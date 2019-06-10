@@ -44,6 +44,7 @@ public class Handler extends NMSHandler {
     public Handler() {
         advancementHelper = new AdvancementHelperImpl();
         animationHelper = new AnimationHelperImpl();
+        arrowHelper = new ArrowHelper();
         blockHelper = new BlockHelperImpl();
         chunkHelper = new ChunkHelperImpl();
         customEntityHelper = new CustomEntityHelperImpl();

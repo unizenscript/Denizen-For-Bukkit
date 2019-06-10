@@ -101,6 +101,10 @@ public abstract class NMSHandler {
         return getInstance().animationHelper;
     }
 
+    public static ArrowHelper getArrowHelper() {
+        return getInstance().arrowHelper;
+    }
+
     public static BlockHelper getBlockHelper() {
         return getInstance().blockHelper;
     }
