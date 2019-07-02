@@ -48,7 +48,7 @@ public class EntityCritical implements Property {
 
     @Override
     public String getPropertyString() {
-        return String.valueOf(NMSHandler.getInstance().getArrowHelper().isCritical(entity.getBukkitEntity()));
+        return NMSHandler.getInstance().getArrowHelper().isCritical(entity.getBukkitEntity()) ? "true" : null;
     }
 
     @Override
