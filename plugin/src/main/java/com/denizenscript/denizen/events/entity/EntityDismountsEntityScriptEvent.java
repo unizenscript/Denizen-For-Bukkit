@@ -49,9 +49,8 @@ public class EntityDismountsEntityScriptEvent extends BukkitScriptEvent implemen
     public EntityDismountEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer script, String event) {
-        String lower = CoreUtilities.toLowerCase(event);
-        return CoreUtilities.getXthArg(1, lower).equals("dismounts");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventArgLowerAt(1).equals("dismounts");
     }
 
     @Override

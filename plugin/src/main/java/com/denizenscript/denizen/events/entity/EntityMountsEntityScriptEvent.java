@@ -49,9 +49,8 @@ public class EntityMountsEntityScriptEvent extends BukkitScriptEvent implements 
     public EntityMountEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer script, String event) {
-        String lower = CoreUtilities.toLowerCase(event);
-        return CoreUtilities.getXthArg(1, lower).equals("mounts");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventArgLowerAt(1).equals("mounts");
     }
 
     @Override
