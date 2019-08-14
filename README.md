@@ -1,76 +1,69 @@
-The Denizen Scripting Language - Spigot Impl
---------------------------------------------
-
-An implementation of the Denizen Scripting Language for Spigot servers, with strong Citizens interlinks to emphasize the power of using Denizen with NPCs!
+# Denizen: Helpful Citizens for Spigot
 
 **Version 1.1.0**: Compatible with Spigot 1.12.2, 1.13.2, and 1.14.4!
 
-#### Download Links:
+## Helpful Links
 
-- **Release builds**: https://ci.citizensnpcs.co/job/Denizen/
-- **Developmental builds**: https://ci.citizensnpcs.co/job/Denizen_Developmental/
-- **SpigotMC - VERY SLOW releases**: https://www.spigotmc.org/resources/denizen.21039/
+### Downloads
 
-#### Need help using Denizen? Try one of these places:
+- **Release builds:** <https://ci.citizensnpcs.co/job/Denizen/>
+- **Developmental builds:** <https://ci.citizensnpcs.co/job/Denizen_Developmental/>
+- **SpigotMC Page:** <https://www.spigotmc.org/resources/denizen.21039/>
 
-- **Discord** - chat room (Modern, strongly recommended): https://discord.gg/Q6pZGSR
-- **Denizen Home Page** - a link directory (Modern): https://denizenscript.com/
-- **Forum** (Modern but not used much): https://forum.denizenscript.com/
-- **Meta documentation** - command/tag/event/etc. search (Modern): https://one.denizenscript.com/denizen/logs/
-- **Textual Beginner's Guide** - text form (Modern): https://guide.denizenscript.com/
-- **Tutorial Videos** (Semi-Modern): https://one.denizenscript.com/denizen/vids
-- ~~**Wiki** (OLD): https://wiki.citizensnpcs.co/Denizen .~~
+### Documentation and Guides
 
-#### Also check out:
+- **Meta documentation:** <https://one.denizenscript.com/denizen/logs/>
+- **Tutorial Text Guide (to be replaced soon!):** <https://docs.denizenscript.com/>
+- **Tutorial Videos (outdated):** <https://one.denizenscript.com/denizen/vids>
 
-- **Citizens2 (NPC support)**: https://github.com/CitizensDev/Citizens2/
-- **Depenizen (Other plugin support)**: https://github.com/DenizenScript/Depenizen
-- **dDiscordBot (Adds a Discord bot to Denizen)**: https://github.com/DenizenScript/dDiscordBot
-- **Webizen (Adds a webserver to Denizen)**: https://github.com/DenizenScript/Webizen
-- **DenizenCore (Our core, needed for building)**: https://github.com/DenizenScript/Denizen-Core
-- **DenizenVSCode (extension for writing Denizen scripts in VS Code)**: https://github.com/DenizenScript/DenizenVSCode
+### Other Projects
 
-### Building
+- **Citizens2 (NPC Support):** <https://github.com/CitizensDev/Citizens2/>
+- **Depenizen (Other plugin support)**: <https://github.com/DenizenScript/Depenizen-For-Bukkit>
+- **dDiscordBot (Adds a Discord bot to Denizen)**: <https://github.com/DenizenScript/dDiscordBot>
+- **Webizen (Adds a webserver to Denizen)**: <https://github.com/DenizenScript/Webizen>
+- **DenizenCore (Required to build Denizen)**: <https://github.com/DenizenScript/Denizen-Core>
+
+## Building
 
 - Built against JDK 8, using maven `pom.xml` as project file.
-- Requires building all listed versions of Spigot via Spigot BuildTools: https://www.spigotmc.org/wiki/buildtools/
+- Requires building the latest versions for Spigot 1.12.2, 1.13.2, and 1.14.4. Use BuildTools to obtain the required
+  Spigot versions. You may find a page on how to use BuildTools [here](https://www.spigotmc.org/wiki/buildtools/). You
+  may download BuildTools [here](https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/).
+- Requires DenizenCore.
+- Requires Citizens2 for all Citizens-reliant code.
 
-### Licensing pre-note:
+## Contributing and Pull Requests
 
-This is an open source project, provided entirely freely, for everyone to use and contribute to.
+By submitting a pull request, you agree to submitting your code under the same MIT license as this project.
 
-If you make any changes that could benefit the community as a whole, please contribute upstream.
+## License
 
-### The short of the license is:
+This is an open source project for everyone to use and contribute to, free of any cost or fee.
 
-You can do basically whatever you want, except you may not hold any developer liable for what you do with the software.
+You may also view the license information [here](LICENSE.txt).
 
-### Previous License
+### Short Description
 
-Copyright (C) 2012-2013 Aufdemrand, All Rights Reserved.
+You are free to use and modify the software, with no cost or fee. You may not hold any developer liable for what you do
+with the software.
 
-Copyright (C) 2013-2019 The Denizen Script Team, All Rights Reserved.
-
-### The long version of the license follows:
+### Full License
 
 The MIT License (MIT)
 
-Copyright (c) 2019 The Denizen Script Team
+Copyright (c) 2012-2019 the Denizen contributors, including all contributions pulled upstream from the Denizen project.
+Copyright (c) 2019 the Unizen contributors.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+persons to whom the Software is furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
