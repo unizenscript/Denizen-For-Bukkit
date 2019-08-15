@@ -8,6 +8,7 @@ import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Panda;
 
 import java.util.ArrayList;
@@ -16,14 +17,14 @@ import java.util.List;
 public class EntityPandaGene implements Property {
 
     public static boolean describes(ObjectTag entity) {
-        return false;
+        return entity instanceof EntityTag && ((EntityTag) entity).getBukkitEntityType() == EntityType.PANDA;
     }
 
     public static EntityPandaGene getFrom(ObjectTag entity) {
         if (!describes(entity)) {
             return null;
         }
-        return null;
+        return new EntityPandaGene((EntityTag) entity);
     }
 
     public static final String[] handledTags = new String[] {
@@ -111,7 +112,7 @@ public class EntityPandaGene implements Property {
         // If the entity is a panda, returns both the main and hidden genes in this order: MAIN|HIDDEN.
         // The genes can be any of: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/entity/Panda.Gene.html>
         // -->
-        if (attribute.startsWith("hidden_gene")) {
+        if (attribute.startsWith("genes")) {
             ListTag list = new ListTag();
             return new ListTag(getGenes()).getAttribute(attribute.fulfill(1));
         }
