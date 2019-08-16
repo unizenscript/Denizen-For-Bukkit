@@ -167,15 +167,23 @@ public class PropertyRegistry {
             PropertyParser.registerProperty(MaterialLeaves.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialLevel.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialLightable.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialMultipleFacing.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialOpen.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialOrientation.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialRailShape.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialRedstonePower.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialRotation.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialSnowy.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialRepeaterDelay.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialSaplingStage.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialSeaPickles.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialSlabType.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialSnowLayers.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialStairsShape.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialStructureBlockMode.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialSwitchFace.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialWaterlogged.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialTntUnstable.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialTripwireDisarmed.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialTurtleEggsAmount.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialTurtleEggsHatch.class, MaterialTag.class);
+        }
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
+            PropertyParser.registerProperty(MaterialScaffoldingBottom.class,MaterialTag.class);
+            PropertyParser.registerProperty(MaterialScaffoldingDistanceToBottom.class, MaterialTag.class);
         }
 
         // register core TradeTag properties
