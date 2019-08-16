@@ -25,6 +25,7 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(new BlockSpreadsScriptEvent());
         ScriptEvent.registerScriptEvent(new BrewsScriptEvent());
         ScriptEvent.registerScriptEvent(new CauldronLevelChangeScriptEvent());
+        ScriptEvent.registerScriptEvent(new DragonEggMovesScriptEvent());
         ScriptEvent.registerScriptEvent(new FurnaceBurnsItemScriptEvent());
         ScriptEvent.registerScriptEvent(new FurnaceSmeltsItemScriptEvent());
         ScriptEvent.registerScriptEvent(new LeafDecaysScriptEvent());
