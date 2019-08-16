@@ -173,9 +173,20 @@ public class EntityPandaGene implements Property {
                 return;
             }
 
+            Panda.Gene mainGene;
+            Panda.Gene hiddenGene;
+            try {
+                mainGene = Panda.Gene.valueOf(filteredList.get(0).toUpperCase());
+                hiddenGene = Panda.Gene.valueOf(filteredList.get(1).toUpperCase());
+            }
+            catch (IllegalArgumentException e) {
+                Debug.echoError("Invalid gene(s) were specified!");
+                return;
+            }
+
             Panda panda = (Panda) entity.getBukkitEntity();
-            panda.setMainGene(Panda.Gene.valueOf(filteredList.get(1).toUpperCase()));
-            panda.setHiddenGene(Panda.Gene.valueOf(filteredList.get(1).toUpperCase()));
+            panda.setMainGene(mainGene);
+            panda.setHiddenGene(hiddenGene);
         }
     }
 }
