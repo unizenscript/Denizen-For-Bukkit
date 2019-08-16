@@ -151,7 +151,7 @@ public class MaterialMultipleFacing implements Property {
         // <MaterialTag.allowed_faces>
         // <MaterialTag.has_face[<face>]>
         // -->
-        if (mechanism.matches("faces") && mechanism.requireObject(ListTag.class)) {
+        if (mechanism.matches("faces")) {
             List<BlockFace> validFaces = new ArrayList<>();
             for (String input : mechanism.valueAsType(ListTag.class)) {
                 BlockFace face;
