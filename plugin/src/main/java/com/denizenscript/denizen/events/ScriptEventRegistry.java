@@ -11,7 +11,7 @@ import com.denizenscript.denizencore.events.ScriptEvent;
 
 public class ScriptEventRegistry {
 
-    public static void registermainEvents() {
+    public static void registerMainEvents() {
         // Block events
         ScriptEvent.registerScriptEvent(new BlockBuiltScriptEvent());
         ScriptEvent.registerScriptEvent(new BlockBurnsScriptEvent());
@@ -45,6 +45,7 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(new EntityDamagedScriptEvent());
         ScriptEvent.registerScriptEvent(new EntityDeathScriptEvent());
         ScriptEvent.registerScriptEvent(new EntityDespawnScriptEvent());
+        ScriptEvent.registerScriptEvent(new EntityDismountsEntityScriptEvent());
         ScriptEvent.registerScriptEvent(new EntityEntersPortalScriptEvent());
         ScriptEvent.registerScriptEvent(new EntityEntersVehicleScriptEvent());
         ScriptEvent.registerScriptEvent(new EntityExitsPortalScriptEvent());
@@ -57,6 +58,7 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(new EntityHealsScriptEvent());
         ScriptEvent.registerScriptEvent(new EntityInteractScriptEvent());
         ScriptEvent.registerScriptEvent(new EntityKilledScriptEvent());
+        ScriptEvent.registerScriptEvent(new EntityMountsEntityScriptEvent());
         if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13_R2)) {
             ScriptEvent.registerScriptEvent(new EntityPotionEffectScriptEvent());
         }
