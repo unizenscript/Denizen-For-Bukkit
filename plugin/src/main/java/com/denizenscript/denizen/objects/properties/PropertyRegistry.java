@@ -162,20 +162,28 @@ public class PropertyRegistry {
             PropertyParser.registerProperty(MaterialAge.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialAttached.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialDirectional.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialFarmlandMoisture.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialHalf.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialSlab.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialLeaves.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialGateInStoneWall.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialHopperEnabled.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialJukeboxRecord.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialLeavesDistance.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialLeavesPersistence.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialLevel.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialLightable.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialMultipleFacing.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialOpen.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialOrientation.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialNoteblockInstrument.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialNoteblockNote.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialPistonExtended.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialPistonHeadRetracting.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialPistonType.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialRailShape.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialRedstonePower.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialRotation.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialSnowy.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialRedstoneConnection.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialSwitchFace.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialWaterlogged.class, MaterialTag.class);
+        }
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14_R1)) {
+            PropertyParser.registerProperty(MaterialLanternHanging.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialLecternBook.class, MaterialTag.class);
         }
 
         // register core TradeTag properties
