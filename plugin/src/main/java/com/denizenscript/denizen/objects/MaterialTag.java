@@ -531,7 +531,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.direction>, <@link tag MaterialTag.valid_directions>,
         // and <@link mechanism MaterialTag.direction> are accessible.
         // -->
-        registerTag("is_bisected", new TagRunnable() {
+        registerTag("is_directional", new TagRunnable() {
             @Override
             public String run(Attribute attribute, ObjectTag object) {
                 return new ElementTag(MaterialHalf.describes(object))
