@@ -1596,7 +1596,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             if (sidebar == null) {
                 return null;
             }
-            return new ListTag(sidebar.getLinesText()).getAttribute(attribute.fulfill(2));
+            return new ListTag(sidebar.getLines()).getAttribute(attribute.fulfill(2));
         }
 
         // <--[tag]
@@ -1630,6 +1630,34 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
                 scores.add(String.valueOf(score));
             }
             return scores.getAttribute(attribute.fulfill(2));
+        }
+
+        // <--[tag]
+        // @attribute <p@player.sidebar.start>
+        // @returns Element(Number)
+        // @description
+        // Returns the current start score set on the player's Sidebar via the Sidebar command.
+        // -->
+        if (attribute.startsWith("sidebar.start")) {
+            Sidebar sidebar = SidebarCommand.getSidebar(this);
+            if (sidebar == null) {
+                return null;
+            }
+            return new ElementTag(sidebar.getStart()).getAttribute(attribute.fulfill(2));
+        }
+
+        // <--[tag]
+        // @attribute <p@player.sidebar.increment>
+        // @returns Element(Number)
+        // @description
+        // Returns the current score increment set on the player's Sidebar via the Sidebar command.
+        // -->
+        if (attribute.startsWith("sidebar.increment")) {
+            Sidebar sidebar = SidebarCommand.getSidebar(this);
+            if (sidebar == null) {
+                return null;
+            }
+            return new ElementTag(sidebar.getIncrement()).getAttribute(attribute.fulfill(2));
         }
 
         // <--[tag]
