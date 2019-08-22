@@ -1,5 +1,6 @@
 package com.denizenscript.denizen.objects;
 
+import com.denizenscript.denizen.Settings;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.blocks.FakeBlock;
 import com.denizenscript.denizen.utilities.debugging.Debug;
@@ -124,7 +125,7 @@ public class ChunkTag implements ObjectTag, Adjustable {
     Chunk cachedChunk;
 
     public Chunk getChunkForTag(Attribute attribute) {
-        if (!isLoaded()) {
+        if (!Settings.autoLoadChunks() && !isLoaded()) {
             if (!attribute.hasAlternative()) {
                 Debug.echoError("Cannot get chunk at " + chunkX + ", " + chunkZ + ": Chunk is not loaded. Use the 'chunkload' command to ensure the chunk is loaded.");
             }

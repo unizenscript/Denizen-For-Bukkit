@@ -72,6 +72,7 @@ public class Settings {
         cache_worldScriptChatEventAsynchronous = config.getBoolean("Scripts.World.Events.On player chats.Use asynchronous event", false);
         cache_worldScriptTimeEventFrequency = DurationTag.valueOf(config.getString("Scripts.World.Events.On time changes.Frequency of check", "250t"));
         cache_blockTagsMaxBlocks = config.getInt("Tags.Block tags.Max blocks", 1000000);
+        cache_autoLoadChunks = config.getBoolean("Tags.Automatically load chunks", true);
         cache_chatHistoryMaxMessages = config.getInt("Tags.Chat history.Max messages", 10);
         cache_tagTimeout = config.getInt("Tags.Timeout", 10);
         cache_tagTimeoutSilent = config.getBoolean("Tags.Timeout when silent", false);
@@ -87,7 +88,7 @@ public class Settings {
             cache_healthTraitBlockDrops, cache_chatAsynchronous, cache_chatMustSeeNPC, cache_chatMustLookAtNPC,
             cache_chatGloballyIfFailedChatTriggers, cache_chatGloballyIfNoChatTriggers,
             cache_chatGloballyIfUninteractable, cache_worldScriptChatEventAsynchronous,
-            cache_tagTimeoutSilent, cache_packetInterception;
+            cache_tagTimeoutSilent, cache_packetInterception, cache_autoLoadChunks;
 
     private static String cache_getAlternateScriptPath, cache_scriptQueueSpeed, cache_healthTraitRespawnDelay,
             cache_engageTimeoutInSeconds, cache_chatMultipleTargetsFormat, cache_chatNoTargetFormat,
@@ -404,6 +405,10 @@ public class Settings {
 
     public static int blockTagsMaxBlocks() {
         return cache_blockTagsMaxBlocks;
+    }
+
+    public static boolean autoLoadChunks() {
+        return cache_autoLoadChunks;
     }
 
     public static int chatHistoryMaxMessages() {
