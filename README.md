@@ -4,6 +4,8 @@
 
 ## Helpful Links
 
+[![Discord Banner](https://discordapp.com/api/guilds/577534015670714368/widget.png?style=banner2)](https://discord.gg/5rZ8BxD)
+
 ### Downloads
 
 - **Release builds:** <https://ci.citizensnpcs.co/job/Denizen/>
