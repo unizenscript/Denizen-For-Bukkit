@@ -19,11 +19,10 @@
     </properties>
 
     <modules>
-        <module>nmshandler</module>
-        <module>v1_12_R1</module>
-        <module>v1_13_R2</module>
-        <module>v1_14_R1</module>
         <module>plugin</module>
+        <module>v1_12</module>
+        <module>v1_13</module>
+        <module>v1_14</module>
         <module>paper</module>
         <module>dist</module>
     </modules>
@@ -32,7 +31,7 @@
     <repositories>
         <repository>
             <id>everything</id>
-            <url>http://repo.citizensnpcs.co</url>
+            <url>https://repo.citizensnpcs.co</url>
         </repository>
     </repositories>
 

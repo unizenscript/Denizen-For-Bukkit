@@ -134,7 +134,7 @@ public class SwitchCommand extends AbstractCommand {
     }
 
     public static boolean switchState(Block b) {
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13_R2)) {
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
             ModernBlockData mbd = new ModernBlockData(b);
             Boolean switchState = mbd.getSwitchState();
             if (switchState != null) {
@@ -159,7 +159,7 @@ public class SwitchCommand extends AbstractCommand {
         }
         else if ((type == MaterialCompat.OAK_TRAPDOOR
                 || type == Material.IRON_TRAPDOOR)
-                || (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13_R2)
+                || (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)
                 && (type == Material.DARK_OAK_TRAPDOOR
                 || type == Material.BIRCH_TRAPDOOR
                 || type == Material.ACACIA_TRAPDOOR
@@ -180,7 +180,7 @@ public class SwitchCommand extends AbstractCommand {
                 (switchState.equals(SwitchState.OFF) && currentState) ||
                 switchState.equals(SwitchState.TOGGLE)) {
 
-            if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13_R2)) {
+            if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
                 ModernBlockData mbd = new ModernBlockData(interactLocation.getBlock());
                 mbd.setSwitchState(interactLocation.getBlock(), !currentState);
             }
@@ -194,7 +194,7 @@ public class SwitchCommand extends AbstractCommand {
                         else {
                             block = interactLocation;
                         }
-                        BlockData blockData = NMSHandler.getInstance().getBlockHelper().getBlockData(MaterialCompat.IRON_DOOR, (byte) (block.getBlock().getData() ^ 4));
+                        BlockData blockData = NMSHandler.getBlockHelper().getBlockData(MaterialCompat.IRON_DOOR, (byte) (block.getBlock().getData() ^ 4));
                         blockData.setBlock(block.getBlock(), false);
                     }
                     else {
@@ -215,7 +215,7 @@ public class SwitchCommand extends AbstractCommand {
                                 // TODO: backup if no human NPC available? (Fake EntityPlayer instance?)
                             }
                         }
-                        NMSHandler.getInstance().getEntityHelper().forceInteraction(player, interactLocation);
+                        NMSHandler.getEntityHelper().forceInteraction(player, interactLocation);
                     }
 
                 }

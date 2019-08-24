@@ -139,6 +139,10 @@ Commands:
         # Whether the YAML command (or any other file-alteration command) is allowed to save outside the minecraft server folder.
         # Set to 'false' if you're worried about security.
         Allow saving outside folder: false
+        # Optionally: set a limited path, where all edits must be contained to.
+        # A good path to use for extra security is: plugins/Denizen/data/
+        # Leave at "none" to disable this optional protection.
+        Limit path: none
   Webget:
         # Whether to allow scripts to read arbitrary data from the web, which can also potentially enable tracking of your private server data.
         # Generally this is safe, but set to 'false' if you want very strict security.
@@ -158,6 +162,11 @@ Tags:
   Block tags:
     # How many blocks can be read, max, before stopping the tag in place
     Max blocks: 1000000
+  # Whether tags should be allowed to automatically load currently unloaded chunks when attempting to access information.
+  # For example, when set to false, tags such as <chunk[10,10].entities> and <location[999999,70,999999,world].inventory> will error if the chunk is currently unloaded.
+  # If you are extremely worried about performance, it is recommended you disable this setting and modify your scripts appropriately, manually deciding when it is
+  # necessary to use the ChunkLoad command before accessing information.
+  Automatically load chunks: true
   Chat history:
     # How many player messages will be stored for each player (<player.chat_history>, etc.)
     Max messages: 10

@@ -93,7 +93,7 @@ public class SignCommand extends AbstractCommand {
     }
 
     public void setWallSign(Block sign, BlockFace bf) {
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13_R2)) {
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
             // TODO: 1.14 - allow new sign types?
             sign.setType(MaterialCompat.WALL_SIGN, false);
             DirectionalBlocksHelper.setFace(sign, bf);
@@ -102,7 +102,7 @@ public class SignCommand extends AbstractCommand {
             // TODO: 1.14 - allow new sign types?
             org.bukkit.material.Sign sgntmp = new org.bukkit.material.Sign(MaterialCompat.WALL_SIGN);
             sgntmp.setFacingDirection(bf);
-            BlockData blockData = NMSHandler.getInstance().getBlockHelper().getBlockData(MaterialCompat.WALL_SIGN, sgntmp.getData());
+            BlockData blockData = NMSHandler.getBlockHelper().getBlockData(MaterialCompat.WALL_SIGN, sgntmp.getData());
             blockData.setBlock(sign, false);
         }
     }

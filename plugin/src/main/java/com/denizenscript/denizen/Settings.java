@@ -53,6 +53,7 @@ public class Settings {
         cache_allowServerRestart = config.getBoolean("Commands.Restart.Allow server restart", true);
         cache_allowLogging = config.getBoolean("Commands.Log.Allow logging", true);
         cache_allowStrangeYAMLSaves = config.getBoolean("Commands.Yaml.Allow saving outside folder", false);
+        cache_limitPath = config.getString("Commands.Yaml.Limit path", "none");
         cache_chatMultipleTargetsFormat = config.getString("Commands.Chat.Options.Multiple targets format", "%target%, %target%, %target%, and others");
         cache_chatBystandersRange = config.getDouble("Commands.Chat.Options.Range for bystanders", 5.0);
         cache_chatNoTargetFormat = config.getString("Commands.Chat.Formats.No target", "[<[talker].name>]: <[message]>");
@@ -71,6 +72,7 @@ public class Settings {
         cache_worldScriptChatEventAsynchronous = config.getBoolean("Scripts.World.Events.On player chats.Use asynchronous event", false);
         cache_worldScriptTimeEventFrequency = DurationTag.valueOf(config.getString("Scripts.World.Events.On time changes.Frequency of check", "250t"));
         cache_blockTagsMaxBlocks = config.getInt("Tags.Block tags.Max blocks", 1000000);
+        cache_autoLoadChunks = config.getBoolean("Tags.Automatically load chunks", true);
         cache_chatHistoryMaxMessages = config.getInt("Tags.Chat history.Max messages", 10);
         cache_tagTimeout = config.getInt("Tags.Timeout", 10);
         cache_tagTimeoutSilent = config.getBoolean("Tags.Timeout when silent", false);
@@ -86,12 +88,12 @@ public class Settings {
             cache_healthTraitBlockDrops, cache_chatAsynchronous, cache_chatMustSeeNPC, cache_chatMustLookAtNPC,
             cache_chatGloballyIfFailedChatTriggers, cache_chatGloballyIfNoChatTriggers,
             cache_chatGloballyIfUninteractable, cache_worldScriptChatEventAsynchronous,
-            cache_tagTimeoutSilent, cache_packetInterception;
+            cache_tagTimeoutSilent, cache_packetInterception, cache_autoLoadChunks;
 
     private static String cache_getAlternateScriptPath, cache_scriptQueueSpeed, cache_healthTraitRespawnDelay,
             cache_engageTimeoutInSeconds, cache_chatMultipleTargetsFormat, cache_chatNoTargetFormat,
             cache_chatToTargetFormat, cache_chatWithTargetToBystandersFormat, cache_chatWithTargetsToBystandersFormat,
-            cache_chatToNpcFormat, cache_chatToNpcOverheardFormat, cache_interactQueueSpeed;
+            cache_chatToNpcFormat, cache_chatToNpcOverheardFormat, cache_interactQueueSpeed, cache_limitPath;
 
     private static int cache_consoleWidth = 128, cache_trimLength = 1024, cache_whileMaxLoops, cache_blockTagsMaxBlocks,
             cache_chatHistoryMaxMessages, cache_tagTimeout;
@@ -299,6 +301,10 @@ public class Settings {
         return cache_allowStrangeYAMLSaves;
     }
 
+    public static String fileLimitPath() {
+        return cache_limitPath;
+    }
+
     public static String chatMultipleTargetsFormat() {
         return cache_chatMultipleTargetsFormat;
     }
@@ -399,6 +405,10 @@ public class Settings {
 
     public static int blockTagsMaxBlocks() {
         return cache_blockTagsMaxBlocks;
+    }
+
+    public static boolean autoLoadChunks() {
+        return cache_autoLoadChunks;
     }
 
     public static int chatHistoryMaxMessages() {

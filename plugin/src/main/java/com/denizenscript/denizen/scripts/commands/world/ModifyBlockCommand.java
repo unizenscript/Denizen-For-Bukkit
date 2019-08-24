@@ -88,12 +88,12 @@ public class ModifyBlockCommand extends AbstractCommand implements Listener, Hol
             if (arg.matchesArgumentType(CuboidTag.class)
                     && !scriptEntry.hasObject("locations")
                     && !scriptEntry.hasObject("location_list")) {
-                scriptEntry.addObject("locations", arg.asType(CuboidTag.class).getBlockLocations());
+                scriptEntry.addObject("locations", arg.asType(CuboidTag.class).getBlockLocationsUnfiltered());
             }
             else if (arg.matchesArgumentType(EllipsoidTag.class)
                     && !scriptEntry.hasObject("locations")
                     && !scriptEntry.hasObject("location_list")) {
-                scriptEntry.addObject("locations", arg.asType(EllipsoidTag.class).getBlockLocations());
+                scriptEntry.addObject("locations", arg.asType(EllipsoidTag.class).getBlockLocationsUnfiltered());
             }
             else if (arg.matchesArgumentList(LocationTag.class)
                     && !scriptEntry.hasObject("locations")
@@ -297,7 +297,7 @@ public class ModifyBlockCommand extends AbstractCommand implements Listener, Hol
 
     boolean preSetup(LocationTag loc0) {
         // Freeze the first world in the list.
-        WorldHelper worldHelper = NMSHandler.getInstance().getWorldHelper();
+        WorldHelper worldHelper = NMSHandler.getWorldHelper();
         World world = loc0.getWorld();
         boolean was_static = worldHelper.isStatic(world);
         if (no_physics) {
@@ -309,7 +309,7 @@ public class ModifyBlockCommand extends AbstractCommand implements Listener, Hol
     void postComplete(Location loc, boolean was_static) {
         // Unfreeze the first world in the list.
         if (no_physics) {
-            NMSHandler.getInstance().getWorldHelper().setStatic(loc.getWorld(), was_static);
+            NMSHandler.getWorldHelper().setStatic(loc.getWorld(), was_static);
         }
         no_physics = false;
     }

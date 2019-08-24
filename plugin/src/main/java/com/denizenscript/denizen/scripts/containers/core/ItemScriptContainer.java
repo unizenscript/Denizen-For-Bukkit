@@ -12,8 +12,8 @@ import com.denizenscript.denizencore.objects.core.ScriptTag;
 import com.denizenscript.denizencore.scripts.ScriptRegistry;
 import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.tags.TagManager;
+import com.denizenscript.denizencore.utilities.Deprecations;
 import com.denizenscript.denizencore.utilities.YamlConfiguration;
-import com.denizenscript.denizencore.utilities.debugging.SlowWarning;
 import com.denizenscript.denizencore.utilities.text.StringHolder;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -91,7 +91,7 @@ public class ItemScriptContainer extends ScriptContainer {
     //   no_id: true/false
     //
     //   # For colorable items, such as leather armor, you can specify a valid ColorTag to specify the item's appearance.
-    //   # See 'dColor' for more information.
+    //   # See 'ColorTag' for more information.
     //   color: ColorTag
     //
     //   # If your material is a 'm@written_book', you can specify a book script to automatically scribe your item
@@ -158,8 +158,6 @@ public class ItemScriptContainer extends ScriptContainer {
         return getItemFrom(null, null);
     }
 
-    public static SlowWarning boundWarning = new SlowWarning("Item script 'bound' functionality has never been reliable and should not be used. Consider replicating the concept with world events.");
-
     public ItemTag getItemFrom(PlayerTag player, NPCTag npc) {
         // Try to use this script to make an item.
         ItemTag stack = null;
@@ -203,7 +201,7 @@ public class ItemScriptContainer extends ScriptContainer {
 
             // Set if the object is bound to the player
             if (contains("BOUND")) {
-                boundWarning.warn();
+                Deprecations.boundWarning.warn();
                 bound = Boolean.valueOf(TagManager.tag(getString("BOUND"), context));
             }
 

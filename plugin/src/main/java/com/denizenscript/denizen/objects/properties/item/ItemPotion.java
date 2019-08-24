@@ -206,7 +206,7 @@ public class ItemPotion implements Property {
                 // NOTE: Not supported as of Minecraft version 1.13.
                 // -->
                 if (attribute.startsWith("color")) {
-                    if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13_R2)) {
+                    if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
                         Debug.echoError("Custom effects with the color option are not supported as of Minecraft version 1.13.");
                         return null;
                     }
@@ -222,7 +222,7 @@ public class ItemPotion implements Property {
                 // @description
                 // Returns whether the potion effect shows an icon.
                 // -->
-                if (attribute.startsWith("icon") && NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13_R2)) {
+                if (attribute.startsWith("icon") && NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
                     return new ElementTag(meta.getCustomEffects().get(potN).hasIcon()).getAttribute(attribute.fulfill(1));
                 }
 
@@ -337,7 +337,7 @@ public class ItemPotion implements Property {
                 meta.setColor(ColorTag.valueOf(d1[3].replace("&comma", ",")).getColor());
             }
             meta.clearCustomEffects();
-            ItemHelper itemHelper = NMSHandler.getInstance().getItemHelper();
+            ItemHelper itemHelper = NMSHandler.getItemHelper();
             for (int i = 1; i < data.size(); i++) {
                 String[] d2 = data.get(i).split(",");
                 PotionEffectType type = PotionEffectType.getByName(d2[0].toUpperCase());
@@ -350,7 +350,7 @@ public class ItemPotion implements Property {
                 Color color = null;
                 boolean icon = false;
                 if (d2.length > 5) {
-                    if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13_R2)) {
+                    if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
                         ElementTag check = new ElementTag(d2[5]);
                         if (check.isBoolean()) {
                             icon = check.asBoolean();
