@@ -387,7 +387,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             }
             return null;
         }
-        if (!isChunkLoaded()) {
+        if (!Settings.autoLoadChunks() && !isChunkLoaded()) {
             if (!attribute.hasAlternative()) {
                 Debug.echoError("LocationTag trying to read block, but cannot because the chunk is unloaded. Use the 'chunkload' command to ensure the chunk is loaded.");
             }
