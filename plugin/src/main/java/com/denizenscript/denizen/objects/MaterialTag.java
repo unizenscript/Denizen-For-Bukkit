@@ -666,6 +666,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // Returns whether the material is a redstone power source or can be powered by redstone.
         // When this returns true, <@link tag MaterialTag.redstone_power>, <@link tag MaterialTag.max_redstone_power>,
         // and <@link mechanism MaterialTag.redstone_power> are accessible.
+        // NOTE: This returns true only for daylight detectors and redstone wires.
         // -->
         registerTag("is_redstone_powerable", new TagRunnable() {
             @Override
@@ -683,6 +684,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // Returns whether the material is rotatable (for example, player heads).
         // When this returns true, <@link tag MaterialTag.rotation>,
         // and <@link mechanism MaterialTag.rotation> are accessible.
+        // NOTE: This returns true only for standing signs (not wall signs).
         // -->
         registerTag("is_rotatable", new TagRunnable() {
             @Override

@@ -29,7 +29,7 @@ public class MaterialMultipleFacing implements Property {
     }
 
     public static final String[] handledTags = new String[] {
-            "allowed_faces", "has_face", "faces"
+            "valid_faces", "has_face", "faces"
     };
 
     public static final String[] handledMechs = new String[] {
@@ -84,14 +84,14 @@ public class MaterialMultipleFacing implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.allowed_faces>
+        // @attribute <MaterialTag.valid_faces>
         // @returns ListTag
         // @group properties
         // @description
         // If the material can have faces, returns which faces the material's texture can be displayed on.
         // A list of all faces can be found here: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/block/BlockFace.html>
         // -->
-        if (attribute.startsWith("allowed_faces")) {
+        if (attribute.startsWith("valid_faces")) {
             ListTag allowedFaces = new ListTag();
             for (BlockFace face : getMultipleFacing().getAllowedFaces()) {
                 allowedFaces.add(face.name());
@@ -148,7 +148,7 @@ public class MaterialMultipleFacing implements Property {
         // A list of all faces can be found here: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/block/BlockFace.html>
         // @tags
         // <MaterialTag.faces>
-        // <MaterialTag.allowed_faces>
+        // <MaterialTag.valid_faces>
         // <MaterialTag.has_face[<face>]>
         // -->
         if (mechanism.matches("faces")) {
