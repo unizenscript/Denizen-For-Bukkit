@@ -81,6 +81,7 @@ public abstract class NMSHandler {
 
     public AdvancementHelper advancementHelper;
     public AnimationHelper animationHelper;
+    public ArrowHelper arrowHelper;
     public BlockHelper blockHelper;
     public ChunkHelper chunkHelper;
     public CustomEntityHelper customEntityHelper;
@@ -99,6 +100,10 @@ public abstract class NMSHandler {
 
     public static AnimationHelper getAnimationHelper() {
         return getInstance().animationHelper;
+    }
+
+    public static ArrowHelper getArrowHelper() {
+        return getInstance().arrowHelper;
     }
 
     public static BlockHelper getBlockHelper() {

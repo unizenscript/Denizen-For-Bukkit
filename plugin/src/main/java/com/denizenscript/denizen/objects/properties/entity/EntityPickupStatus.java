@@ -2,17 +2,16 @@ package com.denizenscript.denizen.objects.properties.entity;
 
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.Mechanism;
 import com.denizenscript.denizencore.objects.ObjectTag;
+import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.entity.Arrow;
 
 public class EntityPickupStatus implements Property {
 
     public static boolean describes(ObjectTag entity) {
-        return entity instanceof EntityTag && ((EntityTag) entity).getBukkitEntity() instanceof Arrow;
+        return entity instanceof EntityTag && NMSHandler.getArrowHelper().isArrow(((EntityTag) entity).getBukkitEntity());
     }
 
     public static EntityPickupStatus getFrom(ObjectTag entity) {
@@ -36,10 +35,10 @@ public class EntityPickupStatus implements Property {
     /////////////
 
     private EntityPickupStatus(EntityTag entity) {
-        dentity = entity;
+        this.entity = entity;
     }
 
-    EntityTag dentity;
+    EntityTag entity;
 
     /////////
     // Property Methods
@@ -47,7 +46,7 @@ public class EntityPickupStatus implements Property {
 
     @Override
     public String getPropertyString() {
-        return NMSHandler.getEntityHelper().getArrowPickupStatus(dentity.getBukkitEntity());
+        return NMSHandler.getArrowHelper().getPickupStatus(entity.getBukkitEntity());
     }
 
     @Override
@@ -75,7 +74,7 @@ public class EntityPickupStatus implements Property {
         // If the entity is an arrow or trident, returns the pickup status of the arrow/trident.
         // -->
         if (attribute.startsWith("pickup_status")) {
-            return new ElementTag(NMSHandler.getEntityHelper().getArrowPickupStatus(dentity.getBukkitEntity()))
+            return new ElementTag(NMSHandler.getArrowHelper().getPickupStatus(entity.getBukkitEntity()))
                     .getAttribute(attribute.fulfill(1));
         }
 
@@ -91,13 +90,13 @@ public class EntityPickupStatus implements Property {
         // @input Element
         // @description
         // Changes the pickup status of an arrow/trident.
-        // Available pickup statuses can be found here: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/entity/Arrow.PickupStatus.html>
+        // Available pickup statuses can be found here: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/entity/AbstractArrow.PickupStatus.html>
         // @tags
         // <EntityTag.pickup_status>
         // -->
 
         if (mechanism.matches("pickup_status")) {
-            NMSHandler.getEntityHelper().setArrowPickupStatus(dentity.getBukkitEntity(), mechanism.getValue().asString().toUpperCase());
+            NMSHandler.getArrowHelper().setPickupStatus(entity.getBukkitEntity(), mechanism.getValue().asString());
         }
     }
 }

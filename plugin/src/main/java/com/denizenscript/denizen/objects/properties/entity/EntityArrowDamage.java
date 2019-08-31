@@ -7,12 +7,11 @@ import com.denizenscript.denizencore.objects.Mechanism;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.entity.Arrow;
 
 public class EntityArrowDamage implements Property {
 
     public static boolean describes(ObjectTag entity) {
-        return entity instanceof EntityTag && ((EntityTag) entity).getBukkitEntity() instanceof Arrow;
+        return entity instanceof EntityTag && NMSHandler.getArrowHelper().isArrow(((EntityTag) entity).getBukkitEntity());
     }
 
     public static EntityArrowDamage getFrom(ObjectTag entity) {
@@ -36,10 +35,10 @@ public class EntityArrowDamage implements Property {
     /////////////
 
     private EntityArrowDamage(EntityTag entity) {
-        dentity = entity;
+        this.entity = entity;
     }
 
-    EntityTag dentity;
+    EntityTag entity;
 
     /////////
     // Property Methods
@@ -47,7 +46,7 @@ public class EntityArrowDamage implements Property {
 
     @Override
     public String getPropertyString() {
-        return String.valueOf(NMSHandler.getEntityHelper().getArrowDamage(dentity.getBukkitEntity()));
+        return String.valueOf(NMSHandler.getArrowHelper().getDamage(entity.getBukkitEntity()));
     }
 
     @Override
@@ -76,7 +75,7 @@ public class EntityArrowDamage implements Property {
         // NOTE: The actual damage dealt by the arrow/trident may be different depending on the projectile's flight speed.
         // -->
         if (attribute.startsWith("damage")) {
-            return new ElementTag(NMSHandler.getEntityHelper().getArrowDamage(dentity.getBukkitEntity()))
+            return new ElementTag(NMSHandler.getArrowHelper().getDamage(entity.getBukkitEntity()))
                     .getAttribute(attribute.fulfill(1));
         }
 
@@ -97,7 +96,7 @@ public class EntityArrowDamage implements Property {
         // -->
 
         if (mechanism.matches("damage") && mechanism.requireDouble()) {
-            NMSHandler.getEntityHelper().setArrowDamage(dentity.getBukkitEntity(), mechanism.getValue().asDouble());
+            NMSHandler.getArrowHelper().setDamage(entity.getBukkitEntity(), mechanism.getValue().asDouble());
         }
     }
 }

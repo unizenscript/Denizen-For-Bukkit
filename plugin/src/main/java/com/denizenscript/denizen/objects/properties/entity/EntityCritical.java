@@ -1,17 +1,17 @@
 package com.denizenscript.denizen.objects.properties.entity;
 
+import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.Mechanism;
 import com.denizenscript.denizencore.objects.ObjectTag;
+import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.entity.Arrow;
 
 public class EntityCritical implements Property {
 
     public static boolean describes(ObjectTag entity) {
-        return entity instanceof EntityTag && ((EntityTag) entity).getBukkitEntity() instanceof Arrow;
+        return entity instanceof EntityTag && NMSHandler.getArrowHelper().isArrow(((EntityTag) entity).getBukkitEntity());
     }
 
     public static EntityCritical getFrom(ObjectTag entity) {
@@ -37,10 +37,10 @@ public class EntityCritical implements Property {
     /////////////
 
     private EntityCritical(EntityTag entity) {
-        critical = entity;
+        this.entity = entity;
     }
 
-    EntityTag critical;
+    EntityTag entity;
 
     /////////
     // Property Methods
@@ -48,12 +48,7 @@ public class EntityCritical implements Property {
 
     @Override
     public String getPropertyString() {
-        if (!((Arrow) critical.getBukkitEntity()).isCritical()) {
-            return null;
-        }
-        else {
-            return "true";
-        }
+        return NMSHandler.getArrowHelper().isCritical(entity.getBukkitEntity()) ? "true" : null;
     }
 
     @Override
@@ -78,10 +73,10 @@ public class EntityCritical implements Property {
         // @mechanism EntityTag.critical
         // @group properties
         // @description
-        // If the entity is an arrow or trident, returns whether the arrow/trident is critical.
+        // If the entity is an arrow or trident, returns whether the arrow/trident is a critical arrow/trident.
         // -->
         if (attribute.startsWith("critical")) {
-            return new ElementTag(((Arrow) critical.getBukkitEntity()).isCritical())
+            return new ElementTag(NMSHandler.getArrowHelper().isCritical(entity.getBukkitEntity()))
                     .getAttribute(attribute.fulfill(1));
         }
 
@@ -96,13 +91,13 @@ public class EntityCritical implements Property {
         // @name critical
         // @input Element(Boolean)
         // @description
-        // Changes whether an arrow/trident is critical.
+        // Changes whether an arrow/trident is a critical arrow/trident.
         // @tags
         // <EntityTag.critical>
         // -->
 
         if (mechanism.matches("critical") && mechanism.requireBoolean()) {
-            ((Arrow) critical.getBukkitEntity()).setCritical(mechanism.getValue().asBoolean());
+            NMSHandler.getArrowHelper().setCritical(entity.getBukkitEntity(), mechanism.getValue().asBoolean());
         }
     }
 }
