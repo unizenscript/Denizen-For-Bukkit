@@ -47,7 +47,7 @@ public class EntityMooshroomVariant implements Property {
 
     @Override
     public String getPropertyString() {
-        return ((MushroomCow) entity.getBukkitEntity()).getVariant() != MushroomCow.Variant.RED ? ((MushroomCow) entity.getBukkitEntity()).getVariant().name() : null;
+        return ((MushroomCow) entity.getBukkitEntity()).getVariant().name();
     }
 
     @Override

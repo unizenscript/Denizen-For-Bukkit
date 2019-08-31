@@ -47,14 +47,14 @@ public class PropertyRegistry {
         PropertyParser.registerProperty(EntityBeamTarget.class, EntityTag.class);
         PropertyParser.registerProperty(EntityBodyArrows.class, EntityTag.class);
         PropertyParser.registerProperty(EntityBoundingBox.class, EntityTag.class);
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14_R1)) {
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
             PropertyParser.registerProperty(EntityCatType.class, EntityTag.class);
         }
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13_R2)) {
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
             PropertyParser.registerProperty(EntityCharging.class, EntityTag.class);
         }
         PropertyParser.registerProperty(EntityChestCarrier.class, EntityTag.class);
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14_R1)) {
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
             PropertyParser.registerProperty(EntityCollarColor.class, EntityTag.class);
         }
         PropertyParser.registerProperty(EntityColor.class, EntityTag.class);
@@ -67,7 +67,7 @@ public class PropertyRegistry {
         PropertyParser.registerProperty(EntityExplosionFire.class, EntityTag.class);
         PropertyParser.registerProperty(EntityExplosionRadius.class, EntityTag.class);
         PropertyParser.registerProperty(EntityFirework.class, EntityTag.class);
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14_R1)) {
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
             PropertyParser.registerProperty(EntityFoxCrouching.class, EntityTag.class);
             PropertyParser.registerProperty(EntityFoxType.class, EntityTag.class);
         }
@@ -82,11 +82,11 @@ public class PropertyRegistry {
         PropertyParser.registerProperty(EntityKnockback.class, EntityTag.class);
         PropertyParser.registerProperty(EntityMarker.class, EntityTag.class);
         PropertyParser.registerProperty(EntityMaxFuseTicks.class, EntityTag.class);
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14_R1)) {
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
             PropertyParser.registerProperty(EntityMooshroomVariant.class, EntityTag.class);
         }
         PropertyParser.registerProperty(EntityPainting.class, EntityTag.class);
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14_R1)) {
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
             PropertyParser.registerProperty(EntityPandaGene.class, EntityTag.class);
             PropertyParser.registerProperty(EntityPatrolLeader.class, EntityTag.class);
             PropertyParser.registerProperty(EntityPatrolTarget.class, EntityTag.class);

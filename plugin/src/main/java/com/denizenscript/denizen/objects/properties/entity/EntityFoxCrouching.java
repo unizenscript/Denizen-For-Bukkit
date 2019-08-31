@@ -47,7 +47,7 @@ public class EntityFoxCrouching implements Property {
 
     @Override
     public String getPropertyString() {
-        return ((Fox) entity.getBukkitEntity()).isCrouching() ? "true" : null;
+        return String.valueOf(((Fox) entity.getBukkitEntity()).isCrouching());
     }
 
     @Override

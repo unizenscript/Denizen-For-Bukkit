@@ -47,7 +47,7 @@ public class EntityCharging implements Property {
 
     @Override
     public String getPropertyString() {
-        return ((Vex) entity.getBukkitEntity()).isCharging() ? "true" : null;
+        return String.valueOf(((Vex) entity.getBukkitEntity()).isCharging());
     }
 
     @Override

@@ -47,7 +47,7 @@ public class EntityFoxType implements Property {
 
     @Override
     public String getPropertyString() {
-        return ((Fox) entity.getBukkitEntity()).getFoxType() != Fox.Type.RED ? ((Fox) entity.getBukkitEntity()).getFoxType().name() : null;
+        return ((Fox) entity.getBukkitEntity()).getFoxType().name();
     }
 
     @Override

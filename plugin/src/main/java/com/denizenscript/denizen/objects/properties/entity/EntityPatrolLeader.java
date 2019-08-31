@@ -47,7 +47,7 @@ public class EntityPatrolLeader implements Property {
 
     @Override
     public String getPropertyString() {
-        return ((Raider) entity.getBukkitEntity()).isPatrolLeader() ? "true" : null;
+        return String.valueOf(((Raider) entity.getBukkitEntity()).isPatrolLeader());
     }
 
     @Override
