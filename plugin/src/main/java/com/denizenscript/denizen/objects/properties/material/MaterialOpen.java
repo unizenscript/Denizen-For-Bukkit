@@ -24,11 +24,11 @@ public class MaterialOpen implements Property {
     }
 
     public static final String[] handledTags = new String[] {
-            "is_open"
+            "open"
     };
 
     public static final String[] handledMechs = new String[] {
-            "is_open"
+            "open"
     };
 
 
@@ -57,7 +57,7 @@ public class MaterialOpen implements Property {
 
     @Override
     public String getPropertyId() {
-        return "is_open";
+        return "open";
     }
 
     ///////////
@@ -71,14 +71,14 @@ public class MaterialOpen implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.is_open>
+        // @attribute <MaterialTag.open>
         // @returns ElementTag(Boolean)
-        // @mechanism MaterialTag.is_open
+        // @mechanism MaterialTag.open
         // @group properties
         // @description
         // If the material is a door, trapdoor, or fence gate, returns whether this material is opened.
         // -->
-        if (attribute.startsWith("is_open")) {
+        if (attribute.startsWith("open")) {
             return new ElementTag(getOpenable().isOpen()).getAttribute(attribute.fulfill(1));
         }
 
@@ -90,14 +90,14 @@ public class MaterialOpen implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name is_open
+        // @name open
         // @input ElementTag(Boolean)
         // @description
         // If the material is a door, trapdoor, or fence gate, sets whether this material is opened.
         // @tags
-        // <MaterialTag.is_open>
+        // <MaterialTag.open>
         // -->
-        if (mechanism.matches("is_open") && mechanism.requireBoolean()) {
+        if (mechanism.matches("open") && mechanism.requireBoolean()) {
             getOpenable().setOpen(mechanism.getValue().asBoolean());
         }
     }

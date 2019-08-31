@@ -24,11 +24,11 @@ public class MaterialAttached implements Property {
     }
 
     public static final String[] handledTags = new String[] {
-            "is_attached"
+            "attached"
     };
 
     public static final String[] handledMechs = new String[] {
-            "is_attached"
+            "attached"
     };
 
 
@@ -61,7 +61,7 @@ public class MaterialAttached implements Property {
 
     @Override
     public String getPropertyId() {
-        return "is_attached";
+        return "attached";
     }
 
     ///////////
@@ -75,14 +75,14 @@ public class MaterialAttached implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.is_attached>
+        // @attribute <MaterialTag.attached>
         // @returns ElementTag(Boolean)
-        // @mechanism MaterialTag.is_attached
+        // @mechanism MaterialTag.attached
         // @group properties
         // @description
         // If the material is a tripwire hook or string, returns if the material is part of a complete tripwire circuit.
         // -->
-        if (attribute.startsWith("is_attached")) {
+        if (attribute.startsWith("attached")) {
             return new ElementTag(isAttached()).getAttribute(attribute.fulfill(1));
         }
 
@@ -94,15 +94,15 @@ public class MaterialAttached implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name is_attached
+        // @name attached
         // @input ElementTag(Boolean)
         // @description
         // Sets the attached state of the material, if the material is a tripwire hook or a string.
         // NOTE: Updating the tripwire hook will visibly change the material's texture, while a string will not have any notable difference.
         // @tags
-        // <MaterialTag.is_attached>
+        // <MaterialTag.attached>
         // -->
-        if (mechanism.matches("is_attached") && mechanism.requireBoolean()) {
+        if (mechanism.matches("attached") && mechanism.requireBoolean()) {
             getAttachable().setAttached(mechanism.getValue().asBoolean());
         }
     }
