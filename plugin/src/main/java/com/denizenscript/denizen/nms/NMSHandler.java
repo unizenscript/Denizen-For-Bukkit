@@ -81,6 +81,7 @@ public abstract class NMSHandler {
 
     public AdvancementHelper advancementHelper;
     public AnimationHelper animationHelper;
+    public ArrowHelper arrowHelper;
     public BlockHelper blockHelper;
     public ChunkHelper chunkHelper;
     public CustomEntityHelper customEntityHelper;

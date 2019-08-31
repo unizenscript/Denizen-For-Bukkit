@@ -1,7 +1,7 @@
-package net.aufdemrand.denizen.nms.helpers;
+package com.denizenscript.denizen.nms.v1_13.helpers;
 
-import net.aufdemrand.denizen.nms.interfaces.ArrowHelper;
-import net.aufdemrand.denizencore.utilities.debugging.dB;
+import com.denizenscript.denizen.nms.interfaces.ArrowHelper;
+import com.denizenscript.denizen.utilities.debugging.Debug;
 import org.bukkit.Color;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Arrow;
@@ -14,7 +14,7 @@ import org.bukkit.potion.PotionType;
 
 import java.util.List;
 
-public class ArrowHelper_v1_13_R2 implements ArrowHelper {
+public class ArrowHelperImpl implements ArrowHelper {
 
     @Override
     public boolean isArrow(Entity entity) {
@@ -114,7 +114,7 @@ public class ArrowHelper_v1_13_R2 implements ArrowHelper {
             pickupStatus = Arrow.PickupStatus.valueOf(status.toUpperCase());
         }
         catch (Exception e) {
-            dB.echoError("Invalid arrow pickup status! Input was: '" + status + "'.");
+            Debug.echoError("Invalid arrow pickup status! Input was: '" + status + "'.");
             return;
         }
         ((Arrow) entity).setPickupStatus(pickupStatus);
@@ -134,15 +134,15 @@ public class ArrowHelper_v1_13_R2 implements ArrowHelper {
             return;
         }
         if (type == PotionType.UNCRAFTABLE) {
-            dB.echoError("A base potion effect cannot be type 'UNCRAFTABLE'! Not applying this change.");
+            Debug.echoError("A base potion effect cannot be type 'UNCRAFTABLE'! Not applying this change.");
             return;
         }
         if (!type.isUpgradeable() && upgrade) {
-            dB.echoError("A base potion effect of type '" + type.name() + "' is not upgradeable! Reverting this to 'false'...");
+            Debug.echoError("A base potion effect of type '" + type.name() + "' is not upgradeable! Reverting this to 'false'...");
             upgrade = false;
         }
         if (!type.isExtendable() && extend) {
-            dB.echoError("A base potion effect of type '" + type.name() + "' is not extendable! Reverting this to 'false'...");
+            Debug.echoError("A base potion effect of type '" + type.name() + "' is not extendable! Reverting this to 'false'...");
             extend = false;
         }
         ((TippedArrow) entity).setBasePotionData(new PotionData(type, extend, upgrade));
@@ -194,7 +194,7 @@ public class ArrowHelper_v1_13_R2 implements ArrowHelper {
             return false;
         }
         if (color != null) {
-            dB.echoError("Colors for custom effects are deprecated! Please use the dEntity.color property instead.");
+            Debug.echoError("Colors for custom effects are deprecated! Please use the dEntity.color property instead.");
         }
         return ((TippedArrow) entity).addCustomEffect(
                 new PotionEffect(effect, duration, amplifier, ambient, particles, icon),

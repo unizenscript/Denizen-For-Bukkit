@@ -1,17 +1,17 @@
-package net.aufdemrand.denizen.objects.properties.entity;
+package com.denizenscript.denizen.objects.properties.entity;
 
-import net.aufdemrand.denizen.nms.NMSHandler;
-import net.aufdemrand.denizen.objects.EntityTag;
-import net.aufdemrand.denizencore.objects.ElementTag;
-import net.aufdemrand.denizencore.objects.Mechanism;
-import net.aufdemrand.denizencore.objects.ObjectTag;
-import net.aufdemrand.denizencore.objects.properties.Property;
-import net.aufdemrand.denizencore.tags.Attribute;
+import com.denizenscript.denizen.nms.NMSHandler;
+import com.denizenscript.denizen.objects.EntityTag;
+import com.denizenscript.denizencore.objects.Mechanism;
+import com.denizenscript.denizencore.objects.ObjectTag;
+import com.denizenscript.denizencore.objects.core.ElementTag;
+import com.denizenscript.denizencore.objects.properties.Property;
+import com.denizenscript.denizencore.tags.Attribute;
 
 public class EntityPickupStatus implements Property {
 
     public static boolean describes(ObjectTag entity) {
-        return entity instanceof EntityTag && NMSHandler.getInstance().getArrowHelper().isArrow(((EntityTag) entity).getBukkitEntity());
+        return entity instanceof EntityTag && NMSHandler.getArrowHelper().isArrow(((EntityTag) entity).getBukkitEntity());
     }
 
     public static EntityPickupStatus getFrom(ObjectTag entity) {

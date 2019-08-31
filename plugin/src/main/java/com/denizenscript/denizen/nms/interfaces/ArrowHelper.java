@@ -1,4 +1,4 @@
-package net.aufdemrand.denizen.nms.interfaces;
+package com.denizenscript.denizen.nms.interfaces;
 
 import org.bukkit.Color;
 import org.bukkit.block.Block;

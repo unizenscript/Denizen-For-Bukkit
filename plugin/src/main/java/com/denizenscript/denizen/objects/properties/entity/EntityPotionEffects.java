@@ -21,18 +21,18 @@ import java.util.List;
 
 public class EntityPotionEffects implements Property {
 
-    public static boolean describes(ObjectTag object) {
-        return object instanceof EntityTag &&
-                (((EntityTag) object).isLivingEntity()
-                        || ((EntityTag) object).getBukkitEntity() instanceof TippedArrow);
+    public static boolean describes(ObjectTag entity) {
+        return entity instanceof EntityTag &&
+                (((EntityTag) entity).isLivingEntity()
+                        || NMSHandler.getArrowHelper().isTippedArrow(((EntityTag) entity).getBukkitEntity()));
     }
 
-    public static EntityPotionEffects getFrom(ObjectTag object) {
-        if (!describes(object)) {
+    public static EntityPotionEffects getFrom(ObjectTag entity) {
+        if (!describes(entity)) {
             return null;
         }
         else {
-            return new EntityPotionEffects((EntityTag) object);
+            return new EntityPotionEffects((EntityTag) entity);
         }
     }
 

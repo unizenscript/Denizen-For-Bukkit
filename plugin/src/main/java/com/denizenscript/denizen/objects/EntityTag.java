@@ -2265,8 +2265,8 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         // Returns whether or not the arrow/trident entity is in a block.
         // -->
         if (attribute.startsWith("is_in_block")) {
-            if (NMSHandler.getInstance().getArrowHelper().isArrow(getBukkitEntity())) {
-                return new Element(NMSHandler.getInstance().getArrowHelper().isInBlock(getBukkitEntity())).getAttribute(attribute.fulfill(1));
+            if (NMSHandler.getArrowHelper().isArrow(getBukkitEntity())) {
+                return new ElementTag(NMSHandler.getArrowHelper().isInBlock(getBukkitEntity())).getAttribute(attribute.fulfill(1));
             }
             return null;
         }
@@ -2279,8 +2279,8 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         // Returns the location of the block that the arrow/trident entity is attached to.
         // -->
         if (attribute.startsWith("attached_block")) {
-            if (NMSHandler.getInstance().getArrowHelper().isArrow(getBukkitEntity())) {
-                Block attachedBlock = NMSHandler.getInstance().getArrowHelper().getAttachedBlock(getBukkitEntity());
+            if (NMSHandler.getArrowHelper().isArrow(getBukkitEntity())) {
+                Block attachedBlock = NMSHandler.getArrowHelper().getAttachedBlock(getBukkitEntity());
                 if (attachedBlock != null) {
                     return new LocationTag(attachedBlock.getLocation()).getAttribute(attribute.fulfill(1));
                 }

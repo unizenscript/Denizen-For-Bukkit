@@ -1,12 +1,12 @@
-package net.aufdemrand.denizen.nms.helpers;
+package com.denizenscript.denizen.nms.v1_12.helpers;
 
-import net.aufdemrand.denizen.nms.interfaces.ArrowHelper;
-import net.aufdemrand.denizencore.utilities.debugging.dB;
+import com.denizenscript.denizen.nms.interfaces.ArrowHelper;
+import com.denizenscript.denizen.utilities.debugging.Debug;
 import org.bukkit.Color;
 import org.bukkit.block.Block;
-import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.TippedArrow;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -14,18 +14,10 @@ import org.bukkit.potion.PotionType;
 
 import java.util.List;
 
-public class ArrowHelper_v1_14_R1 implements ArrowHelper {
+public class ArrowHelperImpl implements ArrowHelper {
 
     @Override
     public boolean isArrow(Entity entity) {
-        if (entity == null) {
-            return false;
-        }
-        return entity instanceof AbstractArrow;
-    }
-
-    @Override
-    public boolean isTippedArrow(Entity entity) {
         if (entity == null) {
             return false;
         }
@@ -33,11 +25,19 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
     }
 
     @Override
+    public boolean isTippedArrow(Entity entity) {
+        if (entity == null) {
+            return false;
+        }
+        return entity instanceof TippedArrow;
+    }
+
+    @Override
     public boolean isInBlock(Entity entity) {
         if (!isArrow(entity)) {
             return false;
         }
-        return ((AbstractArrow) entity).isInBlock();
+        return ((Arrow) entity).isInBlock();
     }
 
     @Override
@@ -45,7 +45,7 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
         if (!isArrow(entity)) {
             return null;
         }
-        return ((AbstractArrow) entity).getAttachedBlock();
+        return ((Arrow) entity).getAttachedBlock();
     }
 
     @Override
@@ -53,7 +53,7 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
         if (!isArrow(entity)) {
             return false;
         }
-        return ((AbstractArrow) entity).isCritical();
+        return ((Arrow) entity).isCritical();
     }
 
     @Override
@@ -61,7 +61,7 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
         if (!isArrow(entity)) {
             return;
         }
-        ((AbstractArrow) entity).setCritical(isCrit);
+        ((Arrow) entity).setCritical(isCrit);
     }
 
     @Override
@@ -69,7 +69,7 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
         if (!isArrow(entity)) {
             return -1;
         }
-        return ((AbstractArrow) entity).getDamage();
+        return ((Arrow) entity).spigot().getDamage();
     }
 
     @Override
@@ -77,7 +77,7 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
         if (!isArrow(entity)) {
             return;
         }
-        ((AbstractArrow) entity).setDamage(damage);
+        ((Arrow) entity).spigot().setDamage(damage);
     }
 
     @Override
@@ -85,7 +85,7 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
         if (!isArrow(entity)) {
             return -1;
         }
-        return ((AbstractArrow) entity).getKnockbackStrength();
+        return ((Arrow) entity).getKnockbackStrength();
     }
 
     @Override
@@ -93,7 +93,7 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
         if (!isArrow(entity)) {
             return;
         }
-        ((AbstractArrow) entity).setKnockbackStrength(strength);
+        ((Arrow) entity).setKnockbackStrength(strength);
     }
 
     @Override
@@ -101,7 +101,7 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
         if (!isArrow(entity)) {
             return null;
         }
-        return ((AbstractArrow) entity).getPickupStatus().toString();
+        return ((Arrow) entity).getPickupStatus().toString();
     }
 
     @Override
@@ -114,10 +114,10 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
             pickupStatus = Arrow.PickupStatus.valueOf(status.toUpperCase());
         }
         catch (Exception e) {
-            dB.echoError("Invalid arrow pickup status! Input was: '" + status + "'.");
+            Debug.echoError("Invalid arrow pickup status! Input was: '" + status + "'.");
             return;
         }
-        ((AbstractArrow) entity).setPickupStatus(pickupStatus);
+        ((Arrow) entity).setPickupStatus(pickupStatus);
     }
 
     @Override
@@ -125,7 +125,7 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
         if (!isTippedArrow(entity)) {
             return null;
         }
-        return ((Arrow) entity).getBasePotionData();
+        return ((TippedArrow) entity).getBasePotionData();
     }
 
     @Override
@@ -134,18 +134,18 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
             return;
         }
         if (type == PotionType.UNCRAFTABLE) {
-            dB.echoError("A base potion effect cannot be type 'UNCRAFTABLE'! Not applying this change.");
+            Debug.echoError("A base potion effect cannot be type 'UNCRAFTABLE'! Not applying this change.");
             return;
         }
         if (!type.isUpgradeable() && upgrade) {
-            dB.echoError("A base potion effect of type '" + type.name() + "' is not upgradeable! Reverting this to 'false'...");
+            Debug.echoError("A base potion effect of type '" + type.name() + "' is not upgradeable! Reverting this to 'false'...");
             upgrade = false;
         }
         if (!type.isExtendable() && extend) {
-            dB.echoError("A base potion effect of type '" + type.name() + "' is not extendable! Reverting this to 'false'...");
+            Debug.echoError("A base potion effect of type '" + type.name() + "' is not extendable! Reverting this to 'false'...");
             extend = false;
         }
-        ((Arrow) entity).setBasePotionData(new PotionData(type, extend, upgrade));
+        ((TippedArrow) entity).setBasePotionData(new PotionData(type, extend, upgrade));
     }
 
     @Override
@@ -153,7 +153,7 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
         if (!isTippedArrow(entity)) {
             return null;
         }
-        return ((Arrow) entity).getColor();
+        return ((TippedArrow) entity).getColor();
     }
 
     @Override
@@ -161,7 +161,7 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
         if (!isTippedArrow(entity) || color == null) {
             return;
         }
-        ((Arrow) entity).setColor(color);
+        ((TippedArrow) entity).setColor(color);
     }
 
     @Override
@@ -169,7 +169,7 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
         if (!isTippedArrow(entity)) {
             return false;
         }
-        return ((Arrow) entity).hasCustomEffects();
+        return ((TippedArrow) entity).hasCustomEffects();
     }
 
     @Override
@@ -177,7 +177,7 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
         if (!isTippedArrow(entity) || effect == null) {
             return false;
         }
-        return ((Arrow) entity).hasCustomEffect(effect);
+        return ((TippedArrow) entity).hasCustomEffect(effect);
     }
 
     @Override
@@ -185,7 +185,7 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
         if (!isTippedArrow(entity)) {
             return null;
         }
-        return ((Arrow) entity).getCustomEffects();
+        return ((TippedArrow) entity).getCustomEffects();
     }
 
     @Override
@@ -193,11 +193,8 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
         if (!isTippedArrow(entity) || effect == null) {
             return false;
         }
-        if (color != null) {
-            dB.echoError("Colors for custom effects are deprecated! Please use the dEntity.color property instead.");
-        }
-        return ((Arrow) entity).addCustomEffect(
-                new PotionEffect(effect, duration, amplifier, ambient, particles, icon),
+        return ((TippedArrow) entity).addCustomEffect(
+                new PotionEffect(effect, duration, amplifier, ambient, particles, color),
                 overwrite
         );
     }
@@ -207,7 +204,7 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
         if (!isTippedArrow(entity) || effect == null) {
             return false;
         }
-        return ((Arrow) entity).removeCustomEffect(effect);
+        return ((TippedArrow) entity).removeCustomEffect(effect);
     }
 
     @Override
@@ -215,6 +212,6 @@ public class ArrowHelper_v1_14_R1 implements ArrowHelper {
         if (!isTippedArrow(entity)) {
             return;
         }
-        ((Arrow) entity).clearCustomEffects();
+        ((TippedArrow) entity).clearCustomEffects();
     }
 }
