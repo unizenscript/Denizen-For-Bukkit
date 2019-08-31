@@ -16,6 +16,7 @@ import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.core.QueueTag;
 import com.denizenscript.denizencore.objects.core.ScriptTag;
+import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.objects.properties.PropertyParser;
 
 public class PropertyRegistry {
@@ -46,7 +47,16 @@ public class PropertyRegistry {
         PropertyParser.registerProperty(EntityBeamTarget.class, EntityTag.class);
         PropertyParser.registerProperty(EntityBodyArrows.class, EntityTag.class);
         PropertyParser.registerProperty(EntityBoundingBox.class, EntityTag.class);
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
+            PropertyParser.registerProperty(EntityCatType.class, EntityTag.class);
+        }
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
+            PropertyParser.registerProperty(EntityCharging.class, EntityTag.class);
+        }
         PropertyParser.registerProperty(EntityChestCarrier.class, EntityTag.class);
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
+            PropertyParser.registerProperty(EntityCollarColor.class, EntityTag.class);
+        }
         PropertyParser.registerProperty(EntityColor.class, EntityTag.class);
         PropertyParser.registerProperty(EntityCritical.class, EntityTag.class);
         PropertyParser.registerProperty(EntityCustomName.class, EntityTag.class);
@@ -57,6 +67,10 @@ public class PropertyRegistry {
         PropertyParser.registerProperty(EntityExplosionFire.class, EntityTag.class);
         PropertyParser.registerProperty(EntityExplosionRadius.class, EntityTag.class);
         PropertyParser.registerProperty(EntityFirework.class, EntityTag.class);
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
+            PropertyParser.registerProperty(EntityFoxCrouching.class, EntityTag.class);
+            PropertyParser.registerProperty(EntityFoxType.class, EntityTag.class);
+        }
         PropertyParser.registerProperty(EntityFramed.class, EntityTag.class);
         PropertyParser.registerProperty(EntityGravity.class, EntityTag.class);
         PropertyParser.registerProperty(EntityHealth.class, EntityTag.class);
@@ -68,7 +82,15 @@ public class PropertyRegistry {
         PropertyParser.registerProperty(EntityKnockback.class, EntityTag.class);
         PropertyParser.registerProperty(EntityMarker.class, EntityTag.class);
         PropertyParser.registerProperty(EntityMaxFuseTicks.class, EntityTag.class);
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
+            PropertyParser.registerProperty(EntityMooshroomVariant.class, EntityTag.class);
+        }
         PropertyParser.registerProperty(EntityPainting.class, EntityTag.class);
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
+            PropertyParser.registerProperty(EntityPandaGene.class, EntityTag.class);
+            PropertyParser.registerProperty(EntityPatrolLeader.class, EntityTag.class);
+            PropertyParser.registerProperty(EntityPatrolTarget.class, EntityTag.class);
+        }
         PropertyParser.registerProperty(EntityPickupStatus.class, EntityTag.class);
         PropertyParser.registerProperty(EntityPotion.class, EntityTag.class);
         PropertyParser.registerProperty(EntityPowered.class, EntityTag.class);
