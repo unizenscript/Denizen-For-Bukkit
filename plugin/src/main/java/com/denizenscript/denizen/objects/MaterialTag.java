@@ -1,9 +1,6 @@
 package com.denizenscript.denizen.objects;
 
-import com.denizenscript.denizen.objects.properties.material.MaterialAge;
-import com.denizenscript.denizen.objects.properties.material.MaterialHalf;
-import com.denizenscript.denizen.objects.properties.material.MaterialLevel;
-import com.denizenscript.denizen.objects.properties.material.MaterialLightable;
+import com.denizenscript.denizen.objects.properties.material.*;
 import com.denizenscript.denizen.utilities.blocks.OldMaterialsHelper;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizencore.objects.*;
@@ -509,15 +506,32 @@ public class MaterialTag implements ObjectTag, Adjustable {
         });
 
         // <--[tag]
+        // @attribute <MaterialTag.is_attachable>
+        // @returns ElementTag(Boolean)
+        // @group properties
+        // @description
+        // Returns whether the material is an attachable material (tripwire hooks and strings).
+        // When this returns true, <@link tag MaterialTag.is_attached>
+        // and <@link mechanism MaterialTag.is_attached> are accessible.
+        // -->
+        registerTag("is_attachable", new TagRunnable() {
+            @Override
+            public String run(Attribute attribute, ObjectTag objectTag) {
+                return new ElementTag(MaterialAttached.describes(objectTag))
+                        .getAttribute(attribute.fulfill(1));
+            }
+        });
+
+        // <--[tag]
         // @attribute <MaterialTag.is_directional>
         // @returns ElementTag(Boolean)
         // @group properties
         // @description
-        // Returns whether the material is a is_directional material.
+        // Returns whether the material is a directional material.
         // When this returns true, <@link tag MaterialTag.direction>, <@link tag MaterialTag.valid_directions>,
         // and <@link mechanism MaterialTag.direction> are accessible.
         // -->
-        registerTag("is_bisected", new TagRunnable() {
+        registerTag("is_directional", new TagRunnable() {
             @Override
             public String run(Attribute attribute, ObjectTag object) {
                 return new ElementTag(MaterialHalf.describes(object))
@@ -572,6 +586,160 @@ public class MaterialTag implements ObjectTag, Adjustable {
             @Override
             public String run(Attribute attribute, ObjectTag object) {
                 return new ElementTag(MaterialLightable.describes(object))
+                        .getAttribute(attribute.fulfill(1));
+            }
+        });
+
+        // <--[tag]
+        // @attribute <MaterialTag.is_multifacing>
+        // @returns ElementTag(Boolean)
+        // @group properties
+        // @description
+        // Returns whether the material can have multiple faces.
+        // When this returns true, <@link tag MaterialTag.faces>, <@link tag MaterialTag.has_face[<face>]>,
+        // <@link tag MaterialTag.allowed_faces>, and <@link mechanism MaterialTag.faces> are accessible.
+        // -->
+        registerTag("is_multifacing", new TagRunnable() {
+            @Override
+            public String run(Attribute attribute, ObjectTag objectTag) {
+                return new ElementTag(MaterialMultipleFacing.describes(objectTag))
+                        .getAttribute(attribute.fulfill(1));
+            }
+        });
+
+        // <--[tag]
+        // @attribute <MaterialTag.is_openable>
+        // @returns ElementTag(Boolean)
+        // @group properties
+        // @description
+        // Returns whether the material can be opened (for example, doors).
+        // When this returns true, <@link tag MaterialTag.is_open>
+        // and <@link mechanism MaterialTag.is_open> are accessible.
+        // -->
+        registerTag("is_openable", new TagRunnable() {
+            @Override
+            public String run(Attribute attribute, ObjectTag objectTag) {
+                return new ElementTag(MaterialOpen.describes(objectTag))
+                        .getAttribute(attribute.fulfill(1));
+            }
+        });
+
+        // <--[tag]
+        // @attribute <MaterialTag.is_orientable>
+        // @returns ElementTag(Boolean)
+        // @group properties
+        // @description
+        // Returns whether the material is orientable (for example, oak logs).
+        // When this returns true, <@link tag MaterialTag.valid_orientations>, <@link tag MaterialTag.orientation>,
+        // and <@link mechanism MaterialTag.orientation> are accessible.
+        // -->
+        registerTag("is_orientable", new TagRunnable() {
+            @Override
+            public String run(Attribute attribute, ObjectTag objectTag) {
+                return new ElementTag(MaterialOrientation.describes(objectTag))
+                        .getAttribute(attribute.fulfill(1));
+            }
+        });
+
+        // <--[tag]
+        // @attribute <MaterialTag.is_rail>
+        // @returns ElementTag(Boolean)
+        // @group properties
+        // @description
+        // Returns whether the material is a rail.
+        // When this returns true, <@link tag MaterialTag.valid_rail_shapes>, <@link tag MaterialTag.rail_shape>,
+        // and <@link mechanism MaterialTag.rail_shape> are accessible.
+        // -->
+        registerTag("is_rail", new TagRunnable() {
+            @Override
+            public String run(Attribute attribute, ObjectTag objectTag) {
+                return new ElementTag(MaterialRailShape.describes(objectTag))
+                        .getAttribute(attribute.fulfill(1));
+            }
+        });
+
+        // <--[tag]
+        // @attribute <MaterialTag.is_redstone_powerable>
+        // @returns ElementTag(Boolean)
+        // @group properties
+        // @description
+        // Returns whether the material is a redstone power source or can be powered by redstone.
+        // When this returns true, <@link tag MaterialTag.redstone_power>, <@link tag MaterialTag.max_redstone_power>,
+        // and <@link mechanism MaterialTag.redstone_power> are accessible.
+        // NOTE: This returns true only for daylight detectors and redstone wires.
+        // -->
+        registerTag("is_redstone_powerable", new TagRunnable() {
+            @Override
+            public String run(Attribute attribute, ObjectTag objectTag) {
+                return new ElementTag(MaterialRedstonePower.describes(objectTag))
+                        .getAttribute(attribute.fulfill(1));
+            }
+        });
+
+        // <--[tag]
+        // @attribute <MaterialTag.is_rotatable>
+        // @returns ElementTag(Boolean)
+        // @group properties
+        // @description
+        // Returns whether the material is rotatable (for example, player heads).
+        // When this returns true, <@link tag MaterialTag.rotation>,
+        // and <@link mechanism MaterialTag.rotation> are accessible.
+        // NOTE: This returns true only for standing signs (not wall signs).
+        // -->
+        registerTag("is_rotatable", new TagRunnable() {
+            @Override
+            public String run(Attribute attribute, ObjectTag objectTag) {
+                return new ElementTag(MaterialRotation.describes(objectTag))
+                        .getAttribute(attribute.fulfill(1));
+            }
+        });
+
+        // <--[tag]
+        // @attribute <MaterialTag.is_snowable>
+        // @returns ElementTag(Boolean)
+        // @group properties
+        // @description
+        // Returns whether the material is snowable (for example, grass blocks).
+        // When this returns true, <@link tag MaterialTag.snowy>
+        // and <@link mechanism MaterialTag.snowy> are accessible.
+        // -->
+        registerTag("is_snowable", new TagRunnable() {
+            @Override
+            public String run(Attribute attribute, ObjectTag objectTag) {
+                return new ElementTag(MaterialOrientation.describes(objectTag))
+                        .getAttribute(attribute.fulfill(1));
+            }
+        });
+
+        // <--[tag]
+        // @attribute <MaterialTag.is_switch>
+        // @returns ElementTag(Boolean)
+        // @group properties
+        // @description
+        // Returns whether the material is a switch (button or lever).
+        // When this is true, <@link tag MaterialTag.switch_face>
+        // and <@link mechanism MaterialTag.switch_face> are accessible.
+        registerTag("is_switch", new TagRunnable() {
+            @Override
+            public String run(Attribute attribute, ObjectTag objectTag) {
+                return new ElementTag(MaterialSwitchFace.describes(objectTag))
+                        .getAttribute(attribute.fulfill(1));
+            }
+        });
+
+        // <--[tag]
+        // @attribute <MaterialTag.is_waterloggable>
+        // @returns ElementTag(Boolean)
+        // @group properties
+        // @description
+        // Returns whether the material is waterloggable.
+        // When this returns true, <@link tag MaterialTag.waterlogged>
+        // and <@link mechanism MaterialTag.waterlogged> are accessible.
+        // -->
+        registerTag("is_waterloggable", new TagRunnable() {
+            @Override
+            public String run(Attribute attribute, ObjectTag objectTag) {
+                return new ElementTag(MaterialWaterlogged.describes(objectTag))
                         .getAttribute(attribute.fulfill(1));
             }
         });

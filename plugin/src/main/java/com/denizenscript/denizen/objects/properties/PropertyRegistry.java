@@ -155,11 +155,20 @@ public class PropertyRegistry {
         // register core MaterialTag properties
         if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
             PropertyParser.registerProperty(MaterialAge.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialAttached.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialDirectional.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialHalf.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialLevel.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialLightable.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialMultipleFacing.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialOpen.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialOrientation.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialRailShape.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialRedstonePower.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialRotation.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialSnowy.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialSwitchFace.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialWaterlogged.class, MaterialTag.class);
         }
 
         // register core TradeTag properties
