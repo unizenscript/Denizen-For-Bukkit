@@ -161,7 +161,6 @@ public class PropertyRegistry {
         if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
             PropertyParser.registerProperty(MaterialAge.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialAttached.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialBambooLeaves.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialBedSide.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialBrewingStandBottles.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialBubbleColumnDrag.class, MaterialTag.class);

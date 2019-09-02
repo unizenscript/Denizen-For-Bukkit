@@ -13,7 +13,7 @@ public class MaterialBedSide implements Property {
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData() instanceof Bed;
+                && ((MaterialTag) material).getModernData().data instanceof Bed;
     }
 
     public static MaterialBedSide getFrom(ObjectTag material) {

@@ -53,7 +53,11 @@ public class MaterialBrewingStandBottles implements Property {
     }
 
     private ListTag getBottles() {
-        return new ListTag(getStand().getBottles());
+        ListTag output = new ListTag();
+        for (int bottle : getStand().getBottles()) {
+            output.add(String.valueOf(bottle + 1));
+        }
+        return output;
     }
 
     /////////
@@ -158,7 +162,7 @@ public class MaterialBrewingStandBottles implements Property {
         // <MaterialTag.has_bottles>
         // <MaterialTag.max_bottles>
         // -->
-        if (mechanism.matches("bottles") && mechanism.requireObject(ListTag.class)) {
+        if (mechanism.matches("bottles")) {
             boolean bottle1 = false;
             boolean bottle2 = false;
             boolean bottle3 = false;
