@@ -189,7 +189,7 @@ public class PropertyRegistry {
             PropertyParser.registerProperty(MaterialSwitchFace.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialWaterlogged.class, MaterialTag.class);
         }
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14_R1)) {
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
             PropertyParser.registerProperty(MaterialBambooLeaves.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialBellAttachment.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialCampfireSignal.class, MaterialTag.class);
