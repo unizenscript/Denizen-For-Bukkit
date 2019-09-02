@@ -24,7 +24,7 @@ public class MaterialBedSide implements Property {
     }
 
     public static final String[] handledTags = new String[] {
-            "bed_side", "is_occupied"
+            "bed_side", "occupied"
     };
 
     public static final String[] handledMechs = new String[] {
@@ -88,13 +88,13 @@ public class MaterialBedSide implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.is_occupied>
+        // @attribute <MaterialTag.occupied>
         // @returns ElementTag(Boolean)
         // @group properties
         // @description
         // If the material is a bed, returns whether it is occupied.
         // -->
-        if (attribute.startsWith("is_occupied")) {
+        if (attribute.startsWith("occupied")) {
             return new ElementTag(getBed().isOccupied()).getAttribute(attribute.fulfill(1));
         }
 

@@ -99,6 +99,7 @@ public class MaterialBellAttachment implements Property {
         // @input ElementTag
         // @description
         // If the material is a bell, sets the kind of attachment the material will use.
+        // Can be one of: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/block/data/type/Bell.Attachment.html>
         // @tags
         // <MaterialTag.bell_attachment>
         // -->

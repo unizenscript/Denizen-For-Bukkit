@@ -80,7 +80,7 @@ public class MaterialEndPortalFrameEye implements Property {
         // @mechanism MaterialTag.has_eye
         // @group properties
         // @description
-        // Returns whether this end portal frame material has an eye of ender in it.
+        // Returns whether this end portal frame material has an Eye of Ender in it.
         // -->
         if (attribute.startsWith("has_eye")) {
             return new ElementTag(hasEye()).getAttribute(attribute.fulfill(1));
@@ -97,7 +97,7 @@ public class MaterialEndPortalFrameEye implements Property {
         // @name has_eye
         // @input ElementTag(Boolean)
         // @description
-        // Sets whether this end portal frame material has an eye of ender in it.
+        // Sets whether this end portal frame material has an Eye of Ender in it.
         // @tags
         // <MaterialTag.has_eye>
         // -->

@@ -81,6 +81,7 @@ public class MaterialBambooLeaves implements Property {
         // @group properties
         // @description
         // Returns the size of the leaves on this material, if the material is a bamboo block.
+        // Can be NONE, SMALL, or LARGE.
         // -->
         if (attribute.startsWith("bamboo_leaves")) {
             return new ElementTag(getLeaves()).getAttribute(attribute.fulfill(1));
@@ -98,7 +99,7 @@ public class MaterialBambooLeaves implements Property {
         // @input ElementTag
         // @description
         // Sets the size of the leaves on this bamboo material.
-        // Can be any of: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/block/data/type/Bamboo.Leaves.html>
+        // Can be NONE, SMALL, or LARGE.
         // @tags
         // <MaterialTag.bamboo_leaves>
         // -->

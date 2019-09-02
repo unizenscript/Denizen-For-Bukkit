@@ -24,11 +24,11 @@ public class MaterialCampfireSignal implements Property {
     }
 
     public static final String[] handledTags = new String[] {
-            "is_signal"
+            "signal"
     };
 
     public static final String[] handledMechs = new String[] {
-            "is_signal"
+            "signal"
     };
 
 
@@ -61,7 +61,7 @@ public class MaterialCampfireSignal implements Property {
 
     @Override
     public String getPropertyId() {
-        return "is_signal";
+        return "signal";
     }
 
     ///////////
@@ -75,14 +75,14 @@ public class MaterialCampfireSignal implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.is_signal>
+        // @attribute <MaterialTag.signal>
         // @returns ElementTag(Boolean)
-        // @mechanism MaterialTag.is_signal
+        // @mechanism MaterialTag.signal
         // @group properties
         // @description
         // If the material is a campfire, returns if the material is a signal fire.
         // -->
-        if (attribute.startsWith("is_signal")) {
+        if (attribute.startsWith("signal")) {
             return new ElementTag(isSignal()).getAttribute(attribute.fulfill(1));
         }
 
@@ -94,14 +94,14 @@ public class MaterialCampfireSignal implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name is_signal
+        // @name signal
         // @input ElementTag(Boolean)
         // @description
         // If the material is a campfire, sets if the material is a signal fire.
         // @tags
-        // <MaterialTag.is_signal>
+        // <MaterialTag.signal>
         // -->
-        if (mechanism.matches("is_signal") && mechanism.requireBoolean()) {
+        if (mechanism.matches("signal") && mechanism.requireBoolean()) {
             getCampfire().setSignalFire(mechanism.getValue().asBoolean());
         }
     }

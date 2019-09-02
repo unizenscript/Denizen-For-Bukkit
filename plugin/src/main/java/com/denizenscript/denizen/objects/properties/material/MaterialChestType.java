@@ -81,7 +81,7 @@ public class MaterialChestType implements Property {
         // @group properties
         // @description
         // If the material is a chest, returns what kind of chest it is.
-        // Can be SINGLE, LEFT, or RIGHT, with LEFT and RIGHT indicating that the material is a half of a double chest.
+        // Can be SINGLE, LEFT, or RIGHT. If the type is LEFT or RIGHT, then the chest material is a half of a double chest.
         // -->
         if (attribute.startsWith("chest_type")) {
             return new ElementTag(getType()).getAttribute(attribute.fulfill(1));
@@ -99,7 +99,7 @@ public class MaterialChestType implements Property {
         // @input ElementTag
         // @description
         // If the material is a chest, sets what kind of chest it is.
-        // Can be SINGLE, LEFT, or RIGHT, with LEFT and RIGHT indicating that the material is a half of a double chest.
+        // Can be SINGLE, LEFT, or RIGHT. If the type is LEFT or RIGHT, then the chest material is a half of a double chest.
         // @tags
         // <MaterialTag.chest_type>
         // -->
