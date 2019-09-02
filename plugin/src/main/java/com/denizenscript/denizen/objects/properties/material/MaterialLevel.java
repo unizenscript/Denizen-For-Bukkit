@@ -51,13 +51,14 @@ public class MaterialLevel implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.maximum_level>
+        // @attribute <MaterialTag.max_level>
         // @returns ElementTag(Number)
         // @group properties
         // @description
         // Returns the maximum level for a levelable material (like water, lava, and Cauldrons), or a cake.
+        // NOTE: For cake materials, you may also use <MaterialTag.max_bites>.
         // -->
-        if (attribute.startsWith("maximum_level")) {
+        if (attribute.startsWith("max_level") || attribute.startsWith("maximum_level")) {
             return new ElementTag(getMax()).getObjectAttribute(attribute.fulfill(1));
         }
 
@@ -68,6 +69,7 @@ public class MaterialLevel implements Property {
         // @group properties
         // @description
         // Returns the current level for a levelable material (like water, lava, and Cauldrons), or a cake.
+        // NOTE: For cake materials, you may also use <MaterialTag.bites>.
         // -->
         if (attribute.startsWith("level")) {
             return new ElementTag(getCurrent()).getObjectAttribute(attribute.fulfill(1));
@@ -112,7 +114,10 @@ public class MaterialLevel implements Property {
 
     @Override
     public String getPropertyString() {
-        return String.valueOf(getCurrent());
+        if (isCake()) {
+            return null;
+        }
+        return getCurrent() != 0 ? String.valueOf(getCurrent()) : null;
     }
 
     @Override
@@ -131,7 +136,7 @@ public class MaterialLevel implements Property {
         // Sets the current level for a levelable material (like water, lava, and Cauldrons), or a cake.
         // @tags
         // <MaterialTag.level>
-        // <MaterialTag.maximum_level>
+        // <MaterialTag.max_level>
         // -->
         if (mechanism.matches("level") && mechanism.requireInteger()) {
             int level = mechanism.getValue().asInt();
