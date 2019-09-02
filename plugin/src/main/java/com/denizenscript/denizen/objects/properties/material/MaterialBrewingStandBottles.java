@@ -88,7 +88,7 @@ public class MaterialBrewingStandBottles implements Property {
         // Returns the maximum number of bottles that can be on this brewing stand material.
         // Currently, the maximum number of bottles a brewing stand can hold is 3.
         // -->
-        if (attribute.startsWith("max_bottles")) {
+        if (attribute.startsWith("max_bottles") || attribute.startsWith("maximum_bottles")) {
             return new ElementTag(getStand().getMaximumBottles()).getAttribute(attribute.fulfill(1));
         }
 

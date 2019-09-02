@@ -86,7 +86,7 @@ public class MaterialCakeBites implements Property {
         // @description
         // If the material is a cake, returns the maximum number of bites the material can have.
         // -->
-        if (attribute.startsWith("max_bites")) {
+        if (attribute.startsWith("max_bites") || attribute.startsWith("maximum_bites")) {
             return new ElementTag(getMaxBites()).getAttribute(attribute.fulfill(1));
         }
 
