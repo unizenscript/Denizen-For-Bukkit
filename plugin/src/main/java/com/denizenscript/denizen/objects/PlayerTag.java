@@ -1967,16 +1967,16 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
                     }
                     return scores;
                 }
-                if (attribute.startsWith("sidebar.start")) {
-                    attribute.fulfill(2);
+                if (attribute.startsWith("start", 2)) {
+                    attribute.fulfill(1);
                     Sidebar sidebar = SidebarCommand.getSidebar(object);
                     if (sidebar == null) {
                         return null;
                     }
                     return new ElementTag(sidebar.getStart());
                 }
-                if (attribute.startsWith("sidebar.increment")) {
-                    attribute.fulfill(2);
+                if (attribute.startsWith("increment", 2)) {
+                    attribute.fulfill(1);
                     Sidebar sidebar = SidebarCommand.getSidebar(object);
                     if (sidebar == null) {
                         return null;
