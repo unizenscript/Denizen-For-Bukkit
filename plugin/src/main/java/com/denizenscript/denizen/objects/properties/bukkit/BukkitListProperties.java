@@ -1,6 +1,5 @@
 package com.denizenscript.denizen.objects.properties.bukkit;
 
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -38,7 +37,7 @@ public class BukkitListProperties implements Property {
     ListTag list;
 
     @Override
-    public String getAttribute(Attribute attribute) {
+    public ObjectTag getObjectAttribute(Attribute attribute) {
 
         // <--[tag]
         // @attribute <ListTag.formatted>
@@ -49,7 +48,7 @@ public class BukkitListProperties implements Property {
         // -->
         if (attribute.startsWith("formatted")) {
             if (list.isEmpty()) {
-                return new ElementTag("").getAttribute(attribute.fulfill(1));
+                return new ElementTag("").getObjectAttribute(attribute.fulfill(1));
             }
             StringBuilder dScriptArg = new StringBuilder();
 
@@ -85,19 +84,7 @@ public class BukkitListProperties implements Property {
             }
 
             return new ElementTag(dScriptArg.toString().substring(0, dScriptArg.length() - 2))
-                    .getAttribute(attribute.fulfill(1));
-        }
-
-        // <--[tag]
-        // @attribute <fl@flag_name.expiration>
-        // @returns DurationTag
-        // @description
-        // Returns a DurationTag of the time remaining on the flag, if it
-        // has an expiration.
-        // -->
-        if (attribute.startsWith("expiration") && list.flag != null) {
-            return DenizenAPI.getCurrentInstance().getFlag(list.flag).expiration()
-                    .getAttribute(attribute.fulfill(1));
+                    .getObjectAttribute(attribute.fulfill(1));
         }
 
         return null;

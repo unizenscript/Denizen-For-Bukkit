@@ -61,7 +61,7 @@ public class EntityCritical implements Property {
     ////////
 
     @Override
-    public String getAttribute(Attribute attribute) {
+    public ObjectTag getObjectAttribute(Attribute attribute) {
 
         if (attribute == null) {
             return null;
@@ -77,7 +77,7 @@ public class EntityCritical implements Property {
         // -->
         if (attribute.startsWith("critical")) {
             return new ElementTag(NMSHandler.getArrowHelper().isCritical(entity.getBukkitEntity()))
-                    .getAttribute(attribute.fulfill(1));
+                    .getObjectAttribute(attribute.fulfill(1));
         }
 
         return null;

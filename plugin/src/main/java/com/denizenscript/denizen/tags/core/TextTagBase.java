@@ -1,10 +1,13 @@
 package com.denizenscript.denizen.tags.core;
 
+import com.denizenscript.denizen.utilities.FormattedTextHelper;
 import com.denizenscript.denizencore.objects.core.ElementTag;
-import com.denizenscript.denizencore.objects.TagRunnable;
+import com.denizenscript.denizencore.objects.core.ListTag;
+import com.denizenscript.denizencore.tags.TagRunnable;
 import com.denizenscript.denizencore.tags.Attribute;
 import com.denizenscript.denizencore.tags.ReplaceableTagEvent;
 import com.denizenscript.denizencore.tags.TagManager;
+import com.denizenscript.denizencore.tags.core.EscapeTagBase;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.Deprecations;
 import org.bukkit.ChatColor;
@@ -19,7 +22,7 @@ public class TextTagBase {
             }
         }, "&auml", "&Auml", "&ouml", "&Ouml", "&uuml", "&Uuml", "&nl", "&amp", "&cm", "&ss", "&sq", "&sp", "&nbsp",
                 "&dq", "&co", "&sc", "&rb", "&lb", "&rc", "&lc", "&ns", "&pc", "&pipe",
-                "&ds", "&lt", "&gt", "&bs", "&at", "&dot", "&hrt", "&chr");
+                "&ds", "&lt", "&gt", "&bs", "&at", "&dot", "&hrt", "&chr", "p", "n");
         for (ChatColor color : ChatColor.values()) {
             final String nameVal = CoreUtilities.toLowerCase(color.name());
             final String codeVal = "&" + String.valueOf(color.getChar());
@@ -31,6 +34,219 @@ public class TextTagBase {
                 }
             }, nameVal, codeVal);
         }
+
+        // <--[tag]
+        // @attribute <&hover[<hover text>]>
+        // @returns ElementTag
+        // @description
+        // Returns a special chat code that makes the following text display the input hover text when the mouse is left over it.
+        // This tag must be followed by an <&end_hover> tag.
+        // For example: - narrate "There is a <&hover[you found it!]>secret<&end_hover> in this message!"
+        // -->
+        TagManager.registerTagHandler(new TagRunnable.RootForm() {
+              @Override
+              public void run(ReplaceableTagEvent event) {
+                  Attribute attribute = event.getAttributes();
+                  String hoverText = attribute.getContext(1);
+
+                  // <--[tag]
+                  // @attribute <&hover[<hover text>].type[<type>]>
+                  // @returns ElementTag
+                  // @description
+                  // Returns a special chat code that makes the following text display the input hover text when the mouse is left over it.
+                  // This tag must be followed by an <&end_hover> tag.
+                  // Optionally specify the hover type as one of: SHOW_TEXT, SHOW_ACHIEVEMENT, SHOW_ITEM, or SHOW_ENTITY.
+                  // For example: - narrate "There is a <&hover[you found it!].type[SHOW_TEXT]>secret<&end_hover> in this message!"
+                  // -->
+                  String type = "SHOW_TEXT";
+                  if (attribute.startsWith("type", 2)) {
+                      type = attribute.getContext(2);
+                      attribute.fulfill(1);
+                  }
+                  event.setReplacedObject(new ElementTag(ChatColor.COLOR_CHAR + "[hover=" + type + ";" + FormattedTextHelper.escape(hoverText) + "]").getObjectAttribute(attribute.fulfill(1)));
+              }
+          }, "&hover");
+
+        // <--[tag]
+        // @attribute <&click[<click command>]>
+        // @returns ElementTag
+        // @description
+        // Returns a special chat code that makes the following text execute the input command when clicked.
+        // This tag must be followed by an <&end_click> tag.
+        // For example: - narrate "You can <&click[say wow]>click here<&end_click> to say wow!"
+        // -->
+        TagManager.registerTagHandler(new TagRunnable.RootForm() {
+            @Override
+            public void run(ReplaceableTagEvent event) {
+                Attribute attribute = event.getAttributes();
+                String clickText = attribute.getContext(1);
+
+                // <--[tag]
+                // @attribute <&click[<click command>].type[<type>]>
+                // @returns ElementTag
+                // @description
+                // Returns a special chat code that makes the following text execute the input command when clicked.
+                // This tag must be followed by an <&end_click> tag.
+                // Optionally specify the hover type as one of: OPEN_URL, OPEN_FILE, RUN_COMMAND, SUGGEST_COMMAND, or CHANGE_PAGE.
+                // For example: - narrate "You can <&click[say wow].type[RUN_COMMAND]>click here<&end_click> to say wow!"
+                // -->
+                String type = "RUN_COMMAND";
+                if (attribute.startsWith("type", 2)) {
+                    type = attribute.getContext(2);
+                    attribute.fulfill(1);
+                }
+                event.setReplacedObject(new ElementTag(ChatColor.COLOR_CHAR + "[click=" + type + ";" + FormattedTextHelper.escape(clickText) + "]").getObjectAttribute(attribute.fulfill(1)));
+            }
+        }, "&click");
+
+        // <--[tag]
+        // @attribute <&insertion[<message>]>
+        // @returns ElementTag
+        // @description
+        // Returns a special chat code that makes the following text insert the input message to chat when shift-clicked.
+        // This tag must be followed by an <&end_insertion> tag.
+        // For example: - narrate "You can <&insertion[wow]>click here<&end_insertion> to add 'wow' to your chat!"
+        // -->
+        TagManager.registerTagHandler(new TagRunnable.RootForm() {
+            @Override
+            public void run(ReplaceableTagEvent event) {
+                Attribute attribute = event.getAttributes();
+                String insertText = attribute.getContext(1);
+                event.setReplacedObject(new ElementTag(ChatColor.COLOR_CHAR + "[insertion=" + FormattedTextHelper.escape(insertText) + "]").getObjectAttribute(attribute.fulfill(1)));
+            }
+        }, "&insertion");
+
+        // <--[tag]
+        // @attribute <&end_click>
+        // @returns ElementTag
+        // @description
+        // Returns a special chat code that ends a '&click' tag.
+        // -->
+        TagManager.registerTagHandler(new TagRunnable.RootForm() {
+            @Override
+            public void run(ReplaceableTagEvent event) {
+                Attribute attribute = event.getAttributes();
+                event.setReplacedObject(new ElementTag(ChatColor.COLOR_CHAR + "[/click]").getObjectAttribute(attribute.fulfill(1)));
+            }
+        }, "&end_click");
+
+        // <--[tag]
+        // @attribute <&end_hover>
+        // @returns ElementTag
+        // @description
+        // Returns a special chat code that ends a '&hover' tag.
+        // -->
+        TagManager.registerTagHandler(new TagRunnable.RootForm() {
+            @Override
+            public void run(ReplaceableTagEvent event) {
+                Attribute attribute = event.getAttributes();
+                event.setReplacedObject(new ElementTag(ChatColor.COLOR_CHAR + "[/hover]").getObjectAttribute(attribute.fulfill(1)));
+            }
+        }, "&end_hover");
+
+        // <--[tag]
+        // @attribute <&end_insertion>
+        // @returns ElementTag
+        // @description
+        // Returns a special chat code that ends an '&insertion' tag.
+        // -->
+        TagManager.registerTagHandler(new TagRunnable.RootForm() {
+            @Override
+            public void run(ReplaceableTagEvent event) {
+                Attribute attribute = event.getAttributes();
+                event.setReplacedObject(new ElementTag(ChatColor.COLOR_CHAR + "[/insertion]").getObjectAttribute(attribute.fulfill(1)));
+            }
+        }, "&end_insertion");
+
+        // <--[tag]
+        // @attribute <&keybind[<key>]>
+        // @returns ElementTag
+        // @description
+        // Returns a special chat code that displays a keybind.
+        // For example: - narrate "Press your <&keybind[key.jump]> key!"
+        // -->
+        TagManager.registerTagHandler(new TagRunnable.RootForm() {
+            @Override
+            public void run(ReplaceableTagEvent event) {
+                Attribute attribute = event.getAttributes();
+                String keybindText = attribute.getContext(1);
+                event.setReplacedObject(new ElementTag(ChatColor.COLOR_CHAR + "[keybind=" + FormattedTextHelper.escape(keybindText) + "]").getObjectAttribute(attribute.fulfill(1)));
+            }
+        }, "&keybind");
+
+        // <--[tag]
+        // @attribute <&selector[<key>]>
+        // @returns ElementTag
+        // @description
+        // Returns a special chat code that displays a vanilla selector.
+        // -->
+        TagManager.registerTagHandler(new TagRunnable.RootForm() {
+            @Override
+            public void run(ReplaceableTagEvent event) {
+                Attribute attribute = event.getAttributes();
+                String selectorText = attribute.getContext(1);
+                event.setReplacedObject(new ElementTag(ChatColor.COLOR_CHAR + "[selector=" + FormattedTextHelper.escape(selectorText) + "]").getObjectAttribute(attribute.fulfill(1)));
+            }
+        }, "&selector");
+
+        // <--[tag]
+        // @attribute <&translate[<key>]>
+        // @returns ElementTag
+        // @description
+        // Returns a special chat code that displays an autotranslated message.
+        // For example: - narrate "Reward: <&translate[item.swordDiamond.name]>"
+        // Be warned that language keys change between Minecraft versions.
+        // -->
+        TagManager.registerTagHandler(new TagRunnable.RootForm() {
+            @Override
+            public void run(ReplaceableTagEvent event) {
+                Attribute attribute = event.getAttributes();
+                String translateText = attribute.getContext(1);
+
+                // <--[tag]
+                // @attribute <&translate[<key>].with[<text>|...]>
+                // @returns ElementTag
+                // @description
+                // Returns a special chat code that displays an autotranslated message.
+                // Optionally, specify a list of escaped text values representing input data for the translatable message.
+                // Be aware that missing 'with' values will cause exceptions in your console.
+                // For example: - narrate "<&translate[commands.give.success.single].with[32|<&translate[item.minecraft.diamond_sword].escaped>|<player.name.escaped>]>"
+                // Be warned that language keys change between Minecraft versions.
+                // -->
+                StringBuilder with = new StringBuilder();
+                if (attribute.startsWith("with", 2)) {
+                    ListTag withList = ListTag.valueOf(attribute.getContext(2));
+                    attribute.fulfill(1);
+                    for (String str : withList) {
+                        with.append(";").append(FormattedTextHelper.escape(EscapeTagBase.unEscape(str)));
+                    }
+                }
+                event.setReplacedObject(new ElementTag(ChatColor.COLOR_CHAR + "[translate=" + FormattedTextHelper.escape(translateText) + with.toString() + "]").getObjectAttribute(attribute.fulfill(1)));
+            }
+        }, "&translate");
+
+        // <--[tag]
+        // @attribute <&score[<name>|<objective>(|<value>)]>
+        // @returns ElementTag
+        // @description
+        // Returns a special chat code that displays a scoreboard entry. Input is an escaped list of:
+        // Name of the relevant entity, name of the objective, then optionally a value (if unspecified, will use current scoreboard value).
+        //
+        // -->
+        TagManager.registerTagHandler(new TagRunnable.RootForm() {
+            @Override
+            public void run(ReplaceableTagEvent event) {
+                Attribute attribute = event.getAttributes();
+                ListTag scoreList = ListTag.valueOf(attribute.getContext(1));
+                if (scoreList.size() < 2) {
+                    return;
+                }
+                String name = FormattedTextHelper.escape(EscapeTagBase.unEscape(scoreList.get(0)));
+                String objective = FormattedTextHelper.escape(EscapeTagBase.unEscape(scoreList.get(1)));
+                String value = scoreList.size() >= 3 ? FormattedTextHelper.escape(EscapeTagBase.unEscape(scoreList.get(2))) : "";
+                event.setReplacedObject(new ElementTag(ChatColor.COLOR_CHAR + "[score=" + name + ";" + objective + ";" + value + "]").getObjectAttribute(attribute.fulfill(1)));
+            }
+        }, "&score");
     }
 
     // <--[tag]
@@ -386,10 +602,6 @@ public class TextTagBase {
             Deprecations.pointlessTextTags.warn(event.getScriptEntry());
             event.setReplaced(new ElementTag(String.valueOf((char) 0x2011)).getAttribute(attribute.fulfill(1)));
         }
-        else if (lower.equals("&pc")) {
-            Deprecations.pointlessTextTags.warn(event.getScriptEntry());
-            event.setReplaced(new ElementTag("%").getAttribute(attribute.fulfill(1)));
-        }
         else if (lower.equals("&pipe")) {
             Deprecations.pointlessTextTags.warn(event.getScriptEntry());
             event.setReplaced(new ElementTag("|").getAttribute(attribute.fulfill(1)));
@@ -409,6 +621,16 @@ public class TextTagBase {
         else if (lower.equals("&hrt")) {
             Deprecations.pointlessTextTags.warn(event.getScriptEntry());
             event.setReplaced(new ElementTag("\u2665").getAttribute(attribute.fulfill(1)));
+        }
+
+        // <--[tag]
+        // @attribute <&pc>
+        // @returns ElementTag
+        // @description
+        // Returns a percent symbol: %
+        // -->
+        else if (lower.equals("&pc")) {
+            event.setReplaced(new ElementTag("%").getAttribute(attribute.fulfill(1)));
         }
 
         // <--[tag]
@@ -567,9 +789,28 @@ public class TextTagBase {
         // @description
         // Returns the Unicode character specified. e.g. <&chr[2665]> returns a heart.
         // -->
-        if (attribute.startsWith("&chr") && attribute.hasContext(1)) {
-            event.setReplaced(String.valueOf((char) Integer.parseInt(attribute.getContext(1), 16)));
+        else if (attribute.startsWith("&chr") && attribute.hasContext(1)) {
+            event.setReplaced(new ElementTag(String.valueOf((char) Integer.parseInt(attribute.getContext(1), 16))).getAttribute(attribute.fulfill(1)));
         }
 
+        // <--[tag]
+        // @attribute <p>
+        // @returns ElementTag
+        // @description
+        // Returns a paragraph, for use in books.
+        // -->
+        else if (attribute.startsWith("p")) {
+            event.setReplaced(new ElementTag("\n " + ChatColor.RESET + " \n").getAttribute(attribute.fulfill(1)));
+        }
+
+        // <--[tag]
+        // @attribute <n>
+        // @returns ElementTag
+        // @description
+        // Returns a newline symbol, for use in books.
+        // -->
+        else if (attribute.startsWith("n")) {
+            event.setReplaced(new ElementTag("\n").getAttribute(attribute.fulfill(1)));
+        }
     }
 }

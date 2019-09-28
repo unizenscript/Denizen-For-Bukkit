@@ -1,6 +1,8 @@
 package com.denizenscript.denizen.scripts.containers.core;
 
+import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.utilities.DenizenAPI;
+import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.events.bukkit.ScriptReloadEvent;
 import com.denizenscript.denizen.events.player.PlayerCraftsItemScriptEvent;
@@ -8,9 +10,15 @@ import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.tags.BukkitTagContext;
+import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.core.ScriptTag;
+import com.denizenscript.denizencore.scripts.ScriptBuilder;
 import com.denizenscript.denizencore.tags.TagManager;
+import com.denizenscript.denizencore.utilities.CoreUtilities;
+import com.denizenscript.denizencore.utilities.Deprecations;
+import com.denizenscript.denizencore.utilities.YamlConfiguration;
+import com.denizenscript.denizencore.utilities.text.StringHolder;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -20,153 +28,246 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.InventoryType.SlotType;
-import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.inventory.CraftingInventory;
-import org.bukkit.inventory.FurnaceRecipe;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.Recipe;
+import org.bukkit.inventory.*;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ItemScriptHelper implements Listener {
 
-    public static final Map<String, ItemScriptContainer> item_scripts = new ConcurrentHashMap<>(8, 0.9f, 1);
+    public static final Map<String, ItemScriptContainer> item_scripts = new HashMap<>();
     public static final Map<String, ItemScriptContainer> item_scripts_by_hash_id = new HashMap<>();
-    public static final Map<ItemScriptContainer, List<String>> recipes_to_register = new HashMap<>();
-    public static final Map<ItemScriptContainer, String> shapeless_to_register = new HashMap<>();
-    public static final Map<ItemScriptContainer, String> furnace_to_register = new HashMap<>();
+    public static final Map<String, ItemScriptContainer> recipeIdToItemScript = new HashMap<>();
 
     public ItemScriptHelper() {
         DenizenAPI.getCurrentInstance().getServer().getPluginManager()
                 .registerEvents(this, DenizenAPI.getCurrentInstance());
     }
 
-    // Remove all recipes stored by Denizen
     public static void removeDenizenRecipes() {
-        ItemScriptContainer.specialrecipesMap.clear();
-        ItemScriptContainer.shapelessRecipesMap.clear();
+        recipeIdToItemScript.clear();
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
+            NMSHandler.getItemHelper().clearDenizenRecipes();
+        }
+        else {
+            specialrecipesMap.clear();
+            shapelessRecipesMap.clear();
+        }
     }
 
-    @EventHandler
-    public void scriptReload(ScriptReloadEvent event) {
-
-        for (Map.Entry<ItemScriptContainer, List<String>> entry : recipes_to_register.entrySet()) {
-
-            ItemScriptContainer container = entry.getKey();
-            List<String> recipeList = entry.getValue();
-
-            // Process all tags in list
-            for (int n = 0; n < recipeList.size(); n++) {
-                recipeList.set(n, TagManager.tag(recipeList.get(n), new BukkitTagContext(container.player, container.npc,
-                        false, null, Debug.shouldDebug(container), new ScriptTag(container))));
-            }
-
-            // Store every ingredient in a List
-            List<ItemTag> ingredients = new ArrayList<>();
-
-            boolean shouldRegister = true;
-            recipeLoop:
-            for (String recipeRow : recipeList) {
-                String[] elements = recipeRow.split("\\|", 3);
-
-                for (String element : elements) {
-                    ItemTag ingredient = ItemTag.valueOf(element.replaceAll("[iImM]@", ""), container);
-                    if (ingredient == null) {
-                        Debug.echoError("Invalid ItemTag ingredient, recipe will not be registered for item script '"
-                                + container.getName() + "': " + element);
-                        shouldRegister = false;
-                        break recipeLoop;
-                    }
-                    ingredients.add(ingredient);
-                }
-            }
-
-            // Add the recipe to Denizen's item script recipe list so it
-            // will be checked manually inside ItemScriptHelper
-            if (shouldRegister) {
-                ItemScriptContainer.specialrecipesMap.put(container, ingredients);
-            }
+    public String getIdFor(ItemScriptContainer container, String type, int id) {
+        String basicId = type + "_" + Utilities.cleanseNamespaceID(container.getName()) + "_" + id;
+        if (!recipeIdToItemScript.containsKey(basicId)) {
+            recipeIdToItemScript.put("denizen:" + basicId, container);
+            return basicId;
         }
+        int newNumber = 1;
+        String newId = basicId + "_1";
+        while (recipeIdToItemScript.containsKey(newId)) {
+            newId = basicId + "_" + newNumber++;
+        }
+        recipeIdToItemScript.put("denizen:" + newId, container);
+        return newId;
+    }
 
-        for (Map.Entry<ItemScriptContainer, String> entry : shapeless_to_register.entrySet()) {
+    public void registerShapedRecipe(ItemScriptContainer container, ItemStack item, List<String> recipeList, String internalId, String group) {
+        for (int n = 0; n < recipeList.size(); n++) {
+            recipeList.set(n, TagManager.tag(ScriptBuilder.stripLinePrefix(recipeList.get(n)), new BukkitTagContext(null, null, new ScriptTag(container))));
+        }
+        List<ItemTag> ingredients = new ArrayList<>();
+        List<Boolean> exacts = new ArrayList<>();
+        int width = 1;
+        for (String recipeRow : recipeList) {
+            String[] elements = recipeRow.split("\\|", 3);
+            if (width < 3 && elements.length == 3) {
+                width = 3;
+            }
+            if (width < 2 && elements.length >= 2) {
+                width = 2;
+            }
 
-            ItemScriptContainer container = entry.getKey();
-            String string = entry.getValue();
-
-            String list = TagManager.tag(string, new BukkitTagContext(container.player, container.npc,
-                    false, null, Debug.shouldDebug(container), new ScriptTag(container)));
-
-            List<ItemTag> ingredients = new ArrayList<>();
-
-            boolean shouldRegister = true;
-            for (String element : ListTag.valueOf(list)) {
-                ItemTag ingredient = ItemTag.valueOf(element.replaceAll("[iImM]@", ""), container);
+            for (String element : elements) {
+                String itemText = element.replaceAll("[iImM]@", "");
+                if (itemText.startsWith("material:")) {
+                    exacts.add(false);
+                    itemText = itemText.substring("material:".length());
+                }
+                else {
+                    exacts.add(true);
+                }
+                ItemTag ingredient = ItemTag.valueOf(itemText, container);
                 if (ingredient == null) {
-                    Debug.echoError("Invalid ItemTag ingredient, shapeless recipe will not be registered for item script '"
+                    Debug.echoError("Invalid ItemTag ingredient, recipe will not be registered for item script '"
                             + container.getName() + "': " + element);
-                    shouldRegister = false;
-                    break;
+                    return;
                 }
                 ingredients.add(ingredient);
             }
-            if (shouldRegister) {
-                ItemScriptContainer.shapelessRecipesMap.put(container, ingredients);
-            }
         }
-
-        for (Map.Entry<ItemScriptContainer, String> entry : furnace_to_register.entrySet()) {
-
-            ItemTag furnace_item = ItemTag.valueOf(entry.getValue(), entry.getKey());
-            if (furnace_item == null) {
-                Debug.echoError("Invalid item '" + entry.getValue() + "'");
-                continue;
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
+            NamespacedKey key = new NamespacedKey("denizen", internalId);
+            ShapedRecipe recipe = new ShapedRecipe(key, item);
+            recipe.setGroup(group);
+            String shape1 = "ABC".substring(0, width);
+            String shape2 = "DEF".substring(0, width);
+            String shape3 = "GHI".substring(0, width);
+            String itemChars = shape1 + shape2 + shape3;
+            if (recipeList.size() == 3) {
+                recipe = recipe.shape(shape1, shape2, shape3);
             }
-            FurnaceRecipe recipe = new FurnaceRecipe(entry.getKey().getCleanReference().getItemStack(), furnace_item.getMaterial().getMaterial(), furnace_item.getItemStack().getDurability());
-            Bukkit.getServer().addRecipe(recipe);
+            else if (recipeList.size() == 2) {
+                recipe = recipe.shape(shape1, shape2);
+            }
+            else {
+                recipe = recipe.shape(shape1);
+            }
+            for (int i = 0; i < ingredients.size(); i++) {
+                NMSHandler.getItemHelper().setShapedRecipeIngredient(recipe, itemChars.charAt(i), ingredients.get(i).getItemStack().clone(), exacts.get(i));
+            }
+            Bukkit.addRecipe(recipe);
         }
-        currentFurnaceRecipes = new HashMap<>(furnace_to_register);
-
-        recipes_to_register.clear();
-        shapeless_to_register.clear();
-        furnace_to_register.clear();
+        else {
+            specialrecipesMap.put(container, ingredients);
+        }
     }
 
-    public Map<ItemScriptContainer, String> currentFurnaceRecipes = new HashMap<>();
+    public void registerShapelessRecipe(ItemScriptContainer container, ItemStack item, String shapelessString, String internalId, String group) {
+        String list = TagManager.tag(shapelessString, new BukkitTagContext(null, null, new ScriptTag(container)));
+        List<ItemTag> ingredients = new ArrayList<>();
+        List<Boolean> exacts = new ArrayList<>();
+        for (String element : ListTag.valueOf(list)) {
+            String itemText = element.replaceAll("[iImM]@", "");
+            if (itemText.startsWith("material:")) {
+                exacts.add(false);
+                itemText = itemText.substring("material:".length());
+            }
+            else {
+                exacts.add(true);
+            }
+            ItemTag ingredient = ItemTag.valueOf(itemText, container);
+            if (ingredient == null) {
+                Debug.echoError("Invalid ItemTag ingredient, shapeless recipe will not be registered for item script '"
+                        + container.getName() + "': " + element);
+                return;
+            }
+            ingredients.add(ingredient);
+        }
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
+            ItemStack[] input = new ItemStack[ingredients.size()];
+            for (int i = 0; i < input.length; i++) {
+                input[i] = ingredients.get(i).getItemStack().clone();
+            }
+            boolean[] bools = new boolean[exacts.size()];
+            for (int i = 0; i < exacts.size(); i++) {
+                bools[i] = exacts.get(i);
+            }
+            NMSHandler.getItemHelper().registerShapelessRecipe(internalId, group, item, input, bools);
+        }
+        else {
+            shapelessRecipesMap.put(container, ingredients);
+        }
+    }
 
-    @EventHandler
-    public void furnaceSmeltHandler(FurnaceSmeltEvent event) {
-        if (isItemscript(event.getResult())) {
-            ItemScriptContainer isc = getItemScriptContainer(event.getResult());
-            String inp = currentFurnaceRecipes.get(isc);
-            if (inp != null) {
-                ItemTag itm = ItemTag.valueOf(inp, isc);
-                if (itm != null) {
-                    itm.setAmount(1);
-                    ItemTag src = new ItemTag(event.getSource().clone());
-                    src.setAmount(1);
-                    if (!itm.getFullString().equals(src.getFullString())) {
-                        List<Recipe> recipes = Bukkit.getServer().getRecipesFor(event.getSource());
-                        for (Recipe rec : recipes) {
-                            if (rec instanceof FurnaceRecipe) {
-                                // TODO: Also make sure non-script recipes still burn somehow. FurnaceBurnEvent? Maybe also listen to inventory clicking and manually start a burn?
-                                event.setResult(rec.getResult());
-                                return;
-                            }
+    public void registerFurnaceRecipe(ItemScriptContainer container, ItemStack item, String furnaceItemString, float exp, int time, String type, String internalId, String group) {
+        boolean exact = true;
+        if (furnaceItemString.startsWith("material:")) {
+            exact = false;
+            furnaceItemString = furnaceItemString.substring("material:".length());
+        }
+        ItemTag furnace_item = ItemTag.valueOf(furnaceItemString, container);
+        if (furnace_item == null) {
+            Debug.echoError("Invalid item '" + furnaceItemString + "', furnace recipe will not be registered for item script '" + container.getName() + "'.");
+            return;
+        }
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
+            ItemStack input = furnace_item.getItemStack().clone();
+            NMSHandler.getItemHelper().registerFurnaceRecipe(internalId, group, item, input, exp, time, type, exact);
+        }
+        else {
+            FurnaceRecipe recipe = new FurnaceRecipe(item, furnace_item.getMaterial().getMaterial(), furnace_item.getItemStack().getDurability());
+            Bukkit.addRecipe(recipe);
+            currentFurnaceRecipes.put(container, furnace_item);
+        }
+    }
+
+    public void registerStonecuttingRecipe(ItemScriptContainer container, ItemStack item, String inputItemString, String internalId, String group) {
+        if (!NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
+            return;
+        }
+        boolean exact = true;
+        if (inputItemString.startsWith("material:")) {
+            exact = false;
+            inputItemString = inputItemString.substring("material:".length());
+        }
+        ItemTag stonecutting_item = ItemTag.valueOf(inputItemString, container);
+        if (stonecutting_item == null) {
+            Debug.echoError("Invalid item '" + inputItemString + "', stonecutting recipe will not be registered for item script '" + container.getName() + "'.");
+            return;
+        }
+        ItemStack input = stonecutting_item.getItemStack().clone();
+        NMSHandler.getItemHelper().registerStonecuttingRecipe(internalId, group, item, input, exact);
+    }
+
+    public void rebuildRecipes() {
+        currentFurnaceRecipes.clear();
+        for (ItemScriptContainer container : item_scripts.values()) {
+            if (container.contains("recipes")) {
+                YamlConfiguration section = container.getConfigurationSection("recipes");
+                int id = 0;
+                for (StringHolder key : section.getKeys(false)) {
+                    id++;
+                    YamlConfiguration subSection = section.getConfigurationSection(key.str);
+                    String type = CoreUtilities.toLowerCase(subSection.getString("type"));
+                    String internalId = subSection.contains("recipe_id") ? subSection.getString("recipe_id") : getIdFor(container, type + "_recipe", id);
+                    String group = subSection.contains("group") ? subSection.getString("group") : "";
+                    ItemStack item = container.getCleanReference().getItemStack().clone();
+                    if (subSection.contains("output_quantity")) {
+                        item.setAmount(Integer.parseInt(subSection.getString("output_quantity")));
+                    }
+                    if (type.equals("shaped")) {
+                        registerShapedRecipe(container, item, subSection.getStringList("input"), internalId, group);
+                    }
+                    else if (type.equals("shapeless")) {
+                        registerShapelessRecipe(container, item, subSection.getString("input"), internalId, group);
+                    }
+                    else if (type.equals("stonecutting")) {
+                        registerStonecuttingRecipe(container, item, subSection.getString("input"), internalId, group);
+                    }
+                    else if (type.equals("furnace") || type.equals("blast") || type.equals("smoker") || type.equals("campfire")) {
+                        float exp = 0;
+                        int cookTime = 40;
+                        if (subSection.contains("experience")) {
+                            exp = Float.parseFloat(subSection.getString("experience"));
                         }
-                        event.setCancelled(true);
-                        return;
+                        if (subSection.contains("cook_time")) {
+                            cookTime = DurationTag.valueOf(subSection.getString("cook_time")).getTicksAsInt();
+                        }
+                        registerFurnaceRecipe(container, item, subSection.getString("input"), exp, cookTime, type, internalId, group);
                     }
                 }
             }
+            // Old script style
+            if (container.contains("RECIPE")) {
+                Deprecations.oldRecipeScript.warn(container);
+                registerShapedRecipe(container, container.getCleanReference().getItemStack().clone(), container.getStringList("RECIPE"), getIdFor(container, "old_recipe", 0), "custom");
+            }
+            if (container.contains("SHAPELESS_RECIPE")) {
+                Deprecations.oldRecipeScript.warn(container);
+                registerShapelessRecipe(container, container.getCleanReference().getItemStack().clone(), container.getString("SHAPELESS_RECIPE"), getIdFor(container, "old_shapeless", 0), "custom");
+            }
+            if (container.contains("FURNACE_RECIPE")) {
+                Deprecations.oldRecipeScript.warn(container);
+                registerFurnaceRecipe(container, container.getCleanReference().getItemStack().clone(), container.getString("FURNACE_RECIPE"), 0, 40, "furnace", getIdFor(container, "old_furnace", 0), "custom");
+            }
         }
     }
 
-    public static boolean isBound(ItemStack item) {
-        return (isItemscript(item) && getItemScriptContainer(item).bound);
+
+    @EventHandler
+    public void scriptReload(ScriptReloadEvent event) {
+        rebuildRecipes();
     }
 
     public static boolean isItemscript(ItemStack item) {
@@ -223,14 +324,48 @@ public class ItemScriptHelper implements Listener {
         return colors.toString();
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////// All the below is for the legacy crafting system, which is still used for 1.12 and some recipe types! ///////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    public static Map<ItemScriptContainer, List<ItemTag>> specialrecipesMap = new HashMap<>();
+    public static Map<ItemScriptContainer, List<ItemTag>> shapelessRecipesMap = new HashMap<>();
+    public Map<ItemScriptContainer, ItemTag> currentFurnaceRecipes = new HashMap<>();
+
+    @EventHandler
+    public void furnaceSmeltHandler(FurnaceSmeltEvent event) {
+        if (isItemscript(event.getResult())) {
+            ItemScriptContainer isc = getItemScriptContainer(event.getResult());
+            ItemTag convertResult = currentFurnaceRecipes.get(isc);
+            if (convertResult == null) {
+                return;
+            }
+            ItemTag itm = new ItemTag(convertResult.getItemStack().clone());
+            itm.setAmount(1);
+            ItemTag src = new ItemTag(event.getSource().clone());
+            src.setAmount(1);
+            if (!itm.getFullString().equals(src.getFullString())) {
+                List<Recipe> recipes = Bukkit.getServer().getRecipesFor(event.getSource());
+                for (Recipe rec : recipes) {
+                    if (rec instanceof FurnaceRecipe) {
+                        event.setResult(rec.getResult());
+                        return;
+                    }
+                }
+                event.setCancelled(true);
+                return;
+            }
+        }
+    }
+
     // When special Denizen recipes that have itemscripts as ingredients
     // are being used, check crafting matrix for recipe matches whenever
     // clicks are made in CRAFTING or RESULT slots
     @EventHandler
     public void specialRecipeClick(InventoryClickEvent event) {
         // Proceed only if at least one special recipe has been stored
-        if (ItemScriptContainer.specialrecipesMap.isEmpty()
-                && ItemScriptContainer.shapelessRecipesMap.isEmpty()) {
+        if (specialrecipesMap.isEmpty() && shapelessRecipesMap.isEmpty()) {
             return;
         }
 
@@ -345,10 +480,8 @@ public class ItemScriptHelper implements Listener {
     // drags (which are entirely separate from clicks) are made in CRAFTING slots
     @EventHandler
     public void specialRecipeDrag(InventoryDragEvent event) {
-
         // Proceed only if at least one special recipe has been stored
-        if (ItemScriptContainer.specialrecipesMap.isEmpty()
-                && ItemScriptContainer.shapelessRecipesMap.isEmpty()) {
+        if (specialrecipesMap.isEmpty() && shapelessRecipesMap.isEmpty()) {
             return;
         }
 
@@ -442,8 +575,7 @@ public class ItemScriptHelper implements Listener {
     public Map.Entry<ItemScriptContainer, List<ItemTag>> getSpecialRecipeEntry(ItemStack[] matrix) {
         // Iterate through all the special recipes
         master:
-        for (Map.Entry<ItemScriptContainer, List<ItemTag>> entry :
-                ItemScriptContainer.specialrecipesMap.entrySet()) {
+        for (Map.Entry<ItemScriptContainer, List<ItemTag>> entry : specialrecipesMap.entrySet()) {
 
             // Check if the two sets of items match each other
             for (int n = 0; n < 9; n++) {
@@ -482,8 +614,7 @@ public class ItemScriptHelper implements Listener {
 
         // Forms a shaped recipe from a shapeless recipe
         primary:
-        for (Map.Entry<ItemScriptContainer, List<ItemTag>> entry :
-                ItemScriptContainer.shapelessRecipesMap.entrySet()) {
+        for (Map.Entry<ItemScriptContainer, List<ItemTag>> entry : shapelessRecipesMap.entrySet()) {
 
             // Clone recipe & matrix so we can remove items from them
             List<ItemStack> entryList = new ArrayList<>();
@@ -550,7 +681,7 @@ public class ItemScriptHelper implements Listener {
     public ItemTag getSpecialRecipeResult(ItemStack[] matrix, Player player) {
         Map.Entry<ItemScriptContainer, List<ItemTag>> recipeEntry = getSpecialRecipeEntry(matrix);
         if (recipeEntry != null) {
-            return recipeEntry.getKey().getItemFrom(PlayerTag.mirrorBukkitPlayer(player), null);
+            return recipeEntry.getKey().getItemFrom(new BukkitTagContext(PlayerTag.mirrorBukkitPlayer(player), null, null));
         }
         return null;
     }
@@ -572,7 +703,7 @@ public class ItemScriptHelper implements Listener {
         // Proceed only if the result was not null
         if (recipeEntry != null) {
             List<ItemTag> recipe = recipeEntry.getValue();
-            ItemTag result = recipeEntry.getKey().getItemFrom(PlayerTag.mirrorBukkitPlayer(player), null);
+            ItemTag result = recipeEntry.getKey().getItemFrom(new BukkitTagContext(PlayerTag.mirrorBukkitPlayer(player), null, null));
 
             // In a shift click, the amount of the resulting ItemTag should
             // be based on the amount of the least numerous ingredient multiple,
@@ -626,56 +757,5 @@ public class ItemScriptHelper implements Listener {
             return true;
         }
         return false;
-    }
-
-    @EventHandler
-    public void boundInventoryClickEvent(InventoryClickEvent event) {
-        // Proceed only if this is a CraftingInventory
-        if (!(event.getInventory() instanceof CraftingInventory)) {
-            return;
-        }
-
-        // Proceed only if the click has a cursor item that is bound
-        ItemStack item = event.getCursor();
-        if (item == null || !isBound(item)) {
-            return;
-        }
-
-        if (event.getInventory().getType() != InventoryType.PLAYER) {
-            event.setCancelled(true);
-            return;
-        }
-
-        if (!((Player) event.getInventory().getHolder()).getName().equalsIgnoreCase(event.getWhoClicked().getName())) {
-            event.setCancelled(true);
-            return;
-        }
-    }
-
-    @EventHandler
-    public void boundInventoryDragEvent(InventoryDragEvent event) {
-        // Proceed only if this is a CraftingInventory
-        if (!(event.getInventory() instanceof CraftingInventory)) {
-            return;
-        }
-
-        // Proceed only if the items are bound
-        ItemStack item = event.getOldCursor();
-        if (item == null || !isBound(item)) {
-            return;
-        }
-
-        if (event.getInventory().getType() != InventoryType.PLAYER) {
-            event.setCancelled(true);
-            return;
-        }
-    }
-
-    @EventHandler
-    public void boundDropItem(PlayerDropItemEvent event) {
-        // If the item is bound, don't let them drop it!
-        if (isBound(event.getItemDrop().getItemStack())) {
-            event.setCancelled(true);
-        }
     }
 }

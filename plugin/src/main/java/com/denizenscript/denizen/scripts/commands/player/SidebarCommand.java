@@ -88,7 +88,7 @@ public class SidebarCommand extends AbstractCommand {
     //
     // @Usage
     // Remove multiple lines from the sidebar.
-    // - sidebar remove "lines:2|4|6"
+    // - sidebar remove "scores:2|4|6"
     //
     // @Usage
     // Stop showing the sidebar.
@@ -97,7 +97,7 @@ public class SidebarCommand extends AbstractCommand {
 
     // TODO: Clean me!
 
-    private enum Action {ADD, REMOVE, SET}
+    private enum Action {ADD, REMOVE, SET, SET_LINE}
 
     @Override
     public void onEnable() {
@@ -165,6 +165,15 @@ public class SidebarCommand extends AbstractCommand {
         BukkitScriptEntryData entryData = (BukkitScriptEntryData) scriptEntry.entryData;
         scriptEntry.defaultObject("per_player", new ElementTag(false))
                 .defaultObject("players", new ElementTag(entryData.hasPlayer() ? entryData.getPlayer().identify() : "li@"));
+    }
+
+    public static boolean hasScoreAlready(List<Sidebar.SidebarLine> lines, int score) {
+        for (Sidebar.SidebarLine line : lines) {
+            if (line.score == score) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -362,6 +371,60 @@ public class SidebarCommand extends AbstractCommand {
                 }
                 break;
 
+            case SET_LINE:
+                for (PlayerTag player : players.filter(PlayerTag.class, scriptEntry)) {
+                    if (player == null || !player.isValid()) {
+                        Debug.echoError("Invalid player!");
+                        continue;
+                    }
+                    if ((scores == null || scores.size() == 0) && perScores == null) {
+                        Debug.echoError("Missing or invalid 'scores' parameter.");
+                        return;
+                    }
+                    if ((value == null || value.size() != scores.size()) && perValue == null) {
+                        Debug.echoError("Missing or invalid 'values' parameter.");
+                        return;
+                    }
+                    Sidebar sidebar = createSidebar(player);
+                    if (sidebar == null) {
+                        continue;
+                    }
+                    List<Sidebar.SidebarLine> current = sidebar.getLines();
+                    if (per_player) {
+                        TagContext context = new BukkitTagContext(player, Utilities.getEntryNPC(scriptEntry),
+                                false, scriptEntry, scriptEntry.shouldDebug(), scriptEntry.getScript());
+                        if (perValue != null) {
+                            value = ListTag.valueOf(TagManager.tag(perValue, context));
+                        }
+                        if (perScores != null) {
+                            scores = ListTag.valueOf(TagManager.tag(perScores, context));
+                        }
+                    }
+                    try {
+                        for (int i = 0; i < value.size(); i++) {
+                            int score = ArgumentHelper.getIntegerFrom(scores.get(i));
+                            if (hasScoreAlready(current, score)) {
+                                for (Sidebar.SidebarLine line : current) {
+                                    if (line.score == score) {
+                                        line.text = value.get(i);
+                                        break;
+                                    }
+                                }
+                            }
+                            else {
+                                current.add(new Sidebar.SidebarLine(value.get(i), score));
+                            }
+                        }
+                    }
+                    catch (Exception e) {
+                        Debug.echoError(e);
+                        continue;
+                    }
+                    sidebar.setLines(current);
+                    sidebar.sendUpdate();
+                }
+                break;
+
             case SET:
                 for (PlayerTag player : players.filter(PlayerTag.class, scriptEntry)) {
                     if (player == null || !player.isValid()) {
@@ -410,7 +473,7 @@ public class SidebarCommand extends AbstractCommand {
                             Debug.echoError(e);
                             continue;
                         }
-                        currEdited = true;
+                        sidebar.setLines(current);
                     }
                     else if (value != null) {
                         current = value;
@@ -426,9 +489,6 @@ public class SidebarCommand extends AbstractCommand {
                     }
                     if (title != null) {
                         sidebar.setTitle(title.asString());
-                    }
-                    if (currEdited) {
-                        sidebar.setLines(current);
                     }
                     sidebar.sendUpdate();
                 }

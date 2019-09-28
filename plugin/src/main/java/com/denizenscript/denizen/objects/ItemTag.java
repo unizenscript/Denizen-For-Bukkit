@@ -4,39 +4,44 @@ import com.denizenscript.denizen.objects.properties.item.*;
 import com.denizenscript.denizen.scripts.containers.core.BookScriptContainer;
 import com.denizenscript.denizen.scripts.containers.core.ItemScriptContainer;
 import com.denizenscript.denizen.scripts.containers.core.ItemScriptHelper;
-import com.denizenscript.denizen.utilities.MaterialCompat;
+import com.denizenscript.denizen.utilities.blocks.MaterialCompat;
+import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.blocks.OldMaterialsHelper;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizen.Settings;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.NMSVersion;
-import com.denizenscript.denizen.nms.abstracts.ModernBlockData;
+import com.denizenscript.denizen.utilities.blocks.ModernBlockData;
 import com.denizenscript.denizen.nms.util.jnbt.StringTag;
 import com.denizenscript.denizen.objects.notable.NotableManager;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizencore.objects.core.ElementTag;
+import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.notable.Notable;
 import com.denizenscript.denizencore.objects.notable.Note;
 import com.denizenscript.denizencore.objects.properties.PropertyParser;
 import com.denizenscript.denizencore.scripts.ScriptRegistry;
 import com.denizenscript.denizencore.tags.Attribute;
+import com.denizenscript.denizencore.tags.ObjectTagProcessor;
 import com.denizenscript.denizencore.tags.TagContext;
+import com.denizenscript.denizencore.tags.TagRunnable;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.Deprecations;
 import com.denizenscript.denizencore.utilities.debugging.Debuggable;
 import org.bukkit.Bukkit;
+import org.bukkit.Keyed;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Item;
-import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -89,47 +94,23 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
 
 
     public static ItemTag valueOf(String string) {
-        return valueOf(string, null, null);
+        return valueOf(string, null);
+    }
+
+    public static ItemTag valueOf(String string, PlayerTag player, NPCTag npc) {
+        return valueOf(string, new BukkitTagContext(player, npc, null));
+    }
+
+    public static ItemTag valueOf(String string, Debuggable debugMe) {
+        return valueOf(string, new BukkitTagContext(null, null, false, null, debugMe == null || debugMe.shouldDebug(), null));
+    }
+
+    public static ItemTag valueOf(String string, boolean debugMe) {
+        return valueOf(string, new BukkitTagContext(null, null, false, null, debugMe, null));
     }
 
     @Fetchable("i")
     public static ItemTag valueOf(String string, TagContext context) {
-        if (context == null) {
-            return valueOf(string, null, null);
-        }
-        else {
-            nope = !context.debug;
-            ItemTag tmp = valueOf(string, ((BukkitTagContext) context).player, ((BukkitTagContext) context).npc);
-            nope = false;
-            return tmp;
-        }
-    }
-
-    public static ItemTag valueOf(String string, Debuggable debugMe) {
-        nope = debugMe != null && !debugMe.shouldDebug();
-        ItemTag tmp = valueOf(string, null, null);
-        nope = false;
-        return tmp;
-    }
-
-    public static ItemTag valueOf(String string, boolean debugMe) {
-        nope = !debugMe;
-        ItemTag tmp = valueOf(string, null, null);
-        nope = false;
-        return tmp;
-    }
-
-    /**
-     * Gets a Item Object from a string form.
-     *
-     * @param string The string or dScript argument String
-     * @param player The PlayerTag to be used for player contexts
-     *               where applicable.
-     * @param npc    The NPCTag to be used for NPC contexts
-     *               where applicable.
-     * @return an Item, or null if incorrectly formatted
-     */
-    public static ItemTag valueOf(String string, PlayerTag player, NPCTag npc) {
         if (string == null || string.equals("")) {
             return null;
         }
@@ -141,7 +122,7 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // Handle objects with properties through the object fetcher
         m = ObjectFetcher.DESCRIBED_PATTERN.matcher(string);
         if (m.matches()) {
-            return ObjectFetcher.getObjectFrom(ItemTag.class, string, new BukkitTagContext(player, npc, false, null, !nope, null));
+            return ObjectFetcher.getObjectFrom(ItemTag.class, string, context);
         }
 
         ////////
@@ -173,12 +154,11 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
                 if (ScriptRegistry.containsScript(m.group(1), ItemScriptContainer.class)) {
                     ItemScriptContainer isc = ScriptRegistry.getScriptContainerAs(m.group(1), ItemScriptContainer.class);
                     // TODO: If a script does not contain tags, get the clean reference here.
-                    stack = isc.getItemFrom(player, npc);
+                    stack = isc.getItemFrom(context == null ? null : (BukkitTagContext) context);
                 }
                 else if (ScriptRegistry.containsScript(m.group(1), BookScriptContainer.class)) {
                     // Get book from script
-                    stack = ScriptRegistry.getScriptContainerAs
-                            (m.group(1), BookScriptContainer.class).getBookFrom(player, npc);
+                    stack = ScriptRegistry.getScriptContainerAs (m.group(1), BookScriptContainer.class).getBookFrom(context == null ? null : (BukkitTagContext) context);
                 }
 
                 if (stack != null) {
@@ -201,7 +181,7 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
                 String material = m.group(1).toUpperCase();
 
                 if (ArgumentHelper.matchesInteger(material)) {
-                    if (!nope) {
+                    if (context == null || context.debug) {
                         Deprecations.materialIds.warn();
                     }
                     stack = new ItemTag(Integer.valueOf(material));
@@ -224,23 +204,19 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
                 return stack;
             }
             catch (Exception e) {
-                if (!string.equalsIgnoreCase("none") && !nope) {
+                if (!string.equalsIgnoreCase("none") && (context == null || context.debug)) {
                     Debug.log("Does not match a valid item ID or material: " + string);
                 }
             }
         }
 
-        if (!nope) {
+        if (context == null || context.debug) {
             Debug.log("valueOf ItemTag returning null: " + string);
         }
 
         // No match! Return null.
         return null;
     }
-
-    // :( boolean for technicality, can be fixed
-    // by making matches() method better.
-    public static boolean nope = false;
 
 
     public static boolean matches(String arg) {
@@ -263,14 +239,9 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
             return true;
         }
 
-        // TODO: Make this better. Probably creating some unnecessary
-        // objects by doing this :(
-        nope = true;
-        if (valueOf(arg, null, null) != null) {
-            nope = false;
+        if (valueOf(arg, CoreUtilities.noDebugContext) != null) {
             return true;
         }
-        nope = false;
         return false;
     }
 
@@ -691,21 +662,19 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
 
     public static void registerTags() {
 
-        registerTag("id", new TagRunnable() {
+        registerTag("id", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
+            public ObjectTag run(Attribute attribute, ItemTag object) {
                 Deprecations.materialIds.warn(attribute.getScriptEntry());
-                return new ElementTag(((ItemTag) object).getItemStack().getType().getId())
-                        .getAttribute(attribute.fulfill(1));
+                return new ElementTag(object.getItemStack().getType().getId());
             }
         });
 
-        registerTag("data", new TagRunnable() {
+        registerTag("data", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
+            public ObjectTag run(Attribute attribute, ItemTag object) {
                 Deprecations.materialIds.warn(attribute.getScriptEntry());
-                return new ElementTag(((ItemTag) object).getItemStack().getData().getData())
-                        .getAttribute(attribute.fulfill(1));
+                return new ElementTag(object.getItemStack().getData().getData());
             }
         });
 
@@ -716,13 +685,13 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // @description
         // Returns a copy of the item with mechanism adjustments applied.
         // -->
-        registerTag("with", new TagRunnable() {
+        registerTag("with", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
+            public ObjectTag run(Attribute attribute, ItemTag object) {
                 if (!attribute.hasContext(1)) {
                     Debug.echoError("ItemTag.with[...] tag must have an input mechanism list.");
                 }
-                ItemTag item = new ItemTag(((ItemTag) object).getItemStack().clone());
+                ItemTag item = new ItemTag(object.getItemStack().clone());
                 List<String> properties = ObjectFetcher.separateProperties("[" + attribute.getContext(1) + "]");
                 for (int i = 1; i < properties.size(); i++) {
                     List<String> data = CoreUtilities.split(properties.get(i), '=', 2);
@@ -730,10 +699,10 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
                         Debug.echoError("Invalid property string '" + properties.get(i) + "'!");
                     }
                     else {
-                        item.safeApplyProperty(new Mechanism(new ElementTag(data.get(0)), new ElementTag((data.get(1)).replace('‑', ';')), attribute.context));
+                        item.safeApplyProperty(new Mechanism(new ElementTag(data.get(0)), new ElementTag((data.get(1)).replace((char) 0x2011, ';')), attribute.context));
                     }
                 }
-                return item.getAttribute(attribute.fulfill(1));
+                return item;
             }
         });
 
@@ -747,11 +716,10 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // <@link mechanism ItemTag.durability>, <@link tag ItemTag.max_durability>,
         // and <@link tag ItemTag.durability>
         // -->
-        registerTag("repairable", new TagRunnable() {
+        registerTag("repairable", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(ItemDurability.describes(object))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, ItemTag object) {
+                return new ElementTag(ItemDurability.describes(object));
             }
         });
 
@@ -764,11 +732,10 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // If this returns true, it will enable access to:
         // <@link mechanism ItemTag.plant_growth> and <@link tag ItemTag.plant_growth>
         // -->
-        registerTag("is_crop", new TagRunnable() {
+        registerTag("is_crop", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(ItemPlantgrowth.describes(object))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, ItemTag object) {
+                return new ElementTag(ItemPlantgrowth.describes(object));
             }
         });
 
@@ -784,11 +751,10 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // <@link tag ItemTag.book.page_count>, <@link tag ItemTag.book.page[<#>]>,
         // and <@link tag ItemTag.book.pages>
         // -->
-        registerTag("is_book", new TagRunnable() {
+        registerTag("is_book", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(ItemBook.describes(object))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, ItemTag object) {
+                return new ElementTag(ItemBook.describes(object));
             }
         });
 
@@ -800,19 +766,17 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // If this returns true, it will enable access to:
         // <@link mechanism ItemTag.color>, and <@link tag ItemTag.color>
         // -->
-        registerTag("is_colorable", new TagRunnable() {
+        registerTag("is_colorable", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(ItemColor.describes(object))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, ItemTag object) {
+                return new ElementTag(ItemColor.describes(object));
             }
         });
 
-        registerTag("is_dyeable", new TagRunnable() {
+        registerTag("is_dyeable", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(ItemColor.describes(object))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, ItemTag object) {
+                return new ElementTag(ItemColor.describes(object));
             }
         });
 
@@ -824,11 +788,10 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // If this returns true, it will enable access to:
         // <@link mechanism ItemTag.firework>, and <@link tag ItemTag.firework>
         // -->
-        registerTag("is_firework", new TagRunnable() {
+        registerTag("is_firework", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(ItemFirework.describes(object))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, ItemTag object) {
+                return new ElementTag(ItemFirework.describes(object));
             }
         });
 
@@ -840,11 +803,10 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // If this returns true, it will enable access to:
         // <@link mechanism ItemTag.inventory>, and <@link tag ItemTag.inventory>
         // -->
-        registerTag("has_inventory", new TagRunnable() {
+        registerTag("has_inventory", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(ItemInventory.describes(object))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, ItemTag object) {
+                return new ElementTag(ItemInventory.describes(object));
             }
         });
 
@@ -856,11 +818,10 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // If this returns true, it will enable access to:
         // <@link mechanism ItemTag.lock>, and <@link tag ItemTag.lock>
         // -->
-        registerTag("is_lockable", new TagRunnable() {
+        registerTag("is_lockable", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(ItemLock.describes(object))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, ItemTag object) {
+                return new ElementTag(ItemLock.describes(object));
             }
         });
 
@@ -872,16 +833,18 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // Returns the MaterialTag that is the basis of the item.
         // EG, a stone with lore and a display name, etc. will return only "m@stone".
         // -->
-        registerTag("material", new TagRunnable() {
+        registerTag("material", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                ItemTag item = (ItemTag) object;
+            public ObjectTag run(Attribute attribute, ItemTag object) {
+                if (attribute.getAttribute(2).equals("formatted")) {
+                    return object;
+                }
+                ItemTag item = object;
                 if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13) &&
                         item.getItemStack().hasItemMeta() && item.getItemStack().getItemMeta() instanceof BlockStateMeta) {
-                    return new MaterialTag(new ModernBlockData(((BlockStateMeta) item.getItemStack().getItemMeta()).getBlockState()))
-                            .getAttribute(attribute.fulfill(1));
+                    return new MaterialTag(new ModernBlockData(((BlockStateMeta) item.getItemStack().getItemMeta()).getBlockState()));
                 }
-                return item.getMaterial().getAttribute(attribute.fulfill(1));
+                return item.getMaterial();
             }
         });
 
@@ -896,11 +859,10 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // {"text":"","extra":[{"text":"This is the item in your hand ","color":"white"},
         // {"text":"Item","color":"white","hoverEvent":{"action":"show_item","value":"{<player.item_in_hand.json>}"}}]}'
         // -->
-        registerTag("json", new TagRunnable() {
+        registerTag("json", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(NMSHandler.getItemHelper().getJsonString(((ItemTag) object).item))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, ItemTag object) {
+                return new ElementTag(NMSHandler.getItemHelper().getJsonString(object.item));
             }
         });
 
@@ -911,12 +873,12 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // @description
         // Returns a YAML text section representing the Bukkit serialization of the item, under subkey "item".
         // -->
-        registerTag("bukkit_serial", new TagRunnable() {
+        registerTag("bukkit_serial", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
+            public ObjectTag run(Attribute attribute, ItemTag object) {
                 YamlConfiguration config = new YamlConfiguration();
-                config.set("item", ((ItemTag) object).getItemStack());
-                return new ElementTag(config.saveToString()).getAttribute(attribute.fulfill(1));
+                config.set("item", object.getItemStack());
+                return new ElementTag(config.saveToString());
             }
         });
 
@@ -928,10 +890,10 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // Returns a full reusable item identification for this item, with extra, generally useless data.
         // Irrelevant on modern (1.13+) servers.
         // -->
-        registerTag("full", new TagRunnable() {
+        registerTag("full", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(((ItemTag) object).getFullString()).getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, ItemTag object) {
+                return new ElementTag(object.getFullString());
             }
         });
 
@@ -942,10 +904,48 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // @description
         // Returns a simple reusable item identification for this item, with minimal extra data.
         // -->
-        registerTag("simple", new TagRunnable() {
+        registerTag("simple", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(((ItemTag) object).identifySimple()).getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, ItemTag object) {
+                return new ElementTag(object.identifySimple());
+            }
+        });
+
+        // <--[tag]
+        // @attribute <ItemTag.recipe_ids[(<type>)]>
+        // @returns ListTag
+        // @description
+        // If the item is a scripted item, returns a list of all recipe IDs created by the item script.
+        // Others, returns a list of all recipe IDs that the server lists as capable of crafting the item.
+        // Returns a list in the Namespace:Key format, for example "minecraft:gold_nugget".
+        // Optionally, specify a recipe type (CRAFTING, FURNACE, COOKING, BLASTING, SHAPED, SHAPELESS, SMOKING, STONECUTTING)
+        // to limit to just recipes of that type.
+        // -->
+        registerTag("recipe_ids", new TagRunnable.ObjectForm<ItemTag>() {
+            @Override
+            public ObjectTag run(Attribute attribute, ItemTag object) {
+                String type = attribute.hasContext(1) ? CoreUtilities.toLowerCase(attribute.getContext(1)) : null;
+                ItemTag item = object;
+                ItemScriptContainer container = item.isItemscript() ? ItemScriptHelper.getItemScriptContainer(item.getItemStack()) : null;
+                ListTag list = new ListTag();
+                for (Recipe recipe : Bukkit.getRecipesFor(item.getItemStack())) {
+                    if (!Utilities.isRecipeOfType(recipe, type)) {
+                        continue;
+                    }
+                    if (recipe instanceof Keyed) {
+                        NamespacedKey key = ((Keyed) recipe).getKey();
+                        if (key.getNamespace().equalsIgnoreCase("denizen")) {
+                            if (container != ItemScriptHelper.recipeIdToItemScript.get(key.toString())) {
+                                continue;
+                            }
+                        }
+                        else if (container != null) {
+                            continue;
+                        }
+                        list.add(key.toString());
+                    }
+                }
+                return list;
             }
         });
 
@@ -956,14 +956,90 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // Gets the name of a Notable ItemTag. If the item isn't noted,
         // this is null.
         // -->
-        registerTag("notable_name", new TagRunnable() {
+        registerTag("notable_name", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                String notname = NotableManager.getSavedId((ItemTag) object);
+            public ObjectTag run(Attribute attribute, ItemTag object) {
+                String notname = NotableManager.getSavedId(object);
                 if (notname == null) {
                     return null;
                 }
-                return new ElementTag(notname).getAttribute(attribute.fulfill(1));
+                return new ElementTag(notname);
+            }
+        });
+
+        // <--[tag]
+        // @attribute <ItemTag.formatted>
+        // @returns ElementTag
+        // @group formatting
+        // @description
+        // Returns the formatted material name of the item to be used in a sentence.
+        // Correctly uses singular and plural forms of item names, among other things.
+        // -->
+        registerTag("formatted", new TagRunnable.ObjectForm<ItemTag>() {
+            @Override
+            public ObjectTag run(Attribute attribute, ItemTag object) {
+                String id = CoreUtilities.toLowerCase(object.getMaterial().realName()).replace('_', ' ');
+
+                if (id.equals("air")) {
+                    return new ElementTag("nothing");
+                }
+
+                if (id.equals("ice") || id.equals("dirt")) {
+                    return new ElementTag(id);
+                }
+
+                if (object.getItemStack().getAmount() > 1) {
+                    if (id.equals("cactus")) {
+                        return new ElementTag("cactuses");
+                    }
+
+                    if (id.endsWith(" off")) {
+                        id = id.substring(0, id.length() - 4);
+                    }
+                    if (id.endsWith(" on")) {
+                        id = id.substring(0, id.length() - 3);
+                    }
+
+                    if (id.equals("rotten flesh") || id.equals("cooked fish")
+                            || id.equals("raw fish") || id.endsWith("s")) {
+                        return new ElementTag(id);
+                    }
+                    if (id.endsWith("y")) {
+                        return new ElementTag(id.substring(0, id.length() - 1) + "ies")
+                                ;  // ex: lily -> lilies
+                    }
+                    if (id.endsWith("sh") || id.endsWith("ch")) {
+                        return new ElementTag(id + "es");
+                    }
+                    // else
+                    return new ElementTag(id + "s")
+                            ; // iron sword -> iron swords
+
+                }
+                else {
+                    if (id.equals("cactus")) {
+                        return new ElementTag("a cactus");
+                    }
+                    if (id.endsWith("s")) {
+                        return new ElementTag(id);
+                    }
+
+                    if (id.endsWith(" off")) {
+                        return new ElementTag("a " + id.substring(0, id.length() - 4));
+                    }
+                    if (id.endsWith(" on")) {
+                        return new ElementTag("a " + id.substring(0, id.length() - 3));
+                    }
+
+                    if (id.startsWith("a") || id.startsWith("e") || id.startsWith("i")
+                            || id.startsWith("o") || id.startsWith("u")) {
+                        return new ElementTag("an " + id)
+                                ;// ex: emerald -> an emerald
+                    }
+                    // else
+                    return new ElementTag("a " + id)
+                            ;// ex: diamond -> a diamond
+                }
             }
         });
 
@@ -974,142 +1050,25 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // Always returns 'Item' for ItemTag objects. All objects fetchable by the Object Fetcher will return the
         // type of object that is fulfilling this attribute.
         // -->
-        registerTag("type", new TagRunnable() {
+        registerTag("type", new TagRunnable.ObjectForm<ItemTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag("Item").getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, ItemTag object) {
+                return new ElementTag("Item");
             }
         });
 
     }
 
-    public static HashMap<String, TagRunnable> registeredTags = new HashMap<>();
+    public static ObjectTagProcessor<ItemTag> tagProcessor = new ObjectTagProcessor<>();
 
-    public static void registerTag(String name, TagRunnable runnable) {
-        if (runnable.name == null) {
-            runnable.name = name;
-        }
-        registeredTags.put(name, runnable);
+    public static void registerTag(String name, TagRunnable.ObjectForm<ItemTag> runnable) {
+        tagProcessor.registerTag(name, runnable);
     }
-
-    /////////////////
-    // ATTRIBUTES
-    /////////
 
     @Override
-    public String getAttribute(Attribute attribute) {
-
-        if (attribute == null) {
-            return null;
-        }
-
-        // TODO: Scrap getAttribute, make this functionality a core system
-        String attrLow = CoreUtilities.toLowerCase(attribute.getAttributeWithoutContext(1));
-        TagRunnable tr = registeredTags.get(attrLow);
-        if (tr != null) {
-            if (!tr.name.equals(attrLow)) {
-                com.denizenscript.denizencore.utilities.debugging.Debug.echoError(attribute.getScriptEntry() != null ? attribute.getScriptEntry().getResidingQueue() : null,
-                        "Using deprecated form of tag '" + tr.name + "': '" + attrLow + "'.");
-            }
-            return tr.run(attribute, this);
-        }
-
-        //
-        // TODO: Replace the next 2 with something saner in the tag section
-        //
-
-        // <--[tag]
-        // @attribute <ItemTag.formatted>
-        // @returns ElementTag
-        // @group formatting
-        // @description
-        // Returns the formatted material name of the item to be used in a sentence.
-        // Correctly uses singular and plural forms of item names, among other things.
-        // -->
-        if (attribute.startsWith("material.formatted")) {
-            attribute.fulfill(1);
-        }
-
-        if (attribute.startsWith("formatted")) {
-            String id = CoreUtilities.toLowerCase(getMaterial().realName()).replace('_', ' ');
-
-            if (id.equals("air")) {
-                return new ElementTag("nothing")
-                        .getAttribute(attribute.fulfill(1));
-            }
-
-            if (id.equals("ice") || id.equals("dirt")) {
-                return new ElementTag(id)
-                        .getAttribute(attribute.fulfill(1));
-            }
-
-            if (getItemStack().getAmount() > 1) {
-                if (id.equals("cactus")) {
-                    return new ElementTag("cactuses")
-                            .getAttribute(attribute.fulfill(1));
-                }
-
-                if (id.endsWith(" off")) {
-                    id = id.substring(0, id.length() - 4);
-                }
-                if (id.endsWith(" on")) {
-                    id = id.substring(0, id.length() - 3);
-                }
-
-                if (id.equals("rotten flesh") || id.equals("cooked fish")
-                        || id.equals("raw fish") || id.endsWith("s")) {
-                    return new ElementTag(id)
-                            .getAttribute(attribute.fulfill(1));
-                }
-                if (id.endsWith("y")) {
-                    return new ElementTag(id.substring(0, id.length() - 1) + "ies")
-                            .getAttribute(attribute.fulfill(1));  // ex: lily -> lilies
-                }
-                if (id.endsWith("sh") || id.endsWith("ch")) {
-                    return new ElementTag(id + "es")
-                            .getAttribute(attribute.fulfill(1));
-                }
-                // else
-                return new ElementTag(id + "s")
-                        .getAttribute(attribute.fulfill(1)); // iron sword -> iron swords
-
-            }
-            else {
-                if (id.equals("cactus")) {
-                    return new ElementTag("a cactus").getAttribute(attribute.fulfill(1));
-                }
-                if (id.endsWith("s")) {
-                    return new ElementTag(id).getAttribute(attribute.fulfill(1));
-                }
-
-                if (id.endsWith(" off")) {
-                    return new ElementTag("a " + id.substring(0, id.length() - 4))
-                            .getAttribute(attribute.fulfill(1));
-                }
-                if (id.endsWith(" on")) {
-                    return new ElementTag("a " + id.substring(0, id.length() - 3))
-                            .getAttribute(attribute.fulfill(1));
-                }
-
-                if (id.startsWith("a") || id.startsWith("e") || id.startsWith("i")
-                        || id.startsWith("o") || id.startsWith("u")) {
-                    return new ElementTag("an " + id)
-                            .getAttribute(attribute.fulfill(1));// ex: emerald -> an emerald
-                }
-                // else
-                return new ElementTag("a " + id)
-                        .getAttribute(attribute.fulfill(1));// ex: diamond -> a diamond
-            }
-        }
-
-        String returned = CoreUtilities.autoPropertyTag(this, attribute);
-        if (returned != null) {
-            return returned;
-        }
-
-        return new ElementTag(identify()).getAttribute(attribute);
+    public ObjectTag getObjectAttribute(Attribute attribute) {
+        return tagProcessor.getObjectAttribute(this, attribute);
     }
-
 
     public void applyProperty(Mechanism mechanism) {
         if (NotableManager.isExactSavedObject(this)) {

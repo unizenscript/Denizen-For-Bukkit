@@ -170,8 +170,6 @@ public abstract class NMSHandler {
 
     public abstract BiomeNMS getBiomeNMS(Biome biome);
 
-    public abstract Thread getMainThread();
-
     public abstract double[] getRecentTps();
 
     public abstract void enablePacketInterception(PacketHandler packetHandler);

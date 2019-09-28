@@ -22,6 +22,10 @@ import java.util.*;
 
 public abstract class EntityHelper {
 
+    public List<String> getDiscoveredRecipes(Player player) {
+        throw new UnsupportedOperationException();
+    }
+
     public void setRiptide(Entity entity, boolean state) {
         Debug.echoError("Riptide control not available on this server version.");
     }
@@ -36,6 +40,10 @@ public abstract class EntityHelper {
 
     public abstract Entity getFishHook(PlayerFishEvent event);
 
+    public abstract ItemStack getItemFromTrident(Entity entity);
+
+    public abstract void setItemForTrident(Entity entity, ItemStack item);
+
     public abstract void forceInteraction(Player player, Location location);
 
     public abstract Entity getEntity(World world, UUID uuid);
@@ -49,18 +57,6 @@ public abstract class EntityHelper {
     public abstract CompoundTag getNbtData(Entity entity);
 
     public abstract void setNbtData(Entity entity, CompoundTag compoundTag);
-
-    public abstract void setSilent(Entity entity, boolean silent);
-
-    public abstract boolean isSilent(Entity entity);
-
-    public abstract ItemStack getItemInHand(LivingEntity entity);
-
-    public abstract void setItemInHand(LivingEntity entity, ItemStack itemStack);
-
-    public abstract ItemStack getItemInOffHand(LivingEntity entity);
-
-    public abstract void setItemInOffHand(LivingEntity entity, ItemStack itemStack);
 
     public abstract void stopFollowing(Entity follower);
 

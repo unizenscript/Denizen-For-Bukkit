@@ -4,10 +4,10 @@ import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.interfaces.BlockData;
 import com.denizenscript.denizen.nms.interfaces.EntityHelper;
 import com.denizenscript.denizen.nms.util.BoundingBox;
-import com.denizenscript.denizen.nms.util.Utilities;
 import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
 import com.denizenscript.denizen.nms.v1_13.impl.blocks.BlockDataImpl;
 import com.denizenscript.denizen.nms.v1_13.impl.jnbt.CompoundTagImpl;
+import com.denizenscript.denizen.utilities.Utilities;
 import net.minecraft.server.v1_13_R2.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -15,11 +15,8 @@ import org.bukkit.World;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
 import org.bukkit.craftbukkit.v1_13_R2.block.CraftBlock;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftAnimals;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftCreature;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftLivingEntity;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_13_R2.entity.*;
+import org.bukkit.craftbukkit.v1_13_R2.inventory.CraftItemStack;
 import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.entity.EntityTargetEvent;
@@ -65,6 +62,16 @@ public class EntityHelperImpl extends EntityHelper {
     @Override
     public Entity getFishHook(PlayerFishEvent event) {
         return event.getHook();
+    }
+
+    @Override
+    public ItemStack getItemFromTrident(Entity entity) {
+        return CraftItemStack.asBukkitCopy(((CraftTrident) entity).getHandle().trident);
+    }
+
+    @Override
+    public void setItemForTrident(Entity entity, ItemStack item) {
+        ((CraftTrident) entity).getHandle().trident = CraftItemStack.asNMSCopy(item);
     }
 
     @Override
@@ -114,36 +121,6 @@ public class EntityHelperImpl extends EntityHelper {
     @Override
     public void setNbtData(Entity entity, CompoundTag compoundTag) {
         ((CraftEntity) entity).getHandle().f(((CompoundTagImpl) compoundTag).toNMSTag());
-    }
-
-    @Override
-    public void setSilent(Entity entity, boolean silent) {
-        entity.setSilent(silent);
-    }
-
-    @Override
-    public boolean isSilent(Entity entity) {
-        return entity.isSilent();
-    }
-
-    @Override
-    public ItemStack getItemInHand(LivingEntity entity) {
-        return entity.getEquipment().getItemInMainHand();
-    }
-
-    @Override
-    public void setItemInHand(LivingEntity entity, ItemStack itemStack) {
-        entity.getEquipment().setItemInMainHand(itemStack);
-    }
-
-    @Override
-    public ItemStack getItemInOffHand(LivingEntity entity) {
-        return entity.getEquipment().getItemInOffHand();
-    }
-
-    @Override
-    public void setItemInOffHand(LivingEntity entity, ItemStack itemStack) {
-        entity.getEquipment().setItemInOffHand(itemStack);
     }
 
     /*

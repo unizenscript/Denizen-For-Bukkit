@@ -10,23 +10,21 @@ import com.denizenscript.denizen.npc.traits.TriggerTrait;
 import com.denizenscript.denizen.objects.NPCTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.tags.BukkitTagContext;
+import com.denizenscript.denizen.utilities.blocks.MaterialCompat;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
-import com.denizenscript.denizencore.tags.TagContext;
 import com.denizenscript.denizencore.tags.TagManager;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.*;
 import org.bukkit.util.Vector;
 
 import java.io.File;
@@ -39,7 +37,40 @@ import java.util.List;
  */
 public class Utilities {
 
-    public static final TagContext noDebugContext = new BukkitTagContext(null, null, false, null, false, null);
+    public static NamespacedKey parseNamespacedKey(String input) {
+        int colonIndex = input.indexOf(':');
+        if (colonIndex != -1) {
+            return new NamespacedKey(input.substring(0, colonIndex), input.substring(colonIndex + 1));
+        }
+        else {
+            return NamespacedKey.minecraft(input);
+        }
+    }
+
+    public static String cleanseNamespaceID(String input) {
+        StringBuilder output = new StringBuilder(input.length());
+        for (char c : input.toCharArray()) {
+            if (c >= 'A' && c <= 'Z') {
+                output.append((char)(c - ('A' - 'a')));
+            }
+            else if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_') {
+                output.append(c);
+            }
+        }
+        return output.toString();
+    }
+
+    public static boolean isRecipeOfType(Recipe recipe, String type) {
+        return type == null || (
+                (type.equals("crafting") && (recipe instanceof ShapedRecipe || recipe instanceof ShapelessRecipe)) ||
+                        (type.equals("furnace") && recipe instanceof FurnaceRecipe) ||
+                        (type.equals("cooking") && recipe instanceof CookingRecipe) ||
+                        (type.equals("blasting") && recipe instanceof BlastingRecipe) ||
+                        (type.equals("shaped") && recipe instanceof ShapedRecipe) ||
+                        (type.equals("shapeless") && recipe instanceof ShapelessRecipe) ||
+                        (type.equals("smoking") && recipe instanceof SmokingRecipe) ||
+                        (type.equals("stonecutting") && recipe instanceof StonecuttingRecipe));
+    }
 
     public static boolean canReadFile(File f) {
         if (Settings.allowStupids()) {
@@ -48,6 +79,10 @@ public class Utilities {
         try {
             if (!Settings.allowStrangeYAMLSaves() &&
                     !f.getCanonicalPath().startsWith(new File(".").getCanonicalPath())) {
+                return false;
+            }
+            if (!CoreUtilities.toLowerCase(Settings.fileLimitPath()).equals("none")
+                    && !f.getCanonicalPath().startsWith(new File("./" + Settings.fileLimitPath()).getCanonicalPath())) {
                 return false;
             }
             return true;
@@ -95,6 +130,7 @@ public class Utilities {
             }
             if (!CoreUtilities.toLowerCase(Settings.fileLimitPath()).equals("none")
                     && !f.getCanonicalPath().startsWith(new File("./" + Settings.fileLimitPath()).getCanonicalPath())) {
+                return false;
             }
             return isFileCanonicalStringSafeToWrite(lown) && isFileCanonicalStringSafeToWrite(lown + "/");
         }

@@ -3,7 +3,8 @@ package com.denizenscript.denizen.events.player;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.scripts.containers.core.BookScriptContainer;
-import com.denizenscript.denizen.utilities.MaterialCompat;
+import com.denizenscript.denizen.tags.BukkitTagContext;
+import com.denizenscript.denizen.utilities.blocks.MaterialCompat;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
@@ -81,7 +82,7 @@ public class PlayerEditsBookScriptEvent extends BukkitScriptEvent implements Lis
         else if (ScriptTag.matches(determination)) {
             ScriptTag script = ScriptTag.valueOf(determination);
             if (script.getContainer() instanceof BookScriptContainer) {
-                ItemTag dBook = ((BookScriptContainer) script.getContainer()).getBookFrom(player, null);
+                ItemTag dBook = ((BookScriptContainer) script.getContainer()).getBookFrom((BukkitTagContext) getScriptEntryData().getTagContext());
                 bookMeta = (BookMeta) dBook.getItemStack().getItemMeta();
                 if (dBook.getMaterial().getMaterial() == MaterialCompat.WRITABLE_BOOK) {
                     signing = new ElementTag(false);

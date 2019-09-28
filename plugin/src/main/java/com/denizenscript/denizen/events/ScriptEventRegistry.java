@@ -1,6 +1,8 @@
 package com.denizenscript.denizen.events;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.events.block.*;
+import com.denizenscript.denizen.events.core.ServerPrestartScriptEvent;
 import com.denizenscript.denizen.events.entity.*;
 import com.denizenscript.denizen.events.player.*;
 import com.denizenscript.denizen.events.world.*;
@@ -33,6 +35,9 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(new PistonExtendsScriptEvent());
         ScriptEvent.registerScriptEvent(new PistonRetractsScriptEvent());
         ScriptEvent.registerScriptEvent(new RedstoneScriptEvent());
+
+        // Core events
+        ScriptEvent.registerScriptEvent(new ServerPrestartScriptEvent());
 
         // Entity events
         ScriptEvent.registerScriptEvent(new CreeperPoweredScriptEvent());
@@ -100,6 +105,7 @@ public class ScriptEventRegistry {
         // Player events
         ScriptEvent.registerScriptEvent(new BiomeEnterExitScriptEvent());
         ScriptEvent.registerScriptEvent(new ChatScriptEvent());
+        ScriptEvent.registerScriptEvent(new ExperienceBottleBreaksScriptEvent());
         ScriptEvent.registerScriptEvent(new ItemRecipeFormedScriptEvent());
         ScriptEvent.registerScriptEvent(new ItemScrollScriptEvent());
         ScriptEvent.registerScriptEvent(new ListPingScriptEvent());
@@ -127,7 +133,9 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(new PlayerFlyingScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerItemTakesDamageScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerJoinsScriptEvent());
-        ScriptEvent.registerScriptEvent(new PlayerJumpScriptEvent());
+        if (!Denizen.supportsPaper) {
+            ScriptEvent.registerScriptEvent(new PlayerJumpScriptEvent.PlayerJumpsSpigotScriptEventImpl());
+        }
         ScriptEvent.registerScriptEvent(new PlayerKickedScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerLeashesEntityScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerLeavesBedScriptEvent());

@@ -1,13 +1,15 @@
 package com.denizenscript.denizen.nms.v1_14.helpers;
 
 import com.denizenscript.denizen.nms.NMSHandler;
+import com.denizenscript.denizen.nms.util.ReflectionHelper;
 import com.denizenscript.denizen.nms.v1_14.impl.blocks.BlockDataImpl;
 import com.denizenscript.denizen.nms.v1_14.impl.jnbt.CompoundTagImpl;
 import com.denizenscript.denizen.nms.interfaces.BlockData;
 import com.denizenscript.denizen.nms.interfaces.EntityHelper;
 import com.denizenscript.denizen.nms.util.BoundingBox;
-import com.denizenscript.denizen.nms.util.Utilities;
 import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
+import com.denizenscript.denizen.utilities.Utilities;
+import com.denizenscript.denizen.utilities.debugging.Debug;
 import net.minecraft.server.v1_14_R1.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -16,6 +18,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.v1_14_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_14_R1.block.CraftBlock;
 import org.bukkit.craftbukkit.v1_14_R1.entity.*;
+import org.bukkit.craftbukkit.v1_14_R1.inventory.CraftItemStack;
 import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.entity.EntityTargetEvent;
@@ -25,15 +28,28 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.lang.reflect.Field;
+import java.util.*;
 
 public class EntityHelperImpl extends EntityHelper {
 
-    /*
-        General Entity Methods
-     */
+    public static final Field RECIPE_BOOK_DISCOVERED_SET = ReflectionHelper.getFields(RecipeBook.class).get("a");
+
+    public List<String> getDiscoveredRecipes(Player player) {
+        try {
+            RecipeBookServer book = ((CraftPlayer) player).getHandle().B();
+            Set<MinecraftKey> set = (Set<MinecraftKey>) RECIPE_BOOK_DISCOVERED_SET.get(book);
+            List<String> output = new ArrayList<>();
+            for (MinecraftKey key : set) {
+                output.add(key.toString());
+            }
+            return output;
+        }
+        catch (Throwable ex) {
+            Debug.echoError(ex);
+        }
+        return null;
+    }
 
     @Override
     public void setCarriedItem(Enderman entity, ItemStack item) {
@@ -58,6 +74,16 @@ public class EntityHelperImpl extends EntityHelper {
     @Override
     public Entity getFishHook(PlayerFishEvent event) {
         return event.getHook();
+    }
+
+    @Override
+    public ItemStack getItemFromTrident(Entity entity) {
+        return CraftItemStack.asBukkitCopy(((CraftTrident) entity).getHandle().trident);
+    }
+
+    @Override
+    public void setItemForTrident(Entity entity, ItemStack item) {
+        ((CraftTrident) entity).getHandle().trident = CraftItemStack.asNMSCopy(item);
     }
 
     @Override
@@ -107,36 +133,6 @@ public class EntityHelperImpl extends EntityHelper {
     @Override
     public void setNbtData(Entity entity, CompoundTag compoundTag) {
         ((CraftEntity) entity).getHandle().f(((CompoundTagImpl) compoundTag).toNMSTag());
-    }
-
-    @Override
-    public void setSilent(Entity entity, boolean silent) {
-        entity.setSilent(silent);
-    }
-
-    @Override
-    public boolean isSilent(Entity entity) {
-        return entity.isSilent();
-    }
-
-    @Override
-    public ItemStack getItemInHand(LivingEntity entity) {
-        return entity.getEquipment().getItemInMainHand();
-    }
-
-    @Override
-    public void setItemInHand(LivingEntity entity, ItemStack itemStack) {
-        entity.getEquipment().setItemInMainHand(itemStack);
-    }
-
-    @Override
-    public ItemStack getItemInOffHand(LivingEntity entity) {
-        return entity.getEquipment().getItemInOffHand();
-    }
-
-    @Override
-    public void setItemInOffHand(LivingEntity entity, ItemStack itemStack) {
-        entity.getEquipment().setItemInOffHand(itemStack);
     }
 
     /*
@@ -427,10 +423,16 @@ public class EntityHelperImpl extends EntityHelper {
     }
 
     private static MovingObjectPosition rayTrace(World world, Vector start, Vector end) {
-        return ((CraftWorld) world).getHandle().rayTrace(new RayTrace(new Vec3D(start.getX(), start.getY(), start.getZ()),
-                new Vec3D(end.getX(), end.getY(), end.getZ()),
-                // TODO: 1.14 - check if these collision options are reasonable (maybe provide the options for this method?)
-                RayTrace.BlockCollisionOption.OUTLINE, RayTrace.FluidCollisionOption.NONE, null));
+        try {
+            NMSHandler.getChunkHelper().changeChunkServerThread(world);
+            return ((CraftWorld) world).getHandle().rayTrace(new RayTrace(new Vec3D(start.getX(), start.getY(), start.getZ()),
+                    new Vec3D(end.getX(), end.getY(), end.getZ()),
+                    // TODO: 1.14 - check if these collision options are reasonable (maybe provide the options for this method?)
+                    RayTrace.BlockCollisionOption.OUTLINE, RayTrace.FluidCollisionOption.NONE, null));
+        }
+        finally {
+            NMSHandler.getChunkHelper().restoreServerThread(world);
+        }
     }
 
     @Override

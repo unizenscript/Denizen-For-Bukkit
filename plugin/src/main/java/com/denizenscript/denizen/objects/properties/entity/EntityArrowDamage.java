@@ -59,10 +59,10 @@ public class EntityArrowDamage implements Property {
     ////////
 
     @Override
-    public String getAttribute(Attribute attribute) {
+    public ObjectTag getObjectAttribute(Attribute attribute) {
 
         if (attribute == null) {
-            return "null";
+            return null;
         }
 
         // <--[tag]
@@ -76,7 +76,7 @@ public class EntityArrowDamage implements Property {
         // -->
         if (attribute.startsWith("damage")) {
             return new ElementTag(NMSHandler.getArrowHelper().getDamage(entity.getBukkitEntity()))
-                    .getAttribute(attribute.fulfill(1));
+                    .getObjectAttribute(attribute.fulfill(1));
         }
 
         return null;

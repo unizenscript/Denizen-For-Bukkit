@@ -1,5 +1,6 @@
 package com.denizenscript.denizen.nms.v1_14.helpers;
 
+import com.denizenscript.denizen.DenizenCoreImplementation;
 import com.denizenscript.denizen.nms.interfaces.ChunkHelper;
 import com.denizenscript.denizen.nms.util.ReflectionHelper;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
@@ -16,23 +17,32 @@ public class ChunkHelperImpl implements ChunkHelper {
 
     public final static Field chunkProviderServerThreadField;
     public final static MethodHandle chunkProviderServerThreadFieldSetter;
+    public final static Field worldThreadField;
+    public final static MethodHandle worldThreadFieldSetter;
 
     static {
         chunkProviderServerThreadField = ReflectionHelper.getFields(ChunkProviderServer.class).get("serverThread");
         chunkProviderServerThreadFieldSetter = ReflectionHelper.getFinalSetter(ChunkProviderServer.class, "serverThread");
+        worldThreadField = ReflectionHelper.getFields(net.minecraft.server.v1_14_R1.World.class).get("serverThread");
+        worldThreadFieldSetter = ReflectionHelper.getFinalSetter(net.minecraft.server.v1_14_R1.World.class, "serverThread");
     }
 
-    Thread resetServerThread;
+    public Thread resetServerThread;
 
     @Override
     public void changeChunkServerThread(World world) {
+        if (DenizenCoreImplementation.tagThread == null) {
+            return;
+        }
         if (resetServerThread != null) {
             return;
         }
-        ChunkProviderServer provider = ((CraftWorld) world).getHandle().getChunkProvider();
+        WorldServer nmsWorld = ((CraftWorld) world).getHandle();
+        ChunkProviderServer provider = nmsWorld.getChunkProvider();
         try {
             resetServerThread = (Thread) chunkProviderServerThreadField.get(provider);
             chunkProviderServerThreadFieldSetter.invoke(provider, Thread.currentThread());
+            worldThreadFieldSetter.invoke(nmsWorld, Thread.currentThread());
         }
         catch (Throwable ex) {
             Debug.echoError(ex);
@@ -41,12 +51,17 @@ public class ChunkHelperImpl implements ChunkHelper {
 
     @Override
     public void restoreServerThread(World world) {
+        if (DenizenCoreImplementation.tagThread == null) {
+            return;
+        }
         if (resetServerThread == null) {
             return;
         }
-        ChunkProviderServer provider = ((CraftWorld) world).getHandle().getChunkProvider();
+        WorldServer nmsWorld = ((CraftWorld) world).getHandle();
+        ChunkProviderServer provider = nmsWorld.getChunkProvider();
         try {
             chunkProviderServerThreadFieldSetter.invoke(provider, resetServerThread);
+            worldThreadFieldSetter.invoke(nmsWorld, resetServerThread);
             resetServerThread = null;
         }
         catch (Throwable ex) {

@@ -6,13 +6,15 @@ import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.NMSVersion;
-import com.denizenscript.denizen.nms.abstracts.ModernBlockData;
+import com.denizenscript.denizen.utilities.blocks.ModernBlockData;
 import com.denizenscript.denizen.nms.interfaces.BlockData;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.PropertyParser;
 import com.denizenscript.denizencore.tags.Attribute;
+import com.denizenscript.denizencore.tags.ObjectTagProcessor;
 import com.denizenscript.denizencore.tags.TagContext;
+import com.denizenscript.denizencore.tags.TagRunnable;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.Deprecations;
 import org.bukkit.Bukkit;
@@ -22,7 +24,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.material.MaterialData;
 
-import java.util.HashMap;
+import java.util.List;
 
 public class MaterialTag implements ObjectTag, Adjustable {
 
@@ -460,23 +462,21 @@ public class MaterialTag implements ObjectTag, Adjustable {
 
     public static void registerTags() {
 
-        registerTag("id", new TagRunnable() {
+        registerTag("id", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
                 Deprecations.materialIdsSuggestNames.warn(attribute.getScriptEntry());
-                return new ElementTag(((MaterialTag) object).material.getId())
-                        .getAttribute(attribute.fulfill(1));
+                return new ElementTag(object.material.getId());
             }
         });
 
-        registerTag("data", new TagRunnable() {
+        registerTag("data", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
                 if (attribute.context == null || attribute.context.debug) {
                     Deprecations.materialIdsSuggestProperties.warn(attribute.getScriptEntry());
                 }
-                return new ElementTag(((MaterialTag) object).getData())
-                        .getAttribute(attribute.fulfill(1));
+                return new ElementTag(object.getData());
             }
         });
 
@@ -489,19 +489,17 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.age>, <@link tag MaterialTag.maximum_age>,
         // and <@link mechanism MaterialTag.age> are accessible.
         // -->
-        registerTag("is_ageable", new TagRunnable() {
+        registerTag("is_ageable", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(MaterialAge.describes(object))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(MaterialAge.describes(object));
             }
         });
 
-        registerTag("is_plant", new TagRunnable() {
+        registerTag("is_plant", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(MaterialAge.describes(object))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(MaterialAge.describes(object));
             }
         });
 
@@ -531,11 +529,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.direction>, <@link tag MaterialTag.valid_directions>,
         // and <@link mechanism MaterialTag.direction> are accessible.
         // -->
-        registerTag("is_directional", new TagRunnable() {
+        registerTag("is_directional", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(MaterialHalf.describes(object))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(MaterialDirectional.describes(object));
             }
         });
 
@@ -548,11 +545,43 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.half>,
         // and <@link mechanism MaterialTag.half> are accessible.
         // -->
-        registerTag("is_bisected", new TagRunnable() {
+        registerTag("is_bisected", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(MaterialHalf.describes(object))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(MaterialHalf.describes(object));
+            }
+        });
+
+        // <--[tag]
+        // @attribute <MaterialTag.is_leaves>
+        // @returns ElementTag(Boolean)
+        // @group properties
+        // @description
+        // Returns whether the material is a leaves material.
+        // When this returns true, <@link tag LocationTag.tree_distance>,
+        // <@link tag MaterialTag.persistent>, and
+        // <@link mechanism MaterialTag.persistent> are accessible.
+        // -->
+        registerTag("is_leaves", new TagRunnable.ObjectForm<MaterialTag>() {
+            @Override
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(MaterialLeaves.describes(object));
+            }
+        });
+
+        // <--[tag]
+        // @attribute <MaterialTag.is_slab>
+        // @returns ElementTag(Boolean)
+        // @group properties
+        // @description
+        // Returns whether the material is a slab.
+        // When this returns true, <@link tag MaterialTag.slab_type>,
+        // and <@link mechanism MaterialTag.slab_type> are accessible.
+        // -->
+        registerTag("is_slab", new TagRunnable.ObjectForm<MaterialTag>() {
+            @Override
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(MaterialSlab.describes(object));
             }
         });
 
@@ -565,11 +594,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.level>, <@link tag MaterialTag.maximum_level>,
         // and <@link mechanism MaterialTag.level> are accessible.
         // -->
-        registerTag("is_levelable", new TagRunnable() {
+        registerTag("is_levelable", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(MaterialLevel.describes(object))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(MaterialLevel.describes(object));
             }
         });
 
@@ -582,11 +610,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.lit>,
         // and <@link mechanism MaterialTag.lit> are accessible.
         // -->
-        registerTag("is_lightable", new TagRunnable() {
+        registerTag("is_lightable", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(MaterialLightable.describes(object))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(MaterialLightable.describes(object));
             }
         });
 
@@ -750,11 +777,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is affected by gravity.
         // -->
-        registerTag("has_gravity", new TagRunnable() {
+        registerTag("has_gravity", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(((MaterialTag) object).material.hasGravity())
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(object.material.hasGravity());
             }
         });
 
@@ -764,11 +790,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is a placeable block.
         // -->
-        registerTag("is_block", new TagRunnable() {
+        registerTag("is_block", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(((MaterialTag) object).material.isBlock())
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(object.material.isBlock());
             }
         });
 
@@ -778,11 +803,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is a block that can burn away.
         // -->
-        registerTag("is_burnable", new TagRunnable() {
+        registerTag("is_burnable", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(((MaterialTag) object).material.isBurnable())
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(object.material.isBurnable());
             }
         });
 
@@ -792,11 +816,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is edible.
         // -->
-        registerTag("is_edible", new TagRunnable() {
+        registerTag("is_edible", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(((MaterialTag) object).material.isEdible())
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(object.material.isEdible());
             }
         });
 
@@ -806,11 +829,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is a block that can catch fire.
         // -->
-        registerTag("is_flammable", new TagRunnable() {
+        registerTag("is_flammable", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(((MaterialTag) object).material.isFlammable())
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(object.material.isFlammable());
             }
         });
 
@@ -820,11 +842,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is a block that completely blocks vision.
         // -->
-        registerTag("is_occluding", new TagRunnable() {
+        registerTag("is_occluding", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(((MaterialTag) object).material.isOccluding())
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(object.material.isOccluding());
             }
         });
 
@@ -834,11 +855,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is a playable music disc.
         // -->
-        registerTag("is_record", new TagRunnable() {
+        registerTag("is_record", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(((MaterialTag) object).material.isRecord())
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(object.material.isRecord());
             }
         });
 
@@ -848,11 +868,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is a block that is solid (cannot be walked through).
         // -->
-        registerTag("is_solid", new TagRunnable() {
+        registerTag("is_solid", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(((MaterialTag) object).material.isSolid())
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(object.material.isSolid());
             }
         });
 
@@ -862,11 +881,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is a block that does not block any light.
         // -->
-        registerTag("is_transparent", new TagRunnable() {
+        registerTag("is_transparent", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(((MaterialTag) object).material.isTransparent())
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(object.material.isTransparent());
             }
         });
 
@@ -876,11 +894,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns the maximum durability of this material.
         // -->
-        registerTag("max_durability", new TagRunnable() {
+        registerTag("max_durability", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(((MaterialTag) object).material.getMaxDurability())
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(object.material.getMaxDurability());
             }
         });
 
@@ -891,16 +908,15 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns the explosion resistance for all blocks of this material type.
         // -->
-        registerTag("block_resistance", new TagRunnable() {
+        registerTag("block_resistance", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                MaterialTag material = (MaterialTag) object;
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                MaterialTag material = object;
                 if (!NMSHandler.getBlockHelper().hasBlock(material.getMaterial())) {
                     Debug.echoError("Provided material does not have a placeable block.");
                     return null;
                 }
-                return new ElementTag(NMSHandler.getBlockHelper().getBlockResistance(material.getMaterial()))
-                        .getAttribute(attribute.fulfill(1));
+                return new ElementTag(NMSHandler.getBlockHelper().getBlockResistance(material.getMaterial()));
             }
         });
 
@@ -910,16 +926,15 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns the value representing how hard a material, used as a basis for calculating the time it takes to break.
         // -->
-        registerTag("hardness", new TagRunnable() {
+        registerTag("hardness", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                MaterialTag material = (MaterialTag) object;
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                MaterialTag material = object;
                 if (!material.getMaterial().isBlock()) {
                     Debug.echoError("Provided material does not have a placeable block.");
                     return null;
                 }
-                return new ElementTag(material.getMaterial().getHardness())
-                        .getAttribute(attribute.fulfill(1));
+                return new ElementTag(material.getMaterial().getHardness());
             }
         });
 
@@ -929,11 +944,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns the maximum amount of this material that can be held in a stack.
         // -->
-        registerTag("max_stack_size", new TagRunnable() {
+        registerTag("max_stack_size", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(((MaterialTag) object).material.getMaxStackSize())
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(object.material.getMaxStackSize());
             }
         });
 
@@ -945,12 +959,11 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // Example: <m@red_wool.is_made_of[m@wool]> will return true.
         // Invalid for 1.13+ servers.
         // -->
-        registerTag("is_made_of", new TagRunnable() {
+        registerTag("is_made_of", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
                 MaterialTag compared = MaterialTag.valueOf(attribute.getContext(1));
-                return new ElementTag(compared != null && ((MaterialTag) object).material == compared.getMaterial())
-                        .getAttribute(attribute.fulfill(1));
+                return new ElementTag(compared != null && object.material == compared.getMaterial());
             }
         });
 
@@ -962,11 +975,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // will return 'sapling'
         // Unneeded for 1.13+ servers.
         // -->
-        registerTag("bukkit_enum", new TagRunnable() {
+        registerTag("bukkit_enum", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(((MaterialTag) object).material.name())
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(object.material.name());
             }
         });
 
@@ -976,12 +988,11 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns the name of the material.
         // -->
-        registerTag("name", new TagRunnable() {
+        registerTag("name", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag(((MaterialTag) object).forcedIdentity != null ? ((MaterialTag) object).forcedIdentityLow :
-                        CoreUtilities.toLowerCase(((MaterialTag) object).material.name()))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(object.forcedIdentity != null ? object.forcedIdentityLow :
+                        CoreUtilities.toLowerCase(object.material.name()));
             }
         });
 
@@ -992,16 +1003,14 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // Returns the material's full identification.
         // Irrelevant on modern (1.13+) servers.
         // -->
-        registerTag("full", new TagRunnable() {
+        registerTag("full", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                if (((MaterialTag) object).hasData()) {
-                    return new ElementTag(((MaterialTag) object).identifyFull())
-                            .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                if (object.hasData()) {
+                    return new ElementTag(object.identifyFull());
                 }
                 else {
-                    return new ElementTag(((MaterialTag) object).identify())
-                            .getAttribute(attribute.fulfill(1));
+                    return new ElementTag(object.identify());
                 }
             }
         });
@@ -1012,27 +1021,17 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns an item of the material.
         // -->
-        registerTag("item", new TagRunnable() {
+        registerTag("item", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                MaterialTag material = (MaterialTag) object;
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                MaterialTag material = object;
                 ItemTag item = new ItemTag(material, 1);
-                attribute = attribute.fulfill(1);
                 if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-                    // Special patch for older material-item tags.
-                    if (!attribute.isComplete()) {
-                        String tag = attribute.getAttribute(1);
-                        String returned = CoreUtilities.autoPropertyTag(object, attribute);
-                        if (returned != null) {
-                            Debug.echoError("Usage of outdated 'material.item." + tag + "' tag should be replaced by 'material." + tag + "' (with '.item' removed).");
-                            return returned;
-                        }
-                    }
                     if (item.getItemStack().hasItemMeta() && item.getItemStack().getItemMeta() instanceof BlockStateMeta) {
                         ((BlockStateMeta) item.getItemStack().getItemMeta()).setBlockState(material.modernData.getBlockState());
                     }
                 }
-                return item.getAttribute(attribute);
+                return item;
             }
         });
 
@@ -1043,14 +1042,14 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns the material's piston reaction. (Only for block materials).
         // -->
-        registerTag("piston_reaction", new TagRunnable() {
+        registerTag("piston_reaction", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                String res = NMSHandler.getBlockHelper().getPushReaction(((MaterialTag) object).material);
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                String res = NMSHandler.getBlockHelper().getPushReaction(object.material);
                 if (res == null) {
                     return null;
                 }
-                return new ElementTag(res).getAttribute(attribute.fulfill(1));
+                return new ElementTag(res);
             }
         });
 
@@ -1061,11 +1060,11 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns the material's strength level. (Only for block materials).
         // -->
-        registerTag("block_strength", new TagRunnable() {
+        registerTag("block_strength", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                float res = NMSHandler.getBlockHelper().getBlockStength(((MaterialTag) object).material);
-                return new ElementTag(res).getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                float res = NMSHandler.getBlockHelper().getBlockStength(object.material);
+                return new ElementTag(res);
             }
         });
 
@@ -1076,47 +1075,52 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // Always returns 'Material' for MaterialTag objects. All objects fetchable by the Object Fetcher will return the
         // type of object that is fulfilling this attribute.
         // -->
-        registerTag("type", new TagRunnable() {
+        registerTag("type", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag object) {
-                return new ElementTag("Material").getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag("Material");
             }
         });
 
+
+        // <--[tag]
+        // @attribute <MaterialTag.with[<mechanism>=<value>;...]>
+        // @returns MaterialTag
+        // @group properties
+        // @description
+        // Returns a copy of the material with mechanism adjustments applied.
+        // -->
+        registerTag("with", new TagRunnable.ObjectForm<MaterialTag>() {
+            @Override
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                if (!attribute.hasContext(1)) {
+                    Debug.echoError("MaterialTag.with[...] tag must have an input mechanism list.");
+                }
+                MaterialTag mat = new MaterialTag(object.getModernData().clone());
+                List<String> properties = ObjectFetcher.separateProperties("[" + attribute.getContext(1) + "]");
+                for (int i = 1; i < properties.size(); i++) {
+                    List<String> data = CoreUtilities.split(properties.get(i), '=', 2);
+                    if (data.size() != 2) {
+                        Debug.echoError("Invalid property string '" + properties.get(i) + "'!");
+                    }
+                    else {
+                        mat.safeApplyProperty(new Mechanism(new ElementTag(data.get(0)), new ElementTag((data.get(1)).replace((char) 0x2011, ';')), attribute.context));
+                    }
+                }
+                return mat;
+            }
+        });
     }
 
-    public static HashMap<String, TagRunnable> registeredTags = new HashMap<>();
+    public static ObjectTagProcessor<MaterialTag> tagProcessor = new ObjectTagProcessor<>();
 
-    public static void registerTag(String name, TagRunnable runnable) {
-        if (runnable.name == null) {
-            runnable.name = name;
-        }
-        registeredTags.put(name, runnable);
+    public static void registerTag(String name, TagRunnable.ObjectForm<MaterialTag> runnable) {
+        tagProcessor.registerTag(name, runnable);
     }
 
     @Override
-    public String getAttribute(Attribute attribute) {
-        if (attribute == null) {
-            return null;
-        }
-
-        // TODO: Scrap getAttribute, make this functionality a core system
-        String attrLow = CoreUtilities.toLowerCase(attribute.getAttributeWithoutContext(1));
-        TagRunnable tr = registeredTags.get(attrLow);
-        if (tr != null) {
-            if (!tr.name.equals(attrLow)) {
-                com.denizenscript.denizencore.utilities.debugging.Debug.echoError(attribute.getScriptEntry() != null ? attribute.getScriptEntry().getResidingQueue() : null,
-                        "Using deprecated form of tag '" + tr.name + "': '" + attrLow + "'.");
-            }
-            return tr.run(attribute, this);
-        }
-
-        String returned = CoreUtilities.autoPropertyTag(this, attribute);
-        if (returned != null) {
-            return returned;
-        }
-
-        return new ElementTag(identify()).getAttribute(attribute.fulfill(0));
+    public ObjectTag getObjectAttribute(Attribute attribute) {
+        return tagProcessor.getObjectAttribute(this, attribute);
     }
 
     @Override

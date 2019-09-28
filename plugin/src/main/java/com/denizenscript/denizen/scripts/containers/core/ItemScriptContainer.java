@@ -3,12 +3,12 @@ package com.denizenscript.denizen.scripts.containers.core;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.nbt.LeatherColorer;
 import com.denizenscript.denizen.objects.ItemTag;
-import com.denizenscript.denizen.objects.NPCTag;
-import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.Mechanism;
+import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.core.ScriptTag;
+import com.denizenscript.denizencore.scripts.ScriptBuilder;
 import com.denizenscript.denizencore.scripts.ScriptRegistry;
 import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.tags.TagManager;
@@ -19,9 +19,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ItemScriptContainer extends ScriptContainer {
 
@@ -69,22 +67,52 @@ public class ItemScriptContainer extends ScriptContainer {
     //   - enchantment_name:level
     //   - ...
     //
-    //   # You can specify the items required to craft your item. For an empty slot, use air.
-    //   recipe:
-    //   - ItemTag|ItemTag|ItemTag
-    //   - ItemTag|ItemTag|ItemTag
-    //   - ItemTag|ItemTag|ItemTag
-    //
-    //   # You can specify a material that can be smelted into your item.
-    //   # Note: This can overwrite existing furnace recipes.
-    //   # If no_id is specified, only the material/data pair will be validated.
-    //   # This might misbehave with some smelting systems, as the Minecraft smelting logic may refuse
-    //   # To continue smelting items in some cases when the script validator gets in the way.
-    //   furnace_recipe: ItemTag
-    //
-    //   # You can specify a list of materials that make up a shapeless recipe.
-    //   # Note: This can overwrite existing shapeless recipes.
-    //   shapeless_recipe: ItemTag|...
+    //   # You can optionally add crafting recipes for your item script.
+    //   recipes:
+    //       1:
+    //           # The type can be: shaped, shapeless, stonecutting, furnace, blast, smoker, or campfire.
+    //           type: shaped
+    //           # The recipe can optionally have a custom internal recipe ID (for recipe books).
+    //           # If not specified, will be of the form "<type>_<script.name>_<id>" where ID is the recipe list index (starting at 1, counting up).
+    //           # IDs will always have the namespace "denizen". So, for the below, the full ID is "denizen:my_custom_item_id"
+    //           # Note that most users should not set a custom ID. If you choose to set a custom one, be careful to avoid duplicates or invalid text.
+    //           recipe_id: my_custom_item_id
+    //           # You can optional add a group as well. If unspecified, the item will have no group.
+    //           # Groups are used to merge together similar recipes (in particular, multiple recipes for one item).
+    //           group: my_custom_group
+    //           # You can optionally specify the quantity to output. The default is 1 (or whatever the item script's quantity is).
+    //           output_quantity: 4
+    //           # You must specify the input for the recipe. The below is a sample of a 3x3 shaped recipe. Other recipe types have a different format.
+    //           # You are allowed to have non-3x3 shapes (can be any value 1-3 x 1-3, so for example 1x3, 2x1, and 2x2 are fine).
+    //           # For an empty slot, use "air".
+    //           # By default, items require an exact match. For a material-based match, use the format "material:MaterialNameHere" like "material:stick".
+    //           input:
+    //           - ItemTag|ItemTag|ItemTag
+    //           - ItemTag|ItemTag|ItemTag
+    //           - ItemTag|ItemTag|ItemTag
+    //      # You can add as many as you want.
+    //      2:
+    //           # Sample of the format for a 2x2 recipe
+    //           type: shaped
+    //           input:
+    //           - ItemTag|ItemTag
+    //           - ItemTag|ItemTag
+    //      3:
+    //          # Shapeless recipes take a list of input items.
+    //          type: shapeless
+    //          input: ItemTag|...
+    //      4:
+    //          # Stonecutting recipes take exactly one input item.
+    //          type: stonecutting
+    //          input: ItemTag
+    //      5:
+    //          # Furnace, blast, smoker, and campfire recipes take one input and have additional options.
+    //          type: furnace
+    //          # Optionally specify the cook time as a duration (default 2s).
+    //          cook_time: 1s
+    //          # Optionally specify experience reward amount (default 0).
+    //          experience: 5
+    //          input: ItemTag
     //
     //   # Set to true to not store the scriptID on the item, treating it as an item dropped by any other plugin.
     //   # NOTE: THIS IS NOT RECOMMENDED UNLESS YOU HAVE A SPECIFIC REASON TO USE IT.
@@ -101,12 +129,6 @@ public class ItemScriptContainer extends ScriptContainer {
     //
     // -->
 
-    // A map storing special recipes that use itemscripts as ingredients
-    public static Map<ItemScriptContainer, List<ItemTag>> specialrecipesMap = new HashMap<>();
-    public static Map<ItemScriptContainer, List<ItemTag>> shapelessRecipesMap = new HashMap<>();
-
-    NPCTag npc = null;
-    PlayerTag player = null;
     public boolean bound = false;
     String hash = "";
 
@@ -115,26 +137,6 @@ public class ItemScriptContainer extends ScriptContainer {
 
         ItemScriptHelper.item_scripts.put(getName(), this);
         ItemScriptHelper.item_scripts_by_hash_id.put(ItemScriptHelper.createItemScriptID(this), this);
-
-        // Set Recipe
-        if (contains("RECIPE")) {
-
-            // Get recipe list from item script
-            List<String> recipeList = getStringList("RECIPE");
-
-            // Process later so that any item script ingredients can be fulfilled
-            ItemScriptHelper.recipes_to_register.put(this, recipeList);
-
-        }
-
-        if (contains("SHAPELESS_RECIPE")) {
-            ItemScriptHelper.shapeless_to_register.put(this, getString("SHAPELESS_RECIPE"));
-        }
-
-        if (contains("FURNACE_RECIPE")) {
-            // Process later so that any item script ingredients can be fulfilled
-            ItemScriptHelper.furnace_to_register.put(this, getString("FURNACE_RECIPE"));
-        }
     }
 
     private ItemTag cleanReference;
@@ -155,18 +157,23 @@ public class ItemScriptContainer extends ScriptContainer {
     }
 
     public ItemTag getItemFrom() {
-        return getItemFrom(null, null);
+        return getItemFrom(null);
     }
 
-    public ItemTag getItemFrom(PlayerTag player, NPCTag npc) {
+    boolean isProcessing = false;
+
+    public ItemTag getItemFrom(BukkitTagContext context) {
+        if (isProcessing) {
+            Debug.echoError("Item script contains (or chains to) a reference to itself. Cannot process.");
+            return null;
+        }
+        if (context == null) {
+            context = new BukkitTagContext(null, null, new ScriptTag(this));
+        }
         // Try to use this script to make an item.
         ItemTag stack = null;
+        isProcessing = true;
         try {
-            boolean debug = true;
-            if (contains("DEBUG")) {
-                debug = Boolean.valueOf(getString("DEBUG"));
-            }
-            BukkitTagContext context = new BukkitTagContext(player, npc, false, null, debug, new ScriptTag(this));
             // Check validity of material
             if (contains("MATERIAL")) {
                 String material = TagManager.tag(getString("MATERIAL"), context);
@@ -185,7 +192,17 @@ public class ItemScriptContainer extends ScriptContainer {
             if (contains("MECHANISMS")) {
                 YamlConfiguration mechs = getConfigurationSection("MECHANISMS");
                 for (StringHolder key : mechs.getKeys(false)) {
-                    String val = TagManager.tag(mechs.getString(key.str), context);
+                    String val;
+                    if (mechs.isList(key.str)) {
+                        ListTag list = new ListTag();
+                        for (String listVal : mechs.getStringList(key.str)) {
+                            list.add(ScriptBuilder.stripLinePrefix(TagManager.tag(listVal, context)));
+                        }
+                        val = list.identify();
+                    }
+                    else {
+                        val = TagManager.tag(mechs.getString(key.str), context);
+                    }
                     stack.safeAdjust(new Mechanism(new ElementTag(key.low), new ElementTag(val), context));
                 }
             }
@@ -201,7 +218,7 @@ public class ItemScriptContainer extends ScriptContainer {
 
             // Set if the object is bound to the player
             if (contains("BOUND")) {
-                Deprecations.boundWarning.warn();
+                Deprecations.boundWarning.warn(context);
                 bound = Boolean.valueOf(TagManager.tag(getString("BOUND"), context));
             }
 
@@ -259,7 +276,7 @@ public class ItemScriptContainer extends ScriptContainer {
                         .getScriptContainer(TagManager.tag(getString("BOOK"),
                                 context).replace("s@", ""));
 
-                stack = book.writeBookTo(stack, player, npc);
+                stack = book.writeBookTo(stack, context);
             }
 
             stack.setItemScript(this);
@@ -269,15 +286,10 @@ public class ItemScriptContainer extends ScriptContainer {
             Debug.echoError(e);
             stack = null;
         }
+        finally {
+            isProcessing = false;
+        }
 
         return stack;
-    }
-
-    public void setNPC(NPCTag npc) {
-        this.npc = npc;
-    }
-
-    public void setPlayer(PlayerTag player) {
-        this.player = player;
     }
 }

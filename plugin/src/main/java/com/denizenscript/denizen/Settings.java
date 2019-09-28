@@ -37,6 +37,7 @@ public class Settings {
         cache_allowConsoleRedirection = config.getBoolean("Debug.Allow console redirection", false);
         cache_canRecordStats = config.getBoolean("Debug.Stats", true);
         cache_defaultDebugMode = config.getBoolean("Debug.Container default", true);
+        cache_debugLimitPerTick = config.getInt("Debug.Limit per tick", 5000);
         cache_scriptQueueSpeed = config.getString("Scripts.Queue speed", "instant");
         cache_interactQueueSpeed = config.getString("Scripts.Interact.Queue speed", "0.5s");
         cache_healthTraitEnabledByDefault = config.getBoolean("Traits.Health.Enabled", false);
@@ -61,8 +62,8 @@ public class Settings {
         cache_chatWithTargetToBystandersFormat = config.getString("Commands.Chat.Formats.With target to bystanders", "[<[talker].name>] -> <[target].name>: <[message]>");
         cache_chatWithTargetsToBystandersFormat = config.getString("Commands.Chat.Formats.With targets to bystanders", "[<[talker].name>] -> [<[targets]>]: <[message]>");
         cache_chatAsynchronous = config.getBoolean("Triggers.Chat.Use asynchronous event", false);
-        cache_chatToNpcFormat = config.getString("Triggers.Chat.Formats.Player to NPC", "You -> <npc.name.nickname>: <text>");
-        cache_chatToNpcOverheardFormat = config.getString("Triggers.Chat.Formats.Player to NPC overheard", "<player.name> -> <npc.name.nickname>: <text>");
+        cache_chatToNpcFormat = config.getString("Triggers.Chat.Formats.Player to NPC", "You -> <npc.nickname>: <text>");
+        cache_chatToNpcOverheardFormat = config.getString("Triggers.Chat.Formats.Player to NPC overheard", "<player.name> -> <npc.nickname>: <text>");
         cache_chatToNpcOverhearingRange = config.getDouble("Triggers.Chat.Overhearing range", 4);
         cache_chatMustSeeNPC = config.getBoolean("Triggers.Chat.Prerequisites.Must be able to see NPC", true);
         cache_chatMustLookAtNPC = config.getBoolean("Triggers.Chat.Prerequisites.Must be looking in direction of NPC", true);
@@ -76,6 +77,7 @@ public class Settings {
         cache_chatHistoryMaxMessages = config.getInt("Tags.Chat history.Max messages", 10);
         cache_tagTimeout = config.getInt("Tags.Timeout", 10);
         cache_tagTimeoutSilent = config.getBoolean("Tags.Timeout when silent", false);
+        cache_tagTimeoutUnsafe = config.getBoolean("Tags.Timeout when unsafe", false);
         cache_warningRate = config.getLong("Tags.Warning rate", 10000);
         cache_packetInterception = config.getBoolean("Packets.Interception", true);
     }
@@ -88,7 +90,7 @@ public class Settings {
             cache_healthTraitBlockDrops, cache_chatAsynchronous, cache_chatMustSeeNPC, cache_chatMustLookAtNPC,
             cache_chatGloballyIfFailedChatTriggers, cache_chatGloballyIfNoChatTriggers,
             cache_chatGloballyIfUninteractable, cache_worldScriptChatEventAsynchronous,
-            cache_tagTimeoutSilent, cache_packetInterception, cache_autoLoadChunks;
+            cache_tagTimeoutSilent, cache_packetInterception, cache_autoLoadChunks, cache_tagTimeoutUnsafe;
 
     private static String cache_getAlternateScriptPath, cache_scriptQueueSpeed, cache_healthTraitRespawnDelay,
             cache_engageTimeoutInSeconds, cache_chatMultipleTargetsFormat, cache_chatNoTargetFormat,
@@ -96,7 +98,7 @@ public class Settings {
             cache_chatToNpcFormat, cache_chatToNpcOverheardFormat, cache_interactQueueSpeed, cache_limitPath;
 
     private static int cache_consoleWidth = 128, cache_trimLength = 1024, cache_whileMaxLoops, cache_blockTagsMaxBlocks,
-            cache_chatHistoryMaxMessages, cache_tagTimeout;
+            cache_chatHistoryMaxMessages, cache_tagTimeout, cache_debugLimitPerTick;
 
     private static long cache_warningRate;
 
@@ -154,6 +156,10 @@ public class Settings {
 
     public static boolean defaultDebugMode() {
         return cache_defaultDebugMode;
+    }
+
+    public static int debugLimitPerTick() {
+        return cache_debugLimitPerTick;
     }
 
     /**
@@ -421,6 +427,9 @@ public class Settings {
 
     public static boolean tagTimeoutSilent() {
         return cache_tagTimeoutSilent;
+    }
+    public static boolean tagTimeoutUnsafe() {
+        return cache_tagTimeoutUnsafe;
     }
 
     public static long warningRate() {

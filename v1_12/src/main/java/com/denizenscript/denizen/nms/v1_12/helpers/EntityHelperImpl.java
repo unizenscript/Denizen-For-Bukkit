@@ -4,8 +4,8 @@ import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.v1_12.impl.jnbt.CompoundTagImpl;
 import com.denizenscript.denizen.nms.interfaces.EntityHelper;
 import com.denizenscript.denizen.nms.util.BoundingBox;
-import com.denizenscript.denizen.nms.util.Utilities;
 import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
+import com.denizenscript.denizen.utilities.Utilities;
 import net.minecraft.server.v1_12_R1.*;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -50,6 +50,16 @@ public class EntityHelperImpl extends EntityHelper {
     @Override
     public Entity getFishHook(PlayerFishEvent event) {
         return event.getHook();
+    }
+
+    @Override
+    public ItemStack getItemFromTrident(Entity entity) {
+        return null;
+    }
+
+    @Override
+    public void setItemForTrident(Entity entity, ItemStack item) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -100,36 +110,6 @@ public class EntityHelperImpl extends EntityHelper {
     @Override
     public void setNbtData(Entity entity, CompoundTag compoundTag) {
         ((CraftEntity) entity).getHandle().f(((CompoundTagImpl) compoundTag).toNMSTag());
-    }
-
-    @Override
-    public void setSilent(Entity entity, boolean silent) {
-        entity.setSilent(silent);
-    }
-
-    @Override
-    public boolean isSilent(Entity entity) {
-        return entity.isSilent();
-    }
-
-    @Override
-    public ItemStack getItemInHand(LivingEntity entity) {
-        return entity.getEquipment().getItemInMainHand();
-    }
-
-    @Override
-    public void setItemInHand(LivingEntity entity, ItemStack itemStack) {
-        entity.getEquipment().setItemInMainHand(itemStack);
-    }
-
-    @Override
-    public ItemStack getItemInOffHand(LivingEntity entity) {
-        return entity.getEquipment().getItemInOffHand();
-    }
-
-    @Override
-    public void setItemInOffHand(LivingEntity entity, ItemStack itemStack) {
-        entity.getEquipment().setItemInOffHand(itemStack);
     }
 
     /*

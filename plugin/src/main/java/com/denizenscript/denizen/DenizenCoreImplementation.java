@@ -10,14 +10,12 @@ import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.depends.Depends;
 import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizencore.DenizenImplementation;
 import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
 import com.denizenscript.denizencore.scripts.ScriptHelper;
-import com.denizenscript.denizencore.scripts.ScriptRegistry;
 import com.denizenscript.denizencore.scripts.queues.ScriptQueue;
 import com.denizenscript.denizencore.tags.TagContext;
 import com.denizenscript.denizencore.tags.TagManager;
@@ -129,11 +127,6 @@ public class DenizenCoreImplementation implements DenizenImplementation {
     }
 
     @Override
-    public void buildCoreContainers(YamlConfiguration config) {
-        ScriptRegistry._buildCoreYamlScriptContainers(config);
-    }
-
-    @Override
     public List<YamlConfiguration> getOutsideScripts() {
         List<YamlConfiguration> files = new ArrayList<>();
         try {
@@ -181,12 +174,8 @@ public class DenizenCoreImplementation implements DenizenImplementation {
     }
 
     @Override
-    public TagContext getTagContextFor(ScriptEntry scriptEntry, boolean b) {
-        PlayerTag player = scriptEntry != null ? Utilities.getEntryPlayer(scriptEntry) : null;
-        NPCTag npc = scriptEntry != null ? Utilities.getEntryNPC(scriptEntry) : null;
-        return new BukkitTagContext(player, npc, b, scriptEntry,
-                scriptEntry != null ? scriptEntry.shouldDebug() : true,
-                scriptEntry != null ? scriptEntry.getScript() : null);
+    public TagContext getTagContextFor(ScriptEntry scriptEntry, boolean instant) {
+        return new BukkitTagContext(scriptEntry, instant);
     }
 
     @Override
@@ -285,7 +274,7 @@ public class DenizenCoreImplementation implements DenizenImplementation {
 
     @Override
     public int getTagTimeout() {
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
+        if (!Settings.tagTimeoutUnsafe()) {
             return 0;
         }
         return Settings.tagTimeout();
@@ -380,19 +369,21 @@ public class DenizenCoreImplementation implements DenizenImplementation {
     }
 
     @Override
-    public Thread getMainThread() {
-        return NMSHandler.getInstance().getMainThread();
-    }
-
-    @Override
     public boolean allowedToWebget() {
         return Settings.allowWebget();
+    }
+
+    public static Thread tagThread = null;
+
+    public static boolean isSafeThread() {
+        return Bukkit.isPrimaryThread() || Thread.currentThread().equals(tagThread);
     }
 
     @Override
     public void preTagExecute() {
         try {
             NMSHandler.getInstance().disableAsyncCatcher();
+            tagThread = Thread.currentThread();
         }
         catch (Throwable e) {
             Debug.echoError("Running not-Spigot?!");
@@ -403,6 +394,7 @@ public class DenizenCoreImplementation implements DenizenImplementation {
     public void postTagExecute() {
         try {
             NMSHandler.getInstance().undisableAsyncCatcher();
+            tagThread = null;
         }
         catch (Throwable e) {
             Debug.echoError("Running not-Spigot?!");

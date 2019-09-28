@@ -1,5 +1,6 @@
 package com.denizenscript.denizen.scripts.commands.item;
 
+import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.utilities.Conversion;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
@@ -213,8 +214,13 @@ public class InventoryCommand extends AbstractCommand {
         }
 
         int slotId = SlotHelper.nameToIndex(slot.asString());
-        if (slotId == -1) {
-            Debug.echoError(scriptEntry.getResidingQueue(), "The input '" + slot.asString() + "' is not a valid slot!");
+        if (slotId < 0) {
+            if (slotId == -1) {
+                Debug.echoError(scriptEntry.getResidingQueue(), "The input '" + slot.asString() + "' is not a valid slot (unrecognized)!");
+            }
+            else {
+                Debug.echoError(scriptEntry.getResidingQueue(), "The input '" + slot.asString() + "' is not a valid slot (negative values are invalid)!");
+            }
             return;
         }
 
@@ -342,7 +348,7 @@ public class InventoryCommand extends AbstractCommand {
                 case ADJUST:
                     ItemTag toAdjust = new ItemTag(destination.getInventory().getItem(slotId));
                     toAdjust.safeAdjust(new Mechanism(mechanism, mechanismValue, scriptEntry.entryData.getTagContext()));
-                    destination.getInventory().setItem(slotId, toAdjust.getItemStack());
+                    NMSHandler.getItemHelper().setInventoryItem(destination.getInventory(), toAdjust.getItemStack(), slotId);
                     break;
             }
         }

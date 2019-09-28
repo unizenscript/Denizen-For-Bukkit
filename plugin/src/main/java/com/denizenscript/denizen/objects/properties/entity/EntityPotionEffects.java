@@ -11,7 +11,7 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
-import org.bukkit.entity.TippedArrow;
+import org.bukkit.entity.Arrow;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -59,8 +59,8 @@ public class EntityPotionEffects implements Property {
         if (entity.isLivingEntity()) {
             return entity.getLivingEntity().getActivePotionEffects();
         }
-        else if (entity.getBukkitEntity() instanceof TippedArrow) {
-            return ((TippedArrow) entity.getBukkitEntity()).getCustomEffects();
+        else if (entity.getBukkitEntity() instanceof Arrow) {
+            return ((Arrow) entity.getBukkitEntity()).getCustomEffects();
         }
         return new ArrayList<>();
     }
@@ -91,10 +91,10 @@ public class EntityPotionEffects implements Property {
                 + (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13) ? "," + effect.hasIcon() : "");
     }
 
-    public String getAttribute(Attribute attribute) {
+    public ObjectTag getObjectAttribute(Attribute attribute) {
 
         if (attribute == null) {
-            return "null";
+            return null;
         }
 
         // <--[tag]
@@ -112,7 +112,7 @@ public class EntityPotionEffects implements Property {
             for (PotionEffect effect : getEffectsList()) {
                 effects.add(stringify(effect));
             }
-            return effects.getAttribute(attribute.fulfill(1));
+            return effects.getObjectAttribute(attribute.fulfill(1));
         }
 
         // <--[tag]
@@ -136,7 +136,7 @@ public class EntityPotionEffects implements Property {
             else if (!getEffectsList().isEmpty()) {
                 returnElement = true;
             }
-            return new ElementTag(returnElement).getAttribute(attribute.fulfill(1));
+            return new ElementTag(returnElement).getObjectAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -188,8 +188,8 @@ public class EntityPotionEffects implements Property {
                     if (entity.isLivingEntity()) {
                         entity.getLivingEntity().addPotionEffect(actualEffect);
                     }
-                    else if (entity.getBukkitEntity() instanceof TippedArrow) {
-                        ((TippedArrow) entity.getBukkitEntity()).addCustomEffect(actualEffect, true);
+                    else if (entity.getBukkitEntity() instanceof Arrow) {
+                        ((Arrow) entity.getBukkitEntity()).addCustomEffect(actualEffect, true);
                     }
                 }
                 catch (NumberFormatException ex) {

@@ -33,9 +33,9 @@ import com.denizenscript.denizencore.scripts.containers.core.WorldScriptContaine
 import com.denizenscript.denizencore.tags.Attribute;
 import com.denizenscript.denizencore.tags.ReplaceableTagEvent;
 import com.denizenscript.denizencore.tags.TagManager;
+import com.denizenscript.denizencore.tags.TagRunnable;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.Deprecations;
-import com.denizenscript.denizencore.utilities.javaluator.DoubleEvaluator;
 import net.citizensnpcs.Citizens;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.command.CommandContext;
@@ -72,30 +72,9 @@ public class ServerTagBase {
         TagManager.registerTagHandler(new TagRunnable.RootForm() {
             @Override
             public void run(ReplaceableTagEvent event) {
-                mathTag(event);
-            }
-        }, "math", "m");
-        TagManager.registerTagHandler(new TagRunnable.RootForm() {
-            @Override
-            public void run(ReplaceableTagEvent event) {
                 serverTag(event);
             }
         }, "server", "svr", "global");
-    }
-
-    public void mathTag(ReplaceableTagEvent event) {
-        if (!event.matches("math", "m")) {
-            return;
-        }
-        Deprecations.mathTagBase.warn(event.getScriptEntry());
-        try {
-            Double evaluation = new DoubleEvaluator().evaluate(event.getValue());
-            event.setReplaced(new ElementTag(String.valueOf(evaluation)).getAttribute(event.getAttributes().fulfill(1)));
-        }
-        catch (Exception e) {
-            Debug.echoError("Invalid math tag!");
-            event.setReplaced("0.0");
-        }
     }
 
 
@@ -209,6 +188,42 @@ public class ServerTagBase {
             catch (Exception ex) {
                 Debug.echoError(ex);
             }
+            return;
+        }
+
+        // <--[tag]
+        // @attribute <server.list_recipe_ids[(<type>)]>
+        // @returns ListTag
+        // @description
+        // Returns a list of all recipe IDs on the server.
+        // Returns a list in the Namespace:Key format, for example "minecraft:gold_nugget".
+        // Optionally, specify a recipe type (CRAFTING, FURNACE, COOKING, BLASTING, SHAPED, SHAPELESS, SMOKING, STONECUTTING)
+        // to limit to just recipes of that type.
+        // -->
+        if (attribute.startsWith("list_recipe_ids")) {
+            String type = attribute.hasContext(1) ? CoreUtilities.toLowerCase(attribute.getContext(1)) : null;
+            ListTag list = new ListTag();
+            Bukkit.recipeIterator().forEachRemaining((recipe) -> {
+                if (Utilities.isRecipeOfType(recipe, type) && recipe instanceof Keyed) {
+                    list.add(((Keyed) recipe).getKey().toString());
+                }
+            });
+            event.setReplaced(list.getAttribute(attribute.fulfill(1)));
+            return;
+        }
+
+        // <--[tag]
+        // @attribute <server.list_advancements>
+        // @returns ListTag
+        // @description
+        // Returns a list of all registered advancement names.
+        // -->
+        if (attribute.startsWith("list_advancements")) {
+            ListTag list = new ListTag();
+            Bukkit.advancementIterator().forEachRemaining((adv) -> {
+                list.add(adv.getKey().toString());
+            });
+            event.setReplaced(list.getAttribute(attribute.fulfill(1)));
             return;
         }
 
@@ -329,24 +344,22 @@ public class ServerTagBase {
         // @description
         // Returns the specified flag from the server.
         // -->
-        if (attribute.startsWith("flag")) {
-            String flag_name;
-            if (attribute.hasContext(1)) {
-                flag_name = attribute.getContext(1);
-            }
-            else {
-                event.setReplaced("null");
-                return;
-            }
+        if (attribute.startsWith("flag") && attribute.hasContext(1)) {
+            String flag_name = attribute.getContext(1);
             attribute.fulfill(1);
-            // NOTE: Meta is in ListTag.java
+
+            // <--[tag]
+            // @attribute <server.flag[<flag_name>].is_expired>
+            // @returns ElementTag(Boolean)
+            // @description
+            // returns true if the flag is expired or does not exist, false if it is not yet expired or has no expiration.
+            // -->
             if (attribute.startsWith("is_expired")
                     || attribute.startsWith("isexpired")) {
                 event.setReplaced(new ElementTag(!FlagManager.serverHasFlag(flag_name))
                         .getAttribute(attribute.fulfill(1)));
                 return;
             }
-            // NOTE: Meta is in ListTag.java
             if (attribute.startsWith("size") && !FlagManager.serverHasFlag(flag_name)) {
                 event.setReplaced(new ElementTag(0).getAttribute(attribute.fulfill(1)));
                 return;
@@ -354,6 +367,18 @@ public class ServerTagBase {
             if (FlagManager.serverHasFlag(flag_name)) {
                 FlagManager.Flag flag = DenizenAPI.getCurrentInstance().flagManager()
                         .getGlobalFlag(flag_name);
+
+                // <--[tag]
+                // @attribute <server.flag[<flag_name>].expiration>
+                // @returns DurationTag
+                // @description
+                // Returns a DurationTag of the time remaining on the flag, if it has an expiration.
+                // Works with offline players.
+                // -->
+                if (attribute.startsWith("expiration")) {
+                    event.setReplaced(flag.expiration().getAttribute(attribute.fulfill(1)));
+                }
+
                 event.setReplaced(new ListTag(flag.toString(), true, flag.values())
                         .getAttribute(attribute));
             }
@@ -1479,10 +1504,21 @@ public class ServerTagBase {
         // @attribute <server.motd>
         // @returns ElementTag
         // @description
-        // Returns the server's current MOTD
+        // Returns the server's current MOTD.
         // -->
         if (attribute.startsWith("motd")) {
             event.setReplaced(new ElementTag(Bukkit.getServer().getMotd()).getAttribute(attribute.fulfill(1)));
+            return;
+        }
+
+        // <--[tag]
+        // @attribute <server.view_distance>
+        // @returns ElementTag(Number)
+        // @description
+        // Returns the server's current view distance.
+        // -->
+        if (attribute.startsWith("view_distance")) {
+            event.setReplaced(new ElementTag(Bukkit.getServer().getViewDistance()).getAttribute(attribute.fulfill(1)));
             return;
         }
 
@@ -1495,7 +1531,7 @@ public class ServerTagBase {
         else if (attribute.startsWith("entity_is_spawned")
                 && attribute.hasContext(1)) {
             EntityTag ent = EntityTag.valueOf(attribute.getContext(1), new BukkitTagContext(null, null, false, null, false, null));
-            event.setReplaced(new ElementTag((ent != null && ent.isUnique() && ent.isSpawned()) ? "true" : "false")
+            event.setReplaced(new ElementTag((ent != null && ent.isUnique() && ent.isSpawnedOrValidForTag()) ? "true" : "false")
                     .getAttribute(attribute.fulfill(1)));
         }
 
@@ -1634,6 +1670,7 @@ public class ServerTagBase {
     }
 
     public static void adjustServer(Mechanism mechanism) {
+
         // <--[mechanism]
         // @object server
         // @name delete_file
@@ -1664,8 +1701,8 @@ public class ServerTagBase {
             }
         }
 
-        // Deprecated in favor of SYSTEM.redirect_logging (Core)
         if (mechanism.matches("redirect_logging") && mechanism.hasValue()) {
+            Deprecations.serverRedirectLogging.warn(mechanism.context);
             if (!Settings.allowConsoleRedirection()) {
                 Debug.echoError("Console redirection disabled by administrator.");
                 return;
@@ -1692,6 +1729,36 @@ public class ServerTagBase {
                 se.stats.fires = 0;
                 se.stats.scriptFires = 0;
                 se.stats.nanoTimes = 0;
+            }
+        }
+
+        // <--[mechanism]
+        // @object server
+        // @name reset_recipes
+        // @input None
+        // @description
+        // Resets the server's recipe list to the default vanilla recipe list + item script recipes.
+        // @tags
+        // <server.list_recipe_ids[(<type>)]>
+        // -->
+        if (mechanism.matches("reset_recipes")) {
+            Bukkit.resetRecipes();
+            DenizenAPI.getCurrentInstance().itemScriptHelper.rebuildRecipes();
+        }
+
+        // <--[mechanism]
+        // @object server
+        // @name remove_recipes
+        // @input ListTag
+        // @description
+        // Removes a recipe or list of recipes from the server, in Namespace:Key format.
+        // @tags
+        // <server.list_recipe_ids[(<type>)]>
+        // -->
+        if (mechanism.matches("remove_recipes")) {
+            ListTag list = mechanism.valueAsType(ListTag.class);
+            for (String str : list) {
+                NMSHandler.getItemHelper().removeRecipe(Utilities.parseNamespacedKey(str));
             }
         }
 

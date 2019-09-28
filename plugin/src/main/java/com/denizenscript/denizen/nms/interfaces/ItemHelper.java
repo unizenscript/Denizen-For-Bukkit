@@ -5,27 +5,49 @@ import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
 import com.denizenscript.denizen.nms.util.jnbt.Tag;
 import org.bukkit.Color;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-public interface ItemHelper {
+public abstract class ItemHelper {
 
-    String getInternalNameFromMaterial(Material material);
 
-    Material getMaterialFromInternalName(String internalName);
+    public abstract void removeRecipe(NamespacedKey key);
 
-    String getJsonString(ItemStack itemStack);
+    public abstract void clearDenizenRecipes();
 
-    PlayerProfile getSkullSkin(ItemStack itemStack);
+    public void registerStonecuttingRecipe(String keyName, String group, ItemStack result, ItemStack ingredient, boolean exact) {
+        throw new UnsupportedOperationException();
+    }
 
-    ItemStack setSkullSkin(ItemStack itemStack, PlayerProfile playerProfile);
+    public abstract void registerFurnaceRecipe(String keyName, String group, ItemStack result, ItemStack ingredient, float exp, int time, String type, boolean exact);
 
-    ItemStack addNbtData(ItemStack itemStack, String key, Tag value);
+    public abstract void registerShapelessRecipe(String keyName, String group, ItemStack result, ItemStack[] ingredients, boolean[] exact);
 
-    CompoundTag getNbtData(ItemStack itemStack);
+    public abstract void setShapedRecipeIngredient(ShapedRecipe recipe, char c, ItemStack item, boolean exact);
 
-    ItemStack setNbtData(ItemStack itemStack, CompoundTag compoundTag);
+    public abstract String getInternalNameFromMaterial(Material material);
 
-    PotionEffect getPotionEffect(PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particles, Color color, boolean icon);
+    public abstract Material getMaterialFromInternalName(String internalName);
+
+    public abstract String getJsonString(ItemStack itemStack);
+
+    public abstract PlayerProfile getSkullSkin(ItemStack itemStack);
+
+    public abstract ItemStack setSkullSkin(ItemStack itemStack, PlayerProfile playerProfile);
+
+    public abstract ItemStack addNbtData(ItemStack itemStack, String key, Tag value);
+
+    public abstract CompoundTag getNbtData(ItemStack itemStack);
+
+    public abstract ItemStack setNbtData(ItemStack itemStack, CompoundTag compoundTag);
+
+    public abstract PotionEffect getPotionEffect(PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particles, Color color, boolean icon);
+
+    public void setInventoryItem(Inventory inventory, ItemStack item, int slot) {
+        inventory.setItem(slot, item);
+    }
 }

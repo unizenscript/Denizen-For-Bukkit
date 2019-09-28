@@ -1,6 +1,6 @@
 # Denizen: Helpful Citizens for Spigot
 
-**Version 1.1.0**: Compatible with Spigot 1.12.2, 1.13.2, and 1.14.4!
+**Version 1.1.1**: Compatible with Spigot 1.12.2, 1.13.2, and 1.14.4!
 
 ## Helpful Links
 

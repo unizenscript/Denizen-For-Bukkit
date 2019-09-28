@@ -1,6 +1,6 @@
 package com.denizenscript.denizen.objects.properties.item;
 
-import com.denizenscript.denizen.utilities.MaterialCompat;
+import com.denizenscript.denizen.utilities.blocks.MaterialCompat;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -75,7 +75,7 @@ public class ItemBaseColor implements Property {
     }
 
     @Override
-    public String getAttribute(Attribute attribute) {
+    public ObjectTag getObjectAttribute(Attribute attribute) {
 
         if (attribute == null) {
             return null;
@@ -89,11 +89,12 @@ public class ItemBaseColor implements Property {
         // @description
         // Gets the base color of a banner.
         // For the list of possible colors, see <@link url http://bit.ly/1dydq12>.
+        // As of 1.13+, this tag is no longer relevant.
         // -->
         if (attribute.startsWith("base_color")) {
             DyeColor baseColor = getBaseColor();
             if (baseColor != null) {
-                return new ElementTag(baseColor.name()).getAttribute(attribute.fulfill(1));
+                return new ElementTag(baseColor.name()).getObjectAttribute(attribute.fulfill(1));
             }
             return null;
         }
@@ -126,6 +127,7 @@ public class ItemBaseColor implements Property {
         // @description
         // Changes the base color of a banner.
         // For the list of possible colors, see <@link url http://bit.ly/1dydq12>.
+        // As of 1.13+, this mechanism is no longer relevant.
         // @tags
         // <ItemTag.base_color>
         // -->

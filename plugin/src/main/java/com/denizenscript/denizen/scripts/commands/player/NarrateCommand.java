@@ -1,6 +1,7 @@
 package com.denizenscript.denizen.scripts.commands.player;
 
 import com.denizenscript.denizen.scripts.containers.core.FormatScriptContainer;
+import com.denizenscript.denizen.utilities.FormattedTextHelper;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.objects.PlayerTag;
@@ -22,14 +23,14 @@ public class NarrateCommand extends AbstractCommand {
 
     // <--[command]
     // @Name Narrate
-    // @Syntax narrate [<text>] (targets:<player>|...) (format:<name>)
+    // @Syntax narrate [<text>] (targets:<player>|...) (format:<script>)
     // @Required 1
     // @Short Shows some text to the player.
     // @Group player
     //
     // @Description
     // Prints some text into the target's chat area. If no target is specified it will default to the attached player
-    // or the console. Accepts the 'format:<name>' argument, which will reformat the text according to the specified
+    // or the console. Accepts the 'format:<script>' argument, which will reformat the text according to the specified
     // format script.
     //
     // @Tags
@@ -116,7 +117,7 @@ public class NarrateCommand extends AbstractCommand {
 
         for (PlayerTag player : targets) {
             if (player != null && player.isOnline()) {
-                player.getPlayerEntity().sendMessage(format != null ? format.getFormattedText(scriptEntry) : text);
+                player.getPlayerEntity().spigot().sendMessage(FormattedTextHelper.parse(format != null ? format.getFormattedText(scriptEntry) : text));
             }
             else {
                 Debug.echoError("Narrated to non-existent or offline player!");
