@@ -512,11 +512,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.is_attached>
         // and <@link mechanism MaterialTag.is_attached> are accessible.
         // -->
-        registerTag("is_attachable", new TagRunnable() {
+        registerTag("is_attachable", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag objectTag) {
-                return new ElementTag(MaterialAttached.describes(objectTag))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(MaterialAttached.describes(object));
             }
         });
 
@@ -626,11 +625,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.faces>, <@link tag MaterialTag.has_face[<face>]>,
         // <@link tag MaterialTag.allowed_faces>, and <@link mechanism MaterialTag.faces> are accessible.
         // -->
-        registerTag("is_multifacing", new TagRunnable() {
+        registerTag("is_multifacing", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag objectTag) {
-                return new ElementTag(MaterialMultipleFacing.describes(objectTag))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(MaterialMultipleFacing.describes(object));
             }
         });
 
@@ -643,11 +641,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.is_open>
         // and <@link mechanism MaterialTag.is_open> are accessible.
         // -->
-        registerTag("is_openable", new TagRunnable() {
+        registerTag("is_openable", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag objectTag) {
-                return new ElementTag(MaterialOpen.describes(objectTag))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(MaterialOpen.describes(object));
             }
         });
 
@@ -660,11 +657,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.valid_orientations>, <@link tag MaterialTag.orientation>,
         // and <@link mechanism MaterialTag.orientation> are accessible.
         // -->
-        registerTag("is_orientable", new TagRunnable() {
+        registerTag("is_orientable", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag objectTag) {
-                return new ElementTag(MaterialOrientation.describes(objectTag))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(MaterialOrientation.describes(object));
             }
         });
 
@@ -677,11 +673,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.valid_rail_shapes>, <@link tag MaterialTag.rail_shape>,
         // and <@link mechanism MaterialTag.rail_shape> are accessible.
         // -->
-        registerTag("is_rail", new TagRunnable() {
+        registerTag("is_rail", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag objectTag) {
-                return new ElementTag(MaterialRailShape.describes(objectTag))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(MaterialRailShape.describes(object));
             }
         });
 
@@ -695,11 +690,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // and <@link mechanism MaterialTag.redstone_power> are accessible.
         // NOTE: This returns true only for daylight detectors and redstone wires.
         // -->
-        registerTag("is_redstone_powerable", new TagRunnable() {
+        registerTag("is_redstone_powerable", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag objectTag) {
-                return new ElementTag(MaterialRedstonePower.describes(objectTag))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(MaterialRedstonePower.describes(object));
             }
         });
 
@@ -713,11 +707,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // and <@link mechanism MaterialTag.rotation> are accessible.
         // NOTE: This returns true only for standing signs (not wall signs).
         // -->
-        registerTag("is_rotatable", new TagRunnable() {
+        registerTag("is_rotatable", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag objectTag) {
-                return new ElementTag(MaterialRotation.describes(objectTag))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(MaterialRotation.describes(object));
             }
         });
 
@@ -730,11 +723,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.snowy>
         // and <@link mechanism MaterialTag.snowy> are accessible.
         // -->
-        registerTag("is_snowable", new TagRunnable() {
+        registerTag("is_snowable", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag objectTag) {
-                return new ElementTag(MaterialOrientation.describes(objectTag))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(MaterialOrientation.describes(object));
             }
         });
 
@@ -746,11 +738,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // Returns whether the material is a switch (button or lever).
         // When this is true, <@link tag MaterialTag.switch_face>
         // and <@link mechanism MaterialTag.switch_face> are accessible.
-        registerTag("is_switch", new TagRunnable() {
+        registerTag("is_switch", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag objectTag) {
-                return new ElementTag(MaterialSwitchFace.describes(objectTag))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag objectTag) {
+                return new ElementTag(MaterialSwitchFace.describes(objectTag));
             }
         });
 
@@ -763,11 +754,10 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.waterlogged>
         // and <@link mechanism MaterialTag.waterlogged> are accessible.
         // -->
-        registerTag("is_waterloggable", new TagRunnable() {
+        registerTag("is_waterloggable", new TagRunnable.ObjectForm<MaterialTag>() {
             @Override
-            public String run(Attribute attribute, ObjectTag objectTag) {
-                return new ElementTag(MaterialWaterlogged.describes(objectTag))
-                        .getAttribute(attribute.fulfill(1));
+            public ObjectTag run(Attribute attribute, MaterialTag object) {
+                return new ElementTag(MaterialWaterlogged.describes(object));
             }
         });
 

@@ -1858,7 +1858,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
                 if (sidebar == null) {
                     return null;
                 }
-                return new ListTag(sidebar.getLinesText());
+                return new ListTag(sidebar.getLines());
             }
         });
 
@@ -1901,6 +1901,40 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             }
         });
 
+        // <--[tag]
+        // @attribute <p@player.sidebar_start>
+        // @returns Element(Number)
+        // @description
+        // Returns the current start score set on the player's Sidebar via the Sidebar command.
+        // -->
+        registerOnlineOnlyTag("sidebar_start", new TagRunnable.ObjectForm<PlayerTag>() {
+            @Override
+            public ObjectTag run(Attribute attribute, PlayerTag object) {
+                Sidebar sidebar = SidebarCommand.getSidebar(object);
+                if (sidebar == null) {
+                    return null;
+                }
+                return new ElementTag(sidebar.getStart());
+            }
+        });
+
+        // <--[tag]
+        // @attribute <p@player.sidebar_increment>
+        // @returns Element(Number)
+        // @description
+        // Returns the current score increment set on the player's Sidebar via the Sidebar command.
+        // -->
+        registerOnlineOnlyTag("sidebar_increment", new TagRunnable.ObjectForm<PlayerTag>() {
+            @Override
+            public ObjectTag run(Attribute attribute, PlayerTag object) {
+                Sidebar sidebar = SidebarCommand.getSidebar(object);
+                if (sidebar == null) {
+                    return null;
+                }
+                return new ElementTag(sidebar.getIncrement());
+            }
+        });
+
         registerOnlineOnlyTag("sidebar", new TagRunnable.ObjectForm<PlayerTag>() {
             @Override
             public ObjectTag run(Attribute attribute, PlayerTag object) {
@@ -1911,7 +1945,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
                     if (sidebar == null) {
                         return null;
                     }
-                    return new ListTag(sidebar.getLinesText());
+                    return new ListTag(sidebar.getLines());
                 }
                 if (attribute.startsWith("title", 2)) {
                     attribute.fulfill(1);
@@ -1933,37 +1967,25 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
                     }
                     return scores;
                 }
+                if (attribute.startsWith("sidebar.start")) {
+                    attribute.fulfill(2);
+                    Sidebar sidebar = SidebarCommand.getSidebar(object);
+                    if (sidebar == null) {
+                        return null;
+                    }
+                    return new ElementTag(sidebar.getStart());
+                }
+                if (attribute.startsWith("sidebar.increment")) {
+                    attribute.fulfill(2);
+                    Sidebar sidebar = SidebarCommand.getSidebar(object);
+                    if (sidebar == null) {
+                        return null;
+                    }
+                    return new ElementTag(sidebar.getIncrement());
+                }
                 return null;
             }
         });
-
-        // <--[tag]
-        // @attribute <p@player.sidebar.start>
-        // @returns Element(Number)
-        // @description
-        // Returns the current start score set on the player's Sidebar via the Sidebar command.
-        // -->
-        if (attribute.startsWith("sidebar.start")) {
-            Sidebar sidebar = SidebarCommand.getSidebar(this);
-            if (sidebar == null) {
-                return null;
-            }
-            return new ElementTag(sidebar.getStart()).getAttribute(attribute.fulfill(2));
-        }
-
-        // <--[tag]
-        // @attribute <p@player.sidebar.increment>
-        // @returns Element(Number)
-        // @description
-        // Returns the current score increment set on the player's Sidebar via the Sidebar command.
-        // -->
-        if (attribute.startsWith("sidebar.increment")) {
-            Sidebar sidebar = SidebarCommand.getSidebar(this);
-            if (sidebar == null) {
-                return null;
-            }
-            return new ElementTag(sidebar.getIncrement()).getAttribute(attribute.fulfill(2));
-        }
 
         // <--[tag]
         // @attribute <PlayerTag.skin_blob>
