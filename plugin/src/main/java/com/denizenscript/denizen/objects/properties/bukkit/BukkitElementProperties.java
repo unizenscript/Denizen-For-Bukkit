@@ -523,7 +523,7 @@ public class BukkitElementProperties implements Property {
 
             if (entity != null) {
                 String customName = entity.getCustomName();
-                String entityType = null;
+                String entityType = entity.getType().getName();
                 if (entity instanceof Player) {
                     customName = entity.getName();
                     entityType = "Player";
@@ -687,7 +687,7 @@ public class BukkitElementProperties implements Property {
         // -->
         if (attribute.startsWith("insert_on_shift_click")) {
             if (!attribute.hasContext(1)) {
-                Debug.echoError("An input is required for attribute 'file_on_click'!");
+                Debug.echoError("An input is required for attribute 'insert_on_shift_click'!");
                 return null;
             }
             return new ElementTag(textComponentSecret + "[insertion=" +
