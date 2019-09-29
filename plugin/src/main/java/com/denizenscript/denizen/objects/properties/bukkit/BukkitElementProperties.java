@@ -403,7 +403,6 @@ public class BukkitElementProperties implements Property {
                 Debug.echoError("An input is required for attribute 'text_hover'!");
                 return null;
             }
-            Debug.echoError("Ping!");
             return new ElementTag(textComponentSecret + "[hover=SHOW_TEXT;" +
                     FormattedTextHelper.escape(attribute.getContext(1)) + "]" +
                     element.asString() + textComponentSecret + "[/hover]")
