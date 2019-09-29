@@ -32,6 +32,8 @@ public abstract class ItemHelper {
 
     public abstract Material getMaterialFromInternalName(String internalName);
 
+    public abstract String getUnmodifiedJsonString(ItemStack itemStack);
+
     public abstract String getJsonString(ItemStack itemStack);
 
     public abstract String getRawHoverText(ItemStack itemStack);

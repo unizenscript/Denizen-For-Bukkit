@@ -114,6 +114,14 @@ public class ItemHelperImpl extends ItemHelper {
     }
 
     @Override
+    public String getUnmodifiedJsonString(ItemStack itemStack) {
+        net.minecraft.server.v1_14_R1.ItemStack craftStack = CraftItemStack.asNMSCopy(itemStack);
+        NBTTagCompound compound = new NBTTagCompound();
+        craftStack.save(compound);
+        return compound.toString();
+    }
+
+    @Override
     public String getJsonString(ItemStack itemStack) {
         String json = CraftItemStack.asNMSCopy(itemStack).B().getChatModifier().toString().replace("\\", "\\\\").replace("\"", "\\\"");
         return json.substring(176, json.length() - 185);

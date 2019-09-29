@@ -866,6 +866,22 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
             }
         });
 
+
+        // <--[tag]
+        // @attribute <ItemTag.unmodified_json>
+        // @returns ElementTag
+        // @group conversion
+        // @description
+        // Returns the item converted to a raw JSON object.
+        // Can be used with <@link tag ElementTag.item_hover> and <@link tag &hover>.
+        // -->
+        registerTag("unmodified_json", new TagRunnable.ObjectForm<ItemTag>() {
+            @Override
+            public ObjectTag run(Attribute attribute, ItemTag object) {
+                return new ElementTag(NMSHandler.getItemHelper().getUnmodifiedJsonString(object.item));
+            }
+        });
+
         // <--[tag]
         // @attribute <ItemTag.bukkit_serial>
         // @returns ElementTag

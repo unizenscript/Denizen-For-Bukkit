@@ -1,9 +1,12 @@
 package com.denizenscript.denizen.objects.properties.bukkit;
 
+import com.denizenscript.denizen.nms.NMSHandler;
+import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.objects.*;
 import com.denizenscript.denizen.scripts.containers.core.FormatScriptContainer;
 import com.denizenscript.denizen.scripts.containers.core.ItemScriptHelper;
 import com.denizenscript.denizen.utilities.FormattedTextHelper;
+import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import com.denizenscript.denizen.BukkitScriptEntryData;
 import com.denizenscript.denizen.tags.BukkitTagContext;
@@ -15,6 +18,10 @@ import com.denizenscript.denizencore.scripts.ScriptRegistry;
 import com.denizenscript.denizencore.tags.Attribute;
 import net.md_5.bungee.chat.ComponentSerializer;
 import org.bukkit.ChatColor;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.FallingBlock;
+import org.bukkit.entity.Item;
+import org.bukkit.entity.Player;
 
 import javax.xml.bind.DatatypeConverter;
 import java.nio.charset.StandardCharsets;
@@ -44,11 +51,15 @@ public class BukkitElementProperties implements Property {
             "asinventory", "as_inventory", "asitem", "as_item", "aslocation", "as_location", "asmaterial",
             "as_material", "asnpc", "as_npc", "asplayer", "as_player", "asworld", "as_world", "asplugin",
             "as_plugin", "last_color", "format", "strip_color", "parse_color", "to_itemscript_hash",
-            "to_secret_colors", "from_secret_colors", "to_raw_json", "from_raw_json", "on_hover", "on_click", "with_insertion"
+            "to_secret_colors", "from_secret_colors", "to_raw_json", "from_raw_json", "on_hover", "on_click",
+            "with_insertion", "text_hover", "item_hover", "entity_hover", "run_on_click", "suggest_on_click",
+            "page_on_click", "url_on_click", "file_on_click", "insert_on_shift_click", "to_json", "from_json"
     };
 
     public static final String[] handledMechs = new String[] {
     }; // None
+
+    static char textComponentSecret = net.md_5.bungee.api.ChatColor.COLOR_CHAR;
 
     ElementTag element;
 
@@ -365,8 +376,7 @@ public class BukkitElementProperties implements Property {
         // Inverts <@link tag ElementTag.from_raw_json>.
         // -->
         if (attribute.startsWith("to_raw_json")) {
-            return new ElementTag(ComponentSerializer.toString(FormattedTextHelper.parse(element.asString())))
-                    .getObjectAttribute(attribute.fulfill(1));
+            return new ElementTag(ComponentSerializer.toString(FormattedTextHelper.parse(element.asString())));
         }
 
         // <--[tag]
@@ -378,7 +388,49 @@ public class BukkitElementProperties implements Property {
         // Inverts <@link tag ElementTag.to_raw_json>.
         // -->
         if (attribute.startsWith("from_raw_json")) {
-            return new ElementTag(FormattedTextHelper.stringify(ComponentSerializer.parse(element.asString())))
+            return new ElementTag(FormattedTextHelper.stringify(ComponentSerializer.parse(element.asString())));
+        }
+
+        // @attribute <ElementTag.text_hover[<text>]>
+        // @returns ElementTag
+        // @group conversion
+        // @description
+        // Returns a copy of the element that displays the specified hover text when the mouse is left over the element.
+        // Equivalent to <&hover[<text>]><ElementTag><&end_hover>
+        // -->
+        if (attribute.startsWith("text_hover")) {
+            if (!attribute.hasContext(1)) {
+                Debug.echoError("An input is required for attribute 'text_hover'!");
+                return null;
+            }
+            Debug.echoError("Ping!");
+            return new ElementTag(textComponentSecret + "[hover=SHOW_TEXT;" +
+                    FormattedTextHelper.escape(attribute.getContext(1)) + "]" +
+                    element.asString() + textComponentSecret + "[/hover]")
+                    .getObjectAttribute(attribute.fulfill(1));
+        }
+
+        // @attribute <ElementTag.item_hover[<item>/<text>]>
+        // @returns ElementTag
+        // @group conversion
+        // @description
+        // Returns a copy of the element that displays the specified item when the mouse is left over the element.
+        // If text is used, then it must specify a valid item in JSON format.
+        // Equivalent to <&hover[<text>].type[SHOW_ITEM]><ElementTag><&end_hover>
+        // -->
+        if (attribute.startsWith("item_hover")) {
+            if (!attribute.hasContext(1)) {
+                Debug.echoError("An item or text input is required for attribute 'item_hover'!");
+                return null;
+            }
+
+            String output = attribute.getContext(1);
+            if (Argument.valueOf(attribute.getContext(1)).matchesArgumentType(ItemTag.class)) {
+                output = NMSHandler.getItemHelper().getUnmodifiedJsonString(ItemTag.valueOf(attribute.getContext(1)).getItemStack());
+            }
+            return new ElementTag(textComponentSecret + "[hover=SHOW_ITEM;" +
+                    FormattedTextHelper.escape(output) + "]" +
+                    element.asString() + textComponentSecret + "[/hover]")
                     .getObjectAttribute(attribute.fulfill(1));
         }
 
@@ -448,6 +500,201 @@ public class BukkitElementProperties implements Property {
             String insertionText = attribute.getContext(1);
             return new ElementTag(ChatColor.COLOR_CHAR + "[insertion="  + FormattedTextHelper.escape(insertionText) + "]"
                     + element.asString() + ChatColor.COLOR_CHAR + "[/insertion]").getObjectAttribute(attribute.fulfill(1));
+        }
+
+        // @attribute <ElementTag.entity_hover[<entity>/<text>]>
+        // @returns ElementTag
+        // @group conversion
+        // @description
+        // Returns a copy of the element that displays the specified hover text when the mouse is left over the element.
+        // If text is used, then it must follow the JSON format {"id":"UUID","type":"ENTITY_TYPE","name":"CUSTOM NAME"} (but none of the three keys are required).
+        // Equivalent to <&hover[<text>].type[SHOW_ENTITY]><ElementTag><&end_hover>
+        // -->
+        if (attribute.startsWith("entity_hover")) {
+            if (!attribute.hasContext(1)) {
+                Debug.echoError("An entity or text input is required for attribute 'entity_hover'!");
+                return null;
+            }
+
+            Entity entity = null;
+            String output = attribute.getContext(1);
+            if (Argument.valueOf(attribute.getContext(1)).matchesArgumentType(EntityTag.class)) {
+                entity = EntityTag.valueOf(attribute.getContext(1)).getBukkitEntity();
+            }
+
+            if (entity != null) {
+                String customName = entity.getCustomName();
+                String entityType = null;
+                if (entity instanceof Player) {
+                    customName = entity.getName();
+                    entityType = "Player";
+                }
+                else if (entity instanceof FallingBlock) {
+                    customName = "Falling block: \"" + ((FallingBlock) entity).getBlockData().getMaterial().name().toLowerCase().replace('_', ' ') + "\"";
+                }
+                else if (entity instanceof Item) {
+                    customName = "Item: \"" + ((Item) entity).getItemStack().getType().name().toLowerCase().replace('_', ' ') + "\"";
+                }
+
+                if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
+                    if (entity instanceof Player) {
+                        customName = "{\\\"text\\\":\\\"" + entity.getName() + "\\\"}";
+                    }
+                    else {
+                        entityType = entity.getType().getKey().getKey();
+                        if (customName != null) {
+                            customName = ComponentSerializer.toString(FormattedTextHelper.parse(customName))
+                                    .replace("\\", "\\\\").replace("\"", "\\\"");
+                        }
+                    }
+                }
+
+                if (entityType == null) {
+                    entityType = "Unknown";
+                }
+
+                String[] typeSplit = entityType.split("_");
+                StringBuilder constructedType = new StringBuilder().append(typeSplit[0].toUpperCase().charAt(0));
+                if (typeSplit[0].length() > 1) {
+                    constructedType.append(typeSplit[1].toLowerCase().substring(1));
+                }
+                for (int i = 1; i < entityType.split("_").length; i++) {
+                    if (typeSplit[i].length() == 0) {
+                        continue;
+                    }
+                    constructedType.append(" ").append(typeSplit[i].toUpperCase().charAt(0));
+                    if (typeSplit[i].length() > 1) {
+                        constructedType.append(typeSplit[i].toLowerCase().substring(1));
+                    }
+                }
+
+                output = "{\"id\":\"" + entity.getUniqueId().toString() + "\",\"type\":\"" + constructedType.toString().trim() + (customName == null ? "" : "\",\"name\":\"" + customName) + "\"}";
+            }
+
+            return new ElementTag(textComponentSecret + "[hover=SHOW_ENTITY;" +
+                    FormattedTextHelper.escape(output) + "]" +
+                    element.asString() + textComponentSecret + "[/hover]")
+                    .getObjectAttribute(attribute.fulfill(1));
+        }
+
+        // <--[tag]
+        // @attribute <ElementTag.run_on_click[<command>]>
+        // @returns ElementTag
+        // @group conversion
+        // @description
+        // Returns a copy of the element that runs the specified command as the player who clicked the element.
+        // Equivalent to <&click[<command>]><ElementTag><&end_click>
+        // -->
+        if (attribute.startsWith("run_on_click")) {
+            if (!attribute.hasContext(1)) {
+                Debug.echoError("An input is required for attribute 'run_on_click'!");
+                return null;
+            }
+            return new ElementTag(textComponentSecret + "[click=RUN_COMMAND;" +
+                    FormattedTextHelper.escape(attribute.getContext(1)) + "]" +
+                    element.asString() + textComponentSecret + "[/click]")
+                    .getObjectAttribute(attribute.fulfill(1));
+        }
+
+        // <--[tag]
+        // @attribute <ElementTag.suggest_on_click[<command>]>
+        // @returns ElementTag
+        // @group conversion
+        // @description
+        // Returns a copy of the element that suggests the specified command to the player who clicked the element.
+        // Equivalent to <&click[<command>].type[SUGGEST_COMMAND]><ElementTag><&end_click>
+        // -->
+        if (attribute.startsWith("suggest_on_click")) {
+            if (!attribute.hasContext(1)) {
+                Debug.echoError("An input is required for attribute 'suggest_on_click'!");
+                return null;
+            }
+            return new ElementTag(textComponentSecret + "[click=SUGGEST_COMMAND;" +
+                    FormattedTextHelper.escape(attribute.getContext(1)) + "]" +
+                    element.asString() + textComponentSecret + "[/click]")
+                    .getObjectAttribute(attribute.fulfill(1));
+        }
+
+        // <--[tag]
+        // @attribute <ElementTag.page_on_click[<#>]>
+        // @returns ElementTag
+        // @group conversion
+        // @description
+        // Returns a copy of the element that makes the player who clicked the element turn to a specific page number in the book they are viewing.
+        // Equivalent to <&click[<#>].type[CHANGE_PAGE]><ElementTag><&end_click>
+        // -->
+        if (attribute.startsWith("page_on_click")) {
+            if (!attribute.hasContext(1)) {
+                Debug.echoError("An input is required for attribute 'page_on_click'!");
+                return null;
+            }
+
+            ElementTag page = new ElementTag(attribute.getContext(1));
+            if (!page.isInt() || page.asInt() < 1) {
+                Debug.echoError("A positive integer input is required for attribute 'page_on_click'!");
+                return null;
+            }
+
+            return new ElementTag(textComponentSecret + "[click=CHANGE_PAGE;" +
+                    page.asInt() + "]" + element.asString() + textComponentSecret + "[/click]")
+                    .getObjectAttribute(attribute.fulfill(1));
+        }
+
+        // <--[tag]
+        // @attribute <ElementTag.url_on_click[<url>]>
+        // @returns ElementTag
+        // @group conversion
+        // @description
+        // Returns a copy of the element that makes the player who clicked the element open the specified URL.
+        // Equivalent to <&click[<url>].type[OPEN_URL]><ElementTag><&end_click>
+        // -->
+        if (attribute.startsWith("url_on_click")) {
+            if (!attribute.hasContext(1)) {
+                Debug.echoError("An input is required for attribute 'url_on_click'!");
+                return null;
+            }
+            return new ElementTag(textComponentSecret + "[click=OPEN_URL;" +
+                    FormattedTextHelper.escape(attribute.getContext(1)) + "]" +
+                    element.asString() + textComponentSecret + "[/click]")
+                    .getObjectAttribute(attribute.fulfill(1));
+        }
+
+        // <--[tag]
+        // @attribute <ElementTag.file_on_click[<filepath>]>
+        // @returns ElementTag
+        // @group conversion
+        // @description
+        // Returns a copy of the element that makes the player who clicked the element open a file on their computer.
+        // Equivalent to <&click[<filepath>].type[OPEN_FILE]><ElementTag><&end_click>
+        // -->
+        if (attribute.startsWith("file_on_click")) {
+            if (!attribute.hasContext(1)) {
+                Debug.echoError("An input is required for attribute 'file_on_click'!");
+                return null;
+            }
+            return new ElementTag(textComponentSecret + "[click=OPEN_FILE;" +
+                    FormattedTextHelper.escape(attribute.getContext(1)) + "]" +
+                    element.asString() + textComponentSecret + "[/click]")
+                    .getObjectAttribute(attribute.fulfill(1));
+        }
+
+        // <--[tag]
+        // @attribute <ElementTag.insert_on_shift_click[<text>]>
+        // @returns ElementTag
+        // @group conversion
+        // @description
+        // Returns a copy of the element that sends the specified text to the chat when a player shift + left clicks the element.
+        // Equivalent to <&insertion[<text>]><ElementTag><&end_insertion>
+        // -->
+        if (attribute.startsWith("insert_on_shift_click")) {
+            if (!attribute.hasContext(1)) {
+                Debug.echoError("An input is required for attribute 'file_on_click'!");
+                return null;
+            }
+            return new ElementTag(textComponentSecret + "[insertion=" +
+                    FormattedTextHelper.escape(attribute.getContext(1)) + "]" +
+                    element.asString() + textComponentSecret + "[/insertion]")
+                    .getObjectAttribute(attribute.fulfill(1));
         }
 
         return null;
