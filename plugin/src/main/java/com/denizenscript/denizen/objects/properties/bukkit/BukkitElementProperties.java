@@ -53,7 +53,7 @@ public class BukkitElementProperties implements Property {
             "as_plugin", "last_color", "format", "strip_color", "parse_color", "to_itemscript_hash",
             "to_secret_colors", "from_secret_colors", "to_raw_json", "from_raw_json", "on_hover", "on_click",
             "with_insertion", "text_hover", "item_hover", "entity_hover", "run_on_click", "suggest_on_click",
-            "page_on_click", "url_on_click", "file_on_click", "insert_on_shift_click", "to_json", "from_json"
+            "page_on_click", "url_on_click", "file_on_click", "insert_on_shift_click"
     };
 
     public static final String[] handledMechs = new String[] {
