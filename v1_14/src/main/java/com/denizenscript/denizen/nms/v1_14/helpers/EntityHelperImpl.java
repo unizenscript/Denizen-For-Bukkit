@@ -437,7 +437,7 @@ public class EntityHelperImpl extends EntityHelper {
 
     @Override
     public boolean canTrace(World world, Vector start, Vector end) {
-        return rayTrace(world, start, end) == null;
+        return rayTrace(world, start, end).getType() == MovingObjectPosition.EnumMovingObjectType.MISS;
     }
 
     @Override
