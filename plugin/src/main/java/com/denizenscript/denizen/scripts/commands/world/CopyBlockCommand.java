@@ -108,165 +108,150 @@ public class CopyBlockCommand extends AbstractCommand {
 
         if (origin instanceof CuboidTag) {
             CuboidTag originCuboid = (CuboidTag) origin;
-            List<BlockState> updateList = new ArrayList<>();
-
-            for (CuboidTag.LocationPair pair : originCuboid.pairs) {
-                int xDist = pair.high.getBlockX() - pair.low.getBlockX();
-                int yDist = pair.high.getBlockY() - pair.low.getBlockY();
-                int zDist = pair.high.getBlockZ() - pair.low.getBlockZ();
-
-                for (int x = 0; x <= xDist; x++) {
-                    for (int y = 0; y <= yDist; y++) {
-                        if (pair.low.getBlockY() + y < 0 || pair.low.getBlockY() + y > 255) {
-                            continue;
-                        }
-
-                        for (int z = 0; z <= zDist; z++) {
-                            Block source = pair.low.clone().add(x, y, z).getBlock();
-                            BlockState sourceState = LocationTag.getBlockStateFor(source);
-                            Block updateDest = destination.clone().add(x, y, z).getBlock();
-
-                            BlockData blockData = NMSHandler.getBlockHelper().getBlockData(source);
-                            blockData.setBlock(updateDest, false);
-                            BlockState updatedState = LocationTag.getBlockStateFor(updateDest);
-
-                            if (sourceState instanceof InventoryHolder) {
-                                ((InventoryHolder) updatedState).getInventory().setContents(((InventoryHolder) sourceState).getInventory().getContents());
-                            }
-                            else if (sourceState instanceof Sign) {
-                                int n = 0;
-
-                                for (String line : ((Sign) sourceState).getLines()) {
-                                    ((Sign) updatedState).setLine(n, line);
-                                    n++;
-                                }
-                            }
-                            else if (sourceState instanceof NoteBlock) {
-                                ((NoteBlock) updatedState).setNote(((NoteBlock) sourceState).getNote());
-                            }
-                            else if (sourceState instanceof Skull) {
-                                ((Skull) updatedState).setSkullType(((Skull) sourceState).getSkullType());
-                                ((Skull) updatedState).setOwner(((Skull) sourceState).getOwner());
-                                ((Skull) updatedState).setRotation(((Skull) sourceState).getRotation());
-                            }
-                            else if (sourceState instanceof Banner) {
-                                ((Banner) updatedState).setBaseColor(((Banner) sourceState).getBaseColor());
-                                ((Banner) updatedState).setPatterns(((Banner) sourceState).getPatterns());
-                            }
-                            else if (sourceState instanceof CommandBlock) {
-                                ((CommandBlock) updatedState).setName(((CommandBlock) sourceState).getName());
-                                ((CommandBlock) updatedState).setCommand(((CommandBlock) sourceState).getCommand());
-                            }
-                            else if (sourceState instanceof CreatureSpawner) {
-                                ((CreatureSpawner) updatedState).setSpawnedType(((CreatureSpawner) sourceState).getSpawnedType());
-                                ((CreatureSpawner) updatedState).setDelay(((CreatureSpawner) sourceState).getDelay());
-                                ((CreatureSpawner) updatedState).setMaxNearbyEntities(((CreatureSpawner) sourceState).getMaxNearbyEntities());
-                                ((CreatureSpawner) updatedState).setMinSpawnDelay(((CreatureSpawner) sourceState).getMinSpawnDelay());
-                                ((CreatureSpawner) updatedState).setMaxSpawnDelay(((CreatureSpawner) sourceState).getMaxSpawnDelay());
-                                ((CreatureSpawner) updatedState).setRequiredPlayerRange(((CreatureSpawner) sourceState).getRequiredPlayerRange());
-                                ((CreatureSpawner) updatedState).setSpawnCount(((CreatureSpawner) sourceState).getSpawnCount());
-                                ((CreatureSpawner) updatedState).setSpawnRange(((CreatureSpawner) sourceState).getSpawnRange());
-                            }
-
-                            updateList.add(updatedState);
-
-                            if (remove) {
-                                source.setType(Material.AIR);
-                            }
-                        }
-                    }
-                }
-            }
 
             if (delay) {
                 new BukkitRunnable() {
-                    int lastIndex = 0;
+                    List<CuboidTag.LocationPair> pairList = new ArrayList<>(originCuboid.pairs);
+                    int lastX = 0;
+                    int lastY = 0;
+                    int lastZ = 0;
+
                     @Override
                     public void run() {
                         long startTime = System.currentTimeMillis();
-                        int i;
-                        for (i = lastIndex; i < updateList.size(); i++) {
-                            if (System.currentTimeMillis() - startTime > 50) {
-                                break;
-                            }
-                            updateList.get(i).update();
-                        }
-                        lastIndex = i;
+                        List<CuboidTag.LocationPair> doneCuboids = new ArrayList<>();
 
-                        if (lastIndex == updateList.size() - 1) {
+                        for (CuboidTag.LocationPair pair : pairList) {
+                            boolean continueLoops = true;
+                            int xDist = pair.high.getBlockX() - pair.low.getBlockX();
+                            int yDist = pair.high.getBlockY() - pair.low.getBlockY();
+                            int zDist = pair.high.getBlockZ() - pair.low.getBlockZ();
+
+                            for (int x = lastX; x <= xDist; x++) {
+                                lastX = x;
+                                for (int y = 0; y <= yDist; y++) {
+                                    if (pair.low.getBlockY() + y < 0 || pair.low.getBlockY() + y > 255) {
+                                        continue;
+                                    }
+
+                                    lastY = y;
+                                    for (int z = 0; z <= zDist; z++) {
+                                        if (System.currentTimeMillis() - startTime > 50) {
+                                            continueLoops = false;
+                                            break;
+                                        }
+
+                                        lastZ = z;
+
+                                        Block source = pair.low.clone().add(x, y, z).getBlock();
+                                        Block updateDest = destination.clone().add(x, y, z).getBlock();
+
+                                        replaceBlock(source, updateDest, remove);
+                                    }
+
+                                    if (!continueLoops) {
+                                        break;
+                                    }
+                                }
+
+                                if (!continueLoops) {
+                                    break;
+                                }
+                            }
+
+                            doneCuboids.add(pair);
+                        }
+
+                        pairList.removeAll(doneCuboids);
+                        if (pairList.isEmpty()) {
                             cancel();
                         }
                     }
                 }.runTaskTimer(DenizenAPI.getCurrentInstance(), 1, 1);
             }
             else {
-                for (BlockState state : updateList) {
-                    state.update();
+                for (CuboidTag.LocationPair pair : originCuboid.pairs) {
+                    int xDist = pair.high.getBlockX() - pair.low.getBlockX();
+                    int yDist = pair.high.getBlockY() - pair.low.getBlockY();
+                    int zDist = pair.high.getBlockZ() - pair.low.getBlockZ();
+
+                    for (int x = 0; x <= xDist; x++) {
+                        for (int y = 0; y <= yDist; y++) {
+                            if (pair.low.getBlockY() + y < 0 || pair.low.getBlockY() + y > 255) {
+                                continue;
+                            }
+
+                            for (int z = 0; z <= zDist; z++) {
+                                Block source = pair.low.clone().add(x, y, z).getBlock();
+                                Block updateDest = destination.clone().add(x, y, z).getBlock();
+
+                                replaceBlock(source, updateDest, remove);
+                            }
+                        }
+                    }
                 }
             }
         }
         else if (origin instanceof LocationTag) {
-            LocationTag originLoc = (LocationTag) origin;
-
-            Block source = originLoc.getBlock();
-            BlockState sourceState = LocationTag.getBlockStateFor(source);
+            Block source = ((LocationTag) origin).getBlock();
             Block update = destination.getBlock();
 
-            // TODO: 1.13 - confirm this works
-            BlockData blockData = NMSHandler.getBlockHelper().getBlockData(source);
-            blockData.setBlock(update, false);
+            replaceBlock(source, update, remove);
+        }
+    }
 
-            BlockState updateState = LocationTag.getBlockStateFor(update);
+    private void replaceBlock(Block origin, Block destination, boolean removeOrigin) {
+        BlockState originState = LocationTag.getBlockStateFor(origin);
+        BlockData originData = NMSHandler.getBlockHelper().getBlockData(origin);
+        originData.setBlock(destination, false);
+        BlockState destState = LocationTag.getBlockStateFor(destination);
 
-            // Note: only a BlockState, not a Block, is actually an instance
-            // of InventoryHolder
-            if (sourceState instanceof InventoryHolder) {
-                ((InventoryHolder) updateState).getInventory()
-                        .setContents(((InventoryHolder) sourceState).getInventory().getContents());
-            }
-            else if (sourceState instanceof Sign) {
-                int n = 0;
+        if (originState instanceof InventoryHolder) {
+            ((InventoryHolder) destState).getInventory()
+                    .setContents(((InventoryHolder) originState).getInventory().getContents());
+        }
+        else if (originState instanceof Sign) {
+            int n = 0;
 
-                for (String line : ((Sign) sourceState).getLines()) {
-                    ((Sign) updateState).setLine(n, line);
-                    n++;
-                }
+            for (String line : ((Sign) originState).getLines()) {
+                ((Sign) destState).setLine(n, line);
+                n++;
             }
-            else if (sourceState instanceof NoteBlock) {
-                ((NoteBlock) updateState).setNote(((NoteBlock) sourceState).getNote());
-            }
-            else if (sourceState instanceof Skull) {
-                ((Skull) updateState).setSkullType(((Skull) sourceState).getSkullType());
-                ((Skull) updateState).setOwner(((Skull) sourceState).getOwner());
-                ((Skull) updateState).setRotation(((Skull) sourceState).getRotation());
-            }
-            else if (sourceState instanceof Jukebox) {
-                ((Jukebox) updateState).setPlaying(((Jukebox) sourceState).getPlaying());
-            }
-            else if (sourceState instanceof Banner) {
-                ((Banner) updateState).setBaseColor(((Banner) sourceState).getBaseColor());
-                ((Banner) updateState).setPatterns(((Banner) sourceState).getPatterns());
-            }
-            else if (sourceState instanceof CommandBlock) {
-                ((CommandBlock) updateState).setName(((CommandBlock) sourceState).getName());
-                ((CommandBlock) updateState).setCommand(((CommandBlock) sourceState).getCommand());
-            }
-            else if (sourceState instanceof CreatureSpawner) {
-                ((CreatureSpawner) updateState).setSpawnedType(((CreatureSpawner) sourceState).getSpawnedType());
-                ((CreatureSpawner) updateState).setDelay(((CreatureSpawner) sourceState).getDelay());
-                ((CreatureSpawner) updateState).setMaxNearbyEntities(((CreatureSpawner) sourceState).getMaxNearbyEntities());
-                ((CreatureSpawner) updateState).setMinSpawnDelay(((CreatureSpawner) sourceState).getMinSpawnDelay());
-                ((CreatureSpawner) updateState).setMaxSpawnDelay(((CreatureSpawner) sourceState).getMaxSpawnDelay());
-                ((CreatureSpawner) updateState).setRequiredPlayerRange(((CreatureSpawner) sourceState).getRequiredPlayerRange());
-                ((CreatureSpawner) updateState).setSpawnCount(((CreatureSpawner) sourceState).getSpawnCount());
-                ((CreatureSpawner) updateState).setSpawnRange(((CreatureSpawner) sourceState).getSpawnRange());
-            }
+        }
+        else if (originState instanceof NoteBlock) {
+            ((NoteBlock) destState).setNote(((NoteBlock) originState).getNote());
+        }
+        else if (originState instanceof Skull) {
+            ((Skull) destState).setSkullType(((Skull) originState).getSkullType());
+            ((Skull) destState).setOwner(((Skull) originState).getOwner());
+            ((Skull) destState).setRotation(((Skull) originState).getRotation());
+        }
+        else if (originState instanceof Jukebox) {
+            ((Jukebox) destState).setPlaying(((Jukebox) originState).getPlaying());
+        }
+        else if (originState instanceof Banner) {
+            ((Banner) destState).setBaseColor(((Banner) originState).getBaseColor());
+            ((Banner) destState).setPatterns(((Banner) originState).getPatterns());
+        }
+        else if (originState instanceof CommandBlock) {
+            ((CommandBlock) destState).setName(((CommandBlock) originState).getName());
+            ((CommandBlock) destState).setCommand(((CommandBlock) originState).getCommand());
+        }
+        else if (originState instanceof CreatureSpawner) {
+            ((CreatureSpawner) destState).setSpawnedType(((CreatureSpawner) originState).getSpawnedType());
+            ((CreatureSpawner) destState).setDelay(((CreatureSpawner) originState).getDelay());
+            ((CreatureSpawner) destState).setMaxNearbyEntities(((CreatureSpawner) originState).getMaxNearbyEntities());
+            ((CreatureSpawner) destState).setMinSpawnDelay(((CreatureSpawner) originState).getMinSpawnDelay());
+            ((CreatureSpawner) destState).setMaxSpawnDelay(((CreatureSpawner) originState).getMaxSpawnDelay());
+            ((CreatureSpawner) destState).setRequiredPlayerRange(((CreatureSpawner) originState).getRequiredPlayerRange());
+            ((CreatureSpawner) destState).setSpawnCount(((CreatureSpawner) originState).getSpawnCount());
+            ((CreatureSpawner) destState).setSpawnRange(((CreatureSpawner) originState).getSpawnRange());
+        }
 
-            updateState.update();
+        destState.update();
 
-            if (remove) {
-                originLoc.getBlock().setType(Material.AIR);
-            }
+        if (removeOrigin) {
+            origin.setType(Material.AIR);
         }
     }
 }
