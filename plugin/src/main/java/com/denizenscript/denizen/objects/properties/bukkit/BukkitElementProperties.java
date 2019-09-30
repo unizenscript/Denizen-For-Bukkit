@@ -524,9 +524,12 @@ public class BukkitElementProperties implements Property {
             if (entity != null) {
                 String customName = entity.getCustomName();
                 String entityType = entity.getType().getName();
+                boolean skipTitleCasing = false;
+
                 if (entity instanceof Player) {
                     customName = entity.getName();
                     entityType = "Player";
+                    skipTitleCasing = true;
                 }
                 else if (entity instanceof FallingBlock) {
                     customName = "Falling block: \"" + ((FallingBlock) entity).getBlockData().getMaterial().name().toLowerCase().replace('_', ' ') + "\"";
@@ -550,20 +553,18 @@ public class BukkitElementProperties implements Property {
 
                 if (entityType == null) {
                     entityType = "Unknown";
+                    skipTitleCasing = true;
                 }
 
-                String[] typeSplit = entityType.split("_");
-                StringBuilder constructedType = new StringBuilder().append(typeSplit[0].toUpperCase().charAt(0));
-                if (typeSplit[0].length() > 1) {
-                    constructedType.append(typeSplit[1].toLowerCase().substring(1));
-                }
-                for (int i = 1; i < entityType.split("_").length; i++) {
-                    if (typeSplit[i].length() == 0) {
-                        continue;
-                    }
-                    constructedType.append(" ").append(typeSplit[i].toUpperCase().charAt(0));
-                    if (typeSplit[i].length() > 1) {
-                        constructedType.append(typeSplit[i].toLowerCase().substring(1));
+                StringBuilder constructedType = new StringBuilder().append(entityType);
+                if (!skipTitleCasing) {
+                    String[] typeSplit = entityType.split("_");
+                    constructedType = new StringBuilder().append(typeSplit[0].toUpperCase().charAt(0)).append(typeSplit[0].length() == 1 ? "" : typeSplit[0].toLowerCase().substring(1));
+                    for (int i = 1; i < entityType.split("_").length; i++) {
+                        if (typeSplit[i].length() == 0) {
+                            continue;
+                        }
+                        constructedType.append(" ").append(typeSplit[i].toUpperCase().charAt(0)).append(typeSplit[i].length() == 1 ? "" : typeSplit[i].toLowerCase().substring(1));
                     }
                 }
 
