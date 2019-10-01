@@ -101,7 +101,7 @@ public class CopyBlockCommand extends AbstractCommand {
     @Override
     public void execute(ScriptEntry scriptEntry) {
 
-        ObjectTag sourceObject = (ObjectTag) scriptEntry.getObject("origin");
+        ObjectTag sourceObject = (ObjectTag) scriptEntry.getObject("source");
         LocationTag destination = (LocationTag) scriptEntry.getObject("destination");
         LocationTag originEntry = scriptEntry.hasObject("origin") ? (LocationTag) scriptEntry.getObject("origin") : null;
         ElementTag removeOriginal = (ElementTag) scriptEntry.getObject("remove");
