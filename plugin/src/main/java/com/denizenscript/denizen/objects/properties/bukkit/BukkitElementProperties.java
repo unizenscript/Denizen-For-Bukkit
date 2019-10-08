@@ -3,6 +3,7 @@ package com.denizenscript.denizen.objects.properties.bukkit;
 import com.denizenscript.denizen.objects.*;
 import com.denizenscript.denizen.scripts.containers.core.FormatScriptContainer;
 import com.denizenscript.denizen.scripts.containers.core.ItemScriptHelper;
+import com.denizenscript.denizen.utilities.FormattedTextHelper;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import com.denizenscript.denizen.BukkitScriptEntryData;
 import com.denizenscript.denizen.tags.BukkitTagContext;
@@ -12,6 +13,7 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.scripts.ScriptRegistry;
 import com.denizenscript.denizencore.tags.Attribute;
+import net.md_5.bungee.chat.ComponentSerializer;
 import org.bukkit.ChatColor;
 
 import javax.xml.bind.DatatypeConverter;
@@ -42,7 +44,7 @@ public class BukkitElementProperties implements Property {
             "asinventory", "as_inventory", "asitem", "as_item", "aslocation", "as_location", "asmaterial",
             "as_material", "asnpc", "as_npc", "asplayer", "as_player", "asworld", "as_world", "asplugin",
             "as_plugin", "last_color", "format", "strip_color", "parse_color", "to_itemscript_hash",
-            "to_secret_colors", "from_secret_colors"
+            "to_secret_colors", "from_secret_colors", "to_raw_json", "from_raw_json", "on_hover", "on_click", "with_insertion"
     };
 
     public static final String[] handledMechs = new String[] {
@@ -352,6 +354,100 @@ public class BukkitElementProperties implements Property {
             byte[] bytes = DatatypeConverter.parseHexBinary(text);
             return new ElementTag(new String(bytes, StandardCharsets.UTF_8))
                     .getObjectAttribute(attribute.fulfill(1));
+        }
+
+        // <--[tag]
+        // @attribute <ElementTag.to_raw_json>
+        // @returns ElementTag
+        // @group conversion
+        // @description
+        // Converts normal colored text to Minecraft-style "raw JSON" format.
+        // Inverts <@link tag ElementTag.from_raw_json>.
+        // -->
+        if (attribute.startsWith("to_raw_json")) {
+            return new ElementTag(ComponentSerializer.toString(FormattedTextHelper.parse(element.asString())))
+                    .getObjectAttribute(attribute.fulfill(1));
+        }
+
+        // <--[tag]
+        // @attribute <ElementTag.from_raw_json>
+        // @returns ElementTag
+        // @group conversion
+        // @description
+        // Un-hides the element's text from invisible color codes back to normal text.
+        // Inverts <@link tag ElementTag.to_raw_json>.
+        // -->
+        if (attribute.startsWith("from_raw_json")) {
+            return new ElementTag(FormattedTextHelper.stringify(ComponentSerializer.parse(element.asString())))
+                    .getObjectAttribute(attribute.fulfill(1));
+        }
+
+        // <--[tag]
+        // @attribute <ElementTag.on_hover[<message>]>
+        // @returns ElementTag
+        // @group text manipulation
+        // @description
+        // Adds a hover message to the element, which makes the element display the input hover text when the mouse is left over it.
+        // -->
+        if (attribute.startsWith("on_hover") && attribute.hasContext(1)) {
+            String hoverText = attribute.getContext(1);
+            String type = "SHOW_TEXT";
+
+            // <--[tag]
+            // @attribute <ElementTag.on_hover[<message>].type[<type>]>
+            // @returns ElementTag
+            // @group text manipulation
+            // @description
+            // Adds a hover message to the element, which makes the element display the input hover text when the mouse is left over it.
+            // Optionally specify the hover type as one of: SHOW_TEXT, SHOW_ACHIEVEMENT, SHOW_ITEM, or SHOW_ENTITY.
+            // Note: for "SHOW_ITEM", replace the text with a valid ItemTag. For "SHOW_ENTITY", replace the text with a valid spawned EntityTag (requires F3+H to see entities).
+            // -->
+            if (attribute.startsWith("type", 2)) {
+                type = attribute.getContext(2);
+                attribute.fulfill(1);
+            }
+            return new ElementTag(ChatColor.COLOR_CHAR + "[hover=" + type + ";" + FormattedTextHelper.escape(hoverText) + "]"
+                    + element.asString() + ChatColor.COLOR_CHAR + "[/hover]").getObjectAttribute(attribute.fulfill(1));
+        }
+
+        // <--[tag]
+        // @attribute <ElementTag.on_click[<click command>]>
+        // @returns ElementTag
+        // @group text manipulation
+        // @description
+        // Adds a click command to the element, which makes the element execute the input command when clicked.
+        // -->
+        if (attribute.startsWith("on_click") && attribute.hasContext(1)) {
+            String clickText = attribute.getContext(1);
+            String type = "RUN_COMMAND";
+
+            // <--[tag]
+            // @attribute <ElementTag.on_click[<message>].type[<type>]>
+            // @returns ElementTag
+            // @group text manipulation
+            // @description
+            // Adds a click command to the element, which makes the element execute the input command when clicked.
+            // Optionally specify the hover type as one of: OPEN_URL, OPEN_FILE, RUN_COMMAND, SUGGEST_COMMAND, or CHANGE_PAGE.
+            // -->
+            if (attribute.startsWith("type", 2)) {
+                type = attribute.getContext(2);
+                attribute.fulfill(1);
+            }
+            return new ElementTag(ChatColor.COLOR_CHAR + "[click=" + type + ";" + FormattedTextHelper.escape(clickText) + "]"
+                    + element.asString() + ChatColor.COLOR_CHAR + "[/click]").getObjectAttribute(attribute.fulfill(1));
+        }
+
+        // <--[tag]
+        // @attribute <ElementTag.with_insertion[<message>]>
+        // @returns ElementTag
+        // @group text manipulation
+        // @description
+        // Adds an insertion message to the element, which makes the element insert the input message to chat when shift-clicked.
+        // -->
+        if (attribute.startsWith("with_insertion") && attribute.hasContext(1)) {
+            String insertionText = attribute.getContext(1);
+            return new ElementTag(ChatColor.COLOR_CHAR + "[insertion="  + FormattedTextHelper.escape(insertionText) + "]"
+                    + element.asString() + ChatColor.COLOR_CHAR + "[/insertion]").getObjectAttribute(attribute.fulfill(1));
         }
 
         return null;

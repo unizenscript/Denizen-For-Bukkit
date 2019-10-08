@@ -14,7 +14,6 @@ import org.bukkit.potion.PotionEffectType;
 
 public abstract class ItemHelper {
 
-
     public abstract void removeRecipe(NamespacedKey key);
 
     public abstract void clearDenizenRecipes();
@@ -34,6 +33,8 @@ public abstract class ItemHelper {
     public abstract Material getMaterialFromInternalName(String internalName);
 
     public abstract String getJsonString(ItemStack itemStack);
+
+    public abstract String getRawHoverText(ItemStack itemStack);
 
     public abstract PlayerProfile getSkullSkin(ItemStack itemStack);
 

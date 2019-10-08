@@ -22,6 +22,10 @@ import java.util.*;
 
 public abstract class EntityHelper {
 
+    public abstract double getDamageTo(LivingEntity attacker, Entity target);
+
+    public abstract String getRawHoverText(Entity entity);
+
     public List<String> getDiscoveredRecipes(Player player) {
         throw new UnsupportedOperationException();
     }

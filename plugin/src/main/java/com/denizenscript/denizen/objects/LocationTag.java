@@ -1595,6 +1595,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                     // not the other way around
                     LocationTag target = LocationTag.valueOf(attribute.getContext(1));
                     EntityHelper entityHelper = NMSHandler.getEntityHelper();
+
                     // <--[tag]
                     // @attribute <LocationTag.direction[<location>].yaw>
                     // @returns ElementTag(Decimal)
@@ -2106,7 +2107,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 // @description
                 // Returns a list of living entities within a radius.
                 // -->
-                else if (attribute.startsWith("living_entities")) {
+                else if (attribute.startsWith("living_entities", 2)) {
                     ArrayList<EntityTag> found = new ArrayList<>();
                     attribute.fulfill(2);
                     for (Entity entity : new WorldTag(object.getWorld()).getEntitiesForTag()) {

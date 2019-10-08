@@ -1,6 +1,7 @@
 package com.denizenscript.denizen.nms.v1_12.helpers;
 
 import com.denizenscript.denizen.nms.NMSHandler;
+import com.denizenscript.denizen.nms.util.ReflectionHelper;
 import com.denizenscript.denizen.nms.v1_12.impl.jnbt.CompoundTagImpl;
 import com.denizenscript.denizen.nms.interfaces.EntityHelper;
 import com.denizenscript.denizen.nms.util.BoundingBox;
@@ -9,6 +10,7 @@ import com.denizenscript.denizen.utilities.Utilities;
 import net.minecraft.server.v1_12_R1.*;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_12_R1.entity.CraftAnimals;
@@ -16,6 +18,7 @@ import org.bukkit.craftbukkit.v1_12_R1.entity.CraftCreature;
 import org.bukkit.craftbukkit.v1_12_R1.entity.CraftEntity;
 import org.bukkit.craftbukkit.v1_12_R1.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_12_R1.inventory.CraftItemStack;
 import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.entity.EntityTargetEvent;
@@ -25,15 +28,42 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
+import java.lang.invoke.MethodHandle;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public class EntityHelperImpl extends EntityHelper {
 
-    /*
-        General Entity Methods
-     */
+    @Override
+    public double getDamageTo(LivingEntity attacker, Entity target) {
+        EnumMonsterType monsterType;
+        if (target instanceof LivingEntity) {
+            monsterType = ((CraftLivingEntity) target).getHandle().getMonsterType();
+        }
+        else {
+            monsterType = EnumMonsterType.UNDEFINED;
+        }
+        double damage = attacker.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getValue();
+        if (attacker.getEquipment() != null && attacker.getEquipment().getItemInMainHand() != null) {
+            damage += EnchantmentManager.a(CraftItemStack.asNMSCopy(attacker.getEquipment().getItemInMainHand()), monsterType);
+        }
+        return damage;
+    }
+
+    public static final MethodHandle ENTITY_HOVER_TEXT_GETTER = ReflectionHelper.getMethodHandle(net.minecraft.server.v1_12_R1.Entity.class, "bv");
+
+    @Override
+    public String getRawHoverText(Entity entity) {
+        try {
+            ChatHoverable hoverable = (ChatHoverable) ENTITY_HOVER_TEXT_GETTER.invoke(((CraftEntity) entity).getHandle());
+            return hoverable.b().getText();
+        }
+        catch (Throwable ex) {
+            ex.printStackTrace();
+            return null;
+        }
+    }
 
     @Override
     public int getBodyArrows(Entity entity) {
@@ -392,7 +422,11 @@ public class EntityHelperImpl extends EntityHelper {
 
     @Override
     public boolean canTrace(World world, Vector start, Vector end) {
-        return rayTrace(world, start, end) == null;
+        MovingObjectPosition pos = rayTrace(world, start, end);
+        if (pos == null) {
+            return true;
+        }
+        return pos.type == MovingObjectPosition.EnumMovingObjectType.MISS;
     }
 
     @Override

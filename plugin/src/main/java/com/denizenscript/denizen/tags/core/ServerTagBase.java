@@ -331,7 +331,6 @@ public class ServerTagBase {
                 flag_name = attribute.getContext(1);
             }
             else {
-                event.setReplaced("null");
                 return;
             }
             event.setReplaced(new ElementTag(FlagManager.serverHasFlag(flag_name)).getAttribute(attribute.fulfill(1)));
@@ -377,6 +376,7 @@ public class ServerTagBase {
                 // -->
                 if (attribute.startsWith("expiration")) {
                     event.setReplaced(flag.expiration().getAttribute(attribute.fulfill(1)));
+                    return;
                 }
 
                 event.setReplaced(new ListTag(flag.toString(), true, flag.values())
