@@ -18,6 +18,8 @@ import com.denizenscript.denizencore.objects.core.QueueTag;
 import com.denizenscript.denizencore.objects.core.ScriptTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.objects.properties.PropertyParser;
+import dev.unizen.denizen.objects.properties.entity.*;
+import dev.unizen.denizen.objects.properties.material.*;
 
 public class PropertyRegistry {
 

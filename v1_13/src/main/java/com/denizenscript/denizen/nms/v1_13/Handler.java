@@ -20,6 +20,7 @@ import com.denizenscript.denizen.nms.abstracts.BlockLight;
 import com.denizenscript.denizen.nms.abstracts.ProfileEditor;
 import com.denizenscript.denizen.nms.abstracts.Sidebar;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
+import dev.unizen.denizen.nms.v1_13.helpers.ArrowHelperImpl;
 import net.minecraft.server.v1_13_R2.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

@@ -3,7 +3,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>com.denizenscript</groupId>
+        <groupId>dev.unizen</groupId>
         <artifactId>denizen-parent</artifactId>
         <version>1.1.1-SNAPSHOT</version>
     </parent>
@@ -13,41 +13,41 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.denizenscript</groupId>
+            <groupId>dev.unizen</groupId>
             <artifactId>denizencore</artifactId>
             <version>${dcore.version}</version>
             <scope>compile</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.denizenscript</groupId>
+            <groupId>dev.unizen</groupId>
             <artifactId>denizen</artifactId>
-            <version>${project.parent.version}</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.denizenscript</groupId>
+            <groupId>dev.unizen</groupId>
             <artifactId>denizen-v1_12</artifactId>
-            <version>${project.parent.version}</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.denizenscript</groupId>
+            <groupId>dev.unizen</groupId>
             <artifactId>denizen-v1_13</artifactId>
-            <version>${project.parent.version}</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.denizenscript</groupId>
+            <groupId>dev.unizen</groupId>
             <artifactId>denizen-v1_14</artifactId>
-            <version>${project.parent.version}</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.denizenscript</groupId>
+            <groupId>dev.unizen</groupId>
             <artifactId>denizen-paper</artifactId>
-            <version>${project.parent.version}</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
@@ -86,37 +86,37 @@
                             <minimizeJar>true</minimizeJar>
                             <filters>
                                 <filter>
-                                    <artifact>com.denizenscript:denizencore</artifact>
+                                    <artifact>dev.unizen:denizen-dist</artifact>
+                                    <excludes>
+                                        <exclude>**</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>dev.unizen:denizencore</artifact>
                                     <includes>
                                         <include>**</include>
                                     </includes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.denizenscript:denizen</artifact>
+                                    <artifact>dev.unizen:denizen</artifact>
                                     <includes>
                                         <include>**</include>
                                     </includes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.json:json</artifact>
+                                    <artifact>dev.unizen:denizen-v**</artifact>
                                     <includes>
                                         <include>**</include>
                                     </includes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.denizenscript:denizen-v**</artifact>
+                                    <artifact>dev.unizen:denizen-paper</artifact>
                                     <includes>
                                         <include>**</include>
                                     </includes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.denizenscript:denizen-paper</artifact>
-                                    <includes>
-                                        <include>**</include>
-                                    </includes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.denizenscript:denizen-nmshandler</artifact>
+                                    <artifact>dev.unizen:denizen-nmshandler</artifact>
                                     <includes>
                                         <include>**</include>
                                     </includes>

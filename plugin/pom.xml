@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>com.denizenscript</groupId>
+        <groupId>dev.unizen</groupId>
         <artifactId>denizen-parent</artifactId>
         <version>1.1.1-SNAPSHOT</version>
     </parent>
@@ -12,6 +12,14 @@
 
     <name>Denizen</name>
     <description>Scriptable Minecraft and Citizens2</description>
+
+    <repositories>
+        <!-- For Vault -->
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
 
     <!-- Dependencies -->
     <dependencies>
@@ -24,7 +32,7 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.denizenscript</groupId>
+            <groupId>dev.unizen</groupId>
             <artifactId>denizencore</artifactId>
             <version>${dcore.version}</version>
             <scope>compile</scope>
@@ -38,17 +46,10 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-            <version>LATEST</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.milkbowl.vault</groupId>
-            <artifactId>Vault</artifactId>
-            <version>1.5.6</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/Vault.jar</systemPath>
+            <groupId>com.github.MilkBowl</groupId>
+            <artifactId>VaultAPI</artifactId>
+            <version>1.7</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
@@ -86,7 +87,7 @@
                             <minimizeJar>true</minimizeJar>
                             <filters>
                                 <filter>
-                                    <artifact>com.denizenscript:denizencore</artifact>
+                                    <artifact>dev.unizen:denizencore</artifact>
                                     <includes>
                                         <include>**</include>
                                     </includes>
@@ -98,13 +99,13 @@
                                     </includes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.denizenscript:denizen-v**</artifact>
+                                    <artifact>dev.unizen:denizen-paper</artifact>
                                     <includes>
                                         <include>**</include>
                                     </includes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.denizenscript:denizen-nmshandler</artifact>
+                                    <artifact>dev.unizen:denizen-v**</artifact>
                                     <includes>
                                         <include>**</include>
                                     </includes>

@@ -10,6 +10,8 @@ import com.denizenscript.denizen.utilities.depends.Depends;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizencore.events.ScriptEvent;
+import dev.unizen.denizen.events.block.DragonEggMovesScriptEvent;
+import dev.unizen.denizen.events.entity.EntityMountsEntityScriptEvent;
 
 public class ScriptEventRegistry {
 

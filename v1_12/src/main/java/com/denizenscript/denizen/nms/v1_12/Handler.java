@@ -20,6 +20,7 @@ import com.denizenscript.denizen.nms.util.PlayerProfile;
 import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
 import com.denizenscript.denizen.nms.util.jnbt.Tag;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
+import dev.unizen.denizen.nms.v1_12.helpers.ArrowHelperImpl;
 import net.minecraft.server.v1_12_R1.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

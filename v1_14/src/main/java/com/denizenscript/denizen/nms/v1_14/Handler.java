@@ -19,6 +19,7 @@ import com.denizenscript.denizen.nms.util.ReflectionHelper;
 import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
+import dev.unizen.denizen.nms.v1_14.helpers.ArrowHelperImpl;
 import net.minecraft.server.v1_14_R1.Entity;
 import net.minecraft.server.v1_14_R1.IInventory;
 import net.minecraft.server.v1_14_R1.INamableTileEntity;
