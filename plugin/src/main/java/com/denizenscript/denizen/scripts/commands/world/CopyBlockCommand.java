@@ -12,7 +12,6 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.*;
 import org.bukkit.inventory.InventoryHolder;
@@ -35,8 +34,9 @@ public class CopyBlockCommand extends AbstractCommand {
     // @Description
     // Copies a block or cuboid to another location.
     // If you use the "delayed" argument, the cuboid will be copied at a pace roughly matched to the server's limits.
-    // If you specify an "origin" location, that location will be treated as the reference block from which to base the copying on.
+    // If you specify an "origin" location, that location will be treated as the reference block to use while copying the cuboid.
     // The origin block does not need to be a block that's being copied!
+    // If the "origin" argument is excluded, then the minimum location of the first member of the cuboid will be used as the origin.
     // You may also use the 'remove_original' argument to delete the original block.
     // This effectively moves the block to the target location.
     //
@@ -57,26 +57,31 @@ public class CopyBlockCommand extends AbstractCommand {
 
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
-            if (arg.matchesArgumentType(CuboidTag.class) &&
-                    !scriptEntry.hasObject("source")) {
+            if (!scriptEntry.hasObject("source")
+                    && arg.matchesArgumentType(CuboidTag.class)) {
                 scriptEntry.addObject("source", arg.asType(CuboidTag.class));
             }
-            else if (arg.matchesArgumentType(LocationTag.class) &&
-                    !scriptEntry.hasObject("source") && !arg.matchesPrefix("t", "to") && !arg.matchesPrefix("origin")) {
+            else if (!scriptEntry.hasObject("source")
+                    && arg.matchesArgumentType(LocationTag.class)
+                    && !arg.matchesPrefix("t", "to") && !arg.matchesPrefix("origin")) {
                 scriptEntry.addObject("source", arg.asType(LocationTag.class));
             }
-            else if (arg.matchesArgumentType(LocationTag.class) &&
-                    !scriptEntry.hasObject("origin") && arg.matchesPrefix("origin")) {
+            else if (!scriptEntry.hasObject("origin")
+                    && arg.matchesArgumentType(LocationTag.class)
+                    && arg.matchesPrefix("origin")) {
                 scriptEntry.addObject("origin", arg.asType(LocationTag.class));
             }
-            else if (arg.matchesArgumentType(LocationTag.class) &&
-                    arg.matchesPrefix("t", "to")) {
+            else if (!scriptEntry.hasObject("destination")
+                    && arg.matchesArgumentType(LocationTag.class)
+                    && arg.matchesPrefix("t", "to")) {
                 scriptEntry.addObject("destination", arg.asType(LocationTag.class));
             }
-            else if (arg.matches("remove_original")) {
+            else if (!scriptEntry.hasObject("remove")
+                    && arg.matches("remove_original")) {
                 scriptEntry.addObject("remove", new ElementTag(true));
             }
-            else if (arg.matches("delayed")) {
+            else if (!scriptEntry.hasObject("delayed")
+                    && arg.matches("delayed")) {
                 scriptEntry.addObject("delayed", new ElementTag(true));
             }
             else {
@@ -94,6 +99,12 @@ public class CopyBlockCommand extends AbstractCommand {
         }
 
         // Set defaults
+        if (scriptEntry.getObject("source") instanceof CuboidTag) {
+            scriptEntry.defaultObject("origin", new LocationTag(((CuboidTag) scriptEntry.getObject("source")).pairs.get(0).low));
+        }
+        else {
+            scriptEntry.defaultObject("origin", ((LocationTag) scriptEntry.getObject("source")).clone());
+        }
         scriptEntry.defaultObject("remove", new ElementTag(false));
         scriptEntry.defaultObject("delayed", new ElementTag(false));
     }
@@ -103,12 +114,12 @@ public class CopyBlockCommand extends AbstractCommand {
 
         ObjectTag sourceObject = (ObjectTag) scriptEntry.getObject("source");
         LocationTag destination = (LocationTag) scriptEntry.getObject("destination");
-        LocationTag originEntry = scriptEntry.hasObject("origin") ? (LocationTag) scriptEntry.getObject("origin") : null;
+        LocationTag originEntry = (LocationTag) scriptEntry.getObject("origin");
         ElementTag removeOriginal = (ElementTag) scriptEntry.getObject("remove");
         ElementTag delayElement = (ElementTag) scriptEntry.getObject("delayed");
 
         if (scriptEntry.dbCallShouldDebug()) {
-            Debug.report(scriptEntry, getName(), (sourceObject != null ? sourceObject.debug() : "")
+            Debug.report(scriptEntry, getName(), sourceObject.debug() + originEntry.debug()
                     + destination.debug() + removeOriginal.debug() + delayElement.debug());
         }
 
@@ -118,7 +129,6 @@ public class CopyBlockCommand extends AbstractCommand {
         if (sourceObject instanceof CuboidTag) {
             CuboidTag sourceCuboid = (CuboidTag) sourceObject;
             Set<Block> locationCache = new HashSet<>();
-            Location initialLocation = originEntry != null ? originEntry : sourceCuboid.pairs.get(0).low;
 
             if (delay) {
                 new BukkitRunnable() {
@@ -134,16 +144,16 @@ public class CopyBlockCommand extends AbstractCommand {
 
                         full_loop:
                         for (CuboidTag.LocationPair pair : pairList) {
-                            int xOffset = pair.low.getBlockX() - initialLocation.getBlockX();
-                            int yOffset = pair.low.getBlockY() - initialLocation.getBlockY();
-                            int zOffset = pair.low.getBlockZ() - initialLocation.getBlockZ();
+                            int xOffset = pair.low.getBlockX() - originEntry.getBlockX();
+                            int yOffset = pair.low.getBlockY() - originEntry.getBlockY();
+                            int zOffset = pair.low.getBlockZ() - originEntry.getBlockZ();
                             int xDist = pair.high.getBlockX() - pair.low.getBlockX();
                             int yDist = pair.high.getBlockY() - pair.low.getBlockY();
                             int zDist = pair.high.getBlockZ() - pair.low.getBlockZ();
 
                             for (int x = lastX; x <= xDist; x++) {
                                 for (int y = lastY; y <= yDist; y++) {
-                                    if (pair.low.getBlockY() + y < 0 || pair.low.getBlockY() + y > 255) {
+                                    if (pair.low.getBlockY() + y + yOffset < 0 || pair.low.getBlockY() + y + yOffset > 255) {
                                         continue;
                                     }
 
@@ -158,9 +168,6 @@ public class CopyBlockCommand extends AbstractCommand {
                                         Block source = pair.low.clone().add(x, y, z).getBlock();
                                         Block updateDest = destination.clone().add(xOffset + x, yOffset + y, zOffset + z).getBlock();
 
-                                        if (updateDest.getY() < 0 || updateDest.getY() > 255) {
-                                            break;
-                                        }
                                         if (locationCache.contains(updateDest)) {
                                             continue;
                                         }
@@ -186,9 +193,9 @@ public class CopyBlockCommand extends AbstractCommand {
             }
             else {
                 for (CuboidTag.LocationPair pair : sourceCuboid.pairs) {
-                    int xOffset = pair.low.getBlockX() - initialLocation.getBlockX();
-                    int yOffset = pair.low.getBlockY() - initialLocation.getBlockY();
-                    int zOffset = pair.low.getBlockZ() - initialLocation.getBlockZ();
+                    int xOffset = pair.low.getBlockX() - originEntry.getBlockX();
+                    int yOffset = pair.low.getBlockY() - originEntry.getBlockY();
+                    int zOffset = pair.low.getBlockZ() - originEntry.getBlockZ();
                     int xDist = pair.high.getBlockX() - pair.low.getBlockX();
                     int yDist = pair.high.getBlockY() - pair.low.getBlockY();
                     int zDist = pair.high.getBlockZ() - pair.low.getBlockZ();
@@ -221,11 +228,8 @@ public class CopyBlockCommand extends AbstractCommand {
         else if (sourceObject instanceof LocationTag) {
             Block source = ((LocationTag) sourceObject).getBlock();
             Block update = destination.getBlock();
-            int offsetX = originEntry != null ? source.getX() - originEntry.getBlockX() : 0;
-            int offsetY = originEntry != null ? source.getY() - originEntry.getBlockY() : 0;
-            int offsetZ = originEntry != null ? source.getZ() - originEntry.getBlockZ() : 0;
 
-            replaceBlock(source, update.getLocation().clone().add(offsetX, offsetY, offsetZ).getBlock(), remove);
+            replaceBlock(source, update.getLocation().clone().getBlock(), remove);
         }
     }
 
