@@ -1,4 +1,4 @@
-package com.denizenscript.denizen.objects.properties.material;
+package dev.unizen.denizen.objects.properties.material;
 
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -6,29 +6,29 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.block.data.type.Bamboo;
+import org.bukkit.block.data.type.Comparator;
 
-public class MaterialBambooLeaves implements Property {
+public class MaterialComparatorMode implements Property {
 
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData().data instanceof Bamboo;
+                && ((MaterialTag) material).getModernData().data instanceof Comparator;
     }
 
-    public static MaterialBambooLeaves getFrom(ObjectTag material) {
+    public static MaterialComparatorMode getFrom(ObjectTag material) {
         if (!describes(material)) {
             return null;
         }
-        return new MaterialBambooLeaves((MaterialTag) material);
+        return new MaterialComparatorMode((MaterialTag) material);
     }
 
     public static final String[] handledTags = new String[] {
-            "bamboo_leaves"
+            "comparator_mode"
     };
 
     public static final String[] handledMechs = new String[] {
-            "bamboo_leaves"
+            "comparator_mode"
     };
 
 
@@ -36,18 +36,18 @@ public class MaterialBambooLeaves implements Property {
     // Instance Fields and Methods
     /////////////
 
-    private MaterialBambooLeaves(MaterialTag material) {
+    private MaterialComparatorMode(MaterialTag material) {
         this.material = material;
     }
 
     private MaterialTag material;
 
-    private Bamboo getBamboo() {
-        return (Bamboo) material.getModernData().data;
+    private Comparator getComparator() {
+        return (Comparator) material.getModernData().data;
     }
 
-    private String getLeaves() {
-        return getBamboo().getLeaves().name();
+    private String getMode() {
+        return getComparator().getMode().name();
     }
 
     /////////
@@ -56,12 +56,12 @@ public class MaterialBambooLeaves implements Property {
 
     @Override
     public String getPropertyString() {
-        return getBamboo().getLeaves() != Bamboo.Leaves.NONE ? getLeaves() : null;
+        return getComparator().getMode() != Comparator.Mode.COMPARE ? getMode() : null;
     }
 
     @Override
     public String getPropertyId() {
-        return "bamboo_leaves";
+        return "comparator_mode";
     }
 
     ///////////
@@ -75,16 +75,16 @@ public class MaterialBambooLeaves implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.bamboo_leaves>
+        // @attribute <MaterialTag.comparator_mode>
         // @returns ElementTag
-        // @mechanism MaterialTag.bamboo_leaves
+        // @mechanism MaterialTag.comparator_mode
         // @group properties
         // @description
-        // Returns the size of the leaves on this material, if the material is a bamboo block.
-        // Can be NONE, SMALL, or LARGE.
+        // If the material is a redstone comparator, returns the mode the material is in.
+        // Can be either COMPARE or SUBTRACT.
         // -->
-        if (attribute.startsWith("bamboo_leaves")) {
-            return new ElementTag(getLeaves()).getAttribute(attribute.fulfill(1));
+        if (attribute.startsWith("comparator_mode")) {
+            return new ElementTag(getMode()).getAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -95,16 +95,16 @@ public class MaterialBambooLeaves implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name bamboo_leaves
+        // @name comparator_mode
         // @input ElementTag
         // @description
-        // Sets the size of the leaves on this bamboo material.
-        // Can be NONE, SMALL, or LARGE.
+        // If the material is a redstone comparator, sets the mode the material is in.
+        // Can be either COMPARE or SUBTRACT.
         // @tags
-        // <MaterialTag.bamboo_leaves>
+        // <MaterialTag.comparator_mode>
         // -->
-        if (mechanism.matches("bamboo_leaves") && mechanism.requireEnum(false, Bamboo.Leaves.values())) {
-            getBamboo().setLeaves(Bamboo.Leaves.valueOf(mechanism.getValue().asString().toUpperCase()));
+        if (mechanism.matches("comparator_mode") && mechanism.requireEnum(false, Comparator.Mode.values())) {
+            getComparator().setMode(Comparator.Mode.valueOf(mechanism.getValue().asString().toUpperCase()));
         }
     }
 }

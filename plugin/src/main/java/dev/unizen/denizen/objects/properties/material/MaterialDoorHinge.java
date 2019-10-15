@@ -1,4 +1,4 @@
-package com.denizenscript.denizen.objects.properties.material;
+package dev.unizen.denizen.objects.properties.material;
 
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -6,29 +6,29 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.block.data.type.Chest;
+import org.bukkit.block.data.type.Door;
 
-public class MaterialChestType implements Property {
+public class MaterialDoorHinge implements Property {
 
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData().data instanceof Chest;
+                && ((MaterialTag) material).getModernData().data instanceof Door;
     }
 
-    public static MaterialChestType getFrom(ObjectTag material) {
+    public static MaterialDoorHinge getFrom(ObjectTag material) {
         if (!describes(material)) {
             return null;
         }
-        return new MaterialChestType((MaterialTag) material);
+        return new MaterialDoorHinge((MaterialTag) material);
     }
 
     public static final String[] handledTags = new String[] {
-            "chest_type"
+            "hinge"
     };
 
     public static final String[] handledMechs = new String[] {
-            "chest_type"
+            "hinge"
     };
 
 
@@ -36,18 +36,18 @@ public class MaterialChestType implements Property {
     // Instance Fields and Methods
     /////////////
 
-    private MaterialChestType(MaterialTag material) {
+    private MaterialDoorHinge(MaterialTag material) {
         this.material = material;
     }
 
     private MaterialTag material;
 
-    private Chest getChest() {
-        return (Chest) material.getModernData().data;
+    private Door getDoor() {
+        return (Door) material.getModernData().data;
     }
 
-    private String getType() {
-        return getChest().getType().name();
+    private String getHinge() {
+        return getDoor().getHinge().name();
     }
 
     /////////
@@ -56,12 +56,12 @@ public class MaterialChestType implements Property {
 
     @Override
     public String getPropertyString() {
-        return getChest().getType() != Chest.Type.SINGLE ? getType() : null;
+        return getDoor().getHinge() != Door.Hinge.LEFT ? getHinge() : null;
     }
 
     @Override
     public String getPropertyId() {
-        return "chest_type";
+        return "hinge";
     }
 
     ///////////
@@ -75,16 +75,16 @@ public class MaterialChestType implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.chest_type>
+        // @attribute <MaterialTag.hinge>
         // @returns ElementTag
-        // @mechanism MaterialTag.chest_type
+        // @mechanism MaterialTag.hinge
         // @group properties
         // @description
-        // If the material is a chest, returns what kind of chest it is.
-        // Can be SINGLE, LEFT, or RIGHT. If the type is LEFT or RIGHT, then the chest material is a half of a double chest.
+        // Returns which hinge the door material is using.
+        // Can be either LEFT or RIGHT.
         // -->
-        if (attribute.startsWith("chest_type")) {
-            return new ElementTag(getType()).getAttribute(attribute.fulfill(1));
+        if (attribute.startsWith("hinge")) {
+            return new ElementTag(getHinge()).getAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -95,16 +95,16 @@ public class MaterialChestType implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name chest_type
+        // @name hinge
         // @input ElementTag
         // @description
-        // If the material is a chest, sets what kind of chest it is.
-        // Can be SINGLE, LEFT, or RIGHT. If the type is LEFT or RIGHT, then the chest material is a half of a double chest.
+        // Sets the hinge the door material is using.
+        // Can be either LEFT or RIGHT.
         // @tags
-        // <MaterialTag.chest_type>
+        // <MaterialTag.hinge>
         // -->
-        if (mechanism.matches("chest_type") && mechanism.requireEnum(false, Chest.Type.values())) {
-            getChest().setType(Chest.Type.valueOf(mechanism.getValue().asString().toUpperCase()));
+        if (mechanism.matches("hinge") && mechanism.requireEnum(false, Door.Hinge.values())) {
+            getDoor().setHinge(Door.Hinge.valueOf(mechanism.getValue().asString().toUpperCase()));
         }
     }
 }

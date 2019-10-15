@@ -1,4 +1,4 @@
-package com.denizenscript.denizen.objects.properties.material;
+package dev.unizen.denizen.objects.properties.material;
 
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -6,29 +6,29 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.block.data.type.Dispenser;
+import org.bukkit.block.data.type.Bamboo;
 
-public class MaterialDispenserTriggered implements Property {
+public class MaterialBambooLeaves implements Property {
 
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData().data instanceof Dispenser;
+                && ((MaterialTag) material).getModernData().data instanceof Bamboo;
     }
 
-    public static MaterialDispenserTriggered getFrom(ObjectTag material) {
+    public static MaterialBambooLeaves getFrom(ObjectTag material) {
         if (!describes(material)) {
             return null;
         }
-        return new MaterialDispenserTriggered((MaterialTag) material);
+        return new MaterialBambooLeaves((MaterialTag) material);
     }
 
     public static final String[] handledTags = new String[] {
-            "triggered"
+            "bamboo_leaves"
     };
 
     public static final String[] handledMechs = new String[] {
-            "triggered"
+            "bamboo_leaves"
     };
 
 
@@ -36,18 +36,18 @@ public class MaterialDispenserTriggered implements Property {
     // Instance Fields and Methods
     /////////////
 
-    private MaterialDispenserTriggered(MaterialTag material) {
+    private MaterialBambooLeaves(MaterialTag material) {
         this.material = material;
     }
 
     private MaterialTag material;
 
-    private Dispenser getDispenser() {
-        return (Dispenser) material.getModernData().data;
+    private Bamboo getBamboo() {
+        return (Bamboo) material.getModernData().data;
     }
 
-    private boolean triggered() {
-        return getDispenser().isTriggered();
+    private String getLeaves() {
+        return getBamboo().getLeaves().name();
     }
 
     /////////
@@ -56,12 +56,12 @@ public class MaterialDispenserTriggered implements Property {
 
     @Override
     public String getPropertyString() {
-        return triggered() ? "true" : null;
+        return getBamboo().getLeaves() != Bamboo.Leaves.NONE ? getLeaves() : null;
     }
 
     @Override
     public String getPropertyId() {
-        return "triggered";
+        return "bamboo_leaves";
     }
 
     ///////////
@@ -75,15 +75,16 @@ public class MaterialDispenserTriggered implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.triggered>
-        // @returns ElementTag(Boolean)
-        // @mechanism MaterialTag.triggered
+        // @attribute <MaterialTag.bamboo_leaves>
+        // @returns ElementTag
+        // @mechanism MaterialTag.bamboo_leaves
         // @group properties
         // @description
-        // Returns whether the dispenser material is triggered.
+        // Returns the size of the leaves on this material, if the material is a bamboo block.
+        // Can be NONE, SMALL, or LARGE.
         // -->
-        if (attribute.startsWith("triggered")) {
-            return new ElementTag(triggered()).getAttribute(attribute.fulfill(1));
+        if (attribute.startsWith("bamboo_leaves")) {
+            return new ElementTag(getLeaves()).getAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -94,15 +95,16 @@ public class MaterialDispenserTriggered implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name triggered
-        // @input ElementTag(Boolean)
+        // @name bamboo_leaves
+        // @input ElementTag
         // @description
-        // Sets whether the dispenser material is triggered.
+        // Sets the size of the leaves on this bamboo material.
+        // Can be NONE, SMALL, or LARGE.
         // @tags
-        // <MaterialTag.triggered>
+        // <MaterialTag.bamboo_leaves>
         // -->
-        if (mechanism.matches("triggered") && mechanism.requireBoolean()) {
-            getDispenser().setTriggered(mechanism.getValue().asBoolean());
+        if (mechanism.matches("bamboo_leaves") && mechanism.requireEnum(false, Bamboo.Leaves.values())) {
+            getBamboo().setLeaves(Bamboo.Leaves.valueOf(mechanism.getValue().asString().toUpperCase()));
         }
     }
 }

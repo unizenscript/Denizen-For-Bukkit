@@ -1,4 +1,4 @@
-package com.denizenscript.denizen.objects.properties.material;
+package dev.unizen.denizen.objects.properties.material;
 
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -6,29 +6,29 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.block.data.type.CommandBlock;
+import org.bukkit.block.data.type.Campfire;
 
-public class MaterialCommandBlockConditional implements Property {
+public class MaterialCampfireSignal implements Property {
 
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData().data instanceof CommandBlock;
+                && ((MaterialTag) material).getModernData().data instanceof Campfire;
     }
 
-    public static MaterialCommandBlockConditional getFrom(ObjectTag material) {
+    public static MaterialCampfireSignal getFrom(ObjectTag material) {
         if (!describes(material)) {
             return null;
         }
-        return new MaterialCommandBlockConditional((MaterialTag) material);
+        return new MaterialCampfireSignal((MaterialTag) material);
     }
 
     public static final String[] handledTags = new String[] {
-            "conditional"
+            "signal"
     };
 
     public static final String[] handledMechs = new String[] {
-            "conditional"
+            "signal"
     };
 
 
@@ -36,18 +36,18 @@ public class MaterialCommandBlockConditional implements Property {
     // Instance Fields and Methods
     /////////////
 
-    private MaterialCommandBlockConditional(MaterialTag material) {
+    private MaterialCampfireSignal(MaterialTag material) {
         this.material = material;
     }
 
     private MaterialTag material;
 
-    private CommandBlock getCmdBlock() {
-        return (CommandBlock) material.getModernData().data;
+    private Campfire getCampfire() {
+        return (Campfire) material.getModernData().data;
     }
 
-    private boolean isConditional() {
-        return getCmdBlock().isConditional();
+    private boolean isSignal() {
+        return getCampfire().isSignalFire();
     }
 
     /////////
@@ -56,12 +56,12 @@ public class MaterialCommandBlockConditional implements Property {
 
     @Override
     public String getPropertyString() {
-        return isConditional() ? "true" : null;
+        return isSignal() ? "true" : null;
     }
 
     @Override
     public String getPropertyId() {
-        return "conditional";
+        return "signal";
     }
 
     ///////////
@@ -75,15 +75,15 @@ public class MaterialCommandBlockConditional implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.conditional>
+        // @attribute <MaterialTag.signal>
         // @returns ElementTag(Boolean)
-        // @mechanism MaterialTag.conditional
+        // @mechanism MaterialTag.signal
         // @group properties
         // @description
-        // If the material is a command block, returns whether this command block is conditional.
+        // If the material is a campfire, returns if the material is a signal fire.
         // -->
-        if (attribute.startsWith("conditional")) {
-            return new ElementTag(isConditional()).getAttribute(attribute.fulfill(1));
+        if (attribute.startsWith("signal")) {
+            return new ElementTag(isSignal()).getAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -94,15 +94,15 @@ public class MaterialCommandBlockConditional implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name conditional
+        // @name signal
         // @input ElementTag(Boolean)
         // @description
-        // If the material is a command block, sets whether this material is conditional.
+        // If the material is a campfire, sets if the material is a signal fire.
         // @tags
-        // <MaterialTag.conditional>
+        // <MaterialTag.signal>
         // -->
-        if (mechanism.matches("conditional") && mechanism.requireBoolean()) {
-            getCmdBlock().setConditional(mechanism.getValue().asBoolean());
+        if (mechanism.matches("signal") && mechanism.requireBoolean()) {
+            getCampfire().setSignalFire(mechanism.getValue().asBoolean());
         }
     }
 }

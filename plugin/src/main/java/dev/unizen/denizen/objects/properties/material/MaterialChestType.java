@@ -1,4 +1,4 @@
-package com.denizenscript.denizen.objects.properties.material;
+package dev.unizen.denizen.objects.properties.material;
 
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -6,29 +6,29 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.block.data.type.Comparator;
+import org.bukkit.block.data.type.Chest;
 
-public class MaterialComparatorMode implements Property {
+public class MaterialChestType implements Property {
 
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData().data instanceof Comparator;
+                && ((MaterialTag) material).getModernData().data instanceof Chest;
     }
 
-    public static MaterialComparatorMode getFrom(ObjectTag material) {
+    public static MaterialChestType getFrom(ObjectTag material) {
         if (!describes(material)) {
             return null;
         }
-        return new MaterialComparatorMode((MaterialTag) material);
+        return new MaterialChestType((MaterialTag) material);
     }
 
     public static final String[] handledTags = new String[] {
-            "comparator_mode"
+            "chest_type"
     };
 
     public static final String[] handledMechs = new String[] {
-            "comparator_mode"
+            "chest_type"
     };
 
 
@@ -36,18 +36,18 @@ public class MaterialComparatorMode implements Property {
     // Instance Fields and Methods
     /////////////
 
-    private MaterialComparatorMode(MaterialTag material) {
+    private MaterialChestType(MaterialTag material) {
         this.material = material;
     }
 
     private MaterialTag material;
 
-    private Comparator getComparator() {
-        return (Comparator) material.getModernData().data;
+    private Chest getChest() {
+        return (Chest) material.getModernData().data;
     }
 
-    private String getMode() {
-        return getComparator().getMode().name();
+    private String getType() {
+        return getChest().getType().name();
     }
 
     /////////
@@ -56,12 +56,12 @@ public class MaterialComparatorMode implements Property {
 
     @Override
     public String getPropertyString() {
-        return getComparator().getMode() != Comparator.Mode.COMPARE ? getMode() : null;
+        return getChest().getType() != Chest.Type.SINGLE ? getType() : null;
     }
 
     @Override
     public String getPropertyId() {
-        return "comparator_mode";
+        return "chest_type";
     }
 
     ///////////
@@ -75,16 +75,16 @@ public class MaterialComparatorMode implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.comparator_mode>
+        // @attribute <MaterialTag.chest_type>
         // @returns ElementTag
-        // @mechanism MaterialTag.comparator_mode
+        // @mechanism MaterialTag.chest_type
         // @group properties
         // @description
-        // If the material is a redstone comparator, returns the mode the material is in.
-        // Can be either COMPARE or SUBTRACT.
+        // If the material is a chest, returns what kind of chest it is.
+        // Can be SINGLE, LEFT, or RIGHT. If the type is LEFT or RIGHT, then the chest material is a half of a double chest.
         // -->
-        if (attribute.startsWith("comparator_mode")) {
-            return new ElementTag(getMode()).getAttribute(attribute.fulfill(1));
+        if (attribute.startsWith("chest_type")) {
+            return new ElementTag(getType()).getAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -95,16 +95,16 @@ public class MaterialComparatorMode implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name comparator_mode
+        // @name chest_type
         // @input ElementTag
         // @description
-        // If the material is a redstone comparator, sets the mode the material is in.
-        // Can be either COMPARE or SUBTRACT.
+        // If the material is a chest, sets what kind of chest it is.
+        // Can be SINGLE, LEFT, or RIGHT. If the type is LEFT or RIGHT, then the chest material is a half of a double chest.
         // @tags
-        // <MaterialTag.comparator_mode>
+        // <MaterialTag.chest_type>
         // -->
-        if (mechanism.matches("comparator_mode") && mechanism.requireEnum(false, Comparator.Mode.values())) {
-            getComparator().setMode(Comparator.Mode.valueOf(mechanism.getValue().asString().toUpperCase()));
+        if (mechanism.matches("chest_type") && mechanism.requireEnum(false, Chest.Type.values())) {
+            getChest().setType(Chest.Type.valueOf(mechanism.getValue().asString().toUpperCase()));
         }
     }
 }

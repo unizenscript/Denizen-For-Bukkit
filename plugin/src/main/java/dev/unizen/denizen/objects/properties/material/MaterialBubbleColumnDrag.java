@@ -1,4 +1,4 @@
-package com.denizenscript.denizen.objects.properties.material;
+package dev.unizen.denizen.objects.properties.material;
 
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -6,29 +6,29 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.block.data.type.Campfire;
+import org.bukkit.block.data.type.BubbleColumn;
 
-public class MaterialCampfireSignal implements Property {
+public class MaterialBubbleColumnDrag implements Property {
 
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData().data instanceof Campfire;
+                && ((MaterialTag) material).getModernData().data instanceof BubbleColumn;
     }
 
-    public static MaterialCampfireSignal getFrom(ObjectTag material) {
+    public static MaterialBubbleColumnDrag getFrom(ObjectTag material) {
         if (!describes(material)) {
             return null;
         }
-        return new MaterialCampfireSignal((MaterialTag) material);
+        return new MaterialBubbleColumnDrag((MaterialTag) material);
     }
 
     public static final String[] handledTags = new String[] {
-            "signal"
+            "drags_down"
     };
 
     public static final String[] handledMechs = new String[] {
-            "signal"
+            "drags_down"
     };
 
 
@@ -36,18 +36,18 @@ public class MaterialCampfireSignal implements Property {
     // Instance Fields and Methods
     /////////////
 
-    private MaterialCampfireSignal(MaterialTag material) {
+    private MaterialBubbleColumnDrag(MaterialTag material) {
         this.material = material;
     }
 
     private MaterialTag material;
 
-    private Campfire getCampfire() {
-        return (Campfire) material.getModernData().data;
+    private BubbleColumn getBubbleColumn() {
+        return (BubbleColumn) material.getModernData().data;
     }
 
-    private boolean isSignal() {
-        return getCampfire().isSignalFire();
+    private boolean isDragging() {
+        return getBubbleColumn().isDrag();
     }
 
     /////////
@@ -56,12 +56,12 @@ public class MaterialCampfireSignal implements Property {
 
     @Override
     public String getPropertyString() {
-        return isSignal() ? "true" : null;
+        return !isDragging() ? "false" : null;
     }
 
     @Override
     public String getPropertyId() {
-        return "signal";
+        return "drags_down";
     }
 
     ///////////
@@ -75,15 +75,16 @@ public class MaterialCampfireSignal implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.signal>
+        // @attribute <MaterialTag.drags_down>
         // @returns ElementTag(Boolean)
-        // @mechanism MaterialTag.signal
+        // @mechanism MaterialTag.drags_down
         // @group properties
         // @description
-        // If the material is a campfire, returns if the material is a signal fire.
+        // Returns whether this bubble column material is dragging the player down.
+        // If false, then the material is pushing the player up.
         // -->
-        if (attribute.startsWith("signal")) {
-            return new ElementTag(isSignal()).getAttribute(attribute.fulfill(1));
+        if (attribute.startsWith("drags_down")) {
+            return new ElementTag(isDragging()).getAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -94,15 +95,16 @@ public class MaterialCampfireSignal implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name signal
+        // @name drags_down
         // @input ElementTag(Boolean)
         // @description
-        // If the material is a campfire, sets if the material is a signal fire.
+        // If the material is a bubble column, sets whether the material is dragging the player down.
+        // If false, then the material is pushing the player up.
         // @tags
-        // <MaterialTag.signal>
+        // <MaterialTag.drags_down>
         // -->
-        if (mechanism.matches("signal") && mechanism.requireBoolean()) {
-            getCampfire().setSignalFire(mechanism.getValue().asBoolean());
+        if (mechanism.matches("drags_down") && mechanism.requireBoolean()) {
+            getBubbleColumn().setDrag(mechanism.getValue().asBoolean());
         }
     }
 }

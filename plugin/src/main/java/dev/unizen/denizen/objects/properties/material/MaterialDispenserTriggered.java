@@ -1,4 +1,4 @@
-package com.denizenscript.denizen.objects.properties.material;
+package dev.unizen.denizen.objects.properties.material;
 
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -6,29 +6,29 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.block.data.type.Door;
+import org.bukkit.block.data.type.Dispenser;
 
-public class MaterialDoorHinge implements Property {
+public class MaterialDispenserTriggered implements Property {
 
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData().data instanceof Door;
+                && ((MaterialTag) material).getModernData().data instanceof Dispenser;
     }
 
-    public static MaterialDoorHinge getFrom(ObjectTag material) {
+    public static MaterialDispenserTriggered getFrom(ObjectTag material) {
         if (!describes(material)) {
             return null;
         }
-        return new MaterialDoorHinge((MaterialTag) material);
+        return new MaterialDispenserTriggered((MaterialTag) material);
     }
 
     public static final String[] handledTags = new String[] {
-            "hinge"
+            "triggered"
     };
 
     public static final String[] handledMechs = new String[] {
-            "hinge"
+            "triggered"
     };
 
 
@@ -36,18 +36,18 @@ public class MaterialDoorHinge implements Property {
     // Instance Fields and Methods
     /////////////
 
-    private MaterialDoorHinge(MaterialTag material) {
+    private MaterialDispenserTriggered(MaterialTag material) {
         this.material = material;
     }
 
     private MaterialTag material;
 
-    private Door getDoor() {
-        return (Door) material.getModernData().data;
+    private Dispenser getDispenser() {
+        return (Dispenser) material.getModernData().data;
     }
 
-    private String getHinge() {
-        return getDoor().getHinge().name();
+    private boolean triggered() {
+        return getDispenser().isTriggered();
     }
 
     /////////
@@ -56,12 +56,12 @@ public class MaterialDoorHinge implements Property {
 
     @Override
     public String getPropertyString() {
-        return getDoor().getHinge() != Door.Hinge.LEFT ? getHinge() : null;
+        return triggered() ? "true" : null;
     }
 
     @Override
     public String getPropertyId() {
-        return "hinge";
+        return "triggered";
     }
 
     ///////////
@@ -75,16 +75,15 @@ public class MaterialDoorHinge implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.hinge>
-        // @returns ElementTag
-        // @mechanism MaterialTag.hinge
+        // @attribute <MaterialTag.triggered>
+        // @returns ElementTag(Boolean)
+        // @mechanism MaterialTag.triggered
         // @group properties
         // @description
-        // Returns which hinge the door material is using.
-        // Can be either LEFT or RIGHT.
+        // Returns whether the dispenser material is triggered.
         // -->
-        if (attribute.startsWith("hinge")) {
-            return new ElementTag(getHinge()).getAttribute(attribute.fulfill(1));
+        if (attribute.startsWith("triggered")) {
+            return new ElementTag(triggered()).getAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -95,16 +94,15 @@ public class MaterialDoorHinge implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name hinge
-        // @input ElementTag
+        // @name triggered
+        // @input ElementTag(Boolean)
         // @description
-        // Sets the hinge the door material is using.
-        // Can be either LEFT or RIGHT.
+        // Sets whether the dispenser material is triggered.
         // @tags
-        // <MaterialTag.hinge>
+        // <MaterialTag.triggered>
         // -->
-        if (mechanism.matches("hinge") && mechanism.requireEnum(false, Door.Hinge.values())) {
-            getDoor().setHinge(Door.Hinge.valueOf(mechanism.getValue().asString().toUpperCase()));
+        if (mechanism.matches("triggered") && mechanism.requireBoolean()) {
+            getDispenser().setTriggered(mechanism.getValue().asBoolean());
         }
     }
 }

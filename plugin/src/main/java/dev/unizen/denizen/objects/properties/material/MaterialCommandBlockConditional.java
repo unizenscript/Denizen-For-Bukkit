@@ -1,4 +1,4 @@
-package com.denizenscript.denizen.objects.properties.material;
+package dev.unizen.denizen.objects.properties.material;
 
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -6,29 +6,29 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.block.data.type.EndPortalFrame;
+import org.bukkit.block.data.type.CommandBlock;
 
-public class MaterialEndPortalFrameEye implements Property {
+public class MaterialCommandBlockConditional implements Property {
 
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData().data instanceof EndPortalFrame;
+                && ((MaterialTag) material).getModernData().data instanceof CommandBlock;
     }
 
-    public static MaterialEndPortalFrameEye getFrom(ObjectTag material) {
+    public static MaterialCommandBlockConditional getFrom(ObjectTag material) {
         if (!describes(material)) {
             return null;
         }
-        return new MaterialEndPortalFrameEye((MaterialTag) material);
+        return new MaterialCommandBlockConditional((MaterialTag) material);
     }
 
     public static final String[] handledTags = new String[] {
-            "has_eye"
+            "conditional"
     };
 
     public static final String[] handledMechs = new String[] {
-            "has_eye"
+            "conditional"
     };
 
 
@@ -36,18 +36,18 @@ public class MaterialEndPortalFrameEye implements Property {
     // Instance Fields and Methods
     /////////////
 
-    private MaterialEndPortalFrameEye(MaterialTag material) {
+    private MaterialCommandBlockConditional(MaterialTag material) {
         this.material = material;
     }
 
     private MaterialTag material;
 
-    private EndPortalFrame getFrame() {
-        return (EndPortalFrame) material.getModernData().data;
+    private CommandBlock getCmdBlock() {
+        return (CommandBlock) material.getModernData().data;
     }
 
-    private boolean hasEye() {
-        return getFrame().hasEye();
+    private boolean isConditional() {
+        return getCmdBlock().isConditional();
     }
 
     /////////
@@ -56,12 +56,12 @@ public class MaterialEndPortalFrameEye implements Property {
 
     @Override
     public String getPropertyString() {
-        return hasEye() ? "true" : null;
+        return isConditional() ? "true" : null;
     }
 
     @Override
     public String getPropertyId() {
-        return "has_eye";
+        return "conditional";
     }
 
     ///////////
@@ -75,15 +75,15 @@ public class MaterialEndPortalFrameEye implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.has_eye>
+        // @attribute <MaterialTag.conditional>
         // @returns ElementTag(Boolean)
-        // @mechanism MaterialTag.has_eye
+        // @mechanism MaterialTag.conditional
         // @group properties
         // @description
-        // Returns whether this end portal frame material has an Eye of Ender in it.
+        // If the material is a command block, returns whether this command block is conditional.
         // -->
-        if (attribute.startsWith("has_eye")) {
-            return new ElementTag(hasEye()).getAttribute(attribute.fulfill(1));
+        if (attribute.startsWith("conditional")) {
+            return new ElementTag(isConditional()).getAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -94,15 +94,15 @@ public class MaterialEndPortalFrameEye implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name has_eye
+        // @name conditional
         // @input ElementTag(Boolean)
         // @description
-        // Sets whether this end portal frame material has an Eye of Ender in it.
+        // If the material is a command block, sets whether this material is conditional.
         // @tags
-        // <MaterialTag.has_eye>
+        // <MaterialTag.conditional>
         // -->
-        if (mechanism.matches("has_eye") && mechanism.requireBoolean()) {
-            getFrame().setEye(mechanism.getValue().asBoolean());
+        if (mechanism.matches("conditional") && mechanism.requireBoolean()) {
+            getCmdBlock().setConditional(mechanism.getValue().asBoolean());
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.denizenscript.denizen.objects.properties.material;
+package dev.unizen.denizen.objects.properties.material;
 
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -6,29 +6,29 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.block.data.type.BubbleColumn;
+import org.bukkit.block.data.type.EndPortalFrame;
 
-public class MaterialBubbleColumnDrag implements Property {
+public class MaterialEndPortalFrameEye implements Property {
 
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData().data instanceof BubbleColumn;
+                && ((MaterialTag) material).getModernData().data instanceof EndPortalFrame;
     }
 
-    public static MaterialBubbleColumnDrag getFrom(ObjectTag material) {
+    public static MaterialEndPortalFrameEye getFrom(ObjectTag material) {
         if (!describes(material)) {
             return null;
         }
-        return new MaterialBubbleColumnDrag((MaterialTag) material);
+        return new MaterialEndPortalFrameEye((MaterialTag) material);
     }
 
     public static final String[] handledTags = new String[] {
-            "drags_down"
+            "has_eye"
     };
 
     public static final String[] handledMechs = new String[] {
-            "drags_down"
+            "has_eye"
     };
 
 
@@ -36,18 +36,18 @@ public class MaterialBubbleColumnDrag implements Property {
     // Instance Fields and Methods
     /////////////
 
-    private MaterialBubbleColumnDrag(MaterialTag material) {
+    private MaterialEndPortalFrameEye(MaterialTag material) {
         this.material = material;
     }
 
     private MaterialTag material;
 
-    private BubbleColumn getBubbleColumn() {
-        return (BubbleColumn) material.getModernData().data;
+    private EndPortalFrame getFrame() {
+        return (EndPortalFrame) material.getModernData().data;
     }
 
-    private boolean isDragging() {
-        return getBubbleColumn().isDrag();
+    private boolean hasEye() {
+        return getFrame().hasEye();
     }
 
     /////////
@@ -56,12 +56,12 @@ public class MaterialBubbleColumnDrag implements Property {
 
     @Override
     public String getPropertyString() {
-        return !isDragging() ? "false" : null;
+        return hasEye() ? "true" : null;
     }
 
     @Override
     public String getPropertyId() {
-        return "drags_down";
+        return "has_eye";
     }
 
     ///////////
@@ -75,16 +75,15 @@ public class MaterialBubbleColumnDrag implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.drags_down>
+        // @attribute <MaterialTag.has_eye>
         // @returns ElementTag(Boolean)
-        // @mechanism MaterialTag.drags_down
+        // @mechanism MaterialTag.has_eye
         // @group properties
         // @description
-        // Returns whether this bubble column material is dragging the player down.
-        // If false, then the material is pushing the player up.
+        // Returns whether this end portal frame material has an Eye of Ender in it.
         // -->
-        if (attribute.startsWith("drags_down")) {
-            return new ElementTag(isDragging()).getAttribute(attribute.fulfill(1));
+        if (attribute.startsWith("has_eye")) {
+            return new ElementTag(hasEye()).getAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -95,16 +94,15 @@ public class MaterialBubbleColumnDrag implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name drags_down
+        // @name has_eye
         // @input ElementTag(Boolean)
         // @description
-        // If the material is a bubble column, sets whether the material is dragging the player down.
-        // If false, then the material is pushing the player up.
+        // Sets whether this end portal frame material has an Eye of Ender in it.
         // @tags
-        // <MaterialTag.drags_down>
+        // <MaterialTag.has_eye>
         // -->
-        if (mechanism.matches("drags_down") && mechanism.requireBoolean()) {
-            getBubbleColumn().setDrag(mechanism.getValue().asBoolean());
+        if (mechanism.matches("has_eye") && mechanism.requireBoolean()) {
+            getFrame().setEye(mechanism.getValue().asBoolean());
         }
     }
 }
