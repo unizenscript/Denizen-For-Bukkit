@@ -1,4 +1,4 @@
-package com.denizenscript.denizen.objects.properties.material;
+package dev.unizen.denizen.objects.properties.material;
 
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -6,29 +6,29 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.block.data.type.Gate;
+import org.bukkit.block.data.type.Lantern;
 
-public class MaterialGateInStoneWall implements Property {
+public class MaterialLanternHanging implements Property {
 
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData().data instanceof Gate;
+                && ((MaterialTag) material).getModernData().data instanceof Lantern;
     }
 
-    public static MaterialGateInStoneWall getFrom(ObjectTag material) {
+    public static MaterialLanternHanging getFrom(ObjectTag material) {
         if (!describes(material)) {
             return null;
         }
-        return new MaterialGateInStoneWall((MaterialTag) material);
+        return new MaterialLanternHanging((MaterialTag) material);
     }
 
     public static final String[] handledTags = new String[] {
-            "in_stone_wall"
+            "is_hanging"
     };
 
     public static final String[] handledMechs = new String[] {
-            "in_stone_wall"
+            "is_hanging"
     };
 
 
@@ -36,18 +36,18 @@ public class MaterialGateInStoneWall implements Property {
     // Instance Fields and Methods
     /////////////
 
-    private MaterialGateInStoneWall(MaterialTag material) {
+    private MaterialLanternHanging(MaterialTag material) {
         this.material = material;
     }
 
     private MaterialTag material;
 
-    private Gate getGate() {
-        return (Gate) material.getModernData().data;
+    private Lantern getLantern() {
+        return (Lantern) material.getModernData().data;
     }
 
-    private boolean isInWall() {
-        return getGate().isInWall();
+    private boolean isHanging() {
+        return getLantern().isHanging();
     }
 
     /////////
@@ -56,12 +56,12 @@ public class MaterialGateInStoneWall implements Property {
 
     @Override
     public String getPropertyString() {
-        return isInWall() ? "true" : null;
+        return isHanging() ? "true" : null;
     }
 
     @Override
     public String getPropertyId() {
-        return "in_stone_wall";
+        return "is_hanging";
     }
 
     ///////////
@@ -75,15 +75,15 @@ public class MaterialGateInStoneWall implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.in_stone_wall>
+        // @attribute <MaterialTag.is_hanging>
         // @returns ElementTag(Boolean)
-        // @mechanism MaterialTag.in_stone_wall
+        // @mechanism MaterialTag.is_hanging
         // @group properties
         // @description
-        // Returns whether this fence gate material is attached to a stone wall.
+        // Returns whether the lantern material is hanging from a block.
         // -->
-        if (attribute.startsWith("in_stone_wall")) {
-            return new ElementTag(isInWall()).getAttribute(attribute.fulfill(1));
+        if (attribute.startsWith("is_hanging")) {
+            return new ElementTag(isHanging()).getAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -94,16 +94,15 @@ public class MaterialGateInStoneWall implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name in_stone_wall
+        // @name is_hanging
         // @input ElementTag(Boolean)
         // @description
-        // Sets whether this fence gate material is attached to a stone wall.
-        // If true, then the material's texture is lowered.
+        // Sets whether the lantern material is hanging from a block.
         // @tags
-        // <MaterialTag.in_stone_wall>
+        // <MaterialTag.is_hanging>
         // -->
-        if (mechanism.matches("in_stone_wall") && mechanism.requireBoolean()) {
-            getGate().setInWall(mechanism.getValue().asBoolean());
+        if (mechanism.matches("is_hanging") && mechanism.requireBoolean()) {
+            getLantern().setHanging(mechanism.getValue().asBoolean());
         }
     }
 }

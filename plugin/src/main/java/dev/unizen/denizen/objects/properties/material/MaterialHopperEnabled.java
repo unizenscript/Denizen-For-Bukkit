@@ -1,4 +1,4 @@
-package com.denizenscript.denizen.objects.properties.material;
+package dev.unizen.denizen.objects.properties.material;
 
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -6,29 +6,29 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.block.data.type.Leaves;
+import org.bukkit.block.data.type.Hopper;
 
-public class MaterialLeavesDistance implements Property {
+public class MaterialHopperEnabled implements Property {
 
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData().data instanceof Leaves;
+                && ((MaterialTag) material).getModernData().data instanceof Hopper;
     }
 
-    public static MaterialLeavesDistance getFrom(ObjectTag material) {
+    public static MaterialHopperEnabled getFrom(ObjectTag material) {
         if (!describes(material)) {
             return null;
         }
-        return new MaterialLeavesDistance((MaterialTag) material);
+        return new MaterialHopperEnabled((MaterialTag) material);
     }
 
     public static final String[] handledTags = new String[] {
-            "distance"
+            "enabled"
     };
 
     public static final String[] handledMechs = new String[] {
-            "distance"
+            "enabled"
     };
 
 
@@ -36,18 +36,18 @@ public class MaterialLeavesDistance implements Property {
     // Instance Fields and Methods
     /////////////
 
-    private MaterialLeavesDistance(MaterialTag material) {
+    private MaterialHopperEnabled(MaterialTag material) {
         this.material = material;
     }
 
     private MaterialTag material;
 
-    private Leaves getLeaves() {
-        return (Leaves) material.getModernData().data;
+    private Hopper getHopper() {
+        return (Hopper) material.getModernData().data;
     }
 
-    private int getDistance() {
-        return getLeaves().getDistance();
+    private boolean isEnabled() {
+        return getHopper().isEnabled();
     }
 
     /////////
@@ -56,12 +56,13 @@ public class MaterialLeavesDistance implements Property {
 
     @Override
     public String getPropertyString() {
-        return getDistance() != 0 ? String.valueOf(getDistance()) : null;
+        // The default state of a hopper is being enabled.
+        return !isEnabled() ? "false" : null;
     }
 
     @Override
     public String getPropertyId() {
-        return "distance";
+        return "enabled";
     }
 
     ///////////
@@ -75,16 +76,16 @@ public class MaterialLeavesDistance implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.distance>
-        // @returns ElementTag(Number)
-        // @mechanism MaterialTag.distance
+        // @attribute <MaterialTag.enabled>
+        // @returns ElementTag(Boolean)
+        // @mechanism MaterialTag.enabled
         // @group properties
         // @description
-        // Returns how far the leaves material is from a tree.
-        // Used together with <@link tag MaterialTag.persistent> to determine if the leaves will decay.
+        // Returns whether this hopper material is enabled.
+        // NOTE: A hopper is enabled when it is not receiving power!
         // -->
-        if (attribute.startsWith("distance")) {
-            return new ElementTag(getDistance()).getAttribute(attribute.fulfill(1));
+        if (attribute.startsWith("enabled")) {
+            return new ElementTag(isEnabled()).getAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -95,16 +96,16 @@ public class MaterialLeavesDistance implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name distance
-        // @input ElementTag(Number)
+        // @name enabled
+        // @input ElementTag(Boolean)
         // @description
-        // Sets how far the leaves material is from a tree.
-        // Used together with <@link mechanism MaterialTag.persistent> to determine if the leaves will decay.
+        // Sets whether this hopper material is enabled.
+        // NOTE: A hopper is enabled when it is not receiving power!
         // @tags
-        // <MaterialTag.distance>
+        // <MaterialTag.enabled>
         // -->
-        if (mechanism.matches("distance") && mechanism.requireInteger()) {
-            getLeaves().setDistance(mechanism.getValue().asInt());
+        if (mechanism.matches("enabled") && mechanism.requireBoolean()) {
+            getHopper().setEnabled(mechanism.getValue().asBoolean());
         }
     }
 }

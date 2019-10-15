@@ -1,4 +1,4 @@
-package com.denizenscript.denizen.objects.properties.material;
+package dev.unizen.denizen.objects.properties.material;
 
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -6,29 +6,29 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.block.data.type.Leaves;
+import org.bukkit.block.data.type.Piston;
 
-public class MaterialLeavesPersistence implements Property {
+public class MaterialPistonExtended implements Property {
 
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData().data instanceof Leaves;
+                && ((MaterialTag) material).getModernData().data instanceof Piston;
     }
 
-    public static MaterialLeavesPersistence getFrom(ObjectTag material) {
+    public static MaterialPistonExtended getFrom(ObjectTag material) {
         if (!describes(material)) {
             return null;
         }
-        return new MaterialLeavesPersistence((MaterialTag) material);
+        return new MaterialPistonExtended((MaterialTag) material);
     }
 
     public static final String[] handledTags = new String[] {
-            "persistent"
+            "extended"
     };
 
     public static final String[] handledMechs = new String[] {
-            "persistent"
+            "extended"
     };
 
 
@@ -36,18 +36,18 @@ public class MaterialLeavesPersistence implements Property {
     // Instance Fields and Methods
     /////////////
 
-    private MaterialLeavesPersistence(MaterialTag material) {
+    private MaterialPistonExtended(MaterialTag material) {
         this.material = material;
     }
 
     private MaterialTag material;
 
-    private Leaves getLeaves() {
-        return (Leaves) material.getModernData().data;
+    private Piston getPiston() {
+        return (Piston) material.getModernData().data;
     }
 
-    private boolean isPersistent() {
-        return getLeaves().isPersistent();
+    private boolean isExtended() {
+        return getPiston().isExtended();
     }
 
     /////////
@@ -56,12 +56,12 @@ public class MaterialLeavesPersistence implements Property {
 
     @Override
     public String getPropertyString() {
-        return isPersistent() ? "true" : null;
+        return isExtended() ? "true" : null;
     }
 
     @Override
     public String getPropertyId() {
-        return "persistent";
+        return "extended";
     }
 
     ///////////
@@ -75,15 +75,15 @@ public class MaterialLeavesPersistence implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.persistent>
+        // @attribute <MaterialTag.extended>
         // @returns ElementTag(Boolean)
-        // @mechanism MaterialTag.persistent
+        // @mechanism MaterialTag.extended
         // @group properties
         // @description
-        // Returns whether the leaves material is persistent or not.
+        // Returns whether the piston material's head is extended.
         // -->
-        if (attribute.startsWith("persistent")) {
-            return new ElementTag(isPersistent()).getAttribute(attribute.fulfill(1));
+        if (attribute.startsWith("extended")) {
+            return new ElementTag(isExtended()).getAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -94,15 +94,15 @@ public class MaterialLeavesPersistence implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name persistent
+        // @name extended
         // @input ElementTag(Boolean)
         // @description
-        // Sets whether the leaves material is persistent or not.
+        // Sets whether the piston material's head is extended.
         // @tags
-        // <MaterialTag.persistent>
+        // <MaterialTag.extended>
         // -->
-        if (mechanism.matches("persistent") && mechanism.requireBoolean()) {
-            getLeaves().setPersistent(mechanism.getValue().asBoolean());
+        if (mechanism.matches("extended") && mechanism.requireBoolean()) {
+            getPiston().setExtended(mechanism.getValue().asBoolean());
         }
     }
 }

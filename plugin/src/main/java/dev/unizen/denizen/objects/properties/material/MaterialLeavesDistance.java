@@ -1,4 +1,4 @@
-package com.denizenscript.denizen.objects.properties.material;
+package dev.unizen.denizen.objects.properties.material;
 
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -6,29 +6,29 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.block.data.type.Piston;
+import org.bukkit.block.data.type.Leaves;
 
-public class MaterialPistonExtended implements Property {
+public class MaterialLeavesDistance implements Property {
 
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData().data instanceof Piston;
+                && ((MaterialTag) material).getModernData().data instanceof Leaves;
     }
 
-    public static MaterialPistonExtended getFrom(ObjectTag material) {
+    public static MaterialLeavesDistance getFrom(ObjectTag material) {
         if (!describes(material)) {
             return null;
         }
-        return new MaterialPistonExtended((MaterialTag) material);
+        return new MaterialLeavesDistance((MaterialTag) material);
     }
 
     public static final String[] handledTags = new String[] {
-            "extended"
+            "distance"
     };
 
     public static final String[] handledMechs = new String[] {
-            "extended"
+            "distance"
     };
 
 
@@ -36,18 +36,18 @@ public class MaterialPistonExtended implements Property {
     // Instance Fields and Methods
     /////////////
 
-    private MaterialPistonExtended(MaterialTag material) {
+    private MaterialLeavesDistance(MaterialTag material) {
         this.material = material;
     }
 
     private MaterialTag material;
 
-    private Piston getPiston() {
-        return (Piston) material.getModernData().data;
+    private Leaves getLeaves() {
+        return (Leaves) material.getModernData().data;
     }
 
-    private boolean isExtended() {
-        return getPiston().isExtended();
+    private int getDistance() {
+        return getLeaves().getDistance();
     }
 
     /////////
@@ -56,12 +56,12 @@ public class MaterialPistonExtended implements Property {
 
     @Override
     public String getPropertyString() {
-        return isExtended() ? "true" : null;
+        return getDistance() != 0 ? String.valueOf(getDistance()) : null;
     }
 
     @Override
     public String getPropertyId() {
-        return "extended";
+        return "distance";
     }
 
     ///////////
@@ -75,15 +75,16 @@ public class MaterialPistonExtended implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.extended>
-        // @returns ElementTag(Boolean)
-        // @mechanism MaterialTag.extended
+        // @attribute <MaterialTag.distance>
+        // @returns ElementTag(Number)
+        // @mechanism MaterialTag.distance
         // @group properties
         // @description
-        // Returns whether the piston material's head is extended.
+        // Returns how far the leaves material is from a tree.
+        // Used together with <@link tag MaterialTag.persistent> to determine if the leaves will decay.
         // -->
-        if (attribute.startsWith("extended")) {
-            return new ElementTag(isExtended()).getAttribute(attribute.fulfill(1));
+        if (attribute.startsWith("distance")) {
+            return new ElementTag(getDistance()).getAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -94,15 +95,16 @@ public class MaterialPistonExtended implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name extended
-        // @input ElementTag(Boolean)
+        // @name distance
+        // @input ElementTag(Number)
         // @description
-        // Sets whether the piston material's head is extended.
+        // Sets how far the leaves material is from a tree.
+        // Used together with <@link mechanism MaterialTag.persistent> to determine if the leaves will decay.
         // @tags
-        // <MaterialTag.extended>
+        // <MaterialTag.distance>
         // -->
-        if (mechanism.matches("extended") && mechanism.requireBoolean()) {
-            getPiston().setExtended(mechanism.getValue().asBoolean());
+        if (mechanism.matches("distance") && mechanism.requireInteger()) {
+            getLeaves().setDistance(mechanism.getValue().asInt());
         }
     }
 }

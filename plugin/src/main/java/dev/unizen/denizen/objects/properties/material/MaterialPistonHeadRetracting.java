@@ -1,4 +1,4 @@
-package com.denizenscript.denizen.objects.properties.material;
+package dev.unizen.denizen.objects.properties.material;
 
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -6,29 +6,29 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.block.data.type.Hopper;
+import org.bukkit.block.data.type.PistonHead;
 
-public class MaterialHopperEnabled implements Property {
+public class MaterialPistonHeadRetracting implements Property {
 
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData().data instanceof Hopper;
+                && ((MaterialTag) material).getModernData().data instanceof PistonHead;
     }
 
-    public static MaterialHopperEnabled getFrom(ObjectTag material) {
+    public static MaterialPistonHeadRetracting getFrom(ObjectTag material) {
         if (!describes(material)) {
             return null;
         }
-        return new MaterialHopperEnabled((MaterialTag) material);
+        return new MaterialPistonHeadRetracting((MaterialTag) material);
     }
 
     public static final String[] handledTags = new String[] {
-            "enabled"
+            "retracting"
     };
 
     public static final String[] handledMechs = new String[] {
-            "enabled"
+            "retracting"
     };
 
 
@@ -36,18 +36,18 @@ public class MaterialHopperEnabled implements Property {
     // Instance Fields and Methods
     /////////////
 
-    private MaterialHopperEnabled(MaterialTag material) {
+    private MaterialPistonHeadRetracting(MaterialTag material) {
         this.material = material;
     }
 
     private MaterialTag material;
 
-    private Hopper getHopper() {
-        return (Hopper) material.getModernData().data;
+    private PistonHead getPistonHead() {
+        return (PistonHead) material.getModernData().data;
     }
 
-    private boolean isEnabled() {
-        return getHopper().isEnabled();
+    private boolean isShort() {
+        return getPistonHead().isShort();
     }
 
     /////////
@@ -56,13 +56,12 @@ public class MaterialHopperEnabled implements Property {
 
     @Override
     public String getPropertyString() {
-        // The default state of a hopper is being enabled.
-        return !isEnabled() ? "false" : null;
+        return isShort() ? "true" : null;
     }
 
     @Override
     public String getPropertyId() {
-        return "enabled";
+        return "retracting";
     }
 
     ///////////
@@ -76,16 +75,15 @@ public class MaterialHopperEnabled implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.enabled>
+        // @attribute <MaterialTag.retracting>
         // @returns ElementTag(Boolean)
-        // @mechanism MaterialTag.enabled
+        // @mechanism MaterialTag.retracting
         // @group properties
         // @description
-        // Returns whether this hopper material is enabled.
-        // NOTE: A hopper is enabled when it is not receiving power!
+        // Returns whether this piston head is currently retracting.
         // -->
-        if (attribute.startsWith("enabled")) {
-            return new ElementTag(isEnabled()).getAttribute(attribute.fulfill(1));
+        if (attribute.startsWith("retracting")) {
+            return new ElementTag(isShort()).getAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -96,16 +94,15 @@ public class MaterialHopperEnabled implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name enabled
+        // @name retracting
         // @input ElementTag(Boolean)
         // @description
-        // Sets whether this hopper material is enabled.
-        // NOTE: A hopper is enabled when it is not receiving power!
+        // Sets whether this piston head is currently retracting.
         // @tags
-        // <MaterialTag.enabled>
+        // <MaterialTag.retracting>
         // -->
-        if (mechanism.matches("enabled") && mechanism.requireBoolean()) {
-            getHopper().setEnabled(mechanism.getValue().asBoolean());
+        if (mechanism.matches("retracting") && mechanism.requireBoolean()) {
+            getPistonHead().setShort(mechanism.getValue().asBoolean());
         }
     }
 }

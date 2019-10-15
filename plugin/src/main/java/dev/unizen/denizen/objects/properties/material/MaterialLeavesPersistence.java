@@ -1,4 +1,4 @@
-package com.denizenscript.denizen.objects.properties.material;
+package dev.unizen.denizen.objects.properties.material;
 
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -6,29 +6,29 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.block.data.type.Lantern;
+import org.bukkit.block.data.type.Leaves;
 
-public class MaterialLanternHanging implements Property {
+public class MaterialLeavesPersistence implements Property {
 
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData().data instanceof Lantern;
+                && ((MaterialTag) material).getModernData().data instanceof Leaves;
     }
 
-    public static MaterialLanternHanging getFrom(ObjectTag material) {
+    public static MaterialLeavesPersistence getFrom(ObjectTag material) {
         if (!describes(material)) {
             return null;
         }
-        return new MaterialLanternHanging((MaterialTag) material);
+        return new MaterialLeavesPersistence((MaterialTag) material);
     }
 
     public static final String[] handledTags = new String[] {
-            "is_hanging"
+            "persistent"
     };
 
     public static final String[] handledMechs = new String[] {
-            "is_hanging"
+            "persistent"
     };
 
 
@@ -36,18 +36,18 @@ public class MaterialLanternHanging implements Property {
     // Instance Fields and Methods
     /////////////
 
-    private MaterialLanternHanging(MaterialTag material) {
+    private MaterialLeavesPersistence(MaterialTag material) {
         this.material = material;
     }
 
     private MaterialTag material;
 
-    private Lantern getLantern() {
-        return (Lantern) material.getModernData().data;
+    private Leaves getLeaves() {
+        return (Leaves) material.getModernData().data;
     }
 
-    private boolean isHanging() {
-        return getLantern().isHanging();
+    private boolean isPersistent() {
+        return getLeaves().isPersistent();
     }
 
     /////////
@@ -56,12 +56,12 @@ public class MaterialLanternHanging implements Property {
 
     @Override
     public String getPropertyString() {
-        return isHanging() ? "true" : null;
+        return isPersistent() ? "true" : null;
     }
 
     @Override
     public String getPropertyId() {
-        return "is_hanging";
+        return "persistent";
     }
 
     ///////////
@@ -75,15 +75,15 @@ public class MaterialLanternHanging implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.is_hanging>
+        // @attribute <MaterialTag.persistent>
         // @returns ElementTag(Boolean)
-        // @mechanism MaterialTag.is_hanging
+        // @mechanism MaterialTag.persistent
         // @group properties
         // @description
-        // Returns whether the lantern material is hanging from a block.
+        // Returns whether the leaves material is persistent or not.
         // -->
-        if (attribute.startsWith("is_hanging")) {
-            return new ElementTag(isHanging()).getAttribute(attribute.fulfill(1));
+        if (attribute.startsWith("persistent")) {
+            return new ElementTag(isPersistent()).getAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -94,15 +94,15 @@ public class MaterialLanternHanging implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name is_hanging
+        // @name persistent
         // @input ElementTag(Boolean)
         // @description
-        // Sets whether the lantern material is hanging from a block.
+        // Sets whether the leaves material is persistent or not.
         // @tags
-        // <MaterialTag.is_hanging>
+        // <MaterialTag.persistent>
         // -->
-        if (mechanism.matches("is_hanging") && mechanism.requireBoolean()) {
-            getLantern().setHanging(mechanism.getValue().asBoolean());
+        if (mechanism.matches("persistent") && mechanism.requireBoolean()) {
+            getLeaves().setPersistent(mechanism.getValue().asBoolean());
         }
     }
 }

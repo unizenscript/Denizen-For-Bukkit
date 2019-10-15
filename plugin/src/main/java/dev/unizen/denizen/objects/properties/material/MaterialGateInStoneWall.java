@@ -1,4 +1,4 @@
-package com.denizenscript.denizen.objects.properties.material;
+package dev.unizen.denizen.objects.properties.material;
 
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -6,29 +6,29 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.block.data.type.PistonHead;
+import org.bukkit.block.data.type.Gate;
 
-public class MaterialPistonHeadRetracting implements Property {
+public class MaterialGateInStoneWall implements Property {
 
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData().data instanceof PistonHead;
+                && ((MaterialTag) material).getModernData().data instanceof Gate;
     }
 
-    public static MaterialPistonHeadRetracting getFrom(ObjectTag material) {
+    public static MaterialGateInStoneWall getFrom(ObjectTag material) {
         if (!describes(material)) {
             return null;
         }
-        return new MaterialPistonHeadRetracting((MaterialTag) material);
+        return new MaterialGateInStoneWall((MaterialTag) material);
     }
 
     public static final String[] handledTags = new String[] {
-            "retracting"
+            "in_stone_wall"
     };
 
     public static final String[] handledMechs = new String[] {
-            "retracting"
+            "in_stone_wall"
     };
 
 
@@ -36,18 +36,18 @@ public class MaterialPistonHeadRetracting implements Property {
     // Instance Fields and Methods
     /////////////
 
-    private MaterialPistonHeadRetracting(MaterialTag material) {
+    private MaterialGateInStoneWall(MaterialTag material) {
         this.material = material;
     }
 
     private MaterialTag material;
 
-    private PistonHead getPistonHead() {
-        return (PistonHead) material.getModernData().data;
+    private Gate getGate() {
+        return (Gate) material.getModernData().data;
     }
 
-    private boolean isShort() {
-        return getPistonHead().isShort();
+    private boolean isInWall() {
+        return getGate().isInWall();
     }
 
     /////////
@@ -56,12 +56,12 @@ public class MaterialPistonHeadRetracting implements Property {
 
     @Override
     public String getPropertyString() {
-        return isShort() ? "true" : null;
+        return isInWall() ? "true" : null;
     }
 
     @Override
     public String getPropertyId() {
-        return "retracting";
+        return "in_stone_wall";
     }
 
     ///////////
@@ -75,15 +75,15 @@ public class MaterialPistonHeadRetracting implements Property {
         }
 
         // <--[tag]
-        // @attribute <MaterialTag.retracting>
+        // @attribute <MaterialTag.in_stone_wall>
         // @returns ElementTag(Boolean)
-        // @mechanism MaterialTag.retracting
+        // @mechanism MaterialTag.in_stone_wall
         // @group properties
         // @description
-        // Returns whether this piston head is currently retracting.
+        // Returns whether this fence gate material is attached to a stone wall.
         // -->
-        if (attribute.startsWith("retracting")) {
-            return new ElementTag(isShort()).getAttribute(attribute.fulfill(1));
+        if (attribute.startsWith("in_stone_wall")) {
+            return new ElementTag(isInWall()).getAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -94,15 +94,16 @@ public class MaterialPistonHeadRetracting implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name retracting
+        // @name in_stone_wall
         // @input ElementTag(Boolean)
         // @description
-        // Sets whether this piston head is currently retracting.
+        // Sets whether this fence gate material is attached to a stone wall.
+        // If true, then the material's texture is lowered.
         // @tags
-        // <MaterialTag.retracting>
+        // <MaterialTag.in_stone_wall>
         // -->
-        if (mechanism.matches("retracting") && mechanism.requireBoolean()) {
-            getPistonHead().setShort(mechanism.getValue().asBoolean());
+        if (mechanism.matches("in_stone_wall") && mechanism.requireBoolean()) {
+            getGate().setInWall(mechanism.getValue().asBoolean());
         }
     }
 }
