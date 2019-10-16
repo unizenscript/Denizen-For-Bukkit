@@ -16,7 +16,6 @@ import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.core.QueueTag;
 import com.denizenscript.denizencore.objects.core.ScriptTag;
-import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.objects.properties.PropertyParser;
 import dev.unizen.denizen.objects.properties.entity.*;
 import dev.unizen.denizen.objects.properties.material.*;
@@ -161,7 +160,18 @@ public class PropertyRegistry {
         if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
             PropertyParser.registerProperty(MaterialAge.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialAttached.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialBedSide.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialBrewingStandBottles.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialBubbleColumnDrag.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialCakeBites.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialChestType.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialCommandBlockConditional.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialComparatorMode.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialDaylightDetectorInverted.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialDirectional.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialDispenserTriggered.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialDoorHinge.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialEndPortalFrameEye.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialHalf.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialSlab.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialLeaves.class, MaterialTag.class);
@@ -176,6 +186,11 @@ public class PropertyRegistry {
             PropertyParser.registerProperty(MaterialSnowy.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialSwitchFace.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialWaterlogged.class, MaterialTag.class);
+        }
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
+            PropertyParser.registerProperty(MaterialBambooLeaves.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialBellAttachment.class, MaterialTag.class);
+            PropertyParser.registerProperty(MaterialCampfireSignal.class, MaterialTag.class);
         }
 
         // register core TradeTag properties
