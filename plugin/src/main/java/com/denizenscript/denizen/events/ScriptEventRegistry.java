@@ -10,6 +10,7 @@ import com.denizenscript.denizen.utilities.depends.Depends;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizencore.events.ScriptEvent;
+import dev.unizen.denizen.events.block.BrewingStandRefueledScriptEvent;
 import dev.unizen.denizen.events.block.DragonEggMovesScriptEvent;
 import dev.unizen.denizen.events.entity.EntityMountsEntityScriptEvent;
 
@@ -29,7 +30,6 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(new BlockSpreadsScriptEvent());
         ScriptEvent.registerScriptEvent(new BrewsScriptEvent());
         ScriptEvent.registerScriptEvent(new CauldronLevelChangeScriptEvent());
-        ScriptEvent.registerScriptEvent(new DragonEggMovesScriptEvent());
         ScriptEvent.registerScriptEvent(new FurnaceBurnsItemScriptEvent());
         ScriptEvent.registerScriptEvent(new FurnaceSmeltsItemScriptEvent());
         ScriptEvent.registerScriptEvent(new LeafDecaysScriptEvent());
@@ -194,5 +194,13 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(new WorldLoadsScriptEvent());
         ScriptEvent.registerScriptEvent(new WorldSavesScriptEvent());
         ScriptEvent.registerScriptEvent(new WorldUnloadsScriptEvent());
+
+        // Unizen start
+
+        // Block events
+        ScriptEvent.registerScriptEvent(new BrewingStandRefueledScriptEvent());
+        ScriptEvent.registerScriptEvent(new DragonEggMovesScriptEvent());
+
+        // Unizen end
     }
 }

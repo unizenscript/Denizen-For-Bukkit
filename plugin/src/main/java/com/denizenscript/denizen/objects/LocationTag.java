@@ -19,6 +19,7 @@ import com.denizenscript.denizen.nms.interfaces.BlockData;
 import com.denizenscript.denizen.nms.interfaces.EntityHelper;
 import com.denizenscript.denizen.nms.util.PlayerProfile;
 import com.denizenscript.denizen.tags.BukkitTagContext;
+import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.notable.Notable;
@@ -3067,6 +3068,44 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 return null;
             }
         });
+
+        // Unizen start
+
+        // <--[tag]
+        // @attribute <LocationTag.brewing_time>
+        // @returns DurationTag
+        // @mechanism LocationTag.brewing_time
+        // @description
+        // Returns how much time is left in the brewing cycle of this brewing stand block.
+        // -->
+        registerTag("brewing_time", new TagRunnable.ObjectForm<LocationTag>() {
+            @Override
+            public ObjectTag run(Attribute attribute, LocationTag object) {
+                if (object.getBlockStateForTag(attribute) instanceof BrewingStand) {
+                    return new DurationTag((long) ((BrewingStand) object.getBlockStateForTag(attribute)).getBrewingTime());
+                }
+                return null;
+            }
+        });
+
+        // <--[tag]
+        // @attribute <LocationTag.brewing_fuel_level>
+        // @returns ElementTag(Number)
+        // @mechanism LocationTag.brewing_fuel_level
+        // @description
+        // Returns the fuel level of this brewing stand block.
+        // -->
+        registerTag("brewing_fuel_level", new TagRunnable.ObjectForm<LocationTag>() {
+            @Override
+            public ObjectTag run(Attribute attribute, LocationTag object) {
+                if (object.getBlockStateForTag(attribute) instanceof BrewingStand) {
+                    return new ElementTag(((BrewingStand) object.getBlockStateForTag(attribute)).getFuelLevel());
+                }
+                return null;
+            }
+        });
+
+        // Unizen end
     }
 
     public static ObjectTagProcessor<LocationTag> tagProcessor = new ObjectTagProcessor<>();
@@ -3448,7 +3487,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // @input None
         // @description
         // Activates the block at the location if possible.
-        // Works for blocks like dispensers, which have explicit 'activation' methods.
+        // Currently makes dispensers dispense an item and droppers drop an item.
         // -->
         if (mechanism.matches("activate")) {
             BlockState state = getBlockState();
@@ -3459,6 +3498,44 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 ((Dropper) state).drop();
             }
         }
+
+        // Unizen start
+
+        // <--[mechanism]
+        // @object LocationTag
+        // @name brewing_time
+        // @input DurationTag
+        // @description
+        // Sets the brewing time of this brewing stand block.
+        // @tags
+        // <LocationTag.brewing_time>
+        // -->
+        if (mechanism.matches("brewing_time") && mechanism.requireObject(DurationTag.class)) {
+            if (getBlockState() instanceof BrewingStand) {
+                BlockState state = getBlockState();
+                ((BrewingStand) state).setBrewingTime(mechanism.valueAsType(DurationTag.class).getTicksAsInt());
+                state.update();
+            }
+        }
+
+        // <--[mechanism]
+        // @object LocationTag
+        // @name brewing_fuel_level
+        // @input ElementTag(Number)
+        // @description
+        // Sets the brewing fuel level of this brewing stand block.
+        // @tags
+        // <LocationTag.brewing_fuel_level>
+        // -->
+        if (mechanism.matches("brewing_fuel_level") && mechanism.requireInteger()) {
+            if (getBlockState() instanceof BrewingStand) {
+                BlockState state = getBlockState();
+                ((BrewingStand) state).setFuelLevel(mechanism.getValue().asInt());
+                state.update();
+            }
+        }
+
+        // Unizen end
 
         CoreUtilities.autoPropertyMechanism(this, mechanism);
     }
