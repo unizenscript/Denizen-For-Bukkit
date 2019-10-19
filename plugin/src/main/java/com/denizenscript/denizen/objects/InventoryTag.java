@@ -685,7 +685,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
 
     public void setSmelting(ItemStack item) {
         if (inventory instanceof FurnaceInventory) {
-            ((FurnaceInventory) inventory).setFuel(item);
+            ((FurnaceInventory) inventory).setSmelting(item);
         }
     }
 
@@ -2372,6 +2372,27 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
             }
         });
 
+        // <--[tag]
+        // @attribute <InventoryTag.bottles>
+        // @returns ListTag(ItemTag)
+        // @mechanism InventoryTag.bottles
+        // @description
+        // Returns the list of bottles in this brewer inventory.
+        // -->
+        registerTag("bottles", new TagRunnable.ObjectForm<InventoryTag>() {
+            @Override
+            public ObjectTag run(Attribute attribute, InventoryTag object) {
+                if (object.inventory instanceof BrewerInventory) {
+                    ListTag items = new ListTag();
+                    items.addObject(new ItemTag(object.inventory.getItem(0)));
+                    items.addObject(new ItemTag(object.inventory.getItem(1)));
+                    items.addObject(new ItemTag(object.inventory.getItem(2)));
+                    return items;
+                }
+                return null;
+            }
+        });
+
         // Unizen end
     }
 
@@ -2479,7 +2500,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
             if (!(inventory instanceof FurnaceInventory)) {
                 Debug.echoError("Inventory is not a furnace inventory, cannot set smelting.");
             }
-            ((FurnaceInventory) inventory).setSmelting(mechanism.valueAsType(ItemTag.class).getItemStack());
+            setSmelting(mechanism.valueAsType(ItemTag.class).getItemStack());
         }
 
         // <--[mechanism]
@@ -2526,12 +2547,35 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         // Sets the brewing ingredient of this brewer inventory.
         // @tags
         // <InventoryTag.brewing_ingredient>
+        // -->
         if (mechanism.matches("brewing_ingredient") && mechanism.requireObject(ItemTag.class)) {
             if (!(inventory instanceof BrewerInventory)) {
                 Debug.echoError("Inventory is not a brewer inventory, cannot set the brewing ingredient.");
                 return;
             }
             ((BrewerInventory) inventory).setIngredient(mechanism.valueAsType(ItemTag.class).getItemStack());
+        }
+
+        // <--[mechanism]
+        // @object InventoryTag
+        // @name bottles
+        // @input ListTag(ItemTag)
+        // @description
+        // Sets the bottles in this brewer inventory.
+        // @tags
+        // <InventoryTag.bottles>
+        // -->
+        if (mechanism.matches("bottles")) {
+            BrewerInventory brewer = (BrewerInventory) inventory;
+
+            List<ItemTag> items = mechanism.valueAsType(ListTag.class).filter(ItemTag.class, mechanism.context);
+            if (items.size() > 3) {
+                Debug.echoError("The maximum amount of bottles in a brewer inventory is 3! Ignoring the last " + (items.size() - 3) + " items...");
+            }
+
+            for (int i = 0; i < 3; i++) {
+                brewer.setItem(i, i < items.size() ? items.get(i).getItemStack() : new ItemStack(Material.AIR));
+            }
         }
 
         // Unizen end
