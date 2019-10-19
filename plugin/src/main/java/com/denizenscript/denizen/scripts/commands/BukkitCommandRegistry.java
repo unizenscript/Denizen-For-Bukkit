@@ -105,7 +105,7 @@ public class BukkitCommandRegistry extends CommandRegistry {
         else {
             AutoNoCitizensCommand.registerFor("DISENGAGE");
         }
-        registerCoreMember(DisplayItemCommand.class, "DISPLAYITEM", "displayitem [<item>] [<location>] (duration:<value>)", 2);
+        registerCoreMember(DisplayItemCommand.class, "DISPLAYITEM", "displayitem [<item>] [<location>] (no_gravity) (permanent) (duration:<value>)", 2);
         registerCoreMember(DropCommand.class, "DROP", "drop [<entity_type>/xp/<item>|...] (<location>) (quantity:<#>) (speed:<#.#>) (delay:<duration>)", 1);
         if (Depends.citizens != null) {
             registerCoreMember(EngageCommand.class, "ENGAGE", "engage (<duration>)", 0);
