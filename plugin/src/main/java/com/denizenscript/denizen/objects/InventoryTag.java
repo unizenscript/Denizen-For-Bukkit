@@ -2373,13 +2373,13 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         });
 
         // <--[tag]
-        // @attribute <InventoryTag.bottles>
+        // @attribute <InventoryTag.brewing_results>
         // @returns ListTag(ItemTag)
-        // @mechanism InventoryTag.bottles
+        // @mechanism InventoryTag.brewing_results
         // @description
-        // Returns the list of bottles in this brewer inventory.
+        // Returns the list of items in the result slots in this brewer inventory.
         // -->
-        registerTag("bottles", new TagRunnable.ObjectForm<InventoryTag>() {
+        registerTag("brewing_results", new TagRunnable.ObjectForm<InventoryTag>() {
             @Override
             public ObjectTag run(Attribute attribute, InventoryTag object) {
                 if (object.inventory instanceof BrewerInventory) {
@@ -2558,19 +2558,19 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
 
         // <--[mechanism]
         // @object InventoryTag
-        // @name bottles
+        // @name brewing_results
         // @input ListTag(ItemTag)
         // @description
-        // Sets the bottles in this brewer inventory.
+        // Sets the result slots in this brewer inventory.
         // @tags
-        // <InventoryTag.bottles>
+        // <InventoryTag.brewing_results>
         // -->
-        if (mechanism.matches("bottles")) {
+        if (mechanism.matches("brewing_results")) {
             BrewerInventory brewer = (BrewerInventory) inventory;
 
             List<ItemTag> items = mechanism.valueAsType(ListTag.class).filter(ItemTag.class, mechanism.context);
             if (items.size() > 3) {
-                Debug.echoError("The maximum amount of bottles in a brewer inventory is 3! Ignoring the last " + (items.size() - 3) + " items...");
+                Debug.echoError("The maximum amount of results in a brewer inventory is 3! Ignoring the last " + (items.size() - 3) + " items...");
             }
 
             for (int i = 0; i < 3; i++) {
