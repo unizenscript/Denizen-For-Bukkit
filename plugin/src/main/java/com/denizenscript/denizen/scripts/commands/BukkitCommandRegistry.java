@@ -80,7 +80,7 @@ public class BukkitCommandRegistry extends CommandRegistry {
         registerCoreMember(ChunkLoadCommand.class, "CHUNKLOAD", "chunkload ({add}/remove/removeall) [<chunk>] (duration:<value>)", 1);
         registerCoreMember(CompassCommand.class, "COMPASS", "compass [<location>/reset]", 1);
         registerCoreMember(CooldownCommand.class, "COOLDOWN", "cooldown [<duration>] (global) (s:<script>)", 1);
-        registerCoreMember(CopyBlockCommand.class, "COPYBLOCK", "copyblock [<location>/<cuboid>] [to:<location>] (remove_original)", 1);
+        registerCoreMember(CopyBlockCommand.class, "COPYBLOCK", "copyblock [<location>/<cuboid>] (origin:<location>) [to:<location>] (remove_original) (delayed)", 1);
         if (Depends.citizens != null) {
             registerCoreMember(CreateCommand.class, "CREATE", "create [<entity>] [<name>] (<location>)", 1);
         }

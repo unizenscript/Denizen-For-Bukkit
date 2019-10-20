@@ -1,33 +1,42 @@
 package com.denizenscript.denizen.scripts.commands.world;
 
+import com.denizenscript.denizen.objects.CuboidTag;
+import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.interfaces.BlockData;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
+import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.*;
 import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class CopyBlockCommand extends AbstractCommand {
 
     // <--[command]
     // @Name CopyBlock
-    // @Syntax copyblock [<location>] [to:<location>] (remove_original)
+    // @Syntax copyblock [<location>/<cuboid>] (origin:<location>) [to:<location>] (remove_original) (delayed)
     // @Required 1
     // @Short Copies a block to another location, keeping metadata when possible.
     // @Group world
     //
     // @Description
-    // Copies a block to another location.
+    // Copies a block or cuboid to another location.
+    // If you use the "delayed" argument, the cuboid will be copied at a pace roughly matched to the server's limits.
+    // If you specify an "origin" location, that location will be treated as the reference block to use while copying the cuboid.
+    // The origin block does not need to be a block that's being copied!
+    // If the "origin" argument is excluded, then the minimum location of the first member of the cuboid will be used as the origin.
     // You may also use the 'remove_original' argument to delete the original block.
     // This effectively moves the block to the target location.
     //
@@ -48,17 +57,32 @@ public class CopyBlockCommand extends AbstractCommand {
 
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
-            if (arg.matchesArgumentType(LocationTag.class)
-                    && !scriptEntry.hasObject("location")
-                    && !arg.matchesPrefix("t", "to")) {
-                scriptEntry.addObject("location", arg.asType(LocationTag.class));
+            if (!scriptEntry.hasObject("source")
+                    && arg.matchesArgumentType(CuboidTag.class)) {
+                scriptEntry.addObject("source", arg.asType(CuboidTag.class));
             }
-            else if (arg.matchesArgumentType(LocationTag.class)
+            else if (!scriptEntry.hasObject("source")
+                    && arg.matchesArgumentType(LocationTag.class)
+                    && !arg.matchesPrefix("t", "to") && !arg.matchesPrefix("origin")) {
+                scriptEntry.addObject("source", arg.asType(LocationTag.class));
+            }
+            else if (!scriptEntry.hasObject("origin")
+                    && arg.matchesArgumentType(LocationTag.class)
+                    && arg.matchesPrefix("origin")) {
+                scriptEntry.addObject("origin", arg.asType(LocationTag.class));
+            }
+            else if (!scriptEntry.hasObject("destination")
+                    && arg.matchesArgumentType(LocationTag.class)
                     && arg.matchesPrefix("t", "to")) {
                 scriptEntry.addObject("destination", arg.asType(LocationTag.class));
             }
-            else if (arg.matches("remove_original")) {
+            else if (!scriptEntry.hasObject("remove")
+                    && arg.matches("remove_original")) {
                 scriptEntry.addObject("remove", new ElementTag(true));
+            }
+            else if (!scriptEntry.hasObject("delayed")
+                    && arg.matches("delayed")) {
+                scriptEntry.addObject("delayed", new ElementTag(true));
             }
             else {
                 arg.reportUnhandled();
@@ -66,8 +90,8 @@ public class CopyBlockCommand extends AbstractCommand {
         }
 
         // Check required arguments
-        if (!scriptEntry.hasObject("location")) {
-            throw new InvalidArgumentsException("Must specify a source location.");
+        if (!scriptEntry.hasObject("source")) {
+            throw new InvalidArgumentsException("Must specify a source location or cuboid.");
         }
 
         if (!scriptEntry.hasObject("destination")) {
@@ -75,85 +99,192 @@ public class CopyBlockCommand extends AbstractCommand {
         }
 
         // Set defaults
+        if (scriptEntry.getObject("source") instanceof CuboidTag) {
+            scriptEntry.defaultObject("origin", new LocationTag(((CuboidTag) scriptEntry.getObject("source")).pairs.get(0).low));
+        }
+        else {
+            scriptEntry.defaultObject("origin", ((LocationTag) scriptEntry.getObject("source")).clone());
+        }
         scriptEntry.defaultObject("remove", new ElementTag(false));
+        scriptEntry.defaultObject("delayed", new ElementTag(false));
     }
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
 
-        LocationTag copy_location = (LocationTag) scriptEntry.getObject("location");
+        ObjectTag sourceObject = (ObjectTag) scriptEntry.getObject("source");
         LocationTag destination = (LocationTag) scriptEntry.getObject("destination");
-        ElementTag remove_original = (ElementTag) scriptEntry.getObject("remove");
+        LocationTag originEntry = (LocationTag) scriptEntry.getObject("origin");
+        ElementTag removeOriginal = (ElementTag) scriptEntry.getObject("remove");
+        ElementTag delayElement = (ElementTag) scriptEntry.getObject("delayed");
 
         if (scriptEntry.dbCallShouldDebug()) {
-
-            Debug.report(scriptEntry, getName(), (copy_location != null ? copy_location.debug() : "")
-                    + destination.debug() + remove_original.debug());
-
+            Debug.report(scriptEntry, getName(), sourceObject.debug() + originEntry.debug()
+                    + destination.debug() + removeOriginal.debug() + delayElement.debug());
         }
 
-        List<Location> locations = new ArrayList<>();
+        boolean remove = removeOriginal.asBoolean();
+        boolean delay = delayElement.asBoolean();
 
-        if (copy_location != null) {
-            locations.add(copy_location);
-        }
+        if (sourceObject instanceof CuboidTag) {
+            CuboidTag sourceCuboid = (CuboidTag) sourceObject;
+            Set<Block> locationCache = new HashSet<>();
 
-        for (Location loc : locations) {
+            if (delay) {
+                new BukkitRunnable() {
+                    List<CuboidTag.LocationPair> pairList = new ArrayList<>(sourceCuboid.pairs);
+                    int lastX = 0;
+                    int lastY = 0;
+                    int lastZ = 0;
 
-            Block source = loc.getBlock();
-            BlockState sourceState = LocationTag.getBlockStateFor(source);
-            Block update = destination.getBlock();
+                    @Override
+                    public void run() {
+                        long startTime = System.currentTimeMillis();
+                        List<CuboidTag.LocationPair> doneCuboids = new ArrayList<>();
 
-            // TODO: 1.13 - confirm this works
-            BlockData blockData = NMSHandler.getBlockHelper().getBlockData(source);
-            blockData.setBlock(update, false);
+                        full_loop:
+                        for (CuboidTag.LocationPair pair : pairList) {
+                            int xOffset = pair.low.getBlockX() - originEntry.getBlockX();
+                            int yOffset = pair.low.getBlockY() - originEntry.getBlockY();
+                            int zOffset = pair.low.getBlockZ() - originEntry.getBlockZ();
+                            int xDist = pair.high.getBlockX() - pair.low.getBlockX();
+                            int yDist = pair.high.getBlockY() - pair.low.getBlockY();
+                            int zDist = pair.high.getBlockZ() - pair.low.getBlockZ();
 
-            BlockState updateState = LocationTag.getBlockStateFor(update);
+                            for (int x = lastX; x <= xDist; x++) {
+                                for (int y = lastY; y <= yDist; y++) {
+                                    if (pair.low.getBlockY() + y + yOffset < 0 || pair.low.getBlockY() + y + yOffset > 255) {
+                                        continue;
+                                    }
 
-            // Note: only a BlockState, not a Block, is actually an instance
-            // of InventoryHolder
-            if (sourceState instanceof InventoryHolder) {
-                ((InventoryHolder) updateState).getInventory()
-                        .setContents(((InventoryHolder) sourceState).getInventory().getContents());
+                                    for (int z = lastZ; z <= zDist; z++) {
+                                        if (System.currentTimeMillis() - startTime > 50) {
+                                            lastX = x;
+                                            lastY = y;
+                                            lastZ = z;
+                                            break full_loop;
+                                        }
+
+                                        Block source = pair.low.clone().add(x, y, z).getBlock();
+                                        Block updateDest = destination.clone().add(xOffset + x, yOffset + y, zOffset + z).getBlock();
+
+                                        if (locationCache.contains(updateDest)) {
+                                            continue;
+                                        }
+
+                                        replaceBlock(source, updateDest, remove);
+                                        locationCache.add(updateDest);
+                                    }
+                                }
+                            }
+
+                            lastX = 0;
+                            lastY = 0;
+                            lastZ = 0;
+                            doneCuboids.add(pair);
+                        }
+
+                        pairList.removeAll(doneCuboids);
+                        if (pairList.isEmpty()) {
+                            cancel();
+                        }
+                    }
+                }.runTaskTimer(DenizenAPI.getCurrentInstance(), 1, 1);
             }
-            else if (sourceState instanceof Sign) {
-                int n = 0;
+            else {
+                for (CuboidTag.LocationPair pair : sourceCuboid.pairs) {
+                    int xOffset = pair.low.getBlockX() - originEntry.getBlockX();
+                    int yOffset = pair.low.getBlockY() - originEntry.getBlockY();
+                    int zOffset = pair.low.getBlockZ() - originEntry.getBlockZ();
+                    int xDist = pair.high.getBlockX() - pair.low.getBlockX();
+                    int yDist = pair.high.getBlockY() - pair.low.getBlockY();
+                    int zDist = pair.high.getBlockZ() - pair.low.getBlockZ();
 
-                for (String line : ((Sign) sourceState).getLines()) {
-                    ((Sign) updateState).setLine(n, line);
-                    n++;
+                    for (int x = 0; x <= xDist; x++) {
+                        for (int y = 0; y <= yDist; y++) {
+                            if (pair.low.getBlockY() + y < 0 || pair.low.getBlockY() + y > 255) {
+                                continue;
+                            }
+
+                            for (int z = 0; z <= zDist; z++) {
+                                Block source = pair.low.clone().add(x, y, z).getBlock();
+                                Block updateDest = destination.clone().add(xOffset + x, yOffset + y, zOffset + z).getBlock();
+
+                                if (updateDest.getY() < 0 || updateDest.getY() > 255) {
+                                    break;
+                                }
+                                if (locationCache.contains(updateDest)) {
+                                    continue;
+                                }
+
+                                replaceBlock(source, updateDest, remove);
+                                locationCache.add(updateDest);
+                            }
+                        }
+                    }
                 }
             }
-            else if (sourceState instanceof NoteBlock) {
-                ((NoteBlock) updateState).setNote(((NoteBlock) sourceState).getNote());
-            }
-            else if (sourceState instanceof Skull) {
-                ((Skull) updateState).setSkullType(((Skull) sourceState).getSkullType());
-                ((Skull) updateState).setOwner(((Skull) sourceState).getOwner());
-                ((Skull) updateState).setRotation(((Skull) sourceState).getRotation());
-            }
-            else if (sourceState instanceof Jukebox) {
-                ((Jukebox) updateState).setPlaying(((Jukebox) sourceState).getPlaying());
-            }
-            else if (sourceState instanceof Banner) {
-                ((Banner) updateState).setBaseColor(((Banner) sourceState).getBaseColor());
-                ((Banner) updateState).setPatterns(((Banner) sourceState).getPatterns());
-            }
-            else if (sourceState instanceof CommandBlock) {
-                ((CommandBlock) updateState).setName(((CommandBlock) sourceState).getName());
-                ((CommandBlock) updateState).setCommand(((CommandBlock) sourceState).getCommand());
-            }
-            else if (sourceState instanceof CreatureSpawner) {
-                ((CreatureSpawner) updateState).setSpawnedType(((CreatureSpawner) sourceState).getSpawnedType());
-                ((CreatureSpawner) updateState).setDelay(((CreatureSpawner) sourceState).getDelay());
-            }
+        }
+        else if (sourceObject instanceof LocationTag) {
+            Block source = ((LocationTag) sourceObject).getBlock();
+            Block update = destination.getBlock();
 
-            updateState.update();
+            replaceBlock(source, update.getLocation().clone().getBlock(), remove);
+        }
+    }
 
-            if (remove_original.asBoolean()) {
-                loc.getBlock().setType(Material.AIR);
+    private void replaceBlock(Block origin, Block destination, boolean removeOrigin) {
+        BlockState originState = LocationTag.getBlockStateFor(origin);
+        BlockData originData = NMSHandler.getBlockHelper().getBlockData(origin);
+        originData.setBlock(destination, false);
+        BlockState destState = LocationTag.getBlockStateFor(destination);
+
+        if (originState instanceof InventoryHolder) {
+            ((InventoryHolder) destState).getInventory()
+                    .setContents(((InventoryHolder) originState).getInventory().getContents());
+        }
+        else if (originState instanceof Sign) {
+            int n = 0;
+
+            for (String line : ((Sign) originState).getLines()) {
+                ((Sign) destState).setLine(n, line);
+                n++;
             }
+        }
+        else if (originState instanceof NoteBlock) {
+            ((NoteBlock) destState).setNote(((NoteBlock) originState).getNote());
+        }
+        else if (originState instanceof Skull) {
+            ((Skull) destState).setSkullType(((Skull) originState).getSkullType());
+            ((Skull) destState).setOwner(((Skull) originState).getOwner());
+            ((Skull) destState).setRotation(((Skull) originState).getRotation());
+        }
+        else if (originState instanceof Jukebox) {
+            ((Jukebox) destState).setPlaying(((Jukebox) originState).getPlaying());
+        }
+        else if (originState instanceof Banner) {
+            ((Banner) destState).setBaseColor(((Banner) originState).getBaseColor());
+            ((Banner) destState).setPatterns(((Banner) originState).getPatterns());
+        }
+        else if (originState instanceof CommandBlock) {
+            ((CommandBlock) destState).setName(((CommandBlock) originState).getName());
+            ((CommandBlock) destState).setCommand(((CommandBlock) originState).getCommand());
+        }
+        else if (originState instanceof CreatureSpawner) {
+            ((CreatureSpawner) destState).setSpawnedType(((CreatureSpawner) originState).getSpawnedType());
+            ((CreatureSpawner) destState).setDelay(((CreatureSpawner) originState).getDelay());
+            ((CreatureSpawner) destState).setMaxNearbyEntities(((CreatureSpawner) originState).getMaxNearbyEntities());
+            ((CreatureSpawner) destState).setMinSpawnDelay(((CreatureSpawner) originState).getMinSpawnDelay());
+            ((CreatureSpawner) destState).setMaxSpawnDelay(((CreatureSpawner) originState).getMaxSpawnDelay());
+            ((CreatureSpawner) destState).setRequiredPlayerRange(((CreatureSpawner) originState).getRequiredPlayerRange());
+            ((CreatureSpawner) destState).setSpawnCount(((CreatureSpawner) originState).getSpawnCount());
+            ((CreatureSpawner) destState).setSpawnRange(((CreatureSpawner) originState).getSpawnRange());
+        }
 
+        destState.update();
+
+        if (removeOrigin) {
+            origin.setType(Material.AIR);
         }
     }
 }
