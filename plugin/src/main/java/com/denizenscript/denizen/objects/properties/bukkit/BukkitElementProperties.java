@@ -470,6 +470,7 @@ public class BukkitElementProperties implements Property {
                     + element.asString() + ChatColor.COLOR_CHAR + "[/insertion]").getObjectAttribute(attribute.fulfill(1));
         }
 
+        // <--[tag]
         // @attribute <ElementTag.text_hover[<text>]>
         // @returns ElementTag
         // @group text manipulation
@@ -485,6 +486,7 @@ public class BukkitElementProperties implements Property {
                     .getObjectAttribute(attribute.fulfill(1));
         }
 
+        // <--[tag]
         // @attribute <ElementTag.item_hover[<item>/<text>]>
         // @returns ElementTag
         // @group text manipulation
@@ -501,6 +503,7 @@ public class BukkitElementProperties implements Property {
                     .getObjectAttribute(attribute.fulfill(1));
         }
 
+        // <--[tag]
         // @attribute <ElementTag.entity_hover[<entity>/<text>]>
         // @returns ElementTag
         // @group text manipulation
