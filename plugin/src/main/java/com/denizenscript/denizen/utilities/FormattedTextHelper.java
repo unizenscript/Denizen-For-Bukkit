@@ -3,6 +3,7 @@ package com.denizenscript.denizen.utilities;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.ItemTag;
+import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.*;
@@ -194,20 +195,12 @@ public class FormattedTextHelper {
                             TextComponent hoverableText = new TextComponent();
                             HoverEvent.Action action = HoverEvent.Action.valueOf(innardBase.get(1).toUpperCase());
                             BaseComponent[] hoverValue;
-                            if (action == HoverEvent.Action.SHOW_ITEM) {
+                            if (action == HoverEvent.Action.SHOW_ITEM && new Argument(innardParts.get(0)).matchesArgumentType(ItemTag.class)) {
                                 ItemTag item = ItemTag.valueOf(unescape(innardParts.get(0)));
-                                if (item == null) {
-                                    continue;
-                                }
-                                // no ItemComponent?
                                 hoverValue = new BaseComponent[] { new TextComponent(NMSHandler.getItemHelper().getRawHoverText(item.getItemStack())) };
                             }
-                            else if (action == HoverEvent.Action.SHOW_ENTITY) {
+                            else if (action == HoverEvent.Action.SHOW_ENTITY && new Argument(innardParts.get(0)).matchesArgumentType(EntityTag.class)) {
                                 EntityTag entity = EntityTag.valueOf(unescape(innardParts.get(0)));
-                                if (entity == null) {
-                                    continue;
-                                }
-                                // no EntityComponent?
                                 hoverValue = new BaseComponent[] { new TextComponent(NMSHandler.getEntityHelper().getRawHoverText(entity.getBukkitEntity())) };
                             }
                             else {
