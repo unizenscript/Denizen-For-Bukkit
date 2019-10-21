@@ -1,27 +1,16 @@
 package com.denizenscript.denizen.utilities.blocks;
 
-import com.denizenscript.denizen.nms.util.jnbt.*;
-import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.interfaces.BlockData;
 import com.denizenscript.denizen.objects.CuboidTag;
 import com.denizenscript.denizen.objects.MaterialTag;
+import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.scripts.commands.world.SchematicCommand;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.BlockVector;
-import org.bukkit.util.Vector;
-
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 public class CuboidBlockSet implements BlockSet {
 
@@ -31,37 +20,74 @@ public class CuboidBlockSet implements BlockSet {
     public CuboidBlockSet(CuboidTag cuboid, Location center) {
         Location low = cuboid.pairs.get(0).low;
         Location high = cuboid.pairs.get(0).high;
-        x_width = (high.getX() - low.getX()) + 1;
-        y_length = (high.getY() - low.getY()) + 1;
-        z_height = (high.getZ() - low.getZ()) + 1;
-        center_x = center.getX() - low.getX();
-        center_y = center.getY() - low.getY();
-        center_z = center.getZ() - low.getZ();
+        x_width = (int) ((high.getX() - low.getX()) + 1);
+        y_length = (int) ((high.getY() - low.getY()) + 1);
+        z_height = (int) ((high.getZ() - low.getZ()) + 1);
+        center_x = (int) (center.getX() - low.getX());
+        center_y = (int) (center.getY() - low.getY());
+        center_z = (int) (center.getZ() - low.getZ());
+        blocks = new BlockData[(int) (x_width * y_length * z_height)];
+        int index = 0;
         for (int x = 0; x < x_width; x++) {
             for (int y = 0; y < y_length; y++) {
                 for (int z = 0; z < z_height; z++) {
-                    blocks.add(NMSHandler.getBlockHelper().getBlockData(low.clone().add(x, y, z).getBlock()));
+                    blocks[index++] = NMSHandler.getBlockHelper().getBlockData(low.clone().add(x, y, z).getBlock());
                 }
             }
         }
     }
 
-    public List<BlockData> blocks = new ArrayList<>();
+    public void buildDelayed(CuboidTag cuboid, Location center, Runnable runme) {
+        Location low = cuboid.pairs.get(0).low;
+        Location high = cuboid.pairs.get(0).high;
+        x_width = (int) ((high.getX() - low.getX()) + 1);
+        y_length = (int) ((high.getY() - low.getY()) + 1);
+        z_height = (int) ((high.getZ() - low.getZ()) + 1);
+        center_x = (int) (center.getX() - low.getX());
+        center_y = (int) (center.getY() - low.getY());
+        center_z = (int) (center.getZ() - low.getZ());
+        final long goal = (long) (x_width * y_length * z_height);
+        new BukkitRunnable() {
+            int index = 0;
+            @Override
+            public void run() {
+                long start = System.currentTimeMillis();
+                while (index < goal) {
+                    long z = index % ((long) (z_height));
+                    long y = ((index - z) % ((long) (y_length * z_height))) / ((long) z_height);
+                    long x = (index - y - z) / ((long) (y_length * z_height));
+                    blocks[index] = NMSHandler.getBlockHelper().getBlockData(low.clone().add(x, y, z).getBlock());
+                    index++;
+                    if (System.currentTimeMillis() - start > 50) {
+                        SchematicCommand.noPhys = false;
+                        return;
+                    }
+                }
+                if (runme != null) {
+                    runme.run();
+                }
+                cancel();
 
-    public double x_width;
+            }
+        }.runTaskTimer(DenizenAPI.getCurrentInstance(), 1, 1);
+    }
 
-    public double y_length;
+    public BlockData[] blocks = null;
 
-    public double z_height;
+    public int x_width;
 
-    public double center_x;
+    public int y_length;
 
-    public double center_y;
+    public int z_height;
 
-    public double center_z;
+    public int center_x;
+
+    public int center_y;
+
+    public int center_z;
 
     @Override
-    public List<BlockData> getBlocks() {
+    public BlockData[] getBlocks() {
         return blocks;
     }
 
@@ -71,27 +97,41 @@ public class CuboidBlockSet implements BlockSet {
         return new CuboidTag(low, high);
     }
 
-    public class IntHolder {
-        public long theInt = 0;
+    public void setBlockSingle(BlockData block, int x, int y, int z, InputParams input) {
+        if (input.noAir && block.getMaterial() == Material.AIR) {
+            return;
+        }
+        int finalY = input.centerLocation.getBlockY() + y - center_y;
+        if (finalY < 0 || finalY > 255) {
+            return;
+        }
+        Block destBlock = input.centerLocation.clone().add(x - center_x, y - center_y, z - center_z).getBlock();
+        if (input.mask != null && !input.mask.contains(destBlock.getType())) {
+            return;
+        }
+        if (input.fakeTo == null) {
+            block.setBlock(destBlock, false);
+        }
+        else {
+            FakeBlock.showFakeBlockTo(input.fakeTo, destBlock.getLocation(), new MaterialTag(block.modern()), input.fakeDuration);
+        }
     }
 
     @Override
-    public void setBlocksDelayed(final Location loc, final Runnable runme, final boolean noAir) {
-        final IntHolder index = new IntHolder();
+    public void setBlocksDelayed(final Runnable runme, final InputParams input) {
         final long goal = (long) (x_width * y_length * z_height);
         new BukkitRunnable() {
+            int index = 0;
             @Override
             public void run() {
                 SchematicCommand.noPhys = true;
                 long start = System.currentTimeMillis();
-                while (index.theInt < goal) {
-                    long z = index.theInt % ((long) (z_height));
-                    long y = ((index.theInt - z) % ((long) (y_length * z_height))) / ((long) z_height);
-                    long x = (index.theInt - y - z) / ((long) (y_length * z_height));
-                    if (!noAir || blocks.get((int) index.theInt).getMaterial() != Material.AIR) {
-                        blocks.get((int) index.theInt).setBlock(loc.clone().add(x - center_x, y - center_y, z - center_z).getBlock(), false);
-                    }
-                    index.theInt++;
+                while (index < goal) {
+                    int z = index % (z_height);
+                    int y = ((index - z) % (y_length * z_height)) / z_height;
+                    int x = (index - y - z) / (y_length * z_height);
+                    setBlockSingle(blocks[index], x, y, z, input);
+                    index++;
                     if (System.currentTimeMillis() - start > 50) {
                         SchematicCommand.noPhys = false;
                         return;
@@ -108,15 +148,13 @@ public class CuboidBlockSet implements BlockSet {
     }
 
     @Override
-    public void setBlocks(Location loc, boolean noAir) {
+    public void setBlocks(InputParams input) {
         SchematicCommand.noPhys = true;
         int index = 0;
         for (int x = 0; x < x_width; x++) {
             for (int y = 0; y < y_length; y++) {
                 for (int z = 0; z < z_height; z++) {
-                    if (!noAir || blocks.get(index).getMaterial() != Material.AIR) {
-                        blocks.get(index).setBlock(loc.clone().add(x - center_x, y - center_y, z - center_z).getBlock(), false);
-                    }
+                    setBlockSingle(blocks[index], x, y, z, input);
                     index++;
                 }
             }
@@ -125,30 +163,32 @@ public class CuboidBlockSet implements BlockSet {
     }
 
     public void rotateOne() {
-        List<BlockData> bd = new ArrayList<>();
-        double cx = center_x;
+        BlockData[] bd = new BlockData[blocks.length];
+        int index = 0;
+        int cx = center_x;
         center_x = center_z;
         center_z = cx;
         for (int x = 0; x < z_height; x++) {
             for (int y = 0; y < y_length; y++) {
                 for (int z = (int) x_width - 1; z >= 0; z--) {
-                    bd.add(blockAt(z, y, x));
+                    bd[index++] = blockAt(z, y, x);
                 }
             }
         }
-        double xw = x_width;
+        int xw = x_width;
         x_width = z_height;
         z_height = xw;
         blocks = bd;
     }
 
     public void flipX() {
-        List<BlockData> bd = new ArrayList<>();
+        BlockData[] bd = new BlockData[blocks.length];
+        int index = 0;
         center_x = x_width - center_x;
         for (int x = (int) x_width - 1; x >= 0; x--) {
             for (int y = 0; y < y_length; y++) {
                 for (int z = 0; z < z_height; z++) {
-                    bd.add(blockAt(x, y, z));
+                    bd[index++] = blockAt(x, y, z);
                 }
             }
         }
@@ -156,12 +196,13 @@ public class CuboidBlockSet implements BlockSet {
     }
 
     public void flipY() {
-        List<BlockData> bd = new ArrayList<>();
+        BlockData[] bd = new BlockData[blocks.length];
+        int index = 0;
         center_x = x_width - center_x;
         for (int x = 0; x < x_width; x++) {
             for (int y = (int) y_length - 1; y >= 0; y--) {
                 for (int z = 0; z < z_height; z++) {
-                    bd.add(blockAt(x, y, z));
+                    bd[index++] = blockAt(x, y, z);
                 }
             }
         }
@@ -169,12 +210,13 @@ public class CuboidBlockSet implements BlockSet {
     }
 
     public void flipZ() {
-        List<BlockData> bd = new ArrayList<>();
+        BlockData[] bd = new BlockData[blocks.length];
+        int index = 0;
         center_x = x_width - center_x;
         for (int x = 0; x < x_width; x++) {
             for (int y = 0; y < y_length; y++) {
                 for (int z = (int) z_height - 1; z >= 0; z--) {
-                    bd.add(blockAt(x, y, z));
+                    bd[index++] = blockAt(x, y, z);
                 }
             }
         }
@@ -182,7 +224,7 @@ public class CuboidBlockSet implements BlockSet {
     }
 
     public BlockData blockAt(double X, double Y, double Z) {
-        return blocks.get((int) (Z + Y * z_height + X * z_height * y_length));
+        return blocks[(int) (Z + Y * z_height + X * z_height * y_length)];
         // This calculation should produce the same result as the below nonsense:
         /*
         int index = 0;
@@ -198,203 +240,5 @@ public class CuboidBlockSet implements BlockSet {
         }
         return null;
         */
-    }
-
-    public static CuboidBlockSet fromMCEditStream(InputStream is) {
-        CuboidBlockSet cbs = new CuboidBlockSet();
-        try {
-            NBTInputStream nbtStream = new NBTInputStream(new GZIPInputStream(is));
-            NamedTag rootTag = nbtStream.readNamedTag();
-            nbtStream.close();
-            if (!rootTag.getName().equals("Schematic")) {
-                throw new Exception("Tag 'Schematic' does not exist or is not first!");
-            }
-            CompoundTag schematicTag = (CompoundTag) rootTag.getTag();
-            Map<String, Tag> schematic = schematicTag.getValue();
-            short width = (getChildTag(schematic, "Width", ShortTag.class).getValue());
-            short length = (getChildTag(schematic, "Length", ShortTag.class).getValue());
-            short height = (getChildTag(schematic, "Height", ShortTag.class).getValue());
-            int originX = 0;
-            int originY = 0;
-            int originZ = 0;
-            try {
-                originX = getChildTag(schematic, "DenizenOriginX", IntTag.class).getValue();
-                originY = getChildTag(schematic, "DenizenOriginY", IntTag.class).getValue();
-                originZ = getChildTag(schematic, "DenizenOriginZ", IntTag.class).getValue();
-            }
-            catch (Exception e) {
-                // Default origin, why not
-            }
-            cbs.x_width = width;
-            cbs.z_height = length;
-            cbs.y_length = height;
-            cbs.center_x = originX;
-            cbs.center_y = originY;
-            cbs.center_z = originZ;
-            // Disregard Offset
-            String materials = getChildTag(schematic, "Materials", StringTag.class).getValue();
-            if (!materials.equals("Alpha")) {
-                throw new Exception("Schematic file is not an Alpha schematic!");
-            }
-            byte[] blockId = getChildTag(schematic, "Blocks", ByteArrayTag.class).getValue();
-            byte[] blockData = getChildTag(schematic, "Data", ByteArrayTag.class).getValue();
-            byte[] addId = new byte[0];
-            short[] blocks = new short[blockId.length];
-            if (schematic.containsKey("AddBlocks")) {
-                addId = getChildTag(schematic, "AddBlocks", ByteArrayTag.class).getValue();
-            }
-            for (int index = 0; index < blockId.length; index++) {
-                if ((index >> 1) >= addId.length) {
-                    blocks[index] = (short) (blockId[index] & 0xFF);
-                }
-                else {
-                    if ((index & 1) == 0) {
-                        blocks[index] = (short) (((addId[index >> 1] & 0x0F) << 8) + (blockId[index] & 0xFF));
-                    }
-                    else {
-                        blocks[index] = (short) (((addId[index >> 1] & 0xF0) << 4) + (blockId[index] & 0xFF));
-                    }
-                }
-            }
-            List<Tag> tileEntities = getChildTag(schematic, "TileEntities", ListTag.class).getValue();
-            Map<BlockVector, Map<String, Tag>> tileEntitiesMap = new HashMap<>();
-            for (Tag tag : tileEntities) {
-                if (!(tag instanceof CompoundTag)) {
-                    continue;
-                }
-                CompoundTag t = (CompoundTag) tag;
-                int x = 0;
-                int y = 0;
-                int z = 0;
-                Map<String, Tag> values = new HashMap<>();
-                for (Map.Entry<String, Tag> entry : t.getValue().entrySet()) {
-                    if (entry.getKey().equals("x")) {
-                        if (entry.getValue() instanceof IntTag) {
-                            x = ((IntTag) entry.getValue()).getValue();
-                        }
-                    }
-                    else if (entry.getKey().equals("y")) {
-                        if (entry.getValue() instanceof IntTag) {
-                            y = ((IntTag) entry.getValue()).getValue();
-                        }
-                    }
-                    else if (entry.getKey().equals("z")) {
-                        if (entry.getValue() instanceof IntTag) {
-                            z = ((IntTag) entry.getValue()).getValue();
-                        }
-                    }
-                    values.put(entry.getKey(), entry.getValue());
-                }
-                BlockVector vec = new BlockVector(x, y, z);
-                tileEntitiesMap.put(vec, values);
-            }
-            org.bukkit.util.Vector vec = new Vector(width, height, length);
-            for (int x = 0; x < width; x++) {
-                for (int y = 0; y < height; y++) {
-                    for (int z = 0; z < length; z++) {
-                        int index = y * width * length + z * width + x;
-                        BlockVector pt = new BlockVector(x, y, z);
-                        // TODO: 1.13 - move away from legacy IDs somehow?
-                        MaterialTag dMat = OldMaterialsHelper.getMaterialFrom(OldMaterialsHelper.getLegacyMaterial(blocks[index]), blockData[index]);
-                        BlockData block = dMat.getNmsBlockData();
-                        if (tileEntitiesMap.containsKey(pt)) {
-                            CompoundTag otag = NMSHandler.getInstance().createCompoundTag(tileEntitiesMap.get(pt));
-                            block.setCompoundTag(otag);
-                        }
-                        cbs.blocks.add(block);
-                    }
-                }
-            }
-        }
-        catch (Exception e) {
-            Debug.echoError(e);
-        }
-        return cbs;
-    }
-
-    private static <T extends Tag> T getChildTag(Map<String, Tag> items, String key,
-                                                 Class<T> expected) throws Exception {
-        if (!items.containsKey(key)) {
-            throw new Exception("Schematic file is missing a '" + key + "' tag");
-        }
-        Tag tag = items.get(key);
-        if (!expected.isInstance(tag)) {
-            throw new Exception(key + " tag is not of tag type " + expected.getName());
-        }
-        return expected.cast(tag);
-    }
-
-    // Thanks to WorldEdit for sample code
-    public void saveMCEditFormatToStream(OutputStream os) {
-        try {
-            HashMap<String, Tag> schematic = new HashMap<>();
-            schematic.put("Width", new ShortTag((short) (x_width)));
-            schematic.put("Length", new ShortTag((short) (z_height)));
-            schematic.put("Height", new ShortTag((short) (y_length)));
-            schematic.put("Materials", new StringTag("Alpha"));
-            schematic.put("DenizenOriginX", new IntTag((int) center_x));
-            schematic.put("DenizenOriginY", new IntTag((int) center_y));
-            schematic.put("DenizenOriginZ", new IntTag((int) center_z));
-            schematic.put("WEOriginX", new IntTag((int) center_x));
-            schematic.put("WEOriginY", new IntTag((int) center_y));
-            schematic.put("WEOriginZ", new IntTag((int) center_z));
-            schematic.put("WEOffsetX", new IntTag(0));
-            schematic.put("WEOffsetY", new IntTag(0));
-            schematic.put("WEOffsetZ", new IntTag(0));
-            byte[] blocks = new byte[(int) ((x_width) * (y_length) * (z_height))];
-            byte[] addBlocks = null;
-            byte[] blockData = new byte[blocks.length];
-            ArrayList<Tag> tileEntities = new ArrayList<>();
-            int indexer = 0;
-            for (int x = 0; x < x_width; x++) {
-                for (int y = 0; y < y_length; y++) {
-                    for (int z = 0; z < z_height; z++) {
-                        int index = (int) (y * (x_width) * (z_height) + z * (x_width) + x);
-                        BlockData bd = this.blocks.get(indexer);//blockAt(x, y, z);
-                        indexer++;
-                        int matId = NMSHandler.getBlockHelper().idFor(bd.getMaterial());
-                        if (matId > 255) {
-                            if (addBlocks == null) {
-                                addBlocks = new byte[(blocks.length >> 1) + 1];
-                            }
-                            addBlocks[index >> 1] = (byte) (((index & 1) == 0) ?
-                                    addBlocks[index >> 1] & 0xF0 | (matId >> 8) & 0xF
-                                    : addBlocks[index >> 1] & 0xF | ((matId >> 8) & 0xF) << 4);
-                        }
-                        blocks[index] = (byte) matId;
-                        blockData[index] = bd.getData();
-
-                        CompoundTag rawTag = bd.getCompoundTag();
-                        if (rawTag != null) {
-                            HashMap<String, Tag> values = new HashMap<>();
-                            for (Map.Entry<String, Tag> entry : rawTag.getValue().entrySet()) {
-                                values.put(entry.getKey(), entry.getValue());
-                            }
-                            // TODO: ??? -> values.put("id", new StringTag(null)); // block.getNbtId()
-                            values.put("x", new IntTag(x));
-                            values.put("y", new IntTag(y));
-                            values.put("z", new IntTag(z));
-                            CompoundTag tileEntityTag = NMSHandler.getInstance().createCompoundTag(values);
-                            tileEntities.add(tileEntityTag);
-                        }
-                    }
-                }
-            }
-            schematic.put("Blocks", new ByteArrayTag(blocks));
-            schematic.put("Data", new ByteArrayTag(blockData));
-            schematic.put("Entities", new ListTag(CompoundTag.class, new ArrayList<>()));
-            schematic.put("TileEntities", new ListTag(CompoundTag.class, tileEntities));
-            if (addBlocks != null) {
-                schematic.put("AddBlocks", new ByteArrayTag(addBlocks));
-            }
-            CompoundTag schematicTag = NMSHandler.getInstance().createCompoundTag(schematic);
-            NBTOutputStream stream = new NBTOutputStream(new GZIPOutputStream(os));
-            stream.writeNamedTag("Schematic", schematicTag);
-            os.flush();
-            stream.close();
-        }
-        catch (Exception e) {
-            Debug.echoError(e);
-        }
     }
 }

@@ -49,7 +49,7 @@ public class BukkitElementProperties implements Property {
             "as_material", "asnpc", "as_npc", "asplayer", "as_player", "asworld", "as_world", "asplugin",
             "as_plugin", "last_color", "format", "strip_color", "parse_color", "to_itemscript_hash",
             "to_secret_colors", "from_secret_colors", "to_raw_json", "from_raw_json", "on_hover", "on_click",
-            "with_insertion",
+            "with_insertion", "no_reset", "end_format",
 
             // Unizen-added properties
             "text_hover", "item_hover", "entity_hover", "run_on_click", "suggest_on_click",
@@ -471,6 +471,36 @@ public class BukkitElementProperties implements Property {
         }
 
         // <--[tag]
+        // @attribute <ElementTag.no_reset>
+        // @returns ElementTag
+        // @group text manipulation
+        // @description
+        // Makes a color code (&0123456789abcdef) not reset other formatting details.
+        // Use like '<&c.no_reset>' or '<red.no_reset>'.
+        // -->
+        if (attribute.startsWith("no_reset")) {
+            if (element.asString().length() == 2 && element.asString().charAt(0) == ChatColor.COLOR_CHAR) {
+                return new ElementTag(ChatColor.COLOR_CHAR + "[color=" + element.asString().charAt(1) + "]").getObjectAttribute(attribute.fulfill(1));
+            }
+        }
+
+        // <--[tag]
+        // @attribute <ElementTag.end_format>
+        // @returns ElementTag
+        // @group text manipulation
+        // @description
+        // Makes a chat format code (&klmno) be the end of a format, as opposed to the start.
+        // Use like '<&o.end_format>' or '<italic.end_format>'.
+        // -->
+        if (attribute.startsWith("end_format")) {
+            if (element.asString().length() == 2 && element.asString().charAt(0) == ChatColor.COLOR_CHAR) {
+                return new ElementTag(ChatColor.COLOR_CHAR + "[reset=" + element.asString().charAt(1) + "]").getObjectAttribute(attribute.fulfill(1));
+            }
+        }
+
+        // Unizen start
+
+        // <--[tag]
         // @attribute <ElementTag.text_hover[<text>]>
         // @returns ElementTag
         // @group text manipulation
@@ -609,6 +639,8 @@ public class BukkitElementProperties implements Property {
                     element.asString() + textComponentSecret + "[/click]")
                     .getObjectAttribute(attribute.fulfill(1));
         }
+
+        // Unizen end
 
         return null;
     }
