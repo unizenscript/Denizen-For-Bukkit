@@ -233,7 +233,7 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
                 // No 'in ...' specified
                 return true;
             }
-            Deprecations.inAreaSwitchFormat.warn();
+
             it = path.eventArgLowerAt(index + 1);
             if (it.equals("notable")) {
                 String subit = path.eventArgLowerAt(index + 2);

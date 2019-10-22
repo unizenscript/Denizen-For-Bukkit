@@ -20,10 +20,13 @@ public class TriggerCommand extends AbstractCommand {
     // @Required 1
     // @Short Enables or disables a trigger.
     // @Group npc
-    // @Guide https://guide.denizenscript.com/guides/npcs/interact-scripts.html
     //
     // @Description
-    // TODO: Document Command Details
+    // Sets, enables, or disables the state of an NPC trigger.
+    // The Denizen config enables the click and chat triggers automatically.
+    // If the "state" argument is not specified, then the trigger's state will toggle between true and false.
+    // If a cooldown is specified, then there will be a delay between two consecutive trigger pulses. Otherwise, the default cooldown in the Denizen config is used.
+    // If a radius is specified, then the trigger will only activate for that specified radius. Otherwise, the default radius in the Denizen config is used.
     //
     // @Tags
     // <NPCTag.has_trigger[<trigger>]>
@@ -37,7 +40,8 @@ public class TriggerCommand extends AbstractCommand {
     // - trigger name:chat state:true cooldown:10s radius:5
     //
     // @Usage
-    // TODO: Document Command Details
+    // Use to disable the click trigger.
+    // - trigger name:click state:false
     // -->
 
     private enum Toggle {TOGGLE, TRUE, FALSE}

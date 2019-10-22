@@ -3,6 +3,7 @@ package com.denizenscript.denizen;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.notable.NotableManager;
+import com.denizenscript.denizen.scripts.containers.core.VersionScriptContainer;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.command.manager.Command;
 import com.denizenscript.denizen.utilities.command.manager.CommandContext;
@@ -16,6 +17,7 @@ import com.denizenscript.denizencore.scripts.ScriptHelper;
 import com.denizenscript.denizencore.scripts.ScriptRegistry;
 import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.utilities.debugging.FutureWarning;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -290,10 +292,65 @@ public class DenizenCommandHandler {
     public void version(CommandContext args, CommandSender sender) throws CommandException {
         Messaging.sendInfo(sender, "<2>DENIZEN<7>: scriptable Minecraft!"); // TODO: "It's Scriptable!"?
         Messaging.send(sender, "");
-        Messaging.send(sender, "<7>by: <f>the DenizenScript team, with help from many skilled contributors!");
-        Messaging.send(sender, "<7>chat with us at: <f> https://discord.gg/Q6pZGSR");
-        Messaging.send(sender, "<7>or learn more at: <f> https://denizenscript.com");
-        Messaging.send(sender, "<7>version: <f>" + Denizen.versionTag + "<7>, core version: <f>" + DenizenCore.VERSION);
+        Messaging.send(sender, "<7>By: <f>Denizen contributors, Unizen contributors");
+        Messaging.send(sender, "<7>Chat with us at: <f>https://discord.gg/5rZ8BxD");
+        //Messaging.send(sender, "<7>or learn more at: <f>https://denizenscript.com");
+        Messaging.send(sender, "<7>Version: <f>" + Denizen.versionTag + "<7>, core version: <f>" + DenizenCore.VERSION);
+    }
+
+
+    /*
+     * DENIZEN SCRIPTVERSIONS
+     */
+    @Command(
+            aliases = {"denizen"}, usage = "scriptversions",
+            desc = "Shows the currently loaded version of your scripts and checks them against the script repo.", modifiers = {"scriptversions"},
+            min = 1, max = 3, permission = "denizen.basic")
+    public void scriptcheck(CommandContext args, CommandSender sender) throws CommandException {
+        if (VersionScriptContainer.scripts.isEmpty()) {
+            sender.sendMessage(ChatColor.RED + "There are no version scripts loaded!");
+            return;
+        }
+
+        boolean isInteger = false;
+        int amountOfScripts = VersionScriptContainer.scripts.size();
+        int page = 1;
+        int maxPage = (int) Math.ceil(amountOfScripts / 10.0);
+        VersionScriptContainer script;
+
+        if (args.getString(1, null) != null) {
+            String arg = args.getString(1);
+            try {
+                page = Integer.parseInt(arg);
+                isInteger = true;
+            }
+            catch (Exception e) {
+                if (ScriptRegistry.containsScript(arg, VersionScriptContainer.class)) {
+                    script = ScriptRegistry.getScriptContainer(arg);
+                    sender.sendMessage(ChatColor.WHITE + script.getName() +
+                            ChatColor.GRAY + " | " + ChatColor.WHITE + script.getString("author", "N/A") +
+                            ChatColor.GRAY + " | " + ChatColor.WHITE + script.getString("version", "N/A") +
+                            ChatColor.RESET);
+                    return;
+                }
+            }
+        }
+
+        Paginator paginator = new Paginator().header("Scripts (" + amountOfScripts + " total, page " + page + "/" + maxPage + ")");
+        paginator.addLine("Script name | Author | Version");
+
+        for (VersionScriptContainer pagedScripts : VersionScriptContainer.scripts) {
+            paginator.addLine(ChatColor.WHITE + pagedScripts.getName() +
+                    ChatColor.GRAY + " | " + ChatColor.WHITE + pagedScripts.getString("author", "no author") +
+                    ChatColor.GRAY + " | " + ChatColor.WHITE + pagedScripts.getString("version", "no version") +
+                    ChatColor.RESET);
+        }
+
+        if (!paginator.sendPage(sender, page)) {
+            throw new CommandException("The page " + page + " does not exist!");
+        }
+
+        sender.sendMessage(ChatColor.GREEN + "You have " + (amountOfScripts == 1 ? "1 version script" : amountOfScripts + " version scripts") + " loaded." + ChatColor.RESET);
     }
 
 

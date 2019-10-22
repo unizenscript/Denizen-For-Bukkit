@@ -26,27 +26,26 @@ public class ShowFakeCommand extends AbstractCommand {
     // @Group player
     //
     // @Description
-    // Makes the player see a block change that didn't actually happen.
-    // This means that the server will still register the block being what it was before the command,
-    // and players not included in the command will still see the original block.
+    // Makes the player see fake block changes.
+    // Only the players targeted by this command will see the fake block changes.
     //
-    // You must specify a location (or list of locations), and a material (or list of materials).
-    // The material list does not have to be of the same size as the location list (materials will be repeated automatically).
+    // You must specify one or more locations, and one or more materials.
+    // If the material list is not the same size as the location list, then the materials used will cycle or be cut short.
     //
-    // Optionally, specify a list of players to show the change to.
-    // If unspecified, will default to the linked player.
+    // Optionally, specify a list of players to show the fake change to.
+    // If unspecified, the targeted player will default to the linked player.
     //
-    // Optionally, specify how long the fake block should remain for.
-    // If unspecified, will default to 10 seconds.
-    // After the duration is up, the block will revert back to whatever it really is (on the server-side).
-    // Be aware that this system is not perfect, and will not prevent blocks from reverting on their own.
-    // This can happen if a player clicks on the block, or blocks change near it, or the player leaves the area and comes back.
+    // Optionally, specify how long the fake blocks should remain for.
+    // If unspecified, the fake blocks will automatically disappear after 10 seconds.
+    // After the duration is up, the blocks will revert back to whatever they really were.
+    // Be aware that this system is not perfect, and will not prevent faked blocks from reverting on their own.
+    // This can happen if a player clicks on the block, or blocks near the faked ones cahnge, or the player leaves the area and returns.
     //
-    // Note that while the player will see the block as though it were real, the server will have no knowledge of this.
-    // This means that if the player, for example, stands atop a fake block that the server sees as air, that player will be seen as flying.
-    // The reverse applies as well: if a player walks through fake air (that is actually solid), the server will see a player walking through walls.
-    // This can easily lead to players getting kicked by anti-cheat systems or similar results.
-    // Note as well that some clientside block effects may occur (eg fake fire may appear momentarily to actually ignite things, but won't actually damage them).
+    // Note that while the player will see the faked blocks as though they were real, the server will have no knowledge of the fake blocks.
+    // If a player stands on top a fake block that the server sees as air, the server will think that the player is flying.
+    // Similarly, if a player walks through fake air that the server sees as a solid block, the server will think that the player is walking through walls.
+    // This can lead to players getting kicked by anti-cheat systems.
+    // Note as well that some clientside block effects may occur. For example, fake fire may appear to momentarily ignite things, but the fire isn't real.
     //
     // @Tags
     // None
@@ -74,11 +73,13 @@ public class ShowFakeCommand extends AbstractCommand {
                     && arg.matchesPrefix("to", "players")) {
                 scriptEntry.addObject("players", arg.asType(ListTag.class).filter(PlayerTag.class, scriptEntry));
             }
-            else if (arg.matchesPrefix("d", "duration")
+            else if (!scriptEntry.hasObject("duration")
+                    && arg.matchesPrefix("d", "duration")
                     && arg.matchesArgumentType(DurationTag.class)) {
                 scriptEntry.addObject("duration", arg.asType(DurationTag.class));
             }
-            else if (arg.matches("cancel")) {
+            else if (!scriptEntry.hasObject("cancel")
+                    && arg.matches("cancel")) {
                 scriptEntry.addObject("cancel", new ElementTag(true));
             }
             else if (!scriptEntry.hasObject("materials")

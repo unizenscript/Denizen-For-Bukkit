@@ -25,7 +25,6 @@ public class ZapCommand extends AbstractCommand implements Listener {
     // @Required 0
     // @Short Changes the current script step.
     // @Group core
-    // @Guide https://guide.denizenscript.com/guides/npcs/interact-scripts.html
     //
     // @Description
     // TODO: Document Command Details
