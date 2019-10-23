@@ -13,6 +13,7 @@ import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -39,7 +40,12 @@ public class DisplayItemCommand extends AbstractCommand implements Listener {
     // It accepts a duration which determines how long the item will stay for until disappearing.
     // If no duration is specified the item will stay for 1 minute, after which the item will disappear.
     //
+    // When the server restarts, all permanent display items will persist, but all temporary display items will be automatically removed.
+    //
     // @Tags
+    // <server.list_display_items>
+    // <server.list_temporary_display_items>
+    // <server.list_permanent_display_items>
     // <EntityTag.item>
     // <entry[saveName].dropped> returns a EntityTag of the spawned item.
     //
@@ -109,26 +115,41 @@ public class DisplayItemCommand extends AbstractCommand implements Listener {
         scriptEntry.defaultObject("permanent", new ElementTag(false));
     }
 
-    public final HashSet<UUID> protectedEntities = new HashSet<>();
+    private final HashSet<UUID> protectedEntities = new HashSet<>();
+    private final HashSet<UUID> protectedPermanentEntities = new HashSet<>();
+
+    public HashSet<UUID> getProtectedEntities() {
+        cleanProtectedItems();
+        return protectedEntities;
+    }
+
+    public HashSet<UUID> getProtectedPermanentEntities() {
+        cleanProtectedItems();
+        return protectedPermanentEntities;
+    }
 
     @EventHandler
     public void onItemMerge(ItemMergeEvent event) {
-        if (protectedEntities.contains(event.getEntity().getUniqueId())
-                || protectedEntities.contains(event.getTarget().getUniqueId())) {
+        if (protectedEntities.contains(event.getEntity().getUniqueId()) ||
+                protectedEntities.contains(event.getTarget().getUniqueId()) ||
+                protectedPermanentEntities.contains(event.getEntity().getUniqueId()) ||
+                protectedPermanentEntities.contains(event.getTarget().getUniqueId())) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onItemInventoryPickup(InventoryPickupItemEvent event) {
-        if (protectedEntities.contains(event.getItem().getUniqueId())) {
+        if (protectedEntities.contains(event.getItem().getUniqueId()) ||
+                protectedPermanentEntities.contains(event.getItem().getUniqueId())) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onItemEntityPickup(EntityPickupItemEvent event) {
-        if (protectedEntities.contains(event.getItem().getUniqueId())) {
+        if (protectedEntities.contains(event.getItem().getUniqueId()) ||
+                protectedPermanentEntities.contains(event.getItem().getUniqueId())) {
             event.setCancelled(true);
         }
     }
@@ -153,6 +174,11 @@ public class DisplayItemCommand extends AbstractCommand implements Listener {
 
         }
 
+        if (location.getWorld() == null) {
+            Debug.echoError("The location must have a valid world!");
+            return;
+        }
+
         // Drop the item
         final Item dropped = location.getWorld()
                 .dropItem(location.getBlock().getLocation().clone().add(0.5, 1.5, 0.5), item.getItemStack());
@@ -163,13 +189,10 @@ public class DisplayItemCommand extends AbstractCommand implements Listener {
             return;
         }
         final UUID itemUUID = dropped.getUniqueId();
-        protectedEntities.add(itemUUID);
-
-        // Remember the item entity
-        scriptEntry.addObject("dropped", new EntityTag(dropped));
 
         // If the displayed item isn't permanent, remove it after the specified/default duration.
         if (!permanent.asBoolean()) {
+            protectedEntities.add(itemUUID);
             Bukkit.getScheduler().scheduleSyncDelayedTask(DenizenAPI.getCurrentInstance(),
                     () -> {
                         if (dropped.isValid() && !dropped.isDead()) {
@@ -178,5 +201,27 @@ public class DisplayItemCommand extends AbstractCommand implements Listener {
                         }
                     }, duration.getTicks());
         }
+        else {
+            protectedPermanentEntities.add(itemUUID);
+        }
+
+        // Remember the item entity
+        scriptEntry.addObject("dropped", new EntityTag(dropped));
+    }
+
+    public void cleanProtectedItems() {
+        cleanIndividualSet(protectedEntities);
+        cleanIndividualSet(protectedPermanentEntities);
+    }
+
+    private void cleanIndividualSet(HashSet<UUID> set) {
+        HashSet<UUID> invalidEntities = new HashSet<>();
+        for (UUID uuid : set) {
+            if (EntityTag.getEntityForID(uuid) == null || EntityTag.getEntityForID(uuid).getType() != EntityType.DROPPED_ITEM) {
+                invalidEntities.add(uuid);
+            }
+        }
+
+        set.removeAll(invalidEntities);
     }
 }

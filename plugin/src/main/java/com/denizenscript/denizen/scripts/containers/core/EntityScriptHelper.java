@@ -1,5 +1,6 @@
 package com.denizenscript.denizen.scripts.containers.core;
 
+import com.denizenscript.denizen.scripts.commands.item.DisplayItemCommand;
 import com.denizenscript.denizen.utilities.DataPersistenceHelper;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.debugging.Debug;
@@ -17,6 +18,7 @@ import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
@@ -27,9 +29,7 @@ import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class EntityScriptHelper implements Listener {
 
@@ -101,6 +101,24 @@ public class EntityScriptHelper implements Listener {
     }
 
     public static void reloadEntities() {
+
+        // Unizen start
+
+        List<String> permanentDisplayItems = DenizenAPI.getCurrentInstance().getEntities().getStringList("entities.permanent display items");
+        for (String uuid : permanentDisplayItems) {
+            ((DisplayItemCommand) DenizenAPI.getCurrentInstance().getCommandRegistry().get("DISPLAYITEM")).getProtectedPermanentEntities().add(UUID.fromString(uuid));
+        }
+
+        List<String> removableDisplayItems = DenizenAPI.getCurrentInstance().getEntities().getStringList("entities.disposable display items");
+        for (String uuid : removableDisplayItems) {
+            Entity entity = Bukkit.getServer().getEntity(UUID.fromString(uuid));
+            if (entity != null && entity.getType() == EntityType.DROPPED_ITEM) {
+                entity.remove();
+            }
+        }
+
+        // Unizen end
+
         if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
             return;
         }
@@ -118,13 +136,33 @@ public class EntityScriptHelper implements Listener {
     }
 
     public static void saveEntities() {
+
+        // Unizen start
+
+        FileConfiguration entitySaves = DenizenAPI.getCurrentInstance().getEntities();
+
+        // Save protected permanent items created by displayitem command, and slate any old displayitem for immediate removal (since they won't disappear on their own)
+        List<String> permDisplayItems = new ArrayList<>();
+        for (UUID uuid : ((DisplayItemCommand) DenizenAPI.getCurrentInstance().getCommandRegistry().instances.get("displayitem")).getProtectedPermanentEntities()) {
+            permDisplayItems.add(uuid.toString());
+        }
+        entitySaves.set("entities.permanent display items", permDisplayItems);
+
+        List<String> tempDisplayItems = new ArrayList<>();
+        for (UUID uuid : ((DisplayItemCommand) DenizenAPI.getCurrentInstance().getCommandRegistry().instances.get("displayitem")).getProtectedEntities()) {
+            tempDisplayItems.add(uuid.toString());
+        }
+        entitySaves.set("entities.disposable display items", tempDisplayItems);
+
+        // Unizen end
+
         if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
             return;
         }
-        FileConfiguration entityScripts = DenizenAPI.getCurrentInstance().getEntities();
-        entityScripts.set("entities.scripts", null);
+
+        entitySaves.set("entities.scripts", null);
         for (Map.Entry<UUID, String> entry : entities.entrySet()) {
-            entityScripts.set("entities.scripts." + entry.getKey() + ".scriptname", entry.getValue());
+            entitySaves.set("entities.scripts." + entry.getKey() + ".scriptname", entry.getValue());
         }
     }
 
