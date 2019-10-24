@@ -14,6 +14,7 @@ import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ShowFakeCommand extends AbstractCommand {
@@ -36,7 +37,7 @@ public class ShowFakeCommand extends AbstractCommand {
     // If unspecified, the targeted player will default to the linked player.
     //
     // Optionally, specify how long the fake blocks should remain for.
-    // If unspecified, the fake blocks will automatically disappear after 10 seconds.
+    // If unspecified, the fake blocks will disappear after the default duration of 10 seconds.
     // After the duration is up, the blocks will revert back to whatever they really were.
     // Be aware that this system is not perfect, and will not prevent faked blocks from reverting on their own.
     // This can happen if a player clicks on the block, or blocks near the faked ones cahnge, or the player leaves the area and returns.
@@ -48,7 +49,8 @@ public class ShowFakeCommand extends AbstractCommand {
     // Note as well that some clientside block effects may occur. For example, fake fire may appear to momentarily ignite things, but the fire isn't real.
     //
     // @Tags
-    // None
+    // <PlayerTag.fake_block_locations>
+    // <PlayerTag.fake_block[<location>]>
     //
     // @Usage
     // Use to place a fake gold block at where the player is looking
@@ -96,8 +98,8 @@ public class ShowFakeCommand extends AbstractCommand {
         }
 
         if (!scriptEntry.hasObject("players") && Utilities.entryHasPlayer(scriptEntry)) {
-            ListTag players = new ListTag();
-            players.addObject(Utilities.getEntryPlayer(scriptEntry));
+            List<PlayerTag> players = new ArrayList<>();
+            players.add(Utilities.getEntryPlayer(scriptEntry));
             scriptEntry.defaultObject("players", players);
         }
 

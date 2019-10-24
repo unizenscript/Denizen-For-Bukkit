@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.nms.v1_14.helpers;
 
 import com.denizenscript.denizen.nms.v1_14.impl.ImprovedOfflinePlayerImpl;
-import com.denizenscript.denizen.nms.v1_14.impl.packets.handlers.AbstractListenerPlayInImpl;
+import com.denizenscript.denizen.nms.v1_14.impl.network.handlers.AbstractListenerPlayInImpl;
 import com.mojang.authlib.GameProfile;
 import com.denizenscript.denizen.nms.abstracts.ImprovedOfflinePlayer;
 import com.denizenscript.denizen.nms.interfaces.PlayerHelper;
@@ -27,8 +27,6 @@ public class PlayerHelperImpl extends PlayerHelper {
     public static final Map<String, Field> PLAYER_CONNECTION_FIELDS = ReflectionHelper.getFields(PlayerConnection.class);
     public static final Field FLY_TICKS = PLAYER_CONNECTION_FIELDS.get("C");
     public static final Field VEHICLE_FLY_TICKS = PLAYER_CONNECTION_FIELDS.get("E");
-
-    public static final Field PLAYER_MAP = ReflectionHelper.getFields(PlayerChunkMap.class).get("y");
 
     @Override
     public int getFlyKickCooldown(Player player) {

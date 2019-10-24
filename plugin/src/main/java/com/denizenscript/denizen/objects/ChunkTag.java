@@ -21,7 +21,6 @@ import org.bukkit.block.BlockState;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
 
@@ -695,20 +694,6 @@ public class ChunkTag implements ObjectTag, Adjustable {
             final int chunkX = getX();
             final int chunkZ = getZ();
             getWorld().refreshChunk(chunkX, chunkZ);
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    for (Map<Location, FakeBlock> blocks : FakeBlock.getBlocks().values()) {
-                        for (Map.Entry<Location, FakeBlock> locBlock : blocks.entrySet()) {
-                            Location location = locBlock.getKey();
-                            if (Math.floor(location.getX() / 16) == chunkX
-                                    && Math.floor(location.getZ() / 16) == chunkZ) {
-                                locBlock.getValue().updateBlock();
-                            }
-                        }
-                    }
-                }
-            }.runTaskLater(DenizenAPI.getCurrentInstance(), 2);
         }
 
         // <--[mechanism]
