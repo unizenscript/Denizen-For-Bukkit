@@ -471,6 +471,20 @@ public class ServerTagBase {
         }
 
         // <--[tag]
+        // @attribute <server.list_particles>
+        // @returns ListTag
+        // @description
+        // Returns a list of all particles known to the server (only their Bukkit enum names).
+        // -->
+        if (attribute.startsWith("list_particles")) {
+            ListTag particles = new ListTag();
+            for (Particle p : Particle.values()) {
+                particles.add(p.toString());
+            }
+            event.setReplaced(particles.getAttribute(attribute.fulfill(1)));
+        }
+
+        // <--[tag]
         // @attribute <server.list_patterns>
         // @returns ListTag
         // @description
