@@ -19,7 +19,7 @@ import java.util.List;
 public class BiomeTag implements ObjectTag, Adjustable {
 
     // <--[language]
-    // @name BiomeTag
+    // @name BiomeTag Objects
     // @group Object System
     // @description
     // A BiomeTag represents a world biome type.
@@ -39,7 +39,7 @@ public class BiomeTag implements ObjectTag, Adjustable {
     // Fetcher. The constructor for a BiomeTag is the name of a valid biome (in Bukkit).
     // For example, 'b@desert'.
     //
-    // For general info, see <@link language BiomeTag>
+    // For general info, see <@link language BiomeTag Objects>
     //
     // -->
 
@@ -163,36 +163,39 @@ public class BiomeTag implements ObjectTag, Adjustable {
         // Returns this biome's downfall type for when a world has weather.
         // This can be RAIN, SNOW, or NONE.
         // -->
-        registerTag("downfall_type", new TagRunnable.ObjectForm<BiomeTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, BiomeTag object) {
-                return new ElementTag(CoreUtilities.toLowerCase(object.biome.getDownfallType().name()));
-            }
+        registerTag("downfall_type", (attribute, object) -> {
+            return new ElementTag(CoreUtilities.toLowerCase(object.biome.getDownfallType().name()));
+        });
+
+        // <--[tag]
+        // @attribute <BiomeTag.name>
+        // @returns ElementTag
+        // @description
+        // Returns this biome's name.
+        // -->
+        registerTag("name", (attribute, object) -> {
+            return new ElementTag(CoreUtilities.toLowerCase(object.biome.getName()));
         });
 
         // <--[tag]
         // @attribute <BiomeTag.humidity>
         // @returns ElementTag(Decimal)
+        // @mechanism BiomeTag.humidity
         // @description
         // Returns the humidity of this biome.
         // -->
-        registerTag("humidity", new TagRunnable.ObjectForm<BiomeTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, BiomeTag object) {
-                return new ElementTag(object.biome.getHumidity());
-            }
+        registerTag("humidity", (attribute, object) -> {
+            return new ElementTag(object.biome.getHumidity());
         });
         // <--[tag]
         // @attribute <BiomeTag.temperature>
         // @returns ElementTag(Decimal)
+        // @mechanism BiomeTag.temperature
         // @description
         // Returns the temperature of this biome.
         // -->
-        registerTag("temperature", new TagRunnable.ObjectForm<BiomeTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, BiomeTag object) {
-                return new ElementTag(object.biome.getTemperature());
-            }
+        registerTag("temperature", (attribute, object) -> {
+            return new ElementTag(object.biome.getTemperature());
         });
         // <--[tag]
         // @attribute <BiomeTag.spawnable_entities>
@@ -200,70 +203,67 @@ public class BiomeTag implements ObjectTag, Adjustable {
         // @description
         // Returns all entities that spawn naturally in this biome.
         // -->
-        registerTag("spawnable_entities", new TagRunnable.ObjectForm<BiomeTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, BiomeTag object) {
-                BiomeNMS biome = object.biome;
+        registerTag("spawnable_entities", (attribute, object) -> {
+            BiomeNMS biome = object.biome;
 
-                List<EntityType> entityTypes;
+            List<EntityType> entityTypes;
 
-                // <--[tag]
-                // @attribute <BiomeTag.spawnable_entities.ambient>
-                // @returns ListTag(EntityTag)
-                // @description
-                // Returns the entities that spawn naturally in ambient locations.
-                // Default examples: BAT
-                // -->
-                if (attribute.startsWith("ambient", 2)) {
-                    attribute.fulfill(1);
-                    entityTypes = biome.getAmbientEntities();
-                }
-
-                // <--[tag]
-                // @attribute <BiomeTag.spawnable_entities.creatures>
-                // @returns ListTag(EntityTag)
-                // @description
-                // Returns the entities that spawn naturally in creature locations.
-                // Default examples: PIG, COW, CHICKEN...
-                // -->
-                else if (attribute.startsWith("creatures", 2)) {
-                    attribute.fulfill(1);
-                    entityTypes = biome.getCreatureEntities();
-                }
-
-                // <--[tag]
-                // @attribute <BiomeTag.spawnable_entities.monsters>
-                // @returns ListTag(EntityTag)
-                // @description
-                // Returns the entities that spawn naturally in monster locations.
-                // Default examples: CREEPER, ZOMBIE, SKELETON...
-                // -->
-                else if (attribute.startsWith("monsters", 2)) {
-                    attribute.fulfill(1);
-                    entityTypes = biome.getMonsterEntities();
-                }
-
-                // <--[tag]
-                // @attribute <BiomeTag.spawnable_entities.water>
-                // @returns ListTag(EntityTag)
-                // @description
-                // Returns the entities that spawn naturally in underwater locations.
-                // Default examples: SQUID
-                // -->
-                else if (attribute.startsWith("water", 2)) {
-                    attribute.fulfill(1);
-                    entityTypes = biome.getWaterEntities();
-                }
-                else {
-                    entityTypes = biome.getAllEntities();
-                }
-
-                ListTag list = new ListTag();
-                for (EntityType entityType : entityTypes) {
-                    list.add(entityType.name());
-                }
-                return list;
+            // <--[tag]
+            // @attribute <BiomeTag.spawnable_entities.ambient>
+            // @returns ListTag(EntityTag)
+            // @description
+            // Returns the entities that spawn naturally in ambient locations.
+            // Default examples: BAT
+            // -->
+            if (attribute.startsWith("ambient", 2)) {
+                attribute.fulfill(1);
+                entityTypes = biome.getAmbientEntities();
             }
+
+            // <--[tag]
+            // @attribute <BiomeTag.spawnable_entities.creatures>
+            // @returns ListTag(EntityTag)
+            // @description
+            // Returns the entities that spawn naturally in creature locations.
+            // Default examples: PIG, COW, CHICKEN...
+            // -->
+            else if (attribute.startsWith("creatures", 2)) {
+                attribute.fulfill(1);
+                entityTypes = biome.getCreatureEntities();
+            }
+
+            // <--[tag]
+            // @attribute <BiomeTag.spawnable_entities.monsters>
+            // @returns ListTag(EntityTag)
+            // @description
+            // Returns the entities that spawn naturally in monster locations.
+            // Default examples: CREEPER, ZOMBIE, SKELETON...
+            // -->
+            else if (attribute.startsWith("monsters", 2)) {
+                attribute.fulfill(1);
+                entityTypes = biome.getMonsterEntities();
+            }
+
+            // <--[tag]
+            // @attribute <BiomeTag.spawnable_entities.water>
+            // @returns ListTag(EntityTag)
+            // @description
+            // Returns the entities that spawn naturally in underwater locations.
+            // Default examples: SQUID
+            // -->
+            else if (attribute.startsWith("water", 2)) {
+                attribute.fulfill(1);
+                entityTypes = biome.getWaterEntities();
+            }
+            else {
+                entityTypes = biome.getAllEntities();
+            }
+
+            ListTag list = new ListTag();
+            for (EntityType entityType : entityTypes) {
+                list.add(entityType.name());
+            }
+            return list;
         });
 
         // <--[tag]
@@ -273,18 +273,15 @@ public class BiomeTag implements ObjectTag, Adjustable {
         // Always returns 'Biome' for BiomeTag objects. All objects fetchable by the Object Fetcher will return the
         // type of object that is fulfilling this attribute.
         // -->
-        registerTag("type", new TagRunnable.ObjectForm<BiomeTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, BiomeTag object) {
-                return new ElementTag("Biome");
-            }
+        registerTag("type", (attribute, object) -> {
+            return new ElementTag("Biome");
         });
     }
 
     public static ObjectTagProcessor<BiomeTag> tagProcessor = new ObjectTagProcessor<>();
 
-    public static void registerTag(String name, TagRunnable.ObjectForm<BiomeTag> runnable) {
-        tagProcessor.registerTag(name, runnable);
+    public static void registerTag(String name, TagRunnable.ObjectInterface<BiomeTag> runnable, String... variants) {
+        tagProcessor.registerTag(name, runnable, variants);
     }
 
     @Override
@@ -304,7 +301,7 @@ public class BiomeTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object BiomeTag
         // @name humidity
-        // @input Element(Decimal)
+        // @input ElementTag(Decimal)
         // @description
         // Sets the humidity for this biome server-wide.
         // If this is greater than 0.85, fire has less chance
@@ -319,7 +316,7 @@ public class BiomeTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object BiomeTag
         // @name temperature
-        // @input Element(Decimal)
+        // @input ElementTag(Decimal)
         // @description
         // Sets the temperature for this biome server-wide.
         // If this is less than 1.5, snow will form on the ground

@@ -1,31 +1,42 @@
 package com.denizenscript.denizen.scripts.commands.world;
 
+import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.objects.WorldTag;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
+import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.WeatherType;
+import org.bukkit.entity.Player;
+
+import java.util.HashMap;
+import java.util.UUID;
 
 public class WeatherCommand extends AbstractCommand {
 
     // <--[command]
     // @Name Weather
-    // @Syntax weather [type:{global}/player] [sunny/storm/thunder] (world:<name>)
+    // @Syntax weather [{global}/player] [sunny/storm/thunder/reset] (<world>) (reset:<duration>)
     // @Required 1
     // @Short Changes the current weather in the minecraft world.
     // @Group world
     //
     // @Description
-    // Changes the weather in the specified world.
-    // You can also set weather for the attached player, where that player will experience personal
-    // weather that is different from the global weather.
-    // Logging off will reset personal weather.
+    // By default, changes the weather in the specified world.
+    //
+    // If you specify 'player', this will change the weather in that player's view.
+    // This is separate from the global weather, and does not affect other players.
+    // When that player logs off, their weather will be reset to the global weather.
+    // Additionally, you may instead specify 'reset' to return the player's weather back to global weather.
+    // If you specify a custom weather, optionally specify 'reset:<duration>'
+    // to set a time after which the player's weather will reset (if not manually changed again before then).
+    // Note that 'thunder' is no different from 'storm' when used on a single player.
     //
     // @Tags
     // <BiomeTag.downfall_type>
@@ -36,22 +47,30 @@ public class WeatherCommand extends AbstractCommand {
     // <WorldTag.thunder_duration>
     //
     // @Usage
-    // Makes the weather sunny
+    // Use to make the weather sunny.
     // - weather sunny
     //
     // @Usage
-    // Makes the weather storm in world "cookies"
-    // - weather storm world:cookies
+    // Use to start a storm in world "cookies".
+    // - weather storm cookies
     //
     // @Usage
-    // Make the weather storm for the attached player.
-    // - weather type:player storm
+    // Use to start a storm that's only visible to the attached player.
+    // - weather player storm
+    //
+    // @Usage
+    // Use to make the player see a storm for 2 minutes.
+    // - weather player storm reset:2m
+    //
+    // @Usage
+    // Use to let the player see the global weather again.
+    // - weather player reset
     //
     // -->
 
     private enum Type {GLOBAL, PLAYER}
 
-    private enum Value {SUNNY, STORM, THUNDER}
+    private enum Value {SUNNY, STORM, THUNDER, RESET}
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
@@ -70,16 +89,21 @@ public class WeatherCommand extends AbstractCommand {
                     && arg.matchesEnum(Value.values())) {
                 scriptEntry.addObject("value", arg.asElement());
             }
+            else if (!scriptEntry.hasObject("reset_after")
+                    && arg.matchesPrefix("reset")
+                    && arg.matchesArgumentType(DurationTag.class)) {
+                scriptEntry.addObject("reset_after", arg.asType(DurationTag.class));
+            }
             else {
                 arg.reportUnhandled();
             }
         }
 
-        // Check to make sure required arguments have been filled
-
-        if ((!scriptEntry.hasObject("value"))) {
+        if (!scriptEntry.hasObject("value")) {
             throw new InvalidArgumentsException("Must specify a value!");
         }
+
+        scriptEntry.defaultObject("type", Type.GLOBAL);
 
         // If the world has not been specified, try to use the NPC's or player's
         // world, or default to "world" if necessary
@@ -89,57 +113,66 @@ public class WeatherCommand extends AbstractCommand {
                 Bukkit.getWorlds().get(0));
     }
 
+    public HashMap<UUID, Integer> resetTasks = new HashMap<>();
+
     @Override
     public void execute(ScriptEntry scriptEntry) {
-        // Fetch objects
-        Value value = Value.valueOf(((ElementTag) scriptEntry.getObject("value"))
-                .asString().toUpperCase());
-        WorldTag world = (WorldTag) scriptEntry.getObject("world");
-        Type type = scriptEntry.hasObject("type") ?
-                (Type) scriptEntry.getObject("type") : Type.GLOBAL;
+        Value value = Value.valueOf(((ElementTag) scriptEntry.getObject("value")).asString().toUpperCase());
+        WorldTag world = scriptEntry.getObjectTag("world");
+        Type type = (Type) scriptEntry.getObject("type");
+        DurationTag resetAfter = scriptEntry.getObjectTag("reset_after");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
-            Debug.report(scriptEntry, getName(), ArgumentHelper.debugObj("type", type.name()) +
-                    (type.name().equalsIgnoreCase("player") ?
-                            ArgumentHelper.debugObj("player", Utilities.getEntryPlayer(scriptEntry)) : "") +
-                    (type.name().equalsIgnoreCase("global") ?
-                            ArgumentHelper.debugObj("world", world) : "") +
-                    ArgumentHelper.debugObj("value", value));
+            Debug.report(scriptEntry, getName(), ArgumentHelper.debugObj("type", type.name())
+                    + (type.name().equalsIgnoreCase("player") ? ArgumentHelper.debugObj("player", Utilities.getEntryPlayer(scriptEntry)) : "")
+                    + (type.name().equalsIgnoreCase("global") ? ArgumentHelper.debugObj("world", world) : "")
+                    + (resetAfter != null ? resetAfter.debug() : "")
+                    + ArgumentHelper.debugObj("value", value));
         }
 
-        switch (value) {
-            case SUNNY:
-                if (type.equals(Type.GLOBAL)) {
+        if (type.equals(Type.GLOBAL)) {
+            switch (value) {
+                case SUNNY:
                     world.getWorld().setStorm(false);
                     world.getWorld().setThundering(false);
-                }
-                else {
-                    Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().setPlayerWeather(WeatherType.CLEAR);
-                }
-
-                break;
-
-            case STORM:
-                if (type.equals(Type.GLOBAL)) {
+                    break;
+                case STORM:
                     world.getWorld().setStorm(true);
-                }
-                else {
-                    Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().setPlayerWeather(WeatherType.DOWNFALL);
-                }
-
-                break;
-
-            case THUNDER:
-                // Note: setThundering always creates a storm
-                if (type.equals(Type.GLOBAL)) {
+                    break;
+                case THUNDER:
+                    // Note: setThundering always creates a storm
                     world.getWorld().setThundering(true);
-                }
-                else {
-                    Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().setPlayerWeather(WeatherType.DOWNFALL);
-                }
-
-                break;
+                    break;
+                case RESET:
+                    Debug.echoError("Cannot RESET global weather!");
+                    break;
+            }
+        }
+        else {
+            Player player = Utilities.getEntryPlayer(scriptEntry).getPlayerEntity();
+            Integer existingTask = resetTasks.get(player.getUniqueId());
+            if (existingTask != null) {
+                Bukkit.getScheduler().cancelTask(existingTask);
+                resetTasks.remove(player.getUniqueId());
+            }
+            if (value == Value.SUNNY) {
+                player.setPlayerWeather(WeatherType.CLEAR);
+            }
+            else if (value == Value.STORM || value == Value.THUNDER) {
+                player.setPlayerWeather(WeatherType.DOWNFALL);
+            }
+            else if (value == Value.RESET) {
+                player.resetPlayerWeather();
+            }
+            if (resetAfter != null) {
+                int newTask = Bukkit.getScheduler().scheduleSyncDelayedTask(DenizenAPI.getCurrentInstance(), new Runnable() {
+                    @Override
+                    public void run() {
+                        player.resetPlayerWeather();
+                    }
+                }, resetAfter.getTicks());
+                resetTasks.put(player.getUniqueId(), newTask);
+            }
         }
     }
 }

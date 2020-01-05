@@ -4,7 +4,7 @@ import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.utilities.DenizenAPI;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizen.utilities.inventory.SlotHelper;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -27,7 +27,7 @@ public class PlayerBreaksItemScriptEvent extends BukkitScriptEvent implements Li
     //
     // @Regex ^on player breaks held [^\s]+$
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -36,6 +36,8 @@ public class PlayerBreaksItemScriptEvent extends BukkitScriptEvent implements Li
     // @Context
     // <context.item> returns the item that broke.
     // <context.slot> returns the slot of the item that broke.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -73,7 +75,7 @@ public class PlayerBreaksItemScriptEvent extends BukkitScriptEvent implements Li
             Deprecations.oldStylePlayerBreaksItemEvent.message = oldWarningMessage + " (for event: " + path.toString() + ").";
             Deprecations.oldStylePlayerBreaksItemEvent.warn();
         }
-        return true;
+        return super.matches(path);
     }
 
     public static String oldWarningMessage = Deprecations.oldStylePlayerBreaksItemEvent.message;

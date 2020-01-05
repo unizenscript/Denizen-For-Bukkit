@@ -86,6 +86,9 @@ public class CuboidEnterExitSmartEvent implements OldSmartEvent, Listener {
         PlayerMoveEvent.getHandlerList().unregister(this);
         PlayerTeleportEvent.getHandlerList().unregister(this);
         PlayerChangedWorldEvent.getHandlerList().unregister(this);
+        PlayerQuitEvent.getHandlerList().unregister(this);
+        PlayerJoinEvent.getHandlerList().unregister(this);
+        VehicleMoveEvent.getHandlerList().unregister(this);
     }
 
     //////////////
@@ -149,6 +152,7 @@ public class CuboidEnterExitSmartEvent implements OldSmartEvent, Listener {
         internalRun(pme, "join");
     }
 
+    @EventHandler
     public void onWorldChange(PlayerChangedWorldEvent event) {
         if (EntityTag.isNPC(event.getPlayer())) {
             return;
@@ -207,7 +211,7 @@ public class CuboidEnterExitSmartEvent implements OldSmartEvent, Listener {
             if (broad_detection) {
                 ListTag cuboid_context = new ListTag();
                 for (CuboidTag cuboid : exits) {
-                    cuboid_context.add(cuboid.identify());
+                    cuboid_context.addObject(cuboid);
                 }
                 if (Fire(event, cuboid_context, "player exits notable cuboid", cause)) {
                     return;
@@ -224,7 +228,7 @@ public class CuboidEnterExitSmartEvent implements OldSmartEvent, Listener {
             if (broad_detection) {
                 ListTag cuboid_context = new ListTag();
                 for (CuboidTag cuboid : enters) {
-                    cuboid_context.add(cuboid.identify());
+                    cuboid_context.addObject(cuboid);
                 }
                 if (Fire(event, cuboid_context, "player enters notable cuboid", cause)) {
                     return;

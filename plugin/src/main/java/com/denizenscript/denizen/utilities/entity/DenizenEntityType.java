@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.utilities.entity;
 
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.Settings;
+import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.enums.CustomEntityType;
 import com.denizenscript.denizen.nms.interfaces.CustomEntity;
@@ -36,7 +36,7 @@ public class DenizenEntityType {
 
     // <--[language]
     // @name Denizen Entity Types
-    // @group Entities
+    // @group Useful Lists
     // @description
     // Along with the default EntityTypes <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/entity/EntityType.html>,
     // Denizen also adds in a few altered entities:

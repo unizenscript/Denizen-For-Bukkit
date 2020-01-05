@@ -20,7 +20,8 @@ public class FireworkBurstsScriptEvent extends BukkitScriptEvent implements List
     // firework bursts
     //
     // @Regex ^on firework bursts$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -52,7 +53,7 @@ public class FireworkBurstsScriptEvent extends BukkitScriptEvent implements List
         if (!runInCheck(path, entity.getLocation())) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override

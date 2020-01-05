@@ -39,20 +39,11 @@ public class EntityArmorPose implements Property {
             "armor_pose"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityArmorPose(EntityTag ent) {
         entity = ent;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -69,14 +60,10 @@ public class EntityArmorPose implements Property {
         ListTag list = new ListTag();
         for (PosePart posePart : PosePart.values()) {
             list.add(CoreUtilities.toLowerCase(posePart.name()));
-            list.add(fromEulerAngle(posePart.getAngle(armorStand)).identify());
+            list.addObject(fromEulerAngle(posePart.getAngle(armorStand)));
         }
         return list;
     }
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -88,6 +75,7 @@ public class EntityArmorPose implements Property {
         // <--[tag]
         // @attribute <EntityTag.armor_pose_list>
         // @returns ListTag
+        // @mechanism EntityTag.armor_pose
         // @group attributes
         // @description
         // Returns a list of all poses and angles for the armor stand in the
@@ -102,6 +90,7 @@ public class EntityArmorPose implements Property {
         // <--[tag]
         // @attribute <EntityTag.armor_pose[<part>]>
         // @returns LocationTag
+        // @mechanism EntityTag.armor_pose
         // @group attributes
         // @description
         // Returns the current angle pose for the specified part.

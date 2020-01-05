@@ -39,11 +39,6 @@ public class EntityItem implements Property {
             "item"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityItem(EntityTag entity) {
         item = entity;
     }
@@ -63,10 +58,6 @@ public class EntityItem implements Property {
         }
     }
 
-    /////////
-    // Property Methods
-    ///////
-
     @Override
     public String getPropertyString() {
         ItemTag item = getItem();
@@ -82,10 +73,6 @@ public class EntityItem implements Property {
     public String getPropertyId() {
         return "item";
     }
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -123,7 +110,6 @@ public class EntityItem implements Property {
         // @tags
         // <EntityTag.item>
         // -->
-
         if (mechanism.matches("item") && mechanism.requireObject(ItemTag.class)) {
             if (item.getBukkitEntity() instanceof Item) {
                 ((Item) item.getBukkitEntity()).setItemStack(mechanism.valueAsType(ItemTag.class).getItemStack());

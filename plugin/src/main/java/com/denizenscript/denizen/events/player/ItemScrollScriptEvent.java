@@ -2,7 +2,7 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -20,8 +20,8 @@ public class ItemScrollScriptEvent extends BukkitScriptEvent implements Listener
     //
     // @Regex ^on player (scrolls their hotbar|holds item)$
     //
-    // @Switch in <area>
-    // @Switch item <item>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Switch item:<item> to only process the event when the player is going to hold a specified item.
     //
     // @Cancellable true
     //
@@ -30,6 +30,8 @@ public class ItemScrollScriptEvent extends BukkitScriptEvent implements Listener
     // @Context
     // <context.new_slot> returns the number of the new inventory slot.
     // <context.previous_slot> returns the number of the old inventory slot.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -55,7 +57,7 @@ public class ItemScrollScriptEvent extends BukkitScriptEvent implements Listener
         if (path.switches.containsKey("item") && !tryItem(new ItemTag(event.getPlayer().getInventory().getItem(event.getNewSlot())), path.switches.get("item"))) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override

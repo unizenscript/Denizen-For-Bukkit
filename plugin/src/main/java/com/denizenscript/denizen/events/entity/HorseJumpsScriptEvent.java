@@ -19,7 +19,8 @@ public class HorseJumpsScriptEvent extends BukkitScriptEvent implements Listener
     // (<color>) (<type>) jumps
     //
     // @Regex ^on [^\s]+( [^\s]+)? jumps$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -29,10 +30,10 @@ public class HorseJumpsScriptEvent extends BukkitScriptEvent implements Listener
     // <context.entity> returns the EntityTag of the horse.
     // <context.color> returns an ElementTag of the horse's color.
     // <context.variant> returns an ElementTag of the horse's variant.
-    // <context.power> returns an Element(Decimal) of the jump's power.
+    // <context.power> returns an ElementTag(Decimal) of the jump's power.
     //
     // @Determine
-    // Element(Decimal) to set the power of the jump.
+    // ElementTag(Decimal) to set the power of the jump.
     //
     // -->
 
@@ -72,7 +73,7 @@ public class HorseJumpsScriptEvent extends BukkitScriptEvent implements Listener
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override

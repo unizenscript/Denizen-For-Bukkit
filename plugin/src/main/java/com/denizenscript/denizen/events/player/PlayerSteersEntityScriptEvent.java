@@ -2,13 +2,11 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 
 public class PlayerSteersEntityScriptEvent extends BukkitScriptEvent {
 
@@ -18,7 +16,8 @@ public class PlayerSteersEntityScriptEvent extends BukkitScriptEvent {
     // player steers <entity>
     //
     // @Regex ^on player steers [^\s]+$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -26,10 +25,12 @@ public class PlayerSteersEntityScriptEvent extends BukkitScriptEvent {
     //
     // @Context
     // <context.entity> returns the EntityTag being steered by the player.
-    // <context.sideways> returns an Element(Decimal) where a positive number signifies leftward movement.
-    // <context.forward> returns an Element(Decimal) where a positive number signifies forward movement.
-    // <context.jump> returns an Element(Boolean) that signifies whether the player is attempting to jump with the entity.
-    // <context.dismount> returns an Element(Boolean) that signifies whether the player is attempting to dismount.
+    // <context.sideways> returns an ElementTag(Decimal) where a positive number signifies leftward movement.
+    // <context.forward> returns an ElementTag(Decimal) where a positive number signifies forward movement.
+    // <context.jump> returns an ElementTag(Boolean) that signifies whether the player is attempting to jump with the entity.
+    // <context.dismount> returns an ElementTag(Boolean) that signifies whether the player is attempting to dismount.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -47,8 +48,8 @@ public class PlayerSteersEntityScriptEvent extends BukkitScriptEvent {
     public ElementTag dismount;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.getXthArg(1, CoreUtilities.toLowerCase(s)).startsWith("steers");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventArgLowerAt(1).startsWith("steers");
     }
 
     @Override
@@ -57,7 +58,10 @@ public class PlayerSteersEntityScriptEvent extends BukkitScriptEvent {
         if (!tryEntity(entity, entityName)) {
             return false;
         }
-        return runInCheck(path, entity.getLocation());
+        if (!runInCheck(path, entity.getLocation())) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override

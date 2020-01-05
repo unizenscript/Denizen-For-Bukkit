@@ -1,13 +1,12 @@
 package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -31,6 +30,8 @@ public class PlayerJoinsScriptEvent extends BukkitScriptEvent implements Listene
     // ElementTag to change the join message.
     // "NONE" to cancel the join message.
     //
+    // @Player Always.
+    //
     // -->
 
     public PlayerJoinsScriptEvent() {
@@ -38,17 +39,11 @@ public class PlayerJoinsScriptEvent extends BukkitScriptEvent implements Listene
     }
 
     public static PlayerJoinsScriptEvent instance;
-    public String message;
     public PlayerJoinEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.toLowerCase(s).startsWith("player join");
-    }
-
-    @Override
-    public boolean matches(ScriptPath path) {
-        return true;
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player join");
     }
 
     @Override
@@ -61,10 +56,10 @@ public class PlayerJoinsScriptEvent extends BukkitScriptEvent implements Listene
         if (determinationObj instanceof ElementTag) {
             String determination = determinationObj.toString();
             if (CoreUtilities.toLowerCase(determination).equals("none")) {
-                message = null;
+                event.setJoinMessage(null);
                 return true;
             }
-            message = determination;
+            event.setJoinMessage(determination);
             return true;
         }
         return super.applyDetermination(path, determinationObj);
@@ -78,7 +73,7 @@ public class PlayerJoinsScriptEvent extends BukkitScriptEvent implements Listene
     @Override
     public ObjectTag getContext(String name) {
         if (name.equals("message")) {
-            return new ElementTag(message);
+            return new ElementTag(event.getJoinMessage());
         }
         return super.getContext(name);
     }
@@ -88,9 +83,7 @@ public class PlayerJoinsScriptEvent extends BukkitScriptEvent implements Listene
         if (EntityTag.isNPC(event.getPlayer())) {
             return;
         }
-        message = event.getJoinMessage();
         this.event = event;
         fire(event);
-        event.setJoinMessage(message);
     }
 }

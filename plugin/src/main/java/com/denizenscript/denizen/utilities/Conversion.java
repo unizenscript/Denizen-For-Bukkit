@@ -1,6 +1,6 @@
 package com.denizenscript.denizen.utilities;
 
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.objects.*;
 import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.objects.core.ListTag;
@@ -104,11 +104,15 @@ public class Conversion {
         }
         else if (LocationTag.matches(string)) {
             InventoryTag inv = LocationTag.valueOf(string).getInventory();
-            return new AbstractMap.SimpleEntry<>(inv.getContents().length, inv);
+            if (inv != null) {
+                return new AbstractMap.SimpleEntry<>(inv.getContents().length, inv);
+            }
         }
         else if (EntityTag.matches(string)) {
             InventoryTag inv = EntityTag.valueOf(string).getInventory();
-            return new AbstractMap.SimpleEntry<>(inv.getContents().length, inv);
+            if (inv != null) {
+                return new AbstractMap.SimpleEntry<>(inv.getContents().length, inv);
+            }
         }
 
         return null;

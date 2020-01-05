@@ -48,10 +48,6 @@ public class EntityBoundingBox implements Property {
         }
     }
 
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityBoundingBox(EntityTag entity) {
         this.entity = entity;
     }
@@ -61,14 +57,10 @@ public class EntityBoundingBox implements Property {
     private ListTag getBoundingBox() {
         BoundingBox boundingBox = NMSHandler.getEntityHelper().getBoundingBox(entity.getBukkitEntity());
         ListTag list = new ListTag();
-        list.add(new LocationTag(boundingBox.getLow().toLocation(entity.getWorld())).identify());
-        list.add(new LocationTag(boundingBox.getHigh().toLocation(entity.getWorld())).identify());
+        list.addObject(new LocationTag(boundingBox.getLow().toLocation(entity.getWorld())));
+        list.addObject(new LocationTag(boundingBox.getHigh().toLocation(entity.getWorld())));
         return list;
     }
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -119,7 +111,6 @@ public class EntityBoundingBox implements Property {
         // @tags
         // <EntityTag.bounding_box>
         // -->
-
         if (mechanism.matches("bounding_box")) {
             if (entity.isCitizensNPC()) {
                 // TODO: Allow editing NPC boxes properly?

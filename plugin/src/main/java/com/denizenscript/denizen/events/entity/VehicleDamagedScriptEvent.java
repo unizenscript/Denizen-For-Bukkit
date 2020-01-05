@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.events.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -26,7 +26,8 @@ public class VehicleDamagedScriptEvent extends BukkitScriptEvent implements List
     // <entity> damages <vehicle>
     //
     // @Regex ^on [^\s]+ damages [^\s]+$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -37,7 +38,7 @@ public class VehicleDamagedScriptEvent extends BukkitScriptEvent implements List
     // <context.entity> returns the EntityTag of the attacking entity.
     //
     // @Determine
-    // Element(Decimal) to set the value of the damage received by the vehicle.
+    // ElementTag(Decimal) to set the value of the damage received by the vehicle.
     //
     // @NPC when the entity that damaged the vehicle is a player.
     //
@@ -88,7 +89,7 @@ public class VehicleDamagedScriptEvent extends BukkitScriptEvent implements List
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -108,8 +109,7 @@ public class VehicleDamagedScriptEvent extends BukkitScriptEvent implements List
     @Override
     public ScriptEntryData getScriptEntryData() {
         if (entity != null) {
-            return new BukkitScriptEntryData(entity.isPlayer() ? entity.getDenizenPlayer() : null,
-                    entity.isCitizensNPC() ? entity.getDenizenNPC() : null);
+            return new BukkitScriptEntryData(entity);
         }
         return new BukkitScriptEntryData(null, null);
     }

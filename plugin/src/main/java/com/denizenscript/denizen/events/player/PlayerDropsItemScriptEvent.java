@@ -2,14 +2,12 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.ItemTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.entity.Item;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -23,7 +21,8 @@ public class PlayerDropsItemScriptEvent extends BukkitScriptEvent implements Lis
     // player drops <item>
     //
     // @Regex ^on player drops [^\s]+$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -34,6 +33,8 @@ public class PlayerDropsItemScriptEvent extends BukkitScriptEvent implements Lis
     // <context.entity> returns a EntityTag of the item.
     // <context.location> returns a LocationTag of the item's location.
     //
+    // @Player Always.
+    //
     // -->
 
     public PlayerDropsItemScriptEvent() {
@@ -42,13 +43,12 @@ public class PlayerDropsItemScriptEvent extends BukkitScriptEvent implements Lis
 
     public static PlayerDropsItemScriptEvent instance;
     public ItemTag item;
-    public EntityTag entity;
     public LocationTag location;
     public PlayerDropItemEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.toLowerCase(s).startsWith("player drops");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player drops");
     }
 
     @Override
@@ -61,7 +61,7 @@ public class PlayerDropsItemScriptEvent extends BukkitScriptEvent implements Lis
         if (!runInCheck(path, location)) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -80,7 +80,7 @@ public class PlayerDropsItemScriptEvent extends BukkitScriptEvent implements Lis
             return item;
         }
         else if (name.equals("entity")) {
-            return entity;
+            return new EntityTag(event.getItemDrop());
         }
         else if (name.equals("location")) {
             return location;
@@ -97,7 +97,6 @@ public class PlayerDropsItemScriptEvent extends BukkitScriptEvent implements Lis
         Item itemDrop = event.getItemDrop();
         EntityTag.rememberEntity(itemDrop);
         item = new ItemTag(itemDrop.getItemStack());
-        entity = new EntityTag(itemDrop);
         this.event = event;
         fire(event);
     }

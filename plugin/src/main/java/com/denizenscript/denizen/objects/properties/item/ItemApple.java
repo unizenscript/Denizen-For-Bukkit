@@ -95,14 +95,13 @@ public class ItemApple implements Property {
         // <--[mechanism]
         // @object ItemTag
         // @name apple_enchanted
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Changes whether a golden apple is enchanted.
         // NOTE: In 1.13+, enchanted golden apples are now a separate Material type, making this mechanism no longer required.
         // @tags
         // <ItemTag.apple_enchanted>
         // -->
-
         if (mechanism.matches("apple_enchanted") && mechanism.requireBoolean()) {
             if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
                 item.getItemStack().setType(mechanism.getValue().asBoolean() ? Material.ENCHANTED_GOLDEN_APPLE : Material.GOLDEN_APPLE);

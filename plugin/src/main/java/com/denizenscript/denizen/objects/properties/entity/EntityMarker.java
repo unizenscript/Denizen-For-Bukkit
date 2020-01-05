@@ -32,20 +32,11 @@ public class EntityMarker implements Property {
             "marker"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityMarker(EntityTag entity) {
         dentity = entity;
     }
 
     EntityTag dentity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -61,10 +52,6 @@ public class EntityMarker implements Property {
     public String getPropertyId() {
         return "marker";
     }
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -95,13 +82,12 @@ public class EntityMarker implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name marker
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Changes the marker state of an armor stand.
         // @tags
         // <EntityTag.marker>
         // -->
-
         if (mechanism.matches("marker") && mechanism.requireBoolean()) {
             ((ArmorStand) dentity.getBukkitEntity()).setMarker(mechanism.getValue().asBoolean());
         }

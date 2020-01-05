@@ -33,20 +33,11 @@ public class EntityBoatType implements Property {
             "boat_type"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityBoatType(EntityTag entity) {
         this.entity = entity;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -93,7 +84,6 @@ public class EntityBoatType implements Property {
         // @tags
         // <EntityTag.boat_type>
         // -->
-
         if (mechanism.matches("boat_type")) {
             TreeSpecies type = TreeSpecies.valueOf(mechanism.getValue().asString().toUpperCase());
             if (type != null) {

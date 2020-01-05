@@ -17,7 +17,8 @@ public class SheepRegrowsScriptEvent extends BukkitScriptEvent implements Listen
     // sheep regrows wool
     //
     // @Regex ^on sheep regrows wool$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -50,7 +51,7 @@ public class SheepRegrowsScriptEvent extends BukkitScriptEvent implements Listen
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override

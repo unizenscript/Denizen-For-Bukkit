@@ -20,7 +20,7 @@ public class FurnaceBurnsItemScriptEvent extends BukkitScriptEvent implements Li
     //
     // @Group Block
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -31,7 +31,7 @@ public class FurnaceBurnsItemScriptEvent extends BukkitScriptEvent implements Li
     // <context.item> returns the ItemTag burnt.
     //
     // @Determine
-    // Element(Number) to set the burn time for this fuel.
+    // ElementTag(Number) to set the burn time for this fuel.
     //
     // -->
 
@@ -58,7 +58,7 @@ public class FurnaceBurnsItemScriptEvent extends BukkitScriptEvent implements Li
         if (!runInCheck(path, location)) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override

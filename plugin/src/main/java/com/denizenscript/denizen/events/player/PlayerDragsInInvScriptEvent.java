@@ -5,13 +5,11 @@ import com.denizenscript.denizen.objects.InventoryTag;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.utilities.DenizenAPI;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -28,11 +26,12 @@ public class PlayerDragsInInvScriptEvent extends BukkitScriptEvent implements Li
     // player drags (<item>) (in <inventory>)
     //
     // @Regex ^on player drags( ^[\s]+)?(in [^\s]+)?( in_area ((notable (cuboid|ellipsoid))|([^\s]+)))?$
-    // @Switch in_area <area>
+    //
+    // @Switch in_area:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
-    // @Triggers when a player drags in an inventory.
+    // @Triggers when a player drags in an inventory (that is, clicks and then holds the mouse button down while moving the mouse across multiple slots).
     //
     // @Context
     // <context.item> returns the ItemTag the player has dragged.
@@ -40,6 +39,8 @@ public class PlayerDragsInInvScriptEvent extends BukkitScriptEvent implements Li
     // <context.clicked_inventory> returns the InventoryTag that was clicked in.
     // <context.slots> returns a ListTag of the slot numbers dragged through.
     // <context.raw_slots> returns a ListTag of the raw slot numbers dragged through.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -56,9 +57,8 @@ public class PlayerDragsInInvScriptEvent extends BukkitScriptEvent implements Li
     public InventoryDragEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        return lower.startsWith("player drags");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player drags");
     }
 
     @Override
@@ -74,7 +74,10 @@ public class PlayerDragsInInvScriptEvent extends BukkitScriptEvent implements Li
         if (!arg2.equals("in") && !tryItem(item, arg2)) {
             return false;
         }
-        return runInCheck(path, entity.getLocation(), "in_area");
+        if (!runInCheck(path, entity.getLocation(), "in_area")) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override

@@ -3,7 +3,6 @@ package com.denizenscript.denizen.objects.properties.item;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.NMSVersion;
-import com.denizenscript.denizen.nms.interfaces.ItemHelper;
 import com.denizenscript.denizen.objects.ColorTag;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -56,6 +55,49 @@ public class ItemPotion implements Property {
 
     ItemTag item;
 
+    public static String stringifyEffect(PotionEffect effect) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(effect.getType().getName()).append(",")
+                .append(effect.getAmplifier()).append(",")
+                .append(effect.getDuration()).append(",")
+                .append(effect.isAmbient()).append(",")
+                .append(effect.hasParticles());
+        if (NMSHandler.getVersion().isAtMost(NMSVersion.v1_12) && effect.getColor() != null) {
+            sb.append(",").append(new ColorTag(effect.getColor()).identify().replace(",", "&comma"));
+        }
+        return sb.toString();
+    }
+
+    public static PotionEffect parseEffect(String str) {
+        String[] d2 = str.split(",");
+        PotionEffectType type = PotionEffectType.getByName(d2[0].toUpperCase());
+        // NOTE: amplifier and duration are swapped around in the input format
+        // as compared to the PotionEffect constructor!
+        int duration = new ElementTag(d2[2]).asInt();
+        int amplifier = new ElementTag(d2[1]).asInt();
+        boolean ambient = new ElementTag(d2[3]).asBoolean();
+        boolean particles = new ElementTag(d2[4]).asBoolean();
+        Color color = null;
+        boolean icon = false;
+        if (d2.length > 5) {
+            if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
+                ElementTag check = new ElementTag(d2[5]);
+                if (check.isBoolean()) {
+                    icon = check.asBoolean();
+                }
+                else {
+                    Debug.echoError("Custom effects with the color option are not supported as of Minecraft version 1.13.");
+                }
+            }
+            else {
+                String check = d2[5].replace("&comma", ",");
+                if (ColorTag.matches(check)) {
+                    color = ColorTag.valueOf(check).getColor();
+                }
+            }
+        }
+        return NMSHandler.getItemHelper().getPotionEffect(type, duration, amplifier, ambient, particles, color, icon);
+    }
 
     @Override
     public String getPropertyString() {
@@ -73,16 +115,7 @@ public class ItemPotion implements Property {
                 + (meta.hasColor() ? "," + new ColorTag(meta.getColor()).identify().replace(",", "&comma") : "")
         );
         for (PotionEffect pot : meta.getCustomEffects()) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(pot.getType().getName()).append(",")
-                    .append(pot.getAmplifier()).append(",")
-                    .append(pot.getDuration()).append(",")
-                    .append(pot.isAmbient()).append(",")
-                    .append(pot.hasParticles());
-            if (pot.getColor() != null) {
-                sb.append(",").append(new ColorTag(pot.getColor()).identify().replace(",", "&comma"));
-            }
-            effects.add(sb.toString());
+            effects.add(stringifyEffect(pot));
         }
         return effects.identify();
     }
@@ -109,8 +142,8 @@ public class ItemPotion implements Property {
         // @mechanism ItemTag.potion_effects
         // @group properties
         // @description
-        // Returns the potion effect on this item.
-        // In the format Effect,Level,Extended,Splash,Color
+        // Returns the potion type details for this potion item.
+        // In the format Type,Level,Extended,Splash,Color
         // -->
         if (attribute.startsWith("potion_base") && item.getItemStack().hasItemMeta() && item.getItemStack().getItemMeta() instanceof PotionMeta) {
             PotionMeta meta = ((PotionMeta) item.getItemStack().getItemMeta());
@@ -123,7 +156,7 @@ public class ItemPotion implements Property {
         // <--[tag]
         // @attribute <ItemTag.has_potion_effect>
         // @returns ElementTag(Boolean)
-        // @mechanism ItemTag.potion
+        // @mechanism ItemTag.potion_effects
         // @description
         // Returns whether the potion has a potion effect.
         // -->
@@ -311,8 +344,10 @@ public class ItemPotion implements Property {
         // @input ListTag
         // @description
         // Sets the potion's potion effect(s).
-        // Input is a formed like: Effect,Upgraded,Extended(,Color)|Type,Amplifier,Duration,Ambient,Particles(,Icon)|...
+        // Input is a formed like: Type,Upgraded,Extended(,Color)|Effect,Amplifier,Duration,Ambient,Particles(,Icon)|...
         // For example: SPEED,true,false|SPEED,2,200,false,true,true
+        // Second example: REGEN,false,true,RED|REGENERATION,1,500,true,false,false
+        // Color can also be used like "255&comma128&comma0" (r,g,b but replace ',' with '&comma').
         // NOTE: In pre-1.13 Minecraft versions, you could set a color in the custom effects list instead of "icon".
         // @tags
         // <ItemTag.potion_effect[<#>]>
@@ -337,36 +372,8 @@ public class ItemPotion implements Property {
                 meta.setColor(ColorTag.valueOf(d1[3].replace("&comma", ",")).getColor());
             }
             meta.clearCustomEffects();
-            ItemHelper itemHelper = NMSHandler.getItemHelper();
             for (int i = 1; i < data.size(); i++) {
-                String[] d2 = data.get(i).split(",");
-                PotionEffectType type = PotionEffectType.getByName(d2[0].toUpperCase());
-                // NOTE: amplifier and duration are swapped around in the input format
-                // as compared to the PotionEffect constructor!
-                int duration = new ElementTag(d2[2]).asInt();
-                int amplifier = new ElementTag(d2[1]).asInt();
-                boolean ambient = new ElementTag(d2[3]).asBoolean();
-                boolean particles = new ElementTag(d2[4]).asBoolean();
-                Color color = null;
-                boolean icon = false;
-                if (d2.length > 5) {
-                    if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-                        ElementTag check = new ElementTag(d2[5]);
-                        if (check.isBoolean()) {
-                            icon = check.asBoolean();
-                        }
-                        else {
-                            Debug.echoError("Custom effects with the color option are not supported as of Minecraft version 1.13.");
-                        }
-                    }
-                    else {
-                        String check = d2[5].replace("&comma", ",");
-                        if (ColorTag.matches(check)) {
-                            color = ColorTag.valueOf(check).getColor();
-                        }
-                    }
-                }
-                meta.addCustomEffect(itemHelper.getPotionEffect(type, duration, amplifier, ambient, particles, color, icon), false);
+                meta.addCustomEffect(parseEffect(data.get(i)), false);
             }
             item.getItemStack().setItemMeta(meta);
         }

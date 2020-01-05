@@ -19,10 +19,11 @@ public class NoteCommand extends AbstractCommand {
     // @Required 2
     // @Short Adds or removes a notable object.
     // @Group core
+    // @Guide https://guide.denizenscript.com/guides/advanced/notables.html
     //
     // @Description
     // Add or remove a notable object that can be referenced in events or scripts.
-    // Notable objects are "permanent" versions of other ObjectTags. (See: <@link language ObjectTag>)
+    // Notable objects are "permanent" versions of other ObjectTags. (See: <@link language ObjectTags>)
     // Notable objects keep their properties when added.
     //
     // @Tags
@@ -34,7 +35,7 @@ public class NoteCommand extends AbstractCommand {
     //
     // @Usage
     // Use to add a notable cuboid.
-    // - note cu@1,2,3,world|4,5,6,world as:mycuboid
+    // - note <[some_cuboid]> as:mycuboid
     //
     // @Usage
     // Use to remove a notable cuboid.
@@ -42,7 +43,7 @@ public class NoteCommand extends AbstractCommand {
     //
     // @Usage
     // Use to note a location.
-    // - note l@10,5,10,world as:mylocation
+    // - note <context.location> as:mylocation
     // -->
 
     @Override
@@ -90,8 +91,7 @@ public class NoteCommand extends AbstractCommand {
         }
 
         if (remove.asBoolean()) {
-            if (NotableManager.isSaved(id.asString())) {
-                NotableManager.remove(id.asString());
+            if (NotableManager.remove(id.asString()) != null) {
                 Debug.echoDebug(scriptEntry, "notable '" + id.asString() + "' removed");
             }
             else {

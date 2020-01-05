@@ -30,20 +30,11 @@ public class EntitySilent implements Property {
             "silent"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntitySilent(EntityTag ent) {
         entity = ent;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -55,11 +46,6 @@ public class EntitySilent implements Property {
         return "silent";
     }
 
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
-
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
 
@@ -70,6 +56,7 @@ public class EntitySilent implements Property {
         // <--[tag]
         // @attribute <EntityTag.silent>
         // @returns ElementTag(Boolean)
+        // @mechanism EntityTag.silent
         // @group attributes
         // @description
         // Returns whether the entity is silent. (Plays no sounds)
@@ -89,7 +76,7 @@ public class EntitySilent implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name silent
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Sets whether this entity is silent. (Plays no sounds)
         // @tags

@@ -2,6 +2,7 @@ package com.denizenscript.denizen.nms.interfaces;
 
 import com.denizenscript.denizen.nms.abstracts.ImprovedOfflinePlayer;
 import org.bukkit.Chunk;
+import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
@@ -12,10 +13,6 @@ public abstract class PlayerHelper {
     public abstract int getFlyKickCooldown(Player player);
 
     public abstract void setFlyKickCooldown(Player player, int ticks);
-
-    public abstract float getAbsorption(Player player);
-
-    public abstract void setAbsorption(Player player, float value);
 
     public abstract int ticksPassedDuringCooldown(Player player);
 
@@ -36,4 +33,10 @@ public abstract class PlayerHelper {
     public abstract ImprovedOfflinePlayer getOfflineData(UUID uuid);
 
     public abstract ImprovedOfflinePlayer getOfflineData(OfflinePlayer offlinePlayer);
+
+    public abstract void resendDiscoveredRecipes(Player player);
+
+    public abstract void quietlyAddRecipe(Player player, NamespacedKey key);
+
+    public abstract void resendRecipeDetails(Player player);
 }

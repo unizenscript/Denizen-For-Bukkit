@@ -29,20 +29,11 @@ public class EntityArrowDamage implements Property {
             "damage"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityArrowDamage(EntityTag entity) {
         this.entity = entity;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -53,10 +44,6 @@ public class EntityArrowDamage implements Property {
     public String getPropertyId() {
         return "damage";
     }
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -88,13 +75,12 @@ public class EntityArrowDamage implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name damage
-        // @input Element(Decimal)
+        // @input ElementTag(Decimal)
         // @description
         // Changes how much damage an arrow/trident will inflict.
         // @tags
         // <EntityTag.damage>
         // -->
-
         if (mechanism.matches("damage") && mechanism.requireDouble()) {
             NMSHandler.getArrowHelper().setDamage(entity.getBukkitEntity(), mechanism.getValue().asDouble());
         }

@@ -4,13 +4,11 @@ import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.FurnaceExtractEvent;
@@ -24,7 +22,8 @@ public class PlayerTakesFromFurnaceScriptEvent extends BukkitScriptEvent impleme
     // player takes <material> from furnace
     //
     // @Regex ^on player takes [^\s]+ from furnace$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Triggers when a player takes an item from a furnace.
     // @Context
@@ -32,7 +31,9 @@ public class PlayerTakesFromFurnaceScriptEvent extends BukkitScriptEvent impleme
     // <context.item> returns the ItemTag taken out of the furnace.
     //
     // @Determine
-    // Element(Number) to set the amount of experience the player will get.
+    // ElementTag(Number) to set the amount of experience the player will get.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -43,21 +44,25 @@ public class PlayerTakesFromFurnaceScriptEvent extends BukkitScriptEvent impleme
     public static PlayerTakesFromFurnaceScriptEvent instance;
     public LocationTag location;
     public ItemTag item;
-    private int xp;
     public FurnaceExtractEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        return lower.startsWith("player takes")
-                && (CoreUtilities.getXthArg(4, lower).equals("furnace"));
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player takes")
+                && (path.eventArgLowerAt(4).equals("furnace"));
     }
 
     @Override
     public boolean matches(ScriptPath path) {
         String itemTest = path.eventArgLowerAt(2);
 
-        return tryItem(item, itemTest) && runInCheck(path, location);
+        if (!tryItem(item, itemTest)) {
+            return false;
+        }
+        if (!runInCheck(path, location)) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override
@@ -68,7 +73,8 @@ public class PlayerTakesFromFurnaceScriptEvent extends BukkitScriptEvent impleme
     @Override
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         if (determinationObj instanceof ElementTag && ((ElementTag) determinationObj).isInt()) {
-            xp = ((ElementTag) determinationObj).asInt();
+            int xp = ((ElementTag) determinationObj).asInt();
+            event.setExpToDrop(xp);
             return true;
         }
         return super.applyDetermination(path, determinationObj);
@@ -97,10 +103,8 @@ public class PlayerTakesFromFurnaceScriptEvent extends BukkitScriptEvent impleme
         }
         item = new ItemTag(event.getItemType(), event.getItemAmount());
         location = new LocationTag(event.getBlock().getLocation());
-        xp = event.getExpToDrop();
         this.event = event;
         fire(event);
-        event.setExpToDrop(xp);
     }
 
 }

@@ -22,7 +22,7 @@ public class PistonExtendsScriptEvent extends BukkitScriptEvent implements Liste
     //
     // @Group Block
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -61,7 +61,7 @@ public class PistonExtendsScriptEvent extends BukkitScriptEvent implements Liste
         if (!mat.equals("piston") && !tryMaterial(material, mat)) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override

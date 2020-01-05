@@ -24,7 +24,7 @@ public class BlockBuiltScriptEvent extends BukkitScriptEvent implements Listener
     //
     // @Group Block
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -62,16 +62,14 @@ public class BlockBuiltScriptEvent extends BukkitScriptEvent implements Listener
             return false;
         }
 
-        String mat1 = path.eventArgLowerAt(0);
-        if (!tryMaterial(new_material, mat1)) {
-            return false;
-        }
-
         String mat2 = path.eventArgLowerAt(4);
         if (mat2.length() > 0 && !tryMaterial(old_material, mat2)) {
             return false;
         }
-        return true;
+        if (!tryMaterial(new_material, path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override
@@ -87,6 +85,7 @@ public class BlockBuiltScriptEvent extends BukkitScriptEvent implements Listener
             if (lower.equals("buildable")) {
                 cancelled = false;
             }
+            return true;
         }
         return super.applyDetermination(path, determinationObj);
     }

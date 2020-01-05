@@ -1,12 +1,11 @@
 package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 
 public class PlayerReceivesMessageScriptEvent extends BukkitScriptEvent {
@@ -32,6 +31,8 @@ public class PlayerReceivesMessageScriptEvent extends BukkitScriptEvent {
     // "MESSAGE:" + ElementTag to change the message.
     // "RAW_JSON:" + ElementTag to change the JSON used for the message.
     //
+    // @Player Always.
+    //
     // -->
 
     public PlayerReceivesMessageScriptEvent() {
@@ -50,13 +51,8 @@ public class PlayerReceivesMessageScriptEvent extends BukkitScriptEvent {
     public boolean loaded;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.toLowerCase(s).startsWith("player receives message");
-    }
-
-    @Override
-    public boolean matches(ScriptPath path) {
-        return true;
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player receives message");
     }
 
     @Override

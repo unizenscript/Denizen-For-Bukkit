@@ -6,15 +6,14 @@ import com.denizenscript.denizencore.objects.Mechanism;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Horse;
+import org.bukkit.entity.AbstractHorse;
 
 public class EntityJumpStrength implements Property {
 
 
     public static boolean describes(ObjectTag entity) {
         return entity instanceof EntityTag &&
-                ((EntityTag) entity).getBukkitEntityType() == EntityType.HORSE;
+                ((EntityTag) entity).getBukkitEntity() instanceof AbstractHorse;
     }
 
     public static EntityJumpStrength getFrom(ObjectTag entity) {
@@ -34,35 +33,21 @@ public class EntityJumpStrength implements Property {
             "jump_strength"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityJumpStrength(EntityTag ent) {
         entity = ent;
     }
 
     EntityTag entity;
 
-    /////////
-    // Property Methods
-    ///////
-
     @Override
     public String getPropertyString() {
-        return String.valueOf(((Horse) entity.getBukkitEntity()).getJumpStrength());
+        return String.valueOf(((AbstractHorse) entity.getBukkitEntity()).getJumpStrength());
     }
 
     @Override
     public String getPropertyId() {
         return "jump_strength";
     }
-
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -78,9 +63,10 @@ public class EntityJumpStrength implements Property {
         // @group properties
         // @description
         // Returns the power of a horse's jump.
+        // Also applies to horse-like mobs, such as donkeys and mules.
         // -->
         if (attribute.startsWith("jump_strength")) {
-            return new ElementTag(((Horse) entity.getBukkitEntity()).getJumpStrength())
+            return new ElementTag(((AbstractHorse) entity.getBukkitEntity()).getJumpStrength())
                     .getObjectAttribute(attribute.fulfill(1));
         }
 
@@ -93,15 +79,15 @@ public class EntityJumpStrength implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name jump_strength
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Sets the power of the horse's jump.
+        // Also applies to horse-like mobs, such as donkeys and mules.
         // @tags
         // <EntityTag.jump_strength>
         // -->
-
         if (mechanism.matches("jump_strength") && mechanism.requireDouble()) {
-            ((Horse) entity.getBukkitEntity()).setJumpStrength(mechanism.getValue().asDouble());
+            ((AbstractHorse) entity.getBukkitEntity()).setJumpStrength(mechanism.getValue().asDouble());
         }
     }
 }

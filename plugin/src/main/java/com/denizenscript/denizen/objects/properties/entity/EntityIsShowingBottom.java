@@ -32,20 +32,11 @@ public class EntityIsShowingBottom implements Property {
             "is_showing_bottom"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityIsShowingBottom(EntityTag entity) {
         dentity = entity;
     }
 
     EntityTag dentity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -61,10 +52,6 @@ public class EntityIsShowingBottom implements Property {
     public String getPropertyId() {
         return "is_showing_bottom";
     }
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -95,13 +82,12 @@ public class EntityIsShowingBottom implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name is_showing_bottom
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Changes the bottom state of an ender crystal.
         // @tags
         // <EntityTag.is_showing_bottom>
         // -->
-
         if (mechanism.matches("is_showing_bottom") && mechanism.requireBoolean()) {
             ((EnderCrystal) dentity.getBukkitEntity()).setShowingBottom(mechanism.getValue().asBoolean());
         }

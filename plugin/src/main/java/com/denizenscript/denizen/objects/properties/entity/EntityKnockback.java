@@ -31,20 +31,11 @@ public class EntityKnockback implements Property {
             "knockback"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityKnockback(EntityTag entity) {
         this.entity = entity;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -55,10 +46,6 @@ public class EntityKnockback implements Property {
     public String getPropertyId() {
         return "knockback";
     }
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -89,13 +76,12 @@ public class EntityKnockback implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name knockback
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Changes an arrow's/trident's knockback strength.
         // @tags
         // <EntityTag.knockback>
         // -->
-
         if (mechanism.matches("knockback") && mechanism.requireInteger()) {
             NMSHandler.getArrowHelper().setKnockbackStrength(entity.getBukkitEntity(), mechanism.getValue().asInt());
         }

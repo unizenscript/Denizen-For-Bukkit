@@ -27,7 +27,7 @@ public class StructureGrowsScriptEvent extends BukkitScriptEvent implements List
     //
     // @Group World
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -78,7 +78,7 @@ public class StructureGrowsScriptEvent extends BukkitScriptEvent implements List
         if (!runInCheck(path, location)) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override

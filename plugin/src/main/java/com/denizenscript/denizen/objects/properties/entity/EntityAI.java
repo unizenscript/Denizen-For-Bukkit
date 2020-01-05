@@ -32,20 +32,11 @@ public class EntityAI implements Property {
             "has_ai", "toggle_ai"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityAI(EntityTag ent) {
         entity = ent;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -57,11 +48,6 @@ public class EntityAI implements Property {
         return "has_ai";
     }
 
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
-
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
 
@@ -72,10 +58,13 @@ public class EntityAI implements Property {
         // <--[tag]
         // @attribute <EntityTag.has_ai>
         // @returns ElementTag(Boolean)
+        // @mechanism EntityTag.has_ai
         // @group attributes
         // @description
-        // Returns whether the entity uses the default Minecraft
-        // AI to roam and look around.
+        // Returns whether the entity uses the default Minecraft AI to roam and look around.
+        // This tends to have implications for other vanilla functionality, including gravity.
+        // This generally shouldn't be used with NPCs. NPCs do not have vanilla AI, regardless of what this tag returns.
+        // Other programmatic methods of blocking AI might also not be accounted for by this tag.
         // -->
         if (attribute.startsWith("has_ai")) {
             return new ElementTag(!NMSHandler.getEntityHelper().isAIDisabled(entity.getBukkitEntity()))
@@ -92,10 +81,10 @@ public class EntityAI implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name has_ai
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
-        // Sets whether this entity will use the default
-        // Minecraft AI to roam and look around.
+        // Sets whether this entity will use the default Minecraft AI to roam and look around.
+        // This tends to have implications for other vanilla functionality, including gravity.
         // @tags
         // <EntityTag.has_ai>
         // -->

@@ -75,7 +75,7 @@ public class PlayEffectCommand extends AbstractCommand {
     //
     // @Usage
     // Use to play some effects at spawn.
-    // - playeffect effect:FIREWORKS_SPARK at:<WorldTag.spawn_location> visibility:100 quantity:375 data:0 offset:50.0
+    // - playeffect effect:FIREWORKS_SPARK at:<world[world].spawn_location> visibility:100 quantity:375 data:0 offset:50.0
     // -->
 
     @Override
@@ -318,7 +318,7 @@ public class PlayEffectCommand extends AbstractCommand {
                                 Debug.echoError(scriptEntry.getResidingQueue(), "DustOptions special_data must have 2 list entries for particle: " + particleEffect.getName());
                             }
                             else {
-                                float size = ArgumentHelper.getFloatFrom(dataList.get(0));
+                                float size = Float.parseFloat(dataList.get(0));
                                 ColorTag color = ColorTag.valueOf(dataList.get(1));
                                 dataObject = new org.bukkit.Particle.DustOptions(color.getColor(), size);
                             }

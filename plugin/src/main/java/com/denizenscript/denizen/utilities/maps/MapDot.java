@@ -2,7 +2,6 @@ package com.denizenscript.denizen.utilities.maps;
 
 import com.denizenscript.denizen.objects.ColorTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizencore.objects.ArgumentHelper;
 import org.bukkit.Color;
 import org.bukkit.map.MapCanvas;
 import org.bukkit.map.MapPalette;
@@ -35,7 +34,7 @@ public class MapDot extends MapObject {
     public void render(MapView mapView, MapCanvas mapCanvas, PlayerTag player, UUID uuid) {
         int baseX = getX(player, uuid);
         int baseY = getY(player, uuid);
-        int radius = (int) ArgumentHelper.getDoubleFrom(tag(radiusTag, player));
+        int radius = (int) Double.parseDouble(tag(radiusTag, player));
         Color color = ColorTag.valueOf(tag(colorTag, player)).getColor();
         for (int x = -radius; x < radius; x++) {
             int finalX = baseX + x;

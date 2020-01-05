@@ -1,11 +1,11 @@
 package com.denizenscript.denizen.scripts.containers.core;
 
 import com.denizenscript.denizen.utilities.DenizenAPI;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.tags.BukkitTagContext;
+import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizencore.objects.core.ElementTag;
-import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.objects.core.ScriptTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
@@ -22,6 +22,7 @@ import org.bukkit.plugin.ServicePriority;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class EconomyScriptContainer extends ScriptContainer {
 
@@ -41,7 +42,7 @@ public class EconomyScriptContainer extends ScriptContainer {
     //
     // Note that in most cases, you do not want to have multiple economy providers, as only one will actually be in use.
     //
-    // All script keys are required.
+    // ALL SCRIPT KEYS ARE REQUIRED.
     //
     // <code>
     // # The script name will be shown to the economy provider as the name of the economy system.
@@ -128,7 +129,7 @@ public class EconomyScriptContainer extends ScriptContainer {
 
         @Override
         public int fractionalDigits() {
-            return ArgumentHelper.getIntegerFrom(backingScript.getString("digits", "2"));
+            return Integer.parseInt(backingScript.getString("digits", "2"));
         }
 
         @Override
@@ -148,11 +149,19 @@ public class EconomyScriptContainer extends ScriptContainer {
 
         @Override
         public double getBalance(OfflinePlayer player) {
-            return ArgumentHelper.getDoubleFrom(autoTag(backingScript.getString("balance"), player));
+            if (player == null) {
+                Debug.echoError("Economy attempted BALANCE-CHECK to NULL player.");
+                return 0;
+            }
+            return Double.parseDouble(autoTag(backingScript.getString("balance"), player));
         }
 
         @Override
         public EconomyResponse withdrawPlayer(OfflinePlayer player, double amount) {
+            if (player == null) {
+                Debug.echoError("Economy attempted WITHDRAW to NULL player for " + amount);
+                return null;
+            }
             String determination = runSubScript("withdraw", player, amount);
             return new EconomyResponse(amount, getBalance(player), determination == null ?
                     EconomyResponse.ResponseType.SUCCESS : EconomyResponse.ResponseType.FAILURE, determination);
@@ -160,6 +169,10 @@ public class EconomyScriptContainer extends ScriptContainer {
 
         @Override
         public EconomyResponse depositPlayer(OfflinePlayer player, double amount) {
+            if (player == null) {
+                Debug.echoError("Economy attempted DEPOSIT to NULL player for " + amount);
+                return null;
+            }
             String determination = runSubScript("deposit", player, amount);
             return new EconomyResponse(amount, getBalance(player), determination == null ?
                     EconomyResponse.ResponseType.SUCCESS : EconomyResponse.ResponseType.FAILURE, determination);
@@ -167,7 +180,11 @@ public class EconomyScriptContainer extends ScriptContainer {
 
         @Override
         public boolean has(OfflinePlayer player, double amount) {
-            return ArgumentHelper.getBooleanFrom(autoTagAmount(backingScript.getString("has"), player, amount));
+            if (player == null) {
+                Debug.echoError("Economy attempted HAS-CHECK to NULL player for " + amount);
+                return false;
+            }
+            return autoTagAmount(backingScript.getString("has"), player, amount).equalsIgnoreCase("true");
         }
 
         @Override
@@ -180,9 +197,18 @@ public class EconomyScriptContainer extends ScriptContainer {
             return true;
         }
 
+        public OfflinePlayer playerForName(String name) {
+            UUID id = PlayerTag.getAllPlayers().get(CoreUtilities.toLowerCase(name));
+            if (id == null) {
+                Debug.echoError("Economy attempted access to unknown player '" + name + "'");
+                return null;
+            }
+            return Bukkit.getOfflinePlayer(id);
+        }
+
         @Override
         public double getBalance(String playerName) {
-            return getBalance(Bukkit.getPlayerExact(playerName));
+            return getBalance(playerForName(playerName));
         }
 
         @Override
@@ -197,7 +223,7 @@ public class EconomyScriptContainer extends ScriptContainer {
 
         @Override
         public boolean has(String playerName, double amount) {
-            return has(Bukkit.getPlayerExact(playerName), amount);
+            return has(playerForName(playerName), amount);
         }
 
         @Override
@@ -212,7 +238,7 @@ public class EconomyScriptContainer extends ScriptContainer {
 
         @Override
         public EconomyResponse withdrawPlayer(String playerName, double amount) {
-            return withdrawPlayer(Bukkit.getPlayerExact(playerName), amount);
+            return withdrawPlayer(playerForName(playerName), amount);
         }
 
         @Override
@@ -227,7 +253,7 @@ public class EconomyScriptContainer extends ScriptContainer {
 
         @Override
         public EconomyResponse depositPlayer(String playerName, double amount) {
-            return depositPlayer(Bukkit.getPlayerExact(playerName), amount);
+            return depositPlayer(playerForName(playerName), amount);
         }
 
         @Override
@@ -297,7 +323,7 @@ public class EconomyScriptContainer extends ScriptContainer {
     }
 
     public ServicePriority getPriority() {
-        String prioString = CoreUtilities.toLowerCase(getString("PRIORITY", "normal"));
+        String prioString = CoreUtilities.toLowerCase(getString("priority", "normal"));
         // Enumeration name casing is weird for ServicePriority.
         for (ServicePriority prio : ServicePriority.values()) {
             if (CoreUtilities.toLowerCase(prio.name()).equals(prioString)) {

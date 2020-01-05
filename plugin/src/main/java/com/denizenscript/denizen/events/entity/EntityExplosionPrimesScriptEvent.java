@@ -20,7 +20,8 @@ public class EntityExplosionPrimesScriptEvent extends BukkitScriptEvent implemen
     // <entity> explosion primes
     //
     // @Regex ^on [^\s]+ explosion primes$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -58,7 +59,7 @@ public class EntityExplosionPrimesScriptEvent extends BukkitScriptEvent implemen
             return false;
         }
 
-        return true;
+        return super.matches(path);
 
     }
 
@@ -71,12 +72,12 @@ public class EntityExplosionPrimesScriptEvent extends BukkitScriptEvent implemen
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         String determination = determinationObj.toString();
         if (ArgumentHelper.matchesDouble(determination)) {
-            radius = ArgumentHelper.getFloatFrom(determination);
+            radius = Float.parseFloat(determination);
             return true;
         }
         if (Argument.valueOf(determination)
                 .matchesPrimitive(ArgumentHelper.PrimitiveType.Boolean)) {
-            fire = ArgumentHelper.getBooleanFrom(determination);
+            fire = determination.equalsIgnoreCase("true");
             return true;
         }
         return super.applyDetermination(path, determinationObj);

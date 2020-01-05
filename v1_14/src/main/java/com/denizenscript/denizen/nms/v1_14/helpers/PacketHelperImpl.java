@@ -1,10 +1,11 @@
 package com.denizenscript.denizen.nms.v1_14.helpers;
 
 import com.denizenscript.denizen.nms.NMSHandler;
+import com.denizenscript.denizen.nms.util.ReflectionHelper;
 import com.denizenscript.denizen.nms.v1_14.impl.jnbt.CompoundTagImpl;
 import com.denizenscript.denizen.nms.interfaces.PacketHelper;
 import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
-import com.denizenscript.denizen.nms.util.jnbt.ListTag;
+import com.denizenscript.denizen.nms.util.jnbt.JNBTListTag;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_14_R1.*;
@@ -32,10 +33,12 @@ import java.util.List;
 
 public class PacketHelperImpl implements PacketHelper {
 
+    public static final DataWatcherObject<Float> ENTITY_HUMAN_DATA_WATCHER_ABSORPTION = ReflectionHelper.getFieldValue(EntityHuman.class, "c", null);
+
     @Override
     public void setFakeAbsorption(Player player, float value) {
         DataWatcher dw = new DataWatcher(null);
-        dw.register(DataWatcherRegistry.c.a(11), value);
+        dw.register(ENTITY_HUMAN_DATA_WATCHER_ABSORPTION, value);
         sendPacket(player, new PacketPlayOutEntityMetadata(player.getEntityId(), dw, true));
     }
 
@@ -150,7 +153,7 @@ public class PacketHelperImpl implements PacketHelper {
         CompoundTag compoundTag = NMSHandler.getBlockHelper().getNbtData(location.getBlock())
                 .createBuilder()
                 .putInt("Base", base.getDyeData())
-                .put("Patterns", new ListTag(CompoundTag.class, nbtPatterns))
+                .put("Patterns", new JNBTListTag(CompoundTag.class, nbtPatterns))
                 .build();
         showTileEntityData(player, location, 3, compoundTag);
     }

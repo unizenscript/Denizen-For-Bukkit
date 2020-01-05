@@ -2,13 +2,11 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
@@ -22,14 +20,17 @@ public class PlayerSneakScriptEvent extends BukkitScriptEvent implements Listene
     // player stops sneaking
     //
     // @Regex ^on player (toggles|starts|stops) sneaking$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
     // @Triggers when a player starts or stops sneaking.
     //
     // @Context
-    // <context.state> returns an Element(Boolean) with a value of "true" if the player is now sneaking and "false" otherwise.
+    // <context.state> returns an ElementTag(Boolean) with a value of "true" if the player is now sneaking and "false" otherwise.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -38,12 +39,16 @@ public class PlayerSneakScriptEvent extends BukkitScriptEvent implements Listene
     }
 
     public static PlayerSneakScriptEvent instance;
-    public Boolean state;
+    public boolean state;
     public PlayerToggleSneakEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.getXthArg(2, CoreUtilities.toLowerCase(s)).equals("sneaking");
+    public boolean couldMatch(ScriptPath path) {
+        String middleWord = path.eventArgAt(1);
+        if (!(middleWord.equals("starts") || middleWord.equals("stops") || middleWord.equals("toggles"))) {
+            return false;
+        }
+        return path.eventArgLowerAt(0).equals("player") && path.eventArgLowerAt(2).equals("sneaking");
     }
 
     @Override
@@ -55,12 +60,10 @@ public class PlayerSneakScriptEvent extends BukkitScriptEvent implements Listene
         if (cmd.equals("stops") && state) {
             return false;
         }
-
         if (!runInCheck(path, event.getPlayer().getLocation())) {
             return false;
         }
-
-        return true;
+        return super.matches(path);
     }
 
     @Override

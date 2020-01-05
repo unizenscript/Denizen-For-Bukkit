@@ -3,12 +3,10 @@ package com.denizenscript.denizen.events.player;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerBedEnterEvent;
@@ -20,7 +18,8 @@ public class PlayerEntersBedScriptEvent extends BukkitScriptEvent implements Lis
     // player enters bed
     //
     // @Regex ^on player enters bed$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -28,6 +27,8 @@ public class PlayerEntersBedScriptEvent extends BukkitScriptEvent implements Lis
     //
     // @Context
     // <context.location> returns the LocationTag of the bed.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -40,13 +41,16 @@ public class PlayerEntersBedScriptEvent extends BukkitScriptEvent implements Lis
     public PlayerBedEnterEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.toLowerCase(s).startsWith("player enters bed");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player enters bed");
     }
 
     @Override
     public boolean matches(ScriptPath path) {
-        return runInCheck(path, location);
+        if (!runInCheck(path, location)) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override

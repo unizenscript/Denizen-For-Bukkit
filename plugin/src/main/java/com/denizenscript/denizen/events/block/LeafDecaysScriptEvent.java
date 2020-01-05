@@ -17,7 +17,7 @@ public class LeafDecaysScriptEvent extends BukkitScriptEvent implements Listener
     //
     // @Regex ^on [^\s]+ decay$
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -52,7 +52,7 @@ public class LeafDecaysScriptEvent extends BukkitScriptEvent implements Listener
         if (!mat.equals("leaves") && !tryMaterial(material, mat)) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override

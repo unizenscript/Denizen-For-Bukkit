@@ -37,20 +37,11 @@ public class EntityTame implements Property {
             "tame", "owner"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityTame(EntityTag tame) {
         entity = tame;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -72,11 +63,6 @@ public class EntityTame implements Property {
     public String getPropertyId() {
         return "tame";
     }
-
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -125,15 +111,14 @@ public class EntityTame implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name tame
-        // @input Element(Boolean)(|dPlayer)
+        // @input ElementTag(Boolean)(|dPlayer)
         // @description
         // Sets whether the entity has been tamed.
         // Also available: <@link mechanism EntityTag.owner>
         // @tags
         // <EntityTag.is_tamed>
-        // <EntityTag.is_tameable>
+        // <EntityTag.tameable>
         // -->
-
         if (mechanism.matches("tame")) {
             ListTag list = mechanism.valueAsType(ListTag.class);
             if (list.size() == 0) {
@@ -160,10 +145,9 @@ public class EntityTame implements Property {
         // Also available: <@link mechanism EntityTag.tame>
         // @tags
         // <EntityTag.is_tamed>
-        // <EntityTag.is_tameable>
+        // <EntityTag.tameable>
         // <EntityTag.owner>
         // -->
-
         if (mechanism.matches("owner")) {
             if (mechanism.hasValue() && mechanism.requireObject(PlayerTag.class)) {
                 ((Tameable) entity.getBukkitEntity()).setOwner(mechanism.valueAsType(PlayerTag.class).getOfflinePlayer());

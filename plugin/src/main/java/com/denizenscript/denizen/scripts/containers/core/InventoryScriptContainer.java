@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.scripts.containers.core;
 
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.objects.InventoryTag;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.objects.NPCTag;
@@ -32,7 +32,7 @@ public class InventoryScriptContainer extends ScriptContainer {
     // Inventory scripts work with the InventoryTag object, and can be fetched with the Object Fetcher by using the
     // InventoryTag constructor InventoryTag_script_name.
     //
-    // Example: - inventory open d:in@MyInventoryScript
+    // Example: - inventory open d:MyInventoryScript
     //
     // The following is the format for the container.
     //
@@ -42,26 +42,28 @@ public class InventoryScriptContainer extends ScriptContainer {
     //
     // <code>
     // # The name of the script is the same name that you can use to construct a new
-    // # InventoryTag based on this inventory script. For example, an inventory script named 'Super Cool Inventory'
-    // # can be referred to as 'in@Super Cool Inventory'.
-    // Inventory Script Name:
+    // # InventoryTag based on this inventory script. For example, an inventory script named 'Super_Cool_Inventory'
+    // # can be referred to as 'Super_Cool_Inventory'.
+    // Inventory_Script_Name:
     //
     //   type: inventory
     //
     //   # Must be a valid inventory type.
     //   # Valid inventory types: BREWING, CHEST, DISPENSER, ENCHANTING, ENDER_CHEST, HOPPER, PLAYER, WORKBENCH
+    //   # | All inventory scripts MUST have this key!
     //   inventory: inventory type
     //
     //   # The title can be anything you wish. Use color tags to make colored titles.
     //   # Note that titles only work for some inventory types, including CHEST, DISPENSER, FURNACE, ENCHANTING, and HOPPER.
+    //   # | MOST inventory scripts should have this key!
     //   title: custom title
     //
-    //   # The size must be a multiple of 9. It is recommended not to go above 54, as it will not show
-    //   # correctly when a player looks into it. Tags are allowed for advanced usage.
+    //   # The size must be a multiple of 9. It is recommended to not go above 54, as it will not show correctly when a player looks into it.
+    //   # | Some inventory scripts should have this key! Most can exclude it if 'slots' is used.
     //   size: 27
     //
-    //   # You can use definitions to define items to use in the slots. These are not like normal
-    //   # script definitions, and do not need %'s around them.
+    //   # You can use definitions to define items to use in the slots. These are not like normal script definitions, and do not need to be in a definition tag.
+    //   # | Some inventory scripts MAY have this key, but it is optional. Most scripts will just specify items directly.
     //   definitions:
     //     my item: ItemTag
     //     other item: ItemTag
@@ -71,15 +73,17 @@ public class InventoryScriptContainer extends ScriptContainer {
     //   # When the inventory has no more empty slots, it will discard any remaining items in the list.
     //   # A slot is considered empty when it has no value specified in the slots section.
     //   # If the slot is filled with air, it will no longer count as being empty.
+    //   # | Most inventory scripts should exclude this key, but it may be useful in some cases.
     //   procedural items:
-    //     - define list li@
+    //     - define list <list[]>
     //     - foreach <server.list_online_players>:
     //       - define item human_skull[skull_skin=<[value].name>]
     //       - define list <[list].include[<[item]>]>
     //     - determine <[list]>
     //
-    //   # You can specify the items in the slots of the inventory. For empty spaces, simply put
-    //   # an empty "slot". Note the quotes around the entire lines.
+    //   # You can specify the items in the slots of the inventory. For empty spaces, simply put an empty "slot" value, like "[]".
+    //   # Note the quotes around the entire lines.
+    //   # | Most inventory scripts SHOULD have this key!
     //   slots:
     //     - "[] [] [] [my item] [ItemTag] [] [other item] [] []"
     //     - "[my item] [] [] [] [] [ItemTag] [ItemTag] [] []"
@@ -112,25 +116,31 @@ public class InventoryScriptContainer extends ScriptContainer {
         BukkitTagContext context = new BukkitTagContext(player, npc, new ScriptTag(this));
 
         try {
-            if (contains("INVENTORY")) {
-                if (InventoryType.valueOf(getString("INVENTORY").toUpperCase()) != null) {
-                    inventory = new InventoryTag(InventoryType.valueOf(getString("INVENTORY").toUpperCase()));
-                    if (contains("TITLE")) {
-                        inventory.setTitle(TagManager.tag(getString("TITLE"), context));
+            if (contains("inventory")) {
+                try {
+                    inventory = new InventoryTag(InventoryType.valueOf(getString("inventory").toUpperCase()));
+                    if (contains("title")) {
+                        inventory.setTitle(TagManager.tag(getString("title"), context));
                     }
                     inventory.setIdentifiers("script", getName());
                 }
-                else {
-                    Debug.echoError("Invalid inventory type specified. Assuming \"CHEST\"");
+                catch (IllegalArgumentException ex) {
+                    Debug.echoError("Invalid inventory type specified. Assuming \"CHEST\" (" + ex.getMessage() + ")");
                 }
             }
             int size = 0;
-            if (contains("SIZE")) {
-                if (inventory != null && !getInventoryType().name().equalsIgnoreCase("CHEST")) {
+            if (contains("size")) {
+                if (inventory != null && !getInventoryType().name().equalsIgnoreCase("chest")) {
                     Debug.echoError("You can only set the size of chest inventories!");
                 }
                 else {
-                    size = ArgumentHelper.getIntegerFrom(TagManager.tag(getString("SIZE"), context));
+                    String sizeText = TagManager.tag(getString("size"), context);
+                    if (!ArgumentHelper.matchesInteger(sizeText)) {
+                        Debug.echoError("Inventory script '" + getName() + "' has invalid (not-a-number) size value.");
+                    }
+                    else {
+                        size = Integer.parseInt(sizeText);
+                    }
 
                     if (size == 0) {
                         Debug.echoError("Inventory size can't be 0. Assuming default of inventory type...");
@@ -144,18 +154,23 @@ public class InventoryScriptContainer extends ScriptContainer {
                         Debug.echoError("Inventory size must be a positive number! Inverting to " + size + "...");
                     }
 
-                    inventory = new InventoryTag(size, contains("TITLE") ? TagManager.tag(getString("TITLE"), context) : "Chest");
+                    inventory = new InventoryTag(size, contains("title") ? TagManager.tag(getString("title"), context) : "Chest");
                     inventory.setIdentifiers("script", getName());
                 }
             }
             if (size == 0) {
-                size = getInventoryType().getDefaultSize();
+                if (contains("slots") && (getInventoryType().getDefaultSize() % 9) == 0) {
+                    size = getStringList("slots").size() * 9;
+                }
+                else {
+                    size = getInventoryType().getDefaultSize();
+                }
             }
             boolean[] filledSlots = new boolean[size];
-            if (contains("SLOTS")) {
+            if (contains("slots")) {
                 ItemStack[] finalItems = new ItemStack[size];
                 int itemsAdded = 0;
-                for (String items : getStringList("SLOTS")) {
+                for (String items : getStringList("slots")) {
                     items = TagManager.tag(items, context).trim();
                     if (items.isEmpty()) {
                         continue;
@@ -167,11 +182,10 @@ public class InventoryScriptContainer extends ScriptContainer {
                     }
                     String[] itemsInLine = items.substring(1, items.length() - 1).split("\\[?\\]?\\s+\\[", -1);
                     for (String item : itemsInLine) {
-                        if (contains("DEFINITIONS." + item)) {
-                            ItemTag def = ItemTag.valueOf(TagManager.tag(getString("DEFINITIONS." + item), context), context);
+                        if (contains("definitions." + item)) {
+                            ItemTag def = ItemTag.valueOf(TagManager.tag(getString("definitions." + item), context), context);
                             if (def == null) {
-                                Debug.echoError("Invalid definition '" + item + "' in inventory script '" + getName() + "'"
-                                        + "... Ignoring it and assuming \"AIR\"");
+                                Debug.echoError("Invalid definition '" + item + "' in inventory script '" + getName() + "'" + "... Ignoring it and assuming \"AIR\"");
                                 finalItems[itemsAdded] = new ItemStack(Material.AIR);
                             }
                             else {
@@ -202,21 +216,21 @@ public class InventoryScriptContainer extends ScriptContainer {
                 if (inventory == null) {
                     size = finalItems.length % 9 == 0 ? finalItems.length : (int) (Math.ceil(finalItems.length / 9.0) * 9);
                     inventory = new InventoryTag(size == 0 ? 9 : size,
-                            contains("TITLE") ? TagManager.tag(getString("TITLE"), context) : "Chest");
+                            contains("title") ? TagManager.tag(getString("title"), context) : "Chest");
                 }
                 inventory.setContents(finalItems);
             }
-            if (contains("PROCEDURAL ITEMS")) {
+            if (contains("procedural items")) {
                 if (inventory == null) {
                     size = InventoryType.CHEST.getDefaultSize();
-                    inventory = new InventoryTag(size, contains("TITLE") ? TagManager.tag(getString("TITLE"), context) : "Chest");
+                    inventory = new InventoryTag(size, contains("title") ? TagManager.tag(getString("title"), context) : "Chest");
                 }
-                List<ScriptEntry> entries = getEntries(new BukkitScriptEntryData(player, npc), "PROCEDURAL ITEMS");
+                List<ScriptEntry> entries = getEntries(new BukkitScriptEntryData(player, npc), "procedural items");
                 if (!entries.isEmpty()) {
                     InstantQueue queue = new InstantQueue("INV_SCRIPT_ITEM_PROC");
                     queue.addEntries(entries);
-                    if (contains("DEFINITIONS")) {
-                        YamlConfiguration section = getConfigurationSection("DEFINITIONS");
+                    if (contains("definitions")) {
+                        YamlConfiguration section = getConfigurationSection("definitions");
                         for (StringHolder string : section.getKeys(false)) {
                             String definition = string.str;
                             queue.addDefinition(definition, section.getString(definition));
@@ -227,7 +241,7 @@ public class InventoryScriptContainer extends ScriptContainer {
                         ListTag list = ListTag.getListFor(queue.determinations.getObject(0));
                         if (list != null) {
                             int x = 0;
-                            for (ItemTag item : list.filter(ItemTag.class, this, true)) {
+                            for (ItemTag item : list.filter(ItemTag.class, context, true)) {
                                 while (x < filledSlots.length && filledSlots[x]) {
                                     x++;
                                 }
@@ -249,9 +263,9 @@ public class InventoryScriptContainer extends ScriptContainer {
         }
 
         if (inventory != null) {
-            InventoryScriptHelper.tempInventoryScripts.put(inventory.getInventory(), getName());
+            InventoryTag.trackTemporaryInventory(inventory);
+            inventory.scriptName = getName();
         }
-        inventory.scriptName = getName();
 
         return inventory;
 

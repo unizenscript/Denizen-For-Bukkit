@@ -5,6 +5,7 @@ import com.denizenscript.denizen.events.bukkit.SavesReloadEvent;
 import com.denizenscript.denizen.events.core.*;
 import com.denizenscript.denizen.flags.FlagManager;
 import com.denizenscript.denizen.objects.EntityTag;
+import com.denizenscript.denizen.objects.InventoryTag;
 import com.denizenscript.denizen.objects.NPCTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.objects.notable.NotableManager;
@@ -17,6 +18,9 @@ import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizen.tags.core.ServerTagBase;
 import com.denizenscript.denizen.utilities.*;
 import com.denizenscript.denizen.utilities.blocks.OldMaterialsHelper;
+import com.denizenscript.denizen.utilities.command.DenizenCommandHandler;
+import com.denizenscript.denizen.utilities.command.ExCommandHandler;
+import com.denizenscript.denizen.utilities.command.NPCCommandHandler;
 import com.denizenscript.denizen.utilities.command.manager.CommandManager;
 import com.denizenscript.denizen.utilities.command.manager.Injector;
 import com.denizenscript.denizen.utilities.command.manager.messaging.Messaging;
@@ -25,6 +29,8 @@ import com.denizenscript.denizen.utilities.debugging.StatsRecord;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.depends.Depends;
 import com.denizenscript.denizen.utilities.entity.DenizenEntityType;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.DenizenCoreImplementation;
 import com.denizenscript.denizen.utilities.maps.DenizenMapManager;
 import com.denizenscript.denizen.utilities.packets.DenizenPacketHandler;
 import com.denizenscript.denizen.nms.NMSHandler;
@@ -37,12 +43,9 @@ import com.denizenscript.denizencore.DenizenCore;
 import com.denizenscript.denizencore.events.OldEventManager;
 import com.denizenscript.denizencore.objects.ObjectFetcher;
 import com.denizenscript.denizencore.objects.ObjectTag;
-import com.denizenscript.denizencore.scripts.ScriptBuilder;
-import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.ScriptHelper;
 import com.denizenscript.denizencore.scripts.ScriptRegistry;
 import com.denizenscript.denizencore.scripts.commands.core.AdjustCommand;
-import com.denizenscript.denizencore.scripts.queues.core.InstantQueue;
 import com.denizenscript.denizencore.tags.TagManager;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.debugging.SlowWarning;
@@ -55,17 +58,14 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.*;
 import java.net.URLDecoder;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -354,8 +354,7 @@ public class Denizen extends JavaPlugin {
             CommonRegistries.registerMainTagHandlers();
 
             eventManager = new OldEventManager();
-            // Register all the 'Core' SmartEvents.
-            OldEventManager.registerSmartEvent(new CommandSmartEvent());
+            // Register all the legacy 'Core' SmartEvents.
             OldEventManager.registerSmartEvent(new CuboidEnterExitSmartEvent());
             OldEventManager.registerSmartEvent(new FlagSmartEvent());
             OldEventManager.registerSmartEvent(new NPCNavigationSmartEvent());
@@ -367,7 +366,7 @@ public class Denizen extends JavaPlugin {
             CommonRegistries.registerMainObjects();
 
             // Register Core ObjectTags with the ObjectFetcher
-            ObjectFetcher._registerCoreObjects();
+            ObjectFetcher.registerCoreObjects();
         }
         catch (Exception e) {
             Debug.echoError(e);
@@ -408,6 +407,8 @@ public class Denizen extends JavaPlugin {
             supportsPaper = false;
             Debug.echoError(ex);
         }
+        ExCommandHandler exCommand = new ExCommandHandler();
+        exCommand.enableFor(getCommand("ex"));
 
         // Load script files without processing.
         DenizenCore.preloadScripts();
@@ -415,14 +416,21 @@ public class Denizen extends JavaPlugin {
         // Load the saves.yml into memory
         reloadSaves();
 
-        // Fire the 'on Server PreStart' world event
-        ServerPrestartScriptEvent.instance.specialHackRunEvent();
+        try {
+            // Fire the 'on Server PreStart' world event
+            ServerPrestartScriptEvent.instance.specialHackRunEvent();
+        }
+        catch (Throwable ex) {
+            Debug.echoError(ex);
+        }
 
         // Run everything else on the first server tick
-        getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+        Bukkit.getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
             @Override
             public void run() {
                 try {
+                    exCommand.processTagList();
+
                     // Process script files (events, etc).
                     DenizenCore.postLoadScripts();
 
@@ -435,26 +443,28 @@ public class Denizen extends JavaPlugin {
                     Debug.log(ChatColor.LIGHT_PURPLE + "+-------------------------+");
 
                     // Fire the 'on Server Start' world event
+                    ServerStartScriptEvent.instance.fire();
                     worldScriptHelper.serverStartEvent();
 
                     if (Settings.allowStupidx()) {
                         Debug.echoError("Don't screw with bad config values.");
                         Bukkit.shutdown();
                     }
+
+                    Bukkit.getScheduler().scheduleSyncRepeatingTask(Denizen.this, new Runnable() {
+                        @Override
+                        public void run() {
+                            Debug.outputThisTick = 0;
+                            DenizenCore.tick(50); // Sadly, minecraft has no delta timing, so a tick is always 50ms.
+                        }
+                    }, 1, 1);
+                    InventoryTag.setupInventoryTracker();
                 }
                 catch (Exception e) {
                     Debug.echoError(e);
                 }
             }
         }, 1);
-
-        getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
-            @Override
-            public void run() {
-                Debug.outputThisTick = 0;
-                DenizenCore.tick(50); // Sadly, minecraft has no delta timing, so a tick is always 50ms.
-            }
-        }, 1, 1);
 
         new BukkitRunnable() {
             @Override
@@ -633,76 +643,6 @@ public class Denizen extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String cmdName, String[] args) {
-
-        // <--[language]
-        // @name /ex command
-        // @group Console Commands
-        // @description
-        // The '/ex' command is an easy way to run a single denizen script command in-game. Its syntax,
-        // aside from '/ex' is exactly the same as any other command. When running a command, some context
-        // is also supplied, such as '<player>' if being run by a player (versus the console), as well as
-        // '<npc>' if a NPC is selected by using the '/npc sel' command.
-        //
-        // By default, ex command debug output is sent to the player that ran the ex command (if the command was ran by a player).
-        // To avoid this, use '-q' at the start of the ex command.
-        // Like: /ex -q narrate "wow no output"
-        //
-        // Examples:
-        // /ex flag <player> test_flag:!
-        // /ex run 's@npc walk script' as:<npc>
-        //
-        // Need to '/ex' a command as a different player or NPC? No problem. Just use the 'npc' and 'player'
-        // value arguments, or utilize the object fetcher.
-        //
-        // Examples:
-        // /ex narrate player:p@NLBlackEagle 'Your health is <player.health.formatted>.'
-        // /ex walk npc:n@fred <player.location.cursor_on>
-
-        // -->
-
-        if (cmdName.equalsIgnoreCase("ex")) {
-            List<Object> entries = new ArrayList<>();
-            String entry = String.join(" ", args);
-            boolean quiet = false;
-            if (entry.length() > 3 && entry.startsWith("-q ")) {
-                quiet = true;
-                entry = entry.substring("-q ".length());
-            }
-            if (!Settings.showExDebug()) {
-                quiet = !quiet;
-            }
-
-            if (entry.length() < 2) {
-                sender.sendMessage("/ex (-q) <denizen script command> (arguments)");
-                return true;
-            }
-
-            if (Settings.showExHelp()) {
-                if (Debug.showDebug) {
-                    sender.sendMessage(ChatColor.YELLOW + "Executing Denizen script command... check the console for full debug output!");
-                }
-                else {
-                    sender.sendMessage(ChatColor.YELLOW + "Executing Denizen script command... to see debug, use /denizen debug");
-                }
-            }
-
-            entries.add(entry);
-            InstantQueue queue = new InstantQueue("EXCOMMAND");
-            NPCTag npc = null;
-            if (Depends.citizens != null && Depends.citizens.getNPCSelector().getSelected(sender) != null) {
-                npc = new NPCTag(Depends.citizens.getNPCSelector().getSelected(sender));
-            }
-            List<ScriptEntry> scriptEntries = ScriptBuilder.buildScriptEntries(entries, null,
-                    new BukkitScriptEntryData(sender instanceof Player ? new PlayerTag((Player) sender) : null, npc));
-
-            queue.addEntries(scriptEntries);
-            if (!quiet && sender instanceof Player) {
-                queue.debugOutput = sender::sendMessage;
-            }
-            queue.start();
-            return true;
-        }
-
         String modifier = args.length > 0 ? args[0] : "";
         if (!commandManager.hasCommand(cmd, modifier) && !modifier.isEmpty()) {
             return suggestClosestModifier(sender, cmd.getName(), modifier);

@@ -3,7 +3,7 @@ package com.denizenscript.denizen.tags.core;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.Settings;
+import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizencore.tags.TagRunnable;
 import com.denizenscript.denizencore.tags.Attribute;
@@ -26,6 +26,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PlayerTagBase implements Listener {
 
     public PlayerTagBase() {
+
+        // <--[tag]
+        // @attribute <player[(<player>)]>
+        // @returns PlayerTag
+        // @description
+        // Returns a player object constructed from the input value.
+        // If no input value is specified, returns the linked player.
+        // -->
         Bukkit.getServer().getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
         TagManager.registerTagHandler(new TagRunnable.RootForm() {
             @Override

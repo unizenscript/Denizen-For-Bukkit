@@ -117,13 +117,12 @@ public class ItemMap implements Property {
         // <--[mechanism]
         // @object ItemTag
         // @name map
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Changes what map ID number a map item uses.
         // @tags
         // <ItemTag.map>
         // -->
-
         if (mechanism.matches("map") && mechanism.requireInteger()) {
             setMapId(mechanism.getValue().asInt());
         }

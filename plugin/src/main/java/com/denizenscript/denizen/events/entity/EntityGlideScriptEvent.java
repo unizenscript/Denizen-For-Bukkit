@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.events.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -21,7 +21,8 @@ public class EntityGlideScriptEvent extends BukkitScriptEvent implements Listene
     // entity stops gliding
     //
     // @Regex ^on player (toggles|starts|stops) gliding$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -29,7 +30,7 @@ public class EntityGlideScriptEvent extends BukkitScriptEvent implements Listene
     //
     // @Context
     // <context.entity> returns the EntityTag of this event.
-    // <context.state> returns an Element(Boolean) with a value of "true" if the entity is now gliding and "false" otherwise.
+    // <context.state> returns an ElementTag(Boolean) with a value of "true" if the entity is now gliding and "false" otherwise.
     //
     // @Player when the entity is a player.
     //
@@ -69,7 +70,7 @@ public class EntityGlideScriptEvent extends BukkitScriptEvent implements Listene
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -79,8 +80,7 @@ public class EntityGlideScriptEvent extends BukkitScriptEvent implements Listene
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(entity.isPlayer() ? entity.getDenizenPlayer() : null,
-                entity.isCitizensNPC() ? entity.getDenizenNPC() : null);
+        return new BukkitScriptEntryData(entity);
     }
 
     @Override

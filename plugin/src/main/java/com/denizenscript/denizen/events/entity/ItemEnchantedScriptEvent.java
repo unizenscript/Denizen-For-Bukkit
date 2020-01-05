@@ -4,7 +4,7 @@ import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.InventoryTag;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.objects.LocationTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -25,7 +25,8 @@ public class ItemEnchantedScriptEvent extends BukkitScriptEvent implements Liste
     // <item> enchanted
     //
     // @Regex ^on [^\s]+ enchanted$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -40,7 +41,7 @@ public class ItemEnchantedScriptEvent extends BukkitScriptEvent implements Liste
     // <context.cost> returns the experience level cost of the enchantment.
     //
     // @Determine
-    // Element(Number) to set the experience level cost of the enchantment.
+    // ElementTag(Number) to set the experience level cost of the enchantment.
     // "RESULT:" + ItemTag to change the item result (only affects metadata (like enchantments), not material/quantity/etc!).
     // "ENCHANTS:" + ItemTag to change the resultant enchantments based on a ItemTag.
     // -->
@@ -79,7 +80,7 @@ public class ItemEnchantedScriptEvent extends BukkitScriptEvent implements Liste
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -113,8 +114,7 @@ public class ItemEnchantedScriptEvent extends BukkitScriptEvent implements Liste
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(entity.isPlayer() ? entity.getDenizenPlayer() : null,
-                entity.isCitizensNPC() ? entity.getDenizenNPC() : null);
+        return new BukkitScriptEntryData(entity);
     }
 
     @Override

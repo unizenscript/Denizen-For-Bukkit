@@ -102,14 +102,13 @@ public class ItemQuantity implements Property {
         // <--[mechanism]
         // @object ItemTag
         // @name quantity
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Changes the number of items in this stack.
         // @tags
         // <ItemTag.quantity>
         // <ItemTag.max_stack>
         // -->
-
         if (mechanism.matches("quantity") && mechanism.requireInteger()) {
             item.setAmount(mechanism.getValue().asInt());
         }

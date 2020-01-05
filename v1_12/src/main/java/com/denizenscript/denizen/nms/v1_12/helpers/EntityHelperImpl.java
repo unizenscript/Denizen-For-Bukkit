@@ -11,6 +11,7 @@ import net.minecraft.server.v1_12_R1.*;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_12_R1.entity.CraftAnimals;
@@ -36,6 +37,16 @@ import java.util.UUID;
 public class EntityHelperImpl extends EntityHelper {
 
     @Override
+    public double getAbsorption(LivingEntity entity) {
+        return ((CraftPlayer) entity).getHandle().getDataWatcher().get(DataWatcherRegistry.c.a(11));
+    }
+
+    @Override
+    public void setAbsorption(LivingEntity entity, double value) {
+        ((CraftPlayer) entity).getHandle().getDataWatcher().set(DataWatcherRegistry.c.a(11), (float) value);
+    }
+
+    @Override
     public double getDamageTo(LivingEntity attacker, Entity target) {
         EnumMonsterType monsterType;
         if (target instanceof LivingEntity) {
@@ -44,9 +55,38 @@ public class EntityHelperImpl extends EntityHelper {
         else {
             monsterType = EnumMonsterType.UNDEFINED;
         }
-        double damage = attacker.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getValue();
+        double damage = 0;
+        AttributeInstance attrib = attacker.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
+        if (attrib != null) {
+            damage = attrib.getValue();
+        }
         if (attacker.getEquipment() != null && attacker.getEquipment().getItemInMainHand() != null) {
             damage += EnchantmentManager.a(CraftItemStack.asNMSCopy(attacker.getEquipment().getItemInMainHand()), monsterType);
+        }
+        if (damage <= 0) {
+            return 0;
+        }
+        if (target != null) {
+            DamageSource source;
+            if (attacker instanceof Player) {
+                source = DamageSource.playerAttack(((CraftPlayer) attacker).getHandle());
+            }
+            else {
+                source = DamageSource.mobAttack(((CraftLivingEntity) attacker).getHandle());
+            }
+            net.minecraft.server.v1_12_R1.Entity nmsTarget = ((CraftEntity) target).getHandle();
+            if (nmsTarget.isInvulnerable(source)) {
+                return 0;
+            }
+            if (!(nmsTarget instanceof EntityLiving)) {
+                return damage;
+            }
+            EntityLiving livingTarget = (EntityLiving) nmsTarget;
+            damage = CombatMath.a((float) damage, (float) livingTarget.getArmorStrength(), (float) livingTarget.getAttributeInstance(GenericAttributes.h).getValue());
+            int enchantDamageModifier = EnchantmentManager.a(livingTarget.getArmorItems(), source);
+            if (enchantDamageModifier > 0) {
+                damage = CombatMath.a((float) damage, (float) enchantDamageModifier);
+            }
         }
         return damage;
     }

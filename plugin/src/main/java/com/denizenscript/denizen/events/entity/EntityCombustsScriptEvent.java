@@ -2,7 +2,7 @@ package com.denizenscript.denizen.events.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.LocationTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -25,7 +25,8 @@ public class EntityCombustsScriptEvent extends BukkitScriptEvent implements List
     // <entity> combusts
     //
     // @Regex ^on [^\s]+ combusts$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -38,7 +39,7 @@ public class EntityCombustsScriptEvent extends BukkitScriptEvent implements List
     // <context.source_type> returns the type of the source, which can be: ENTITY, LOCATION, NONE.
     //
     // @Determine
-    // Element(Number) set the length of duration.
+    // ElementTag(Number) set the length of duration.
     //
     // @Player when the entity that catches fire is a player.
     //
@@ -71,7 +72,7 @@ public class EntityCombustsScriptEvent extends BukkitScriptEvent implements List
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -90,8 +91,7 @@ public class EntityCombustsScriptEvent extends BukkitScriptEvent implements List
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(entity.isPlayer() ? EntityTag.getPlayerFrom(event.getEntity()) : null,
-                entity.isCitizensNPC() ? EntityTag.getNPCFrom(event.getEntity()) : null);
+        return new BukkitScriptEntryData(entity);
     }
 
     @Override

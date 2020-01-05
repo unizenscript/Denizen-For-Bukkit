@@ -25,7 +25,7 @@ public class BlockDispensesScriptEvent extends BukkitScriptEvent implements List
     //
     // @Group Block
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -63,9 +63,14 @@ public class BlockDispensesScriptEvent extends BukkitScriptEvent implements List
             return false;
         }
 
-        String dispenser = path.eventArgLowerAt(0);
         String iTest = path.eventArgLowerAt(2);
-        return tryMaterial(material, dispenser) && (iTest.equals("item") || tryItem(item, iTest));
+        if  (!iTest.equals("item") && !tryItem(item, iTest)) {
+            return false;
+        }
+        if (!tryMaterial(material, path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override
@@ -78,7 +83,7 @@ public class BlockDispensesScriptEvent extends BukkitScriptEvent implements List
         String determination = determinationObj.toString();
         if (ArgumentHelper.matchesDouble(determination)) {
             Deprecations.blockDispensesItemDetermination.warn();
-            event.setVelocity(event.getVelocity().multiply(ArgumentHelper.getDoubleFrom(determination)));
+            event.setVelocity(event.getVelocity().multiply(Double.parseDouble(determination)));
             return true;
         }
         else if (LocationTag.matches(determination)) {
@@ -89,6 +94,7 @@ public class BlockDispensesScriptEvent extends BukkitScriptEvent implements List
             else {
                 event.setVelocity(vel.toVector());
             }
+            return true;
         }
         else if (ItemTag.matches(determination)) {
             ItemTag it = ItemTag.valueOf(determination, path.container);
@@ -99,6 +105,7 @@ public class BlockDispensesScriptEvent extends BukkitScriptEvent implements List
                 item = it;
                 event.setItem(item.getItemStack());
             }
+            return true;
         }
         return super.applyDetermination(path, determinationObj);
     }

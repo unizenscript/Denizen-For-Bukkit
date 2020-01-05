@@ -16,19 +16,40 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import org.bukkit.craftbukkit.v1_14_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_14_R1.inventory.CraftInventory;
+import org.bukkit.craftbukkit.v1_14_R1.inventory.CraftInventoryPlayer;
 import org.bukkit.craftbukkit.v1_14_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_14_R1.util.CraftNamespacedKey;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.Recipe;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.*;
 
 public class ItemHelperImpl extends ItemHelper {
+
+    public static IRecipe<?> getNMSRecipe(NamespacedKey key) {
+        MinecraftKey nmsKey = CraftNamespacedKey.toMinecraft(key);
+        for (Object2ObjectLinkedOpenHashMap<MinecraftKey, IRecipe<?>> recipeMap : ((CraftServer) Bukkit.getServer()).getServer().getCraftingManager().recipes.values()) {
+            IRecipe<?> recipe = recipeMap.get(nmsKey);
+            if (recipe != null) {
+                return recipe;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Recipe getRecipeById(NamespacedKey key) {
+        IRecipe<?> recipe = getNMSRecipe(key);
+        if (recipe == null) {
+            return null;
+        }
+        return recipe.toBukkitRecipe();
+    }
 
     @Override
     public void removeRecipe(NamespacedKey key) {
@@ -196,8 +217,8 @@ public class ItemHelperImpl extends ItemHelper {
 
     @Override
     public void setInventoryItem(Inventory inventory, ItemStack item, int slot) {
-        if (inventory instanceof CraftInventory) {
-            ((CraftInventory) inventory).getInventory().setItem(slot, CraftItemStack.asNMSCopy(item));
+        if (inventory instanceof CraftInventoryPlayer && ((CraftInventoryPlayer) inventory).getInventory().player == null) {
+            ((CraftInventoryPlayer) inventory).getInventory().setItem(slot, CraftItemStack.asNMSCopy(item));
         }
         else {
             inventory.setItem(slot, item);

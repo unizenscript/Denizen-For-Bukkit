@@ -1,9 +1,8 @@
 package com.denizenscript.denizen.utilities.debugging;
 
-import com.denizenscript.denizen.BukkitScriptEntryData;
-import com.denizenscript.denizen.DenizenCoreImplementation;
-import com.denizenscript.denizen.Settings;
-import com.denizenscript.denizen.flags.FlagManager;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.DenizenCoreImplementation;
+import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizencore.events.OldEventManager;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -50,24 +49,6 @@ public class Debug {
     //  by the Debuggable interface, which usually checks a ScriptContainer's 'debug' node
     //////
 
-
-    // <--[language]
-    // @Name 'show_command_reports' player flag
-    // @Group Useful flags
-
-    // @Description
-    // Giving a player the flag 'show_command_reports' will tell the Denizen dBugger to output
-    // command reports to the player involved with the ScriptEntry. This can be useful for
-    // script debugging, though it not an all-inclusive view of debugging information.
-    //
-    // To turn on and turn off the flag, just use:
-    // <code>
-    // /ex flag <player> show_command_reports
-    // /ex flag <player> show_command_reports:!
-    // </code>
-    //
-    // -->
-
     public static Consumer<String> getDebugSender(Debuggable caller) {
         if (caller == null) {
             caller = CommandExecuter.currentQueue;
@@ -102,21 +83,7 @@ public class Debug {
         if (!showDebug || !shouldDebug(caller)) {
             return;
         }
-        echo("<Y>+> <G>Executing '<Y>" + name + "<G>': "
-                + trimMessage(report), caller);
-
-        if (caller instanceof ScriptEntry) {
-            if (((BukkitScriptEntryData) ((ScriptEntry) caller).entryData).hasPlayer()) {
-                if (FlagManager.playerHasFlag(((BukkitScriptEntryData) ((ScriptEntry) caller).entryData)
-                        .getPlayer(), "show_command_reports")) {
-                    String message = "<Y>+> <G>Executing '<Y>" + name + "<G>': "
-                            + trimMessage(report);
-
-                    ((BukkitScriptEntryData) ((ScriptEntry) caller).entryData).getPlayer().getPlayerEntity()
-                            .sendRawMessage(cleanTextForDebugOutput(message));
-                }
-            }
-        }
+        echo("<Y>+> <G>Executing '<Y>" + name + "<G>': " + trimMessage(report), caller);
     }
 
     public static void echoDebug(Debuggable caller, DebugElement element) {
@@ -304,6 +271,7 @@ public class Debug {
     // @Triggers when an exception occurs on the server.
     // @Context
     // <context.message> returns the Exception message.
+    // <context.full_trace> returns the full exception trace+message output details.
     // <context.type> returns the type of the error. (EG, NullPointerException).
     // <context.queue> returns the queue that caused the exception, if any.
     //
@@ -318,6 +286,7 @@ public class Debug {
         if (source == null) {
             source = CommandExecuter.currentQueue;
         }
+        String errorMessage = getFullExceptionMessage(ex);
         if (throwErrorEvent) {
             throwErrorEvent = false;
             Map<String, ObjectTag> context = new HashMap<>();
@@ -326,8 +295,11 @@ public class Debug {
                 thrown = ex.getCause();
             }
             context.put("message", new ElementTag(thrown.getMessage()));
+            context.put("full_trace", new ElementTag(errorMessage));
             context.put("type", new ElementTag(thrown.getClass().getSimpleName()));
-            context.put("queue", new QueueTag(source));
+            if (source != null) {
+                context.put("queue", new QueueTag(source));
+            }
             ScriptEntry entry = (source != null ? source.getLastEntryExecuted() : null);
             List<String> Determinations = OldEventManager.doEvents(Arrays.asList("server generates exception"),
                     entry == null ? new BukkitScriptEntryData(null, null) : entry.entryData, context);
@@ -347,28 +319,32 @@ public class Debug {
             Debug.echoError(source, "Exception! Enable '/denizen debug -s' for the nitty-gritty.");
         }
         else {
-            StringBuilder errorMesage = new StringBuilder();
-            errorMesage.append("Internal exception was thrown!\n");
-            String prefix = ChatColor.GRAY + "[Error Continued] " + ChatColor.WHITE;
-            boolean first = true;
-            while (ex != null) {
-                errorMesage.append(prefix);
-                if (!first) {
-                    errorMesage.append("Caused by: ");
-                }
-                errorMesage.append(ex.toString()).append("\n");
-                for (StackTraceElement ste : ex.getStackTrace()) {
-                    errorMesage.append(prefix).append(ste.toString()).append("\n");
-                }
-                if (ex.getCause() == ex) {
-                    break;
-                }
-                ex = ex.getCause();
-                first = false;
-            }
-            echoError(source, errorMesage.toString(), false);
+            echoError(source, errorMessage, false);
         }
         throwErrorEvent = wasThrown;
+    }
+
+    public static String getFullExceptionMessage(Throwable ex) {
+        StringBuilder errorMessage = new StringBuilder();
+        errorMessage.append("Internal exception was thrown!\n");
+        String prefix = ChatColor.GRAY + "[Error Continued] " + ChatColor.WHITE;
+        boolean first = true;
+        while (ex != null) {
+            errorMessage.append(prefix);
+            if (!first) {
+                errorMessage.append("Caused by: ");
+            }
+            errorMessage.append(ex.toString()).append("\n");
+            for (StackTraceElement ste : ex.getStackTrace()) {
+                errorMessage.append(prefix).append(ste.toString()).append("\n");
+            }
+            if (ex.getCause() == ex) {
+                break;
+            }
+            ex = ex.getCause();
+            first = false;
+        }
+        return errorMessage.toString();
     }
 
     private static final Map<Class<?>, String> classNameCache = new WeakHashMap<>();
@@ -574,13 +550,6 @@ public class Debug {
         }
     }
 
-
-    /**
-     * ConsoleSender sends dScript debugging information to the logger
-     * will attempt to intelligently wrap any debug information that is more
-     * than one line. This is used by the dB static methods which do some
-     * additional formatting.
-     */
     private static class ConsoleSender {
 
         // Bukkit CommandSender sends color nicely to the logger, so we'll use that.
@@ -637,6 +606,8 @@ public class Debug {
                 Debug.Recording.append(URLEncoder.encode(dateFormat.format(new Date())
                         + " [INFO] " + string.replace(ChatColor.COLOR_CHAR, (char) 0x01) + "\n"));
             }
+
+            string = Settings.debugPrefix() + string;
 
             // Send buffer to the player
             commandSender.sendMessage(showColor ? string : ChatColor.stripColor(string));

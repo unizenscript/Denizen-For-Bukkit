@@ -1,6 +1,6 @@
 # Denizen: Helpful Citizens for Spigot
 
-**Version 1.1.1**: Compatible with Spigot 1.12.2, 1.13.2, and 1.14.4!
+**Version 1.1.2**: Compatible with Spigot 1.12.2, 1.13.2, 1.14.4, and 1.15!
 
 ## Helpful Links
 
@@ -54,8 +54,8 @@ with the software.
 
 The MIT License (MIT)
 
-Copyright (c) 2012-2019 the Denizen contributors, including all contributions pulled upstream from the Denizen project.
-Copyright (c) 2019 the Unizen contributors.
+Copyright (c) 2012-2020 the Denizen contributors, including all contributions pulled upstream from the Denizen project.
+Copyright (c) 2019-2020 the Unizen contributors.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation the

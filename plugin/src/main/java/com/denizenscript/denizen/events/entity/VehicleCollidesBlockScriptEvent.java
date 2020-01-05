@@ -22,7 +22,8 @@ public class VehicleCollidesBlockScriptEvent extends BukkitScriptEvent implement
     // <vehicle> collides with <material>
     //
     // @Regex ^on [^\s]+ collides with [^\s]+$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Triggers when a vehicle collides with a block.
     //
@@ -64,7 +65,7 @@ public class VehicleCollidesBlockScriptEvent extends BukkitScriptEvent implement
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override

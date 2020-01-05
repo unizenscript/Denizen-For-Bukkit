@@ -7,7 +7,7 @@ import com.denizenscript.denizencore.objects.Mechanism;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ScriptTag;
 import com.denizenscript.denizencore.objects.properties.Property;
-import com.denizenscript.denizencore.tags.Attribute;
+import com.denizenscript.denizencore.objects.properties.PropertyParser;
 import net.citizensnpcs.api.CitizensAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.block.BlockState;
@@ -32,17 +32,9 @@ public class InventoryHolder implements Property {
         return new InventoryHolder((InventoryTag) inventory);
     }
 
-    public static final String[] handledTags = new String[] {
-            "id_holder"
-    };
-
     public static final String[] handledMechs = new String[] {
             "holder"
     };
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
 
     InventoryTag inventory;
     ObjectTag holder;
@@ -134,11 +126,6 @@ public class InventoryHolder implements Property {
         }
     }
 
-
-    /////////
-    // Property Methods
-    ///////
-
     @Override
     public String getPropertyString() {
         if (holder == null || (inventory.getIdType().equals("generic")
@@ -155,17 +142,7 @@ public class InventoryHolder implements Property {
         return "holder";
     }
 
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
-
-    @Override
-    public ObjectTag getObjectAttribute(Attribute attribute) {
-
-        if (attribute == null) {
-            return null;
-        }
+    public static void registerTags() {
 
         // <--[tag]
         // @attribute <InventoryTag.id_holder>
@@ -173,17 +150,15 @@ public class InventoryHolder implements Property {
         // @group properties
         // @mechanism InventoryTag.holder
         // @description
-        // Returns Denizen's holder ID for this inventory. (p@aufdemrand, l@123,321,123, etc.)
+        // Returns Denizen's holder ID for this inventory. (player object, location object, etc.)
         // -->
-        if (attribute.startsWith("id_holder")) {
+        PropertyParser.<InventoryHolder>registerTag("id_holder", (attribute, object) -> {
+            ObjectTag holder = object.holder;
             if (holder == null) {
                 return null;
             }
-            return holder.getObjectAttribute(attribute.fulfill(1));
-        }
-
-        return null;
-
+            return holder;
+        });
     }
 
     @Override

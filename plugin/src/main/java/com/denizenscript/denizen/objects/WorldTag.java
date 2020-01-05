@@ -3,7 +3,7 @@ package com.denizenscript.denizen.objects;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizencore.objects.*;
-import com.denizenscript.denizen.Settings;
+import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
@@ -52,7 +52,7 @@ public class WorldTag implements ObjectTag, Adjustable {
     /////////////////
 
     // <--[language]
-    // @name WorldTag
+    // @name WorldTag Objects
     // @group Object System
     // @description
     // A WorldTag represents a world on the server.
@@ -70,7 +70,7 @@ public class WorldTag implements ObjectTag, Adjustable {
     // associated with. For example, to reference the world named 'world1', use WorldTag1.
     // World names are case insensitive.
     //
-    // For general info, see <@link language WorldTag>
+    // For general info, see <@link language WorldTag Objects>
     // -->
 
 
@@ -235,17 +235,14 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns a list of entities in this world.
         // -->
-        registerTag("entities", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                ArrayList<EntityTag> entities = new ArrayList<>();
+        registerTag("entities", (attribute, object) -> {
+            ArrayList<EntityTag> entities = new ArrayList<>();
 
-                for (Entity entity : object.getEntitiesForTag()) {
-                    entities.add(new EntityTag(entity));
-                }
-
-                return new ListTag(entities);
+            for (Entity entity : object.getEntitiesForTag()) {
+                entities.add(new EntityTag(entity));
             }
+
+            return new ListTag(entities);
         });
 
         // <--[tag]
@@ -254,17 +251,14 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns a list of living entities in this world.
         // -->
-        registerTag("living_entities", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                ArrayList<EntityTag> entities = new ArrayList<>();
+        registerTag("living_entities", (attribute, object) -> {
+            ArrayList<EntityTag> entities = new ArrayList<>();
 
-                for (Entity entity : object.getLivingEntitiesForTag()) {
-                    entities.add(new EntityTag(entity));
-                }
-
-                return new ListTag(entities);
+            for (Entity entity : object.getLivingEntitiesForTag()) {
+                entities.add(new EntityTag(entity));
             }
+
+            return new ListTag(entities);
         });
 
         // <--[tag]
@@ -273,19 +267,16 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns a list of online players in this world.
         // -->
-        registerTag("players", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                ArrayList<PlayerTag> players = new ArrayList<>();
+        registerTag("players", (attribute, object) -> {
+            ArrayList<PlayerTag> players = new ArrayList<>();
 
-                for (Player player : object.getWorld().getPlayers()) {
-                    if (!EntityTag.isNPC(player)) {
-                        players.add(new PlayerTag(player));
-                    }
+            for (Player player : object.getWorld().getPlayers()) {
+                if (!EntityTag.isNPC(player)) {
+                    players.add(new PlayerTag(player));
                 }
-
-                return new ListTag(players);
             }
+
+            return new ListTag(players);
         });
 
         // <--[tag]
@@ -294,21 +285,18 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns a list of spawned NPCs in this world.
         // -->
-        registerTag("spawned_npcs", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                ArrayList<NPCTag> npcs = new ArrayList<>();
+        registerTag("spawned_npcs", (attribute, object) -> {
+            ArrayList<NPCTag> npcs = new ArrayList<>();
 
-                World thisWorld = object.getWorld();
+            World thisWorld = object.getWorld();
 
-                for (NPC npc : CitizensAPI.getNPCRegistry()) {
-                    if (npc.isSpawned() && npc.getEntity().getLocation().getWorld().equals(thisWorld)) {
-                        npcs.add(NPCTag.mirrorCitizensNPC(npc));
-                    }
+            for (NPC npc : CitizensAPI.getNPCRegistry()) {
+                if (npc.isSpawned() && npc.getEntity().getLocation().getWorld().equals(thisWorld)) {
+                    npcs.add(NPCTag.mirrorCitizensNPC(npc));
                 }
-
-                return new ListTag(npcs);
             }
+
+            return new ListTag(npcs);
         });
 
         // <--[tag]
@@ -317,25 +305,22 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns a list of all NPCs in this world.
         // -->
-        registerTag("npcs", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                ArrayList<NPCTag> npcs = new ArrayList<>();
+        registerTag("npcs", (attribute, object) -> {
+            ArrayList<NPCTag> npcs = new ArrayList<>();
 
-                World thisWorld = object.getWorld();
+            World thisWorld = object.getWorld();
 
-                for (NPC npc : CitizensAPI.getNPCRegistry()) {
-                    Location location = npc.getStoredLocation();
-                    if (location != null) {
-                        World world = location.getWorld();
-                        if (world != null && world.equals(thisWorld)) {
-                            npcs.add(NPCTag.mirrorCitizensNPC(npc));
-                        }
+            for (NPC npc : CitizensAPI.getNPCRegistry()) {
+                Location location = npc.getStoredLocation();
+                if (location != null) {
+                    World world = location.getWorld();
+                    if (world != null && world.equals(thisWorld)) {
+                        npcs.add(NPCTag.mirrorCitizensNPC(npc));
                     }
                 }
-
-                return new ListTag(npcs);
             }
+
+            return new ListTag(npcs);
         });
 
 
@@ -349,11 +334,8 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the world will generate structures.
         // -->
-        registerTag("can_generate_structures", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().canGenerateStructures());
-            }
+        registerTag("can_generate_structures", (attribute, object) -> {
+            return new ElementTag(object.getWorld().canGenerateStructures());
         });
 
         // <--[tag]
@@ -362,16 +344,13 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns a list of all the currently loaded chunks.
         // -->
-        registerTag("loaded_chunks", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                ListTag chunks = new ListTag();
-                for (Chunk ent : object.getWorld().getLoadedChunks()) {
-                    chunks.add(new ChunkTag(ent).identify());
-                }
-
-                return chunks;
+        registerTag("loaded_chunks", (attribute, object) -> {
+            ListTag chunks = new ListTag();
+            for (Chunk ent : object.getWorld().getLoadedChunks()) {
+                chunks.addObject(new ChunkTag(ent));
             }
+
+            return chunks;
         });
         // <--[tag]
         // @attribute <WorldTag.random_loaded_chunk>
@@ -379,12 +358,9 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns a random loaded chunk.
         // -->
-        registerTag("random_loaded_chunk", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                int random = CoreUtilities.getRandom().nextInt(object.getWorld().getLoadedChunks().length);
-                return new ChunkTag(object.getWorld().getLoadedChunks()[random]);
-            }
+        registerTag("random_loaded_chunk", (attribute, object) -> {
+            int random = CoreUtilities.getRandom().nextInt(object.getWorld().getLoadedChunks().length);
+            return new ChunkTag(object.getWorld().getLoadedChunks()[random]);
         });
 
         // <--[tag]
@@ -393,38 +369,30 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns the level of the sea.
         // -->
-        registerTag("sea_level", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getSeaLevel());
-            }
+        registerTag("sea_level", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getSeaLevel());
         });
 
         // <--[tag]
         // @attribute <WorldTag.spawn_location>
         // @returns LocationTag
+        // @mechanism WorldTag.spawn_location
         // @description
         // Returns the spawn location of the world.
         // -->
-        registerTag("spawn_location", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new LocationTag(object.getWorld().getSpawnLocation());
-            }
+        registerTag("spawn_location", (attribute, object) -> {
+            return new LocationTag(object.getWorld().getSpawnLocation());
         });
 
-        // <-- [tag]
+        // <--[tag]
         // @attribute <WorldTag.world_type>
         // @returns ElementTag
         // @description
         // Returns the world type of the world.
         // Can return any enum from: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/WorldType.html>
         // -->
-        registerTag("world_type", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getWorldType().getName());
-            }
+        registerTag("world_type", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getWorldType().getName());
         });
 
 
@@ -438,11 +406,8 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns the name of the world.
         // -->
-        registerTag("name", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getName());
-            }
+        registerTag("name", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getName());
         });
 
         // <--[tag]
@@ -451,11 +416,8 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns the world seed.
         // -->
-        registerTag("seed", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getSeed());
-            }
+        registerTag("seed", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getSeed());
         });
 
 
@@ -469,11 +431,8 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether animals can spawn in this world.
         // -->
-        registerTag("allows_animals", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getAllowAnimals());
-            }
+        registerTag("allows_animals", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getAllowAnimals());
         });
 
         // <--[tag]
@@ -482,11 +441,8 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether monsters can spawn in this world.
         // -->
-        registerTag("allows_monsters", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getAllowMonsters());
-            }
+        registerTag("allows_monsters", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getAllowMonsters());
         });
 
         // <--[tag]
@@ -495,102 +451,85 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether player versus player combat is allowed in this world.
         // -->
-        registerTag("allows_pvp", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getPVP());
-            }
+        registerTag("allows_pvp", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getPVP());
         });
 
         // <--[tag]
         // @attribute <WorldTag.auto_save>
         // @returns ElementTag(Boolean)
+        // @mechanism WorldTag.auto_save
         // @description
         // Returns whether the world automatically saves.
         // -->
-        registerTag("auto_save", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().isAutoSave());
-            }
+        registerTag("auto_save", (attribute, object) -> {
+            return new ElementTag(object.getWorld().isAutoSave());
         });
 
         // <--[tag]
         // @attribute <WorldTag.ambient_spawn_limit>
         // @returns ElementTag(Number)
+        // @mechanism WorldTag.ambient_spawn_limit
         // @description
         // Returns the number of ambient mobs that can spawn in a chunk in this world.
         // -->
-        registerTag("ambient_spawn_limit", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getAmbientSpawnLimit());
-            }
+        registerTag("ambient_spawn_limit", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getAmbientSpawnLimit());
         });
 
         // <--[tag]
         // @attribute <WorldTag.animal_spawn_limit>
         // @returns ElementTag(Number)
+        // @mechanism WorldTag.animal_spawn_limit
         // @description
         // Returns the number of animals that can spawn in a chunk in this world.
         // -->
-        registerTag("animal_spawn_limit", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getAnimalSpawnLimit());
-            }
+        registerTag("animal_spawn_limit", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getAnimalSpawnLimit());
         });
 
         // <--[tag]
         // @attribute <WorldTag.monster_spawn_limit>
         // @returns ElementTag(Number)
+        // @mechanism WorldTag.monster_spawn_limit
         // @description
         // Returns the number of monsters that can spawn in a chunk in this world.
         // -->
-        registerTag("monster_spawn_limit", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getMonsterSpawnLimit());
-            }
+        registerTag("monster_spawn_limit", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getMonsterSpawnLimit());
         });
 
         // <--[tag]
         // @attribute <WorldTag.water_animal_spawn_limit>
         // @returns ElementTag(Number)
+        // @mechanism WorldTag.water_animal_spawn_limit
         // @description
         // Returns the number of water animals that can spawn in a chunk in this world.
         // -->
-        registerTag("water_animal_spawn_limit", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getWaterAnimalSpawnLimit());
-            }
+        registerTag("water_animal_spawn_limit", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getWaterAnimalSpawnLimit());
         });
 
         // <--[tag]
         // @attribute <WorldTag.difficulty>
         // @returns ElementTag
+        // @mechanism WorldTag.difficulty
         // @description
         // Returns the name of the difficulty level.
         // -->
-        registerTag("difficulty", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getDifficulty().name());
-            }
+        registerTag("difficulty", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getDifficulty().name());
         });
 
         // <--[tag]
         // @attribute <WorldTag.keep_spawn>
         // @returns ElementTag(Boolean)
+        // @mechanism WorldTag.keep_spawn
         // @description
         // Returns whether the world's spawn area should be kept loaded into memory.
         // -->
-        registerTag("keep_spawn", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getKeepSpawnInMemory());
-            }
+        registerTag("keep_spawn", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getKeepSpawnInMemory());
         });
 
         // <--[tag]
@@ -599,37 +538,30 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns the maximum height of this world.
         // -->
-        registerTag("max_height", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getMaxHeight());
-            }
+        registerTag("max_height", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getMaxHeight());
         });
 
         // <--[tag]
         // @attribute <WorldTag.ticks_per_animal_spawn>
         // @returns DurationTag
+        // @Mechanism WorldTag.ticks_per_animal_spawns
         // @description
-        // Returns the world's ticks per animal spawn mechanism.getValue().
+        // Returns the world's ticks per animal spawn value.
         // -->
-        registerTag("ticks_per_animal_spawn", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new DurationTag(object.getWorld().getTicksPerAnimalSpawns());
-            }
+        registerTag("ticks_per_animal_spawn", (attribute, object) -> {
+            return new DurationTag(object.getWorld().getTicksPerAnimalSpawns());
         });
 
         // <--[tag]
         // @attribute <WorldTag.ticks_per_monster_spawn>
         // @returns DurationTag
+        // @Mechanism WorldTag.ticks_per_monster_spawns
         // @description
-        // Returns the world's ticks per monster spawn mechanism.getValue().
+        // Returns the world's ticks per monster spawn value.
         // -->
-        registerTag("ticks_per_monster_spawn", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new DurationTag(object.getWorld().getTicksPerMonsterSpawns());
-            }
+        registerTag("ticks_per_monster_spawn", (attribute, object) -> {
+            return new DurationTag(object.getWorld().getTicksPerMonsterSpawns());
         });
 
         /////////////////////
@@ -639,65 +571,62 @@ public class WorldTag implements ObjectTag, Adjustable {
         // <--[tag]
         // @attribute <WorldTag.time>
         // @returns ElementTag(Number)
+        // @mechanism WorldTag.time
         // @description
         // Returns the relative in-game time of this world.
         // -->
-        registerTag("time", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
+        registerTag("time", (attribute, object) -> {
+            // <--[tag]
+            // @attribute <WorldTag.time.duration>
+            // @returns DurationTags
+            // @description
+            // Returns the relative in-game time of this world as a duration.
+            // -->
+            if (attribute.startsWith("duration", 2)) {
+                attribute.fulfill(1);
+                return new DurationTag(object.getWorld().getTime());
+            }
 
-                // <--[tag]
-                // @attribute <WorldTag.time.duration>
-                // @returns DurationTags
-                // @description
-                // Returns the relative in-game time of this world as a duration.
-                // -->
-                if (attribute.startsWith("duration", 2)) {
-                    attribute.fulfill(1);
-                    return new DurationTag(object.getWorld().getTime());
+            // <--[tag]
+            // @attribute <WorldTag.time.full>
+            // @returns DurationTag
+            // @description
+            // Returns the in-game time of this world.
+            // -->
+            else if (attribute.startsWith("full", 2)) {
+                attribute.fulfill(1);
+                return new DurationTag(object.getWorld().getFullTime());
+            }
+
+            // <--[tag]
+            // @attribute <WorldTag.time.period>
+            // @returns ElementTag
+            // @description
+            // Returns the time as 'day', 'night', 'dawn', or 'dusk'.
+            // -->
+            else if (attribute.startsWith("period", 2)) {
+                attribute.fulfill(1);
+
+                long time = object.getWorld().getTime();
+                String period;
+
+                if (time >= 23000) {
+                    period = "dawn";
                 }
-
-                // <--[tag]
-                // @attribute <WorldTag.time.full>
-                // @returns DurationTag
-                // @description
-                // Returns the in-game time of this world.
-                // -->
-                else if (attribute.startsWith("full", 2)) {
-                    attribute.fulfill(1);
-                    return new ElementTag(object.getWorld().getFullTime());
+                else if (time >= 13500) {
+                    period = "night";
                 }
-
-                // <--[tag]
-                // @attribute <WorldTag.time.period>
-                // @returns ElementTag
-                // @description
-                // Returns the time as 'day', 'night', 'dawn', or 'dusk'.
-                // -->
-                else if (attribute.startsWith("period", 2)) {
-                    attribute.fulfill(1);
-
-                    long time = object.getWorld().getTime();
-                    String period;
-
-                    if (time >= 23000) {
-                        period = "dawn";
-                    }
-                    else if (time >= 13500) {
-                        period = "night";
-                    }
-                    else if (time >= 12500) {
-                        period = "dusk";
-                    }
-                    else {
-                        period = "day";
-                    }
-
-                    return new ElementTag(period);
+                else if (time >= 12500) {
+                    period = "dusk";
                 }
                 else {
-                    return new ElementTag(object.getWorld().getTime());
+                    period = "day";
                 }
+
+                return new ElementTag(period);
+            }
+            else {
+                return new ElementTag(object.getWorld().getTime());
             }
         });
 
@@ -707,13 +636,9 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns the current phase of the moon, as an integer from 1 to 8.
         // -->
-        registerTag("moon_phase", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag((int) ((object.getWorld().getFullTime() / 24000) % 8) + 1);
-            }
-        });
-        registerTag("moonphase", tagProcessor.registeredObjectTags.get("moon_phase"));
+        registerTag("moon_phase", (attribute, object) -> {
+            return new ElementTag((int) ((object.getWorld().getFullTime() / 24000) % 8) + 1);
+        }, "moonphase");
 
         /////////////////////
         //   WEATHER ATTRIBUTES
@@ -726,50 +651,41 @@ public class WorldTag implements ObjectTag, Adjustable {
         // Returns whether there is currently a storm in this world.
         // ie, whether it is raining. To check for thunder, use <@link tag WorldTag.thundering>.
         // -->
-        registerTag("has_storm", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().hasStorm());
-            }
+        registerTag("has_storm", (attribute, object) -> {
+            return new ElementTag(object.getWorld().hasStorm());
         });
 
         // <--[tag]
         // @attribute <WorldTag.thunder_duration>
         // @returns DurationTag
+        // @mechanism WorldTag.thunder_duration
         // @description
         // Returns the duration of thunder.
         // -->
-        registerTag("thunder_duration", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new DurationTag((long) object.getWorld().getThunderDuration());
-            }
+        registerTag("thunder_duration", (attribute, object) -> {
+            return new DurationTag((long) object.getWorld().getThunderDuration());
         });
 
         // <--[tag]
         // @attribute <WorldTag.thundering>
         // @returns ElementTag(Boolean)
+        // @mechanism WorldTag.thundering
         // @description
         // Returns whether it is currently thundering in this world.
         // -->
-        registerTag("thundering", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().isThundering());
-            }
+        registerTag("thundering", (attribute, object) -> {
+            return new ElementTag(object.getWorld().isThundering());
         });
 
         // <--[tag]
         // @attribute <WorldTag.weather_duration>
         // @returns DurationTag
+        // @mechanism WorldTag.weather_duration
         // @description
         // Returns the duration of storms.
         // -->
-        registerTag("weather_duration", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new DurationTag((long) object.getWorld().getWeatherDuration());
-            }
+        registerTag("weather_duration", (attribute, object) -> {
+            return new DurationTag((long) object.getWorld().getWeatherDuration());
         });
 
         // <--[tag]
@@ -778,11 +694,8 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns the environment of the world: NORMAL, NETHER, or THE_END.
         // -->
-        registerTag("environment", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getEnvironment().name());
-            }
+        registerTag("environment", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getEnvironment().name());
         });
 
         // <--[tag]
@@ -792,11 +705,8 @@ public class WorldTag implements ObjectTag, Adjustable {
         // Always returns 'World' for WorldTag objects. All objects fetchable by the Object Fetcher will return the
         // type of object that is fulfilling this attribute.
         // -->
-        registerTag("type", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag("World");
-            }
+        registerTag("type", (attribute, object) -> {
+            return new ElementTag("World");
         });
 
         /////////////////////
@@ -809,11 +719,8 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // returns the size of the world border in this world.
         // -->
-        registerTag("border_size", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getWorldBorder().getSize());
-            }
+        registerTag("border_size", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getWorldBorder().getSize());
         });
 
         // <--[tag]
@@ -822,11 +729,8 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // returns the center of the world border in this world.
         // -->
-        registerTag("border_center", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new LocationTag(object.getWorld().getWorldBorder().getCenter());
-            }
+        registerTag("border_center", (attribute, object) -> {
+            return new LocationTag(object.getWorld().getWorldBorder().getCenter());
         });
 
         // <--[tag]
@@ -835,11 +739,8 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // returns the size of the world border in this world.
         // -->
-        registerTag("border_damage", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getWorldBorder().getDamageAmount());
-            }
+        registerTag("border_damage", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getWorldBorder().getDamageAmount());
         });
 
         // <--[tag]
@@ -848,11 +749,8 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // returns the damage buffer of the world border in this world.
         // -->
-        registerTag("border_damage_buffer", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getWorldBorder().getDamageBuffer());
-            }
+        registerTag("border_damage_buffer", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getWorldBorder().getDamageBuffer());
         });
 
         // <--[tag]
@@ -861,11 +759,8 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // returns the warning distance of the world border in this world.
         // -->
-        registerTag("border_warning_distance", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new ElementTag(object.getWorld().getWorldBorder().getWarningDistance());
-            }
+        registerTag("border_warning_distance", (attribute, object) -> {
+            return new ElementTag(object.getWorld().getWorldBorder().getWarningDistance());
         });
 
         // <--[tag]
@@ -874,11 +769,8 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // returns warning time of the world border in this world as a duration.
         // -->
-        registerTag("border_warning_time", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                return new DurationTag(object.getWorld().getWorldBorder().getWarningTime());
-            }
+        registerTag("border_warning_time", (attribute, object) -> {
+            return new DurationTag(object.getWorld().getWorldBorder().getWarningTime());
         });
 
         // <--[tag]
@@ -888,21 +780,17 @@ public class WorldTag implements ObjectTag, Adjustable {
         // returns the current value of the specified gamerule in the world.
         // Note that the name is case-sensitive... so "doFireTick" is correct, but "dofiretick" is not.
         // -->
-        registerTag("gamerule", new TagRunnable.ObjectForm<WorldTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, WorldTag object) {
-                GameRule rule = GameRule.getByName(attribute.getContext(1));
-                Object result = object.getWorld().getGameRuleValue(rule);
-                return new ElementTag(result == null ? "null" : result.toString());
-            }
+        registerTag("gamerule", (attribute, object) -> {
+            GameRule rule = GameRule.getByName(attribute.getContext(1));
+            Object result = object.getWorld().getGameRuleValue(rule);
+            return new ElementTag(result == null ? "null" : result.toString());
         });
-
     }
 
     public static ObjectTagProcessor<WorldTag> tagProcessor = new ObjectTagProcessor<>();
 
-    public static void registerTag(String name, TagRunnable.ObjectForm<WorldTag> runnable) {
-        tagProcessor.registerTag(name, runnable);
+    public static void registerTag(String name, TagRunnable.ObjectInterface<WorldTag> runnable, String... variants) {
+        tagProcessor.registerTag(name, runnable, variants);
     }
 
     @Override
@@ -920,7 +808,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object WorldTag
         // @name ambient_spawn_limit
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Sets the limit for number of ambient mobs that can spawn in a chunk in this world.
         // @tags
@@ -934,7 +822,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object WorldTag
         // @name animal_spawn_limit
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Sets the limit for number of animals that can spawn in a chunk in this world.
         // @tags
@@ -948,7 +836,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object WorldTag
         // @name auto_save
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Sets whether the world will automatically save edits.
         // @tags
@@ -1039,7 +927,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object WorldTag
         // @name full_time
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Sets the in-game time on the server.
         // @tags
@@ -1052,7 +940,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object WorldTag
         // @name keep_spawn
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Sets whether the world's spawn area should be kept loaded into memory.
         // @tags
@@ -1065,7 +953,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object WorldTag
         // @name monster_spawn_limit
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Sets the limit for number of monsters that can spawn in a chunk in this world.
         // @tags
@@ -1078,7 +966,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object WorldTag
         // @name allow_pvp
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Sets whether player versus player combat is allowed in this world.
         // @tags
@@ -1105,7 +993,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object WorldTag
         // @name storming
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Sets whether there is a storm.
         // @tags
@@ -1131,7 +1019,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object WorldTag
         // @name thundering
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Sets whether it is thundering.
         // @tags
@@ -1148,7 +1036,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Sets the time between animal spawns.
         // @tags
-        // <WorldTag.ticks_per_animal_spawns>
+        // <WorldTag.ticks_per_animal_spawn>
         // -->
         if (mechanism.matches("ticks_per_animal_spawns") && mechanism.requireObject(DurationTag.class)) {
             getWorld().setTicksPerAnimalSpawns(mechanism.valueAsType(DurationTag.class).getTicksAsInt());
@@ -1161,7 +1049,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Sets the time between monster spawns.
         // @tags
-        // <WorldTag.ticks_per_monster_spawns>
+        // <WorldTag.ticks_per_monster_spawn>
         // -->
         if (mechanism.matches("ticks_per_monster_spawns") && mechanism.requireObject(DurationTag.class)) {
             getWorld().setTicksPerMonsterSpawns(mechanism.valueAsType(DurationTag.class).getTicksAsInt());
@@ -1170,7 +1058,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object WorldTag
         // @name time
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Sets the relative in-game time on the server.
         // @tags
@@ -1197,7 +1085,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object WorldTag
         // @name water_animal_spawn_limit
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Sets the limit for number of water animals that can spawn in a chunk in this world.
         // @tags

@@ -21,8 +21,8 @@ public class CauldronLevelChangeScriptEvent extends BukkitScriptEvent implements
     //
     // @Group Block
     //
-    // @Switch in <area>
-    // @Switch cause <cause>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Switch cause:<cause> to only process the event when it came from a specified cause.
     //
     // @Cancellable true
     //
@@ -36,7 +36,7 @@ public class CauldronLevelChangeScriptEvent extends BukkitScriptEvent implements
     // <context.new_level> returns the new cauldron level.
     //
     // @Determine
-    // Element(Number) to set the new level.
+    // ElementTag(Number) to set the new level.
     //
     // -->
 
@@ -75,7 +75,7 @@ public class CauldronLevelChangeScriptEvent extends BukkitScriptEvent implements
         else if (!changeType.equals("changes")) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override

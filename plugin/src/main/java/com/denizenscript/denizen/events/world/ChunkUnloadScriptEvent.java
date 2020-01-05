@@ -19,7 +19,7 @@ public class ChunkUnloadScriptEvent extends BukkitScriptEvent implements Listene
     //
     // @Group World
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Warning This event will fire *extremely* rapidly and often!
     //
@@ -51,7 +51,7 @@ public class ChunkUnloadScriptEvent extends BukkitScriptEvent implements Listene
         if (!runInCheck(path, chunk.getCenter())) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override

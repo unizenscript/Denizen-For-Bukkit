@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.events.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
@@ -22,7 +22,8 @@ public class EntityTamesScriptEvent extends BukkitScriptEvent implements Listene
     // player tames <entity>
     //
     // @Regex ^on [^\s]+ (tames [^\s]+|tamed)$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -66,7 +67,7 @@ public class EntityTamesScriptEvent extends BukkitScriptEvent implements Listene
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -76,9 +77,7 @@ public class EntityTamesScriptEvent extends BukkitScriptEvent implements Listene
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        // TODO: Store the player / npc?
-        return new BukkitScriptEntryData(owner.isPlayer() ? owner.getDenizenPlayer() : null,
-                owner.isCitizensNPC() ? owner.getDenizenNPC() : null);
+        return new BukkitScriptEntryData(owner);
     }
 
     @Override

@@ -32,20 +32,11 @@ public class EntitySitting implements Property {
             "sitting"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntitySitting(EntityTag entity) {
         this.entity = entity;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -59,10 +50,6 @@ public class EntitySitting implements Property {
     public String getPropertyId() {
         return "sitting";
     }
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -93,13 +80,12 @@ public class EntitySitting implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name sitting
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Changes the sitting state of a wolf, cat, or parrot.
         // @tags
         // <EntityTag.sitting>
         // -->
-
         if (mechanism.matches("sitting") && mechanism.requireBoolean()) {
             ((Sittable) entity.getBukkitEntity()).setSitting(mechanism.getValue().asBoolean());
         }

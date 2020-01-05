@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.scripts.commands.server;
 
 import com.denizenscript.denizen.utilities.DenizenAPI;
-import com.denizenscript.denizen.utilities.command.DenizenCommandSender;
+import com.denizenscript.denizen.utilities.command.scripted.DenizenCommandSender;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.nms.NMSHandler;
@@ -27,7 +27,7 @@ public class ExecuteCommand extends AbstractCommand {
 
     // <--[command]
     // @Name Execute
-    // @Syntax execute [as_player/as_op/as_npc/as_server] [<Bukkit command>] (silent)
+    // @Syntax execute [as_player/as_op/as_npc/as_server] [<Bukkit-command>] (silent)
     // @Required 2
     // @Short Executes an arbitrary server command as if the player, NPC, or server typed it in.
     // @Group server

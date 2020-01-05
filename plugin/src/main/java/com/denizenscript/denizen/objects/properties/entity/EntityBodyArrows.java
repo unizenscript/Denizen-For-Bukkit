@@ -30,20 +30,11 @@ public class EntityBodyArrows implements Property {
             "body_arrows", "clear_body_arrows"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityBodyArrows(EntityTag entity) {
         this.entity = entity;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     private int getBodyArrows() {
         return NMSHandler.getEntityHelper().getBodyArrows(entity.getBukkitEntity());
@@ -94,7 +85,7 @@ public class EntityBodyArrows implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name body_arrows
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Sets the number of arrows stuck in the entity's body.
         // Note: Body arrows will only be visible for players or player-type npcs.

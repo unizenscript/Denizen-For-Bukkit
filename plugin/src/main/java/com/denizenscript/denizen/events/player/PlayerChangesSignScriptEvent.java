@@ -1,14 +1,12 @@
 package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.*;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.tags.core.EscapeTagBase;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.event.EventHandler;
@@ -25,7 +23,8 @@ public class PlayerChangesSignScriptEvent extends BukkitScriptEvent implements L
     // player changes <material>
     //
     // @Regex ^on player changes [^\s]+$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -40,6 +39,8 @@ public class PlayerChangesSignScriptEvent extends BukkitScriptEvent implements L
     // @Determine
     // ListTag to change the lines (Uses escaping, see <@link language Property Escaping>)
     //
+    // @Player Always.
+    //
     // -->
 
     public PlayerChangesSignScriptEvent() {
@@ -48,18 +49,16 @@ public class PlayerChangesSignScriptEvent extends BukkitScriptEvent implements L
 
     public static PlayerChangesSignScriptEvent instance;
     public LocationTag location;
-    public ListTag new_sign;
-    public ListTag old_sign;
     public MaterialTag material;
-    public ListTag new_text;
     public SignChangeEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        String sign = CoreUtilities.getXthArg(2, lower);
-        return lower.startsWith("player changes")
-                && (sign.equals("sign") || MaterialTag.matches(sign));
+    public boolean couldMatch(ScriptPath path) {
+        if (!path.eventLower.startsWith("player changes")) {
+            return false;
+        }
+        String sign = path.eventArgAt(2);
+        return (sign.equals("sign") || MaterialTag.matches(sign));
     }
 
     @Override
@@ -67,7 +66,7 @@ public class PlayerChangesSignScriptEvent extends BukkitScriptEvent implements L
 
         String mat = path.eventArgLowerAt(2);
         if (!mat.equals("sign")
-                && (!(LocationTag.getBlockStateFor(event.getBlock()) instanceof Sign)
+                && (!(event.getBlock().getState() instanceof Sign)
                 && (!mat.equals(material.identifyNoIdentifier()) && !mat.equals(material.identifyFullNoIdentifier())))) {
             return false;
         }
@@ -76,7 +75,7 @@ public class PlayerChangesSignScriptEvent extends BukkitScriptEvent implements L
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -88,7 +87,10 @@ public class PlayerChangesSignScriptEvent extends BukkitScriptEvent implements L
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         String determination = determinationObj.toString();
         if (determination.length() > 0 && !isDefaultDetermination(determinationObj)) {
-            new_text = ListTag.valueOf(determination);
+            ListTag new_text = ListTag.valueOf(determination);
+            for (int i = 0; i < 4 && i < new_text.size(); i++) {
+                event.setLine(i, EscapeTagBase.unEscape(new_text.get(i)));
+            }
             return true;
         }
         return super.applyDetermination(path, determinationObj);
@@ -108,10 +110,10 @@ public class PlayerChangesSignScriptEvent extends BukkitScriptEvent implements L
             return material;
         }
         else if (name.equals("new")) {
-            return new_sign;
+            return new ListTag(Arrays.asList(event.getLines()));
         }
         else if (name.equals("old")) {
-            return old_sign;
+            return new ListTag(Arrays.asList(((Sign) event.getBlock().getState()).getLines()));
         }
         return super.getContext(name);
     }
@@ -121,23 +123,14 @@ public class PlayerChangesSignScriptEvent extends BukkitScriptEvent implements L
         if (EntityTag.isNPC(event.getPlayer())) {
             return;
         }
-        BlockState state = LocationTag.getBlockStateFor(event.getBlock());
+        BlockState state = event.getBlock().getState();
         if (!(state instanceof Sign)) {
             return;
         }
-        Sign sign = (Sign) state;
         material = new MaterialTag(event.getBlock());
         location = new LocationTag(event.getBlock().getLocation());
-        old_sign = new ListTag(Arrays.asList(sign.getLines()));
-        new_sign = new ListTag(Arrays.asList(event.getLines()));
-        new_text = null;
         this.event = event;
         fire(event);
-        if (new_text != null) {
-            for (int i = 0; i < 4 && i < new_text.size(); i++) {
-                event.setLine(i, EscapeTagBase.unEscape(new_text.get(i)));
-            }
-        }
     }
 
 }

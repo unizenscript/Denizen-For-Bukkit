@@ -32,20 +32,11 @@ public class EntityArms implements Property {
             "arms"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityArms(EntityTag entity) {
         dentity = entity;
     }
 
     EntityTag dentity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -61,10 +52,6 @@ public class EntityArms implements Property {
     public String getPropertyId() {
         return "arms";
     }
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -95,13 +82,12 @@ public class EntityArms implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name arms
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Changes the arms state of an armor stand.
         // @tags
         // <EntityTag.arms>
         // -->
-
         if (mechanism.matches("arms") && mechanism.requireBoolean()) {
             ((ArmorStand) dentity.getBukkitEntity()).setArms(mechanism.getValue().asBoolean());
         }

@@ -32,11 +32,6 @@ public class EntityElder implements Property {
             "elder"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityElder(EntityTag entity) {
         this.entity = entity;
     }
@@ -55,10 +50,6 @@ public class EntityElder implements Property {
         ((Guardian) (entity.getBukkitEntity())).setElder(elder);
     }
 
-    /////////
-    // Property Methods
-    ///////
-
     @Override
     public String getPropertyString() {
         if (!getElder()) {
@@ -73,10 +64,6 @@ public class EntityElder implements Property {
     public String getPropertyId() {
         return "elder";
     }
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -107,13 +94,12 @@ public class EntityElder implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name elder
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Changes the elder state of a Guardian.
         // @tags
         // <EntityTag.elder>
         // -->
-
         if (mechanism.matches("elder") && mechanism.requireBoolean()) {
             setElder(mechanism.getValue().asBoolean());
         }

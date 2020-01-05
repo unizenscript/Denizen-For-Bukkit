@@ -36,19 +36,11 @@ public class EntityExplosionRadius implements Property {
         return ((Explosive) entity.getBukkitEntity()).getYield();
     }
 
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityExplosionRadius(EntityTag ent) {
         entity = ent;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -59,10 +51,6 @@ public class EntityExplosionRadius implements Property {
     public String getPropertyId() {
         return "explosion_radius";
     }
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -93,7 +81,7 @@ public class EntityExplosionRadius implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name explosion_radius
-        // @input Element(Decimal)
+        // @input ElementTag(Decimal)
         // @description
         // If this entity can explode, sets its explosion radius.
         // @tags

@@ -4,13 +4,11 @@ import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.events.ScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerTakeLecternBookEvent;
@@ -23,7 +21,8 @@ public class PlayerTakesFromLecternScriptEvent extends BukkitScriptEvent impleme
     // player takes <item> from lectern
     //
     // @Regex ^on player takes [^\s]+ from lectern$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -32,6 +31,8 @@ public class PlayerTakesFromLecternScriptEvent extends BukkitScriptEvent impleme
     // @Context
     // <context.location> returns the LocationTag of the lectern.
     // <context.item> returns the book ItemTag taken out of the lectern.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -45,16 +46,21 @@ public class PlayerTakesFromLecternScriptEvent extends BukkitScriptEvent impleme
     public PlayerTakeLecternBookEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        return lower.startsWith("player takes")
-                && (CoreUtilities.getXthArg(4, lower).equals("lectern"));
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player takes")
+                && (path.eventArgLowerAt(4).equals("lectern"));
     }
 
     @Override
     public boolean matches(ScriptEvent.ScriptPath path) {
         String itemTest = path.eventArgLowerAt(2);
-        return tryItem(item, itemTest) && runInCheck(path, location);
+        if (!tryItem(item, itemTest)) {
+            return false;
+        }
+        if (!runInCheck(path, location)) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override

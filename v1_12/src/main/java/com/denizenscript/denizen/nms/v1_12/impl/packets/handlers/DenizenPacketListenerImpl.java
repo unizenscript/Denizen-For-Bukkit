@@ -3,12 +3,8 @@ package com.denizenscript.denizen.nms.v1_12.impl.packets.handlers;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.v1_12.impl.packets.PacketInResourcePackStatusImpl;
 import com.denizenscript.denizen.nms.v1_12.impl.packets.PacketInSteerVehicleImpl;
-import com.denizenscript.denizen.nms.interfaces.packets.PacketHandler;
-import net.minecraft.server.v1_12_R1.EntityPlayer;
-import net.minecraft.server.v1_12_R1.NetworkManager;
-import net.minecraft.server.v1_12_R1.Packet;
-import net.minecraft.server.v1_12_R1.PacketPlayInResourcePackStatus;
-import net.minecraft.server.v1_12_R1.PacketPlayInSteerVehicle;
+import com.denizenscript.denizen.utilities.packets.DenizenPacketHandler;
+import net.minecraft.server.v1_12_R1.*;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -17,13 +13,13 @@ import org.bukkit.event.player.PlayerJoinEvent;
 
 public class DenizenPacketListenerImpl extends AbstractListenerPlayInImpl {
 
-    private static PacketHandler packetHandler;
+    private static DenizenPacketHandler packetHandler;
 
     public DenizenPacketListenerImpl(NetworkManager networkManager, EntityPlayer entityPlayer) {
         super(networkManager, entityPlayer, entityPlayer.playerConnection);
     }
 
-    public static void enable(PacketHandler handler) {
+    public static void enable(DenizenPacketHandler handler) {
         packetHandler = handler;
         Bukkit.getServer().getPluginManager().registerEvents(new PlayerEventListener(), NMSHandler.getJavaPlugin());
     }
@@ -38,6 +34,18 @@ public class DenizenPacketListenerImpl extends AbstractListenerPlayInImpl {
     @Override
     public void a(PacketPlayInResourcePackStatus packet) {
         packetHandler.receivePacket(player.getBukkitEntity(), new PacketInResourcePackStatusImpl(packet));
+        super.a(packet);
+    }
+
+    @Override
+    public void a(PacketPlayInBlockPlace packet) {
+        packetHandler.receivePlacePacket(player.getBukkitEntity());
+        super.a(packet);
+    }
+
+    @Override
+    public void a(PacketPlayInBlockDig packet) {
+        packetHandler.receiveDigPacket(player.getBukkitEntity());
         super.a(packet);
     }
 

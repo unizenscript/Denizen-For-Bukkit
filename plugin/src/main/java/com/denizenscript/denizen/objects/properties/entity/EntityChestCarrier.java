@@ -32,20 +32,11 @@ public class EntityChestCarrier implements Property {
             "carries_chest"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityChestCarrier(EntityTag entity) {
         this.entity = entity;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -56,10 +47,6 @@ public class EntityChestCarrier implements Property {
     public String getPropertyId() {
         return "carries_chest";
     }
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -90,13 +77,12 @@ public class EntityChestCarrier implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name carries_chest
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Changes whether a Horse carries a chest.
         // @tags
         // <EntityTag.carries_chest>
         // -->
-
         if (mechanism.matches("carries_chest") && mechanism.requireBoolean()) {
             NMSHandler.getEntityHelper().setCarryingChest(entity.getBukkitEntity(), mechanism.getValue().asBoolean());
         }

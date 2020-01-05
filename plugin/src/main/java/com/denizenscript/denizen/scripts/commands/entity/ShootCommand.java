@@ -47,20 +47,28 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
     // Shoots an entity through the air up to a certain height, optionally triggering a script on impact with a target.
     //
     // Generally, use the "speed" argument to send an entity exactly the direction you input,
-    // and don't include it to have the entity automatically attempt to land exactly on the destination.
+    // and don't include it to have the entity automatically attempt to land exactly on the destination by calculating an arc.
     //
     // If the origin is not an entity, specify a shooter so the damage handling code knows how to assume shot the projectile.
+    //
     // Normally, a list of entities will spawn mounted on top of each other. To have them instead fire separately and spread out,
     // specify the 'spread' argument with a decimal number indicating how wide to spread the entities.
-    // In the script ran when the arrow lands, the following definitions will be available:
-    // <[shot_entities]> for all shot entities, <[last_entity]> for the last one (The controlling entity),
+    //
+    // Use the 'script:<name>' argument to run a task script when the projectiles land.
+    // When that script runs, the following definitions will be available:
+    // <[shot_entities]> for all shot entities (as in, the projectiles),
+    // <[last_entity]> for the last one (The controlling entity),
     // <[location]> for the last known location of the last shot entity, and
     // <[hit_entities]> for a list of any entities that were hit by fired projectiles.
+    //
     // Optionally, specify a speed and 'lead' value to use the experimental arrow-aiming system.
+    //
     // Optionally, add 'no_rotate' to prevent the shoot command from rotating launched entities.
     //
+    // The shoot command is ~waitable. Refer to <@link language ~waitable>.
+    //
     // @Tags
-    // <entry[saveName].shot_entities> returns a ListTag of entities that were shot.
+    // <entry[saveName].shot_entities> returns a ListTag of entities that were shot (as in, the projectiles).
     //
     // @Usage
     // Use to shoot an arrow from the NPC to perfectly hit the player.
@@ -371,9 +379,9 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
                                 .addEntries(entries);
 
                         // Add relevant definitions
-                        queue.addDefinition("location", lastLocation.identify());
-                        queue.addDefinition("shot_entities", entityList.toString());
-                        queue.addDefinition("last_entity", lastEntity.identify());
+                        queue.addDefinition("location", lastLocation);
+                        queue.addDefinition("shot_entities", entityList);
+                        queue.addDefinition("last_entity", lastEntity);
 
                         // Handle hit_entities definition
                         ListTag hitEntities = new ListTag();
@@ -382,11 +390,11 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
                                 EntityTag hit = arrows.get(entity.getUUID());
                                 arrows.remove(entity.getUUID());
                                 if (hit != null) {
-                                    hitEntities.add(hit.identify());
+                                    hitEntities.addObject(hit);
                                 }
                             }
                         }
-                        queue.addDefinition("hit_entities", hitEntities.identify());
+                        queue.addDefinition("hit_entities", hitEntities);
                         if (definitions != null) {
                             int x = 1;
                             String[] definition_names = null;

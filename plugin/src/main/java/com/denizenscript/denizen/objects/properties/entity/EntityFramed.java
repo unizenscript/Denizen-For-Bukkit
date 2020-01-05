@@ -39,11 +39,6 @@ public class EntityFramed implements Property {
             "framed"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityFramed(EntityTag item) {
         item_frame = item;
     }
@@ -67,11 +62,6 @@ public class EntityFramed implements Property {
         return new ItemTag(getItemFrameEntity().getItem());
     }
 
-
-    /////////
-    // Property Methods
-    ///////
-
     @Override
     public String getPropertyString() {
         if (hasItem()) {
@@ -88,11 +78,6 @@ public class EntityFramed implements Property {
     public String getPropertyId() {
         return "framed";
     }
-
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -155,12 +140,10 @@ public class EntityFramed implements Property {
         // Valid rotations: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Rotation.html>
         // For example: framed:diamond_sword|clockwise
         // @tags
-        // <EntityTag.is_frame>
         // <EntityTag.has_framed_item>
         // <EntityTag.framed_item>
         // <EntityTag.framed_item_rotation>
         // -->
-
         if (mechanism.matches("framed")) {
             ListTag list = mechanism.valueAsType(ListTag.class);
             if (list.size() == 0) {

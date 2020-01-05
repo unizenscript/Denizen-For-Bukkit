@@ -43,23 +43,23 @@ public class AnimateChestCommand extends AbstractCommand {
     //
     // @Usage
     // Use to animate a chest opening, which only the linked player will see.
-    // - animatechest l@15,89,-45,world
+    // - animatechest <context.location>
     //
     // @Usage
     // Use to then animate a chest closing, which only the linked player will see.
-    // - animatechest l@15,89,-45,world close
+    // - animatechest <context.location> close
     //
     // @Usage
     // Use to animate a chest opening with no sound, which only the linked player will see.
-    // - animatechest l@12,12,-64,space sound:false
+    // - animatechest <context.location> sound:false
     //
     // @Usage
     // Use to animate a chest opening that only a single specific player will see.
-    // - animatechest l@12,12,-64,space sound:false p@Morphan1
+    // - animatechest <context.location> sound:false <[someplayer]>
     //
     // @Usage
     // Use to animate a chest opening that only a list of specific players will see.
-    // - animatechest l@12,12,-64,space sound:false p@Morphan1|p@mcmonkey4eva|p@Fortifier42
+    // - animatechest <context.location> sound:false <[someplayer]>|<[player]>|<[thatplayer]>
     // -->
 
     enum ChestAction {OPEN, CLOSE}

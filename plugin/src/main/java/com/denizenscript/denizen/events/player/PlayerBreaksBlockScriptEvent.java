@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.*;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -23,8 +23,8 @@ public class PlayerBreaksBlockScriptEvent extends BukkitScriptEvent implements L
     //
     // @Regex ^on player breaks [^\s]+$
     //
-    // @Switch in <area>
-    // @Switch with <item>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Switch with:<item> to only process the event when the player is breaking the block with a specified item.
     //
     // @Cancellable true
     //
@@ -38,7 +38,9 @@ public class PlayerBreaksBlockScriptEvent extends BukkitScriptEvent implements L
     // @Determine
     // "NOTHING" to make the block drop no items.
     // ListTag(ItemTag) to make the block drop a specified list of items.
-    // Element(Number) to set the amount of xp to drop.
+    // ElementTag(Number) to set the amount of xp to drop.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -76,7 +78,7 @@ public class PlayerBreaksBlockScriptEvent extends BukkitScriptEvent implements L
                 && !tryItem(new ItemTag(event.getPlayer().getItemInHand()), path.eventArgLowerAt(4))) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override

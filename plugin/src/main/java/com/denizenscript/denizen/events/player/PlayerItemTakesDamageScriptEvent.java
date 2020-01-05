@@ -5,13 +5,11 @@ import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.utilities.DenizenAPI;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizen.utilities.inventory.SlotHelper;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -26,7 +24,8 @@ public class PlayerItemTakesDamageScriptEvent extends BukkitScriptEvent implemen
     // player <item> takes damage
     //
     // @Regex ^on player [^\s]+ takes damage$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -38,13 +37,14 @@ public class PlayerItemTakesDamageScriptEvent extends BukkitScriptEvent implemen
     // <context.slot> returns the slot of the item that has taken damage.
     //
     // @Determine
-    // Element(Number) to set the amount of damage the item will take.
+    // ElementTag(Number) to set the amount of damage the item will take.
+    //
+    // @Player Always.
     //
     // -->
 
     public static PlayerItemTakesDamageScriptEvent instance;
     PlayerItemDamageEvent event;
-    ElementTag damage;
     ItemTag item;
     LocationTag location;
 
@@ -54,11 +54,10 @@ public class PlayerItemTakesDamageScriptEvent extends BukkitScriptEvent implemen
     }
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        return (lower.startsWith("players") || lower.startsWith("player")) &&
-                CoreUtilities.getXthArg(2, lower).equals("takes") &&
-                CoreUtilities.getXthArg(3, lower).equals("damage");
+    public boolean couldMatch(ScriptPath path) {
+        return (path.eventLower.startsWith("players") || path.eventLower.startsWith("player")) &&
+                path.eventArgLowerAt(2).equals("takes") &&
+                path.eventArgLowerAt(3).equals("damage");
     }
 
     @Override
@@ -71,7 +70,7 @@ public class PlayerItemTakesDamageScriptEvent extends BukkitScriptEvent implemen
         if (!runInCheck(path, location)) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -82,7 +81,7 @@ public class PlayerItemTakesDamageScriptEvent extends BukkitScriptEvent implemen
     @Override
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         if (determinationObj instanceof ElementTag && ((ElementTag) determinationObj).isInt()) {
-            damage = (ElementTag) determinationObj;
+            event.setDamage(((ElementTag) determinationObj).asInt());
             return true;
         }
         return super.applyDetermination(path, determinationObj);
@@ -99,7 +98,7 @@ public class PlayerItemTakesDamageScriptEvent extends BukkitScriptEvent implemen
             return item;
         }
         else if (name.equals("damage")) {
-            return damage;
+            return new ElementTag(event.getDamage());
         }
         else if (name.equals("slot")) {
             return new ElementTag(SlotHelper.slotForItem(event.getPlayer().getInventory(), item.getItemStack()));
@@ -113,12 +112,10 @@ public class PlayerItemTakesDamageScriptEvent extends BukkitScriptEvent implemen
             return;
         }
         item = new ItemTag(event.getItem());
-        damage = new ElementTag(event.getDamage());
         location = new LocationTag(event.getPlayer().getLocation());
         boolean wasCancelled = event.isCancelled();
         this.event = event;
         fire(event);
-        event.setDamage(damage.asInt());
         final Player p = event.getPlayer();
         if (cancelled && !wasCancelled) {
             Bukkit.getScheduler().scheduleSyncDelayedTask(DenizenAPI.getCurrentInstance(), new Runnable() {

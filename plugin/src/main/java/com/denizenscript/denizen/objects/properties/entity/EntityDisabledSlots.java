@@ -38,11 +38,6 @@ public class EntityDisabledSlots implements Property {
             "disabled_slots_raw", "disabled_slots"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityDisabledSlots(EntityTag entity) {
         dentity = entity;
     }
@@ -74,10 +69,6 @@ public class EntityDisabledSlots implements Property {
         return list;
     }
 
-    /////////
-    // Property Methods
-    ///////
-
     @Override
     public String getPropertyString() {
         ListTag list = getDisabledSlots();
@@ -88,10 +79,6 @@ public class EntityDisabledSlots implements Property {
     public String getPropertyId() {
         return "disabled_slots";
     }
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -120,7 +107,7 @@ public class EntityDisabledSlots implements Property {
         // @mechanism EntityTag.disabled_slots
         // @group properties
         // @description
-        // If the entity is an armor stand, returns a list of its disabled slots in the form li@slot/action|...
+        // If the entity is an armor stand, returns a list of its disabled slots in the form slot/action|...
         // -->
         if (attribute.startsWith("disabled_slots")) {
             return getDisabledSlots().getObjectAttribute(attribute.fulfill(1));
@@ -135,7 +122,7 @@ public class EntityDisabledSlots implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name disabled_slots_raw
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Sets the raw disabled slots value of an armor stand.
         // See <@link url https://minecraft.gamepedia.com/Armor_Stand/ED>
@@ -152,7 +139,7 @@ public class EntityDisabledSlots implements Property {
         // @name disabled_slots
         // @input ListTag
         // @description
-        // Sets the disabled slots of an armor stand in the form li@slot(/action)|...
+        // Sets the disabled slots of an armor stand in the form slot(/action)|...
         // Optionally include an action to disable specific interactions (defaults to ALL).
         // Leave empty to enable all slots.
         // Slots: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/inventory/EquipmentSlot.html>

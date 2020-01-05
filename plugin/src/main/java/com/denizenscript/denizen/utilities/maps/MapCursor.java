@@ -1,7 +1,6 @@
 package com.denizenscript.denizen.utilities.maps;
 
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizencore.objects.ArgumentHelper;
 import org.bukkit.map.MapCanvas;
 import org.bukkit.map.MapView;
 
@@ -22,7 +21,7 @@ public class MapCursor extends MapObject {
     }
 
     public byte getDirection(PlayerTag player) {
-        return yawToDirection(ArgumentHelper.getDoubleFrom(tag(directionTag, player)));
+        return yawToDirection(Double.parseDouble(tag(directionTag, player)));
     }
 
     public org.bukkit.map.MapCursor.Type getType(PlayerTag player) {

@@ -3,12 +3,10 @@ package com.denizenscript.denizen.events.player;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -20,7 +18,8 @@ public class PlayerWalkScriptEvent extends BukkitScriptEvent implements Listener
     // player walks
     //
     // @Regex ^on player walks$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Warning This event fires very very rapidly!
     //
@@ -31,6 +30,8 @@ public class PlayerWalkScriptEvent extends BukkitScriptEvent implements Listener
     // @Context
     // <context.old_location> returns the location of where the player was.
     // <context.new_location> returns the location of where the player is.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -45,14 +46,19 @@ public class PlayerWalkScriptEvent extends BukkitScriptEvent implements Listener
     public PlayerMoveEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        return lower.startsWith("player walks") && !CoreUtilities.xthArgEquals(2, lower, "over");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player walks") && !path.eventArgLowerAt(2).equals("over");
     }
 
     @Override
     public boolean matches(ScriptPath path) {
-        return runInCheck(path, old_location) || runInCheck(path, new_location);
+        if (!runInCheck(path, old_location)) {
+            return false;
+        }
+        if (!runInCheck(path, new_location)) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override

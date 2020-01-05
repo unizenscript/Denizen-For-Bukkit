@@ -3,7 +3,7 @@ package com.denizenscript.denizen.events.player;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.InventoryTag;
 import com.denizenscript.denizen.objects.ItemTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -36,6 +36,8 @@ public class ItemRecipeFormedScriptEvent extends BukkitScriptEvent implements Li
     // @Determine
     // ItemTag to change the item that is formed in the result slot.
     //
+    // @Player Always.
+    //
     // -->
 
     public ItemRecipeFormedScriptEvent() {
@@ -66,7 +68,7 @@ public class ItemRecipeFormedScriptEvent extends BukkitScriptEvent implements Li
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -105,10 +107,10 @@ public class ItemRecipeFormedScriptEvent extends BukkitScriptEvent implements Li
             ListTag recipe = new ListTag();
             for (ItemStack itemStack : event.getInventory().getMatrix()) {
                 if (itemStack != null && itemStack.getType() != Material.AIR) {
-                    recipe.add(new ItemTag(itemStack).identify());
+                    recipe.addObject(new ItemTag(itemStack));
                 }
                 else {
-                    recipe.add(new ItemTag(Material.AIR).identify());
+                    recipe.addObject(new ItemTag(Material.AIR));
                 }
             }
             return recipe;

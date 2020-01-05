@@ -15,6 +15,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.v1_14_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_14_R1.block.CraftBlock;
@@ -36,6 +37,35 @@ import java.util.*;
 public class EntityHelperImpl extends EntityHelper {
 
     @Override
+    public double getAbsorption(LivingEntity entity) {
+        return entity.getAbsorptionAmount();
+    }
+
+    @Override
+    public void setAbsorption(LivingEntity entity, double value) {
+        entity.setAbsorptionAmount(value);
+    }
+
+    public static final Field RECIPE_BOOK_DISCOVERED_SET = ReflectionHelper.getFields(RecipeBook.class).get("a");
+
+    public static final MethodHandle ENTITY_HOVER_TEXT_GETTER = ReflectionHelper.getMethodHandle(net.minecraft.server.v1_14_R1.Entity.class, "bK");
+
+    public static final MethodHandle ENTITY_SETPOSE = ReflectionHelper.getMethodHandle(net.minecraft.server.v1_14_R1.Entity.class, "setPose", EntityPose.class);
+
+    @Override
+    public void setSneaking(Player player, boolean sneak) {
+        player.setSneaking(sneak);
+        EntityPose pose = sneak ? EntityPose.SNEAKING : EntityPose.STANDING;
+        try {
+            ENTITY_SETPOSE.invoke(((CraftPlayer) player).getHandle(), pose);
+        }
+        catch (Throwable ex) {
+            Debug.echoError(ex);
+        }
+
+    }
+
+    @Override
     public double getDamageTo(LivingEntity attacker, Entity target) {
         EnumMonsterType monsterType;
         if (target instanceof LivingEntity) {
@@ -44,16 +74,41 @@ public class EntityHelperImpl extends EntityHelper {
         else {
             monsterType = EnumMonsterType.UNDEFINED;
         }
-        double damage = attacker.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getValue();
+        double damage = 0;
+        AttributeInstance attrib = attacker.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
+        if (attrib != null) {
+            damage = attrib.getValue();
+        }
         if (attacker.getEquipment() != null && attacker.getEquipment().getItemInMainHand() != null) {
             damage += EnchantmentManager.a(CraftItemStack.asNMSCopy(attacker.getEquipment().getItemInMainHand()), monsterType);
         }
+        if (damage <= 0) {
+            return 0;
+        }
+        if (target != null) {
+            DamageSource source;
+            if (attacker instanceof Player) {
+                source = DamageSource.playerAttack(((CraftPlayer) attacker).getHandle());
+            }
+            else {
+                source = DamageSource.mobAttack(((CraftLivingEntity) attacker).getHandle());
+            }
+            net.minecraft.server.v1_14_R1.Entity nmsTarget = ((CraftEntity) target).getHandle();
+            if (nmsTarget.isInvulnerable(source)) {
+                return 0;
+            }
+            if (!(nmsTarget instanceof EntityLiving)) {
+                return damage;
+            }
+            EntityLiving livingTarget = (EntityLiving) nmsTarget;
+            damage = CombatMath.a((float) damage, (float) livingTarget.getArmorStrength(), (float) livingTarget.getAttributeInstance(GenericAttributes.ARMOR_TOUGHNESS).getValue());
+            int enchantDamageModifier = EnchantmentManager.a(livingTarget.getArmorItems(), source);
+            if (enchantDamageModifier > 0) {
+                damage = CombatMath.a((float) damage, (float) enchantDamageModifier);
+            }
+        }
         return damage;
     }
-
-    public static final Field RECIPE_BOOK_DISCOVERED_SET = ReflectionHelper.getFields(RecipeBook.class).get("a");
-
-    public static final MethodHandle ENTITY_HOVER_TEXT_GETTER = ReflectionHelper.getMethodHandle(net.minecraft.server.v1_14_R1.Entity.class, "bK");
 
     @Override
     public String getRawHoverText(Entity entity) {
@@ -231,8 +286,6 @@ public class EntityHelperImpl extends EntityHelper {
         nmsEntity.getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue(speed);
     }
 
-    static final int MAX_ITERATIONS = 100000; // TODO: 1.14.4: Is this name choice correct? Is the value reasonable?
-
     @Override
     public void follow(final Entity target, final Entity follower, final double speed, final double lead,
                        final double maxRange, final boolean allowWander) {
@@ -275,7 +328,7 @@ public class EntityHelperImpl extends EntityHelper {
                     }
                     else {
                         inRadius = false;
-                        path = followerNavigation.a(targetLocation.getX(), targetLocation.getY(), targetLocation.getZ(), MAX_ITERATIONS);
+                        path = followerNavigation.a(targetLocation.getX(), targetLocation.getY(), targetLocation.getZ(), 0);
                         if (path != null) {
                             followerNavigation.a(path, 1D);
                             followerNavigation.a(2D);
@@ -283,7 +336,7 @@ public class EntityHelperImpl extends EntityHelper {
                     }
                 }
                 else if (!inRadius && !Utilities.checkLocation(targetLocation, follower.getLocation(), lead)) {
-                    path = followerNavigation.a(targetLocation.getX(), targetLocation.getY(), targetLocation.getZ(), MAX_ITERATIONS);
+                    path = followerNavigation.a(targetLocation.getX(), targetLocation.getY(), targetLocation.getZ(), 0);
                     if (path != null) {
                         followerNavigation.a(path, 1D);
                         followerNavigation.a(2D);
@@ -319,7 +372,7 @@ public class EntityHelperImpl extends EntityHelper {
             toggleAI(entity, true);
             nmsEntity.onGround = true;
         }
-        path = entityNavigation.a(location.getX(), location.getY(), location.getZ(), MAX_ITERATIONS);
+        path = entityNavigation.a(location.getX(), location.getY(), location.getZ(), 0);
         if (path != null) {
             entityNavigation.a(path, 1D);
             entityNavigation.a(2D);

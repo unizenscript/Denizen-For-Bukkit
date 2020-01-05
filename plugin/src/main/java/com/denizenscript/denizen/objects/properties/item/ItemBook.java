@@ -228,11 +228,8 @@ public class ItemBook implements Property {
         // Changes the plain-text pages of a book item.
         // See <@link language Property Escaping>
         // @tags
-        // <ItemTag.book.page_count>
-        // <ItemTag.book.page[<#>]>
-        // <ItemTag.book.pages>
+        // <ItemTag.book_pages>
         // -->
-
         if (mechanism.matches("book_pages")) {
             BookMeta meta = (BookMeta) item.getItemStack().getItemMeta();
             ListTag data = mechanism.valueAsType(ListTag.class);
@@ -251,9 +248,8 @@ public class ItemBook implements Property {
         // @description
         // Changes the author of a book item.
         // @tags
-        // <ItemTag.book.author>
+        // <ItemTag.book_author>
         // -->
-
         if (mechanism.matches("book_author")) {
             if (!item.getItemStack().getType().equals(Material.WRITTEN_BOOK)) {
                 Debug.echoError("Only WRITTEN_BOOK (not WRITABLE_BOOK) can have a title or author!");
@@ -272,9 +268,8 @@ public class ItemBook implements Property {
         // @description
         // Changes the title of a book item.
         // @tags
-        // <ItemTag.book.title>
+        // <ItemTag.book_title>
         // -->
-
         if (mechanism.matches("book_title")) {
             if (!item.getItemStack().getType().equals(Material.WRITTEN_BOOK)) {
                 Debug.echoError("Only WRITTEN_BOOK (not WRITABLE_BOOK) can have a title or author!");
@@ -295,14 +290,10 @@ public class ItemBook implements Property {
         // See <@link language Property Escaping>
         // @tags
         // <ItemTag.is_book>
-        // <ItemTag.book.author>
-        // <ItemTag.book.title>
-        // <ItemTag.book.page_count>
-        // <ItemTag.book.page[<#>]>
-        // <ItemTag.book.pages>
-        // <ItemTag.book>
+        // <ItemTag.book_title>
+        // <ItemTag.book_author>
+        // <ItemTag.book_pages>
         // -->
-
         if (mechanism.matches("book")) {
             BookMeta meta = (BookMeta) item.getItemStack().getItemMeta();
             ListTag data = mechanism.valueAsType(ListTag.class);

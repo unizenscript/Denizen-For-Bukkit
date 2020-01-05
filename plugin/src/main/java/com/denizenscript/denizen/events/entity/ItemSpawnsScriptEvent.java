@@ -21,7 +21,8 @@ public class ItemSpawnsScriptEvent extends BukkitScriptEvent implements Listener
     // <material> spawns
     //
     // @Regex ^on [^\s]+ spawns$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -68,7 +69,7 @@ public class ItemSpawnsScriptEvent extends BukkitScriptEvent implements Listener
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override

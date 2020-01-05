@@ -17,7 +17,8 @@ public class CreeperPoweredScriptEvent extends BukkitScriptEvent implements List
     // creeper powered (because <cause>)
     //
     // @Regex ^on creeper powered( because [^\s]+)?$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -58,7 +59,7 @@ public class CreeperPoweredScriptEvent extends BukkitScriptEvent implements List
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override

@@ -3,7 +3,7 @@ package com.denizenscript.denizen.scripts.commands.player;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.abstracts.Sidebar;
 import com.denizenscript.denizen.objects.PlayerTag;
@@ -71,27 +71,27 @@ public class SidebarCommand extends AbstractCommand {
     // <PlayerTag.sidebar_increment>
     //
     // @Usage
-    // Show all online players a sidebar.
-    // - sidebar set "title:Hello World!" "values:This is|My Message!|Wee!" "players:<server.list_online_players>"
+    // Use to show all online players a sidebar.
+    // - sidebar set "title:Hello World!" "values:This is|My Message!|Wee!" players:<server.list_online_players>
     //
     // @Usage
-    // Show a few players their ping.
-    // - sidebar set "title:Info" "value:Ping<&co> <player.ping>" "players:p@Morphan1|p@mcmonkey4eva|p@Matterom" per_player
+    // Use to show a few players their ping.
+    // - sidebar set title:Info "values:Ping<&co> <player.ping>" players:<[someplayer]>|<[player]>|<[aplayer]> per_player
     //
     // @Usage
     // Set a line on the sidebar a player is viewing.
-    // - sidebar set "line:2" "value:This is my line now!"
-    //
-    // @Usage
-    // Add a line to the bottom of the sidebar.
-    // - sidebar add "value:This is the bottom!"
+    // - sidebar set line:2 "value:This is my line now!"
     //
     // @Usage
     // Remove multiple lines from the sidebar.
-    // - sidebar remove "lines:2|4|6"
+    // - sidebar remove lines:2|4|6
     //
     // @Usage
-    // Stop showing the sidebar.
+    // Use to remove multiple lines from the sidebar.
+    // - sidebar remove scores:2|4|6
+    //
+    // @Usage
+    // Use to stop showing the sidebar.
     // - sidebar remove
     // -->
 
@@ -144,6 +144,9 @@ public class SidebarCommand extends AbstractCommand {
             else if (!scriptEntry.hasObject("per_player")
                     && arg.matches("per_player")) {
                 scriptEntry.addObject("per_player", new ElementTag(true));
+            }
+            else {
+                arg.reportUnhandled();
             }
         }
 

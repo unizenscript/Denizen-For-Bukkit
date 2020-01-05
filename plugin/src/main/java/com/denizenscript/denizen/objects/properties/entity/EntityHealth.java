@@ -30,27 +30,18 @@ public class EntityHealth implements Property {
     }
 
     public static final String[] handledTags = new String[] {
-            "health"
+            "health", "formatted_health", "health_max", "health_percentage"
     };
 
     public static final String[] handledMechs = new String[] {
             "max_health", "health_data", "health"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityHealth(EntityTag ent) {
         entity = ent;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -83,11 +74,6 @@ public class EntityHealth implements Property {
         }
     }
 
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
-
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
 
@@ -98,6 +84,7 @@ public class EntityHealth implements Property {
         // <--[tag]
         // @attribute <EntityTag.formatted_health>
         // @returns ElementTag
+        // @mechanism EntityTag.health_data
         // @group attributes
         // @description
         // Returns a formatted value of the player's current health level.
@@ -114,13 +101,14 @@ public class EntityHealth implements Property {
         // <--[tag]
         // @attribute <EntityTag.health_max>
         // @returns ElementTag(Decimal)
+        // @mechanism EntityTag.max_health
         // @group attributes
         // @description
         // Returns the maximum health of the entity.
         // -->
         if (attribute.startsWith("health_max")) {
             return new ElementTag(entity.getLivingEntity().getMaxHealth())
-                    .getObjectAttribute(attribute.fulfill(2));
+                    .getObjectAttribute(attribute.fulfill(1));
         }
         if (attribute.startsWith("health.max")) {
             Deprecations.entityHealthTags.warn(attribute.context);
@@ -131,17 +119,18 @@ public class EntityHealth implements Property {
         // <--[tag]
         // @attribute <EntityTag.health_percentage>
         // @returns ElementTag(Decimal)
+        // @mechanism EntityTag.health
         // @group attributes
         // @description
         // Returns the entity's current health as a percentage.
         // -->
         if (attribute.startsWith("health_percentage")) {
             double maxHealth = entity.getLivingEntity().getMaxHealth();
-            if (attribute.hasContext(2)) {
-                maxHealth = attribute.getIntContext(2);
+            if (attribute.hasContext(1)) {
+                maxHealth = attribute.getIntContext(1);
             }
             return new ElementTag((entity.getLivingEntity().getHealth() / maxHealth) * 100)
-                    .getObjectAttribute(attribute.fulfill(2));
+                    .getObjectAttribute(attribute.fulfill(1));
         }
         if (attribute.startsWith("health.percentage")) {
             Deprecations.entityHealthTags.warn(attribute.context);
@@ -156,6 +145,7 @@ public class EntityHealth implements Property {
         // <--[tag]
         // @attribute <EntityTag.health>
         // @returns ElementTag(Decimal)
+        // @mechanism EntityTag.health
         // @group attributes
         // @description
         // Returns the current health of the entity.
@@ -174,13 +164,13 @@ public class EntityHealth implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name max_health
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Sets the maximum health the entity may have.
         // The entity must be living.
         // @tags
         // <EntityTag.health>
-        // <EntityTag.health.max>
+        // <EntityTag.health_max>
         // -->
         if (mechanism.matches("max_health") && mechanism.requireDouble()) {
             if (entity.isCitizensNPC()) {
@@ -203,13 +193,13 @@ public class EntityHealth implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name health_data
-        // @input Element(Decimal)/Element(Decimal)
+        // @input ElementTag(Decimal)/ElementTag(Decimal)
         // @description
         // Sets the amount of health the entity has, and the maximum health it has.
         // The entity must be living.
         // @tags
         // <EntityTag.health>
-        // <EntityTag.health.max>
+        // <EntityTag.health_max>
         // -->
         if (mechanism.matches("health_data")) {
             if (entity.isLivingEntity()) {
@@ -225,13 +215,13 @@ public class EntityHealth implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name health
-        // @input Element(Decimal)
+        // @input ElementTag(Decimal)
         // @description
         // Sets the amount of health the entity has.
         // The entity must be living.
         // @tags
         // <EntityTag.health>
-        // <EntityTag.health.max>
+        // <EntityTag.health_max>
         // -->
         if (mechanism.matches("health") && mechanism.requireDouble()) {
             if (entity.isLivingEntity()) {

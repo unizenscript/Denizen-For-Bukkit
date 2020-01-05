@@ -2,13 +2,11 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerToggleSprintEvent;
@@ -21,15 +19,18 @@ public class PlayerSprintScriptEvent extends BukkitScriptEvent implements Listen
     // player starts sprinting
     // player stops sprinting
     //
-    // @Regex ^on player (toggles|starts\stops) sprinting$
-    // @Switch in <area>
+    // @Regex ^on player (toggles|starts|stops) sprinting$
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
     // @Triggers when a player starts or stops sprinting.
     //
     // @Context
-    // <context.state> returns an Element(Boolean) with a value of "true" if the player is now sprinting and "false" otherwise.
+    // <context.state> returns an ElementTag(Boolean) with a value of "true" if the player is now sprinting and "false" otherwise.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -38,12 +39,16 @@ public class PlayerSprintScriptEvent extends BukkitScriptEvent implements Listen
     }
 
     public static PlayerSprintScriptEvent instance;
-    public Boolean state;
+    public boolean state;
     public PlayerToggleSprintEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.getXthArg(2, CoreUtilities.toLowerCase(s)).startsWith("sprint");
+    public boolean couldMatch(ScriptPath path) {
+        String middleWord = path.eventArgAt(1);
+        if (!(middleWord.equals("starts") || middleWord.equals("stops") || middleWord.equals("toggles"))) {
+            return false;
+        }
+        return path.eventArgLowerAt(0).equals("player") && path.eventArgLowerAt(2).equals("sprinting");
     }
 
     @Override
@@ -55,8 +60,10 @@ public class PlayerSprintScriptEvent extends BukkitScriptEvent implements Listen
         if (cmd.equals("stops") && state) {
             return false;
         }
-
-        return runInCheck(path, event.getPlayer().getLocation());
+        if (!runInCheck(path, event.getPlayer().getLocation())) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override

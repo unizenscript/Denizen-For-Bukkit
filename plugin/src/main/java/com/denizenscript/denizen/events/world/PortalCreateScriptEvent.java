@@ -1,5 +1,7 @@
 package com.denizenscript.denizen.events.world;
 
+import com.denizenscript.denizen.nms.NMSVersion;
+import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.WorldTag;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
@@ -22,13 +24,14 @@ public class PortalCreateScriptEvent extends BukkitScriptEvent implements Listen
     //
     // @Group World
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
     // @Triggers when a portal is created.
     //
     // @Context
+    // <context.entity> returns the EntityTag that created the portal.
     // <context.world> returns the WorldTag the portal was created in.
     // <context.reason> returns an ElementTag of the reason the portal was created. (FIRE or OBC_DESTINATION)
     // <context.blocks> returns a ListTag of all the blocks that will become portal blocks.
@@ -56,7 +59,7 @@ public class PortalCreateScriptEvent extends BukkitScriptEvent implements Listen
         if (!runInCheck(path, event.getBlocks().get(0).getLocation())) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -66,7 +69,10 @@ public class PortalCreateScriptEvent extends BukkitScriptEvent implements Listen
 
     @Override
     public ObjectTag getContext(String name) {
-        if (name.equals("world")) {
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14) && name.equals("entity") && event.getEntity() != null) {
+            return new EntityTag(event.getEntity());
+        }
+        else if (name.equals("world")) {
             return new WorldTag(event.getWorld());
         }
         else if (name.equals("reason")) {

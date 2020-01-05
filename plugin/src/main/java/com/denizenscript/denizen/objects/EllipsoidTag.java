@@ -1,6 +1,7 @@
 package com.denizenscript.denizen.objects;
 
 import com.denizenscript.denizen.objects.notable.NotableManager;
+import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
@@ -19,10 +20,10 @@ import java.util.List;
 public class EllipsoidTag implements ObjectTag, Notable {
 
     // <--[language]
-    // @name EllipsoidTag
+    // @name EllipsoidTag Objects
     // @group Object System
     // @description
-    // A EllipsoidTag represents an ellipsoidal region in the world.
+    // An EllipsoidTag represents an ellipsoidal region in the world.
     //
     // The word 'ellipsoid' means a less strict sphere.
     // Basically: an "ellipsoid" is to a 3D "sphere" what an "ellipse" (or "oval") is to a 2D "circle".
@@ -35,11 +36,11 @@ public class EllipsoidTag implements ObjectTag, Notable {
     // @name ellipsoid@
     // @group Object Fetcher System
     // @description
-    // ellipsoid@ refers to the 'object identifier' of a EllipsoidTag. The 'ellipsoid@' is notation for Denizen's Object
-    // Fetcher. The constructor for a EllipsoidTag is <x>,<y>,<z>,<world>,<x-radius>,<y-radius>,<z-radius>
+    // ellipsoid@ refers to the 'object identifier' of an EllipsoidTag. The 'ellipsoid@' is notation for Denizen's Object
+    // Fetcher. The constructor for an EllipsoidTag is <x>,<y>,<z>,<world>,<x-radius>,<y-radius>,<z-radius>
     // For example, 'ellipsoid@1,2,3,space,7,7,7'.
     //
-    // For general info, see <@link language EllipsoidTag>
+    // For general info, see <@link language EllipsoidTag Objects>
     //
     // -->
 
@@ -74,8 +75,9 @@ public class EllipsoidTag implements ObjectTag, Notable {
             string = string.substring(10);
         }
 
-        if (NotableManager.isType(string, EllipsoidTag.class)) {
-            return (EllipsoidTag) NotableManager.getSavedObject(string);
+        Notable noted = NotableManager.getSavedObject(string);
+        if (noted instanceof EllipsoidTag) {
+            return (EllipsoidTag) noted;
         }
 
         List<String> split = CoreUtilities.split(string, ',');
@@ -89,10 +91,17 @@ public class EllipsoidTag implements ObjectTag, Notable {
             return null;
         }
 
-        LocationTag location = new LocationTag(world.getWorld(),
-                ArgumentHelper.getDoubleFrom(split.get(0)), ArgumentHelper.getDoubleFrom(split.get(1)), ArgumentHelper.getDoubleFrom(split.get(2)));
-        LocationTag size = new LocationTag(null, ArgumentHelper.getDoubleFrom(split.get(4)),
-                ArgumentHelper.getDoubleFrom(split.get(5)), ArgumentHelper.getDoubleFrom(split.get(6)));
+        for (int i = 0; i < 7; i++) {
+            if (i != 3 && !ArgumentHelper.matchesDouble(split.get(i))) {
+                if (context == null || context.debug) {
+                    Debug.echoError("EllipsoidTag input is not a valid decimal number: " + split.get(i));
+                    return null;
+                }
+            }
+        }
+
+        LocationTag location = new LocationTag(world.getWorld(), Double.parseDouble(split.get(0)), Double.parseDouble(split.get(1)), Double.parseDouble(split.get(2)));
+        LocationTag size = new LocationTag(null, Double.parseDouble(split.get(4)), Double.parseDouble(split.get(5)), Double.parseDouble(split.get(6)));
         return new EllipsoidTag(location, size);
     }
 
@@ -105,7 +114,7 @@ public class EllipsoidTag implements ObjectTag, Notable {
     public static boolean matches(String arg) {
 
         try {
-            return EllipsoidTag.valueOf(arg) != null;
+            return EllipsoidTag.valueOf(arg, CoreUtilities.noDebugContext) != null;
         }
         catch (Exception e) {
             return false;
@@ -143,7 +152,7 @@ public class EllipsoidTag implements ObjectTag, Notable {
         ListTag list = new ListTag();
         for (LocationTag loc : initial) {
             if (contains(loc)) {
-                list.add(loc.identify());
+                list.addObject(loc);
             }
         }
         return list;
@@ -274,18 +283,14 @@ public class EllipsoidTag implements ObjectTag, Notable {
         // Optionally, specify a list of materials to only return locations
         // with that block type.
         // -->
-        registerTag("blocks", new TagRunnable.ObjectForm<EllipsoidTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, EllipsoidTag object) {
-                if (attribute.hasContext(1)) {
-                    return new ListTag(object.getBlocks(ListTag.valueOf(attribute.getContext(1)).filter(MaterialTag.class, attribute.context), attribute));
-                }
-                else {
-                    return new ListTag(object.getBlocks(attribute));
-                }
+        registerTag("blocks", (attribute, object) -> {
+            if (attribute.hasContext(1)) {
+                return new ListTag(object.getBlocks(ListTag.valueOf(attribute.getContext(1)).filter(MaterialTag.class, attribute.context), attribute));
             }
-        });
-        registerTag("get_blocks", tagProcessor.registeredObjectTags.get("blocks"));
+            else {
+                return new ListTag(object.getBlocks(attribute));
+            }
+        }, "get_blocks");
 
         // <--[tag]
         // @attribute <EllipsoidTag.location>
@@ -293,11 +298,8 @@ public class EllipsoidTag implements ObjectTag, Notable {
         // @description
         // Returns the location of the ellipsoid.
         // -->
-        registerTag("location", new TagRunnable.ObjectForm<EllipsoidTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, EllipsoidTag object) {
-                return object.loc;
-            }
+        registerTag("location", (attribute, object) -> {
+            return object.loc;
         });
 
         // <--[tag]
@@ -306,11 +308,8 @@ public class EllipsoidTag implements ObjectTag, Notable {
         // @description
         // Returns the size of the ellipsoid.
         // -->
-        registerTag("size", new TagRunnable.ObjectForm<EllipsoidTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, EllipsoidTag object) {
-                return object.size;
-            }
+        registerTag("size", (attribute, object) -> {
+            return object.size;
         });
 
         // <--[tag]
@@ -320,18 +319,15 @@ public class EllipsoidTag implements ObjectTag, Notable {
         // Always returns 'Ellipsoid' for EllipsoidTag objects. All objects fetchable by the Object Fetcher will return the
         // type of object that is fulfilling this attribute.
         // -->
-        registerTag("type", new TagRunnable.ObjectForm<EllipsoidTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, EllipsoidTag object) {
-                return new ElementTag("Ellipsoid");
-            }
+        registerTag("type", (attribute, object) -> {
+            return new ElementTag("Ellipsoid");
         });
     }
 
     public static ObjectTagProcessor<EllipsoidTag> tagProcessor = new ObjectTagProcessor<>();
 
-    public static void registerTag(String name, TagRunnable.ObjectForm<EllipsoidTag> runnable) {
-        tagProcessor.registerTag(name, runnable);
+    public static void registerTag(String name, TagRunnable.ObjectInterface<EllipsoidTag> runnable, String... variants) {
+        tagProcessor.registerTag(name, runnable, variants);
     }
 
     @Override

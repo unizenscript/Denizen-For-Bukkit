@@ -3,7 +3,7 @@ package com.denizenscript.denizen.events.entity;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ArgumentHelper;
@@ -25,7 +25,8 @@ public class EntityExplodesScriptEvent extends BukkitScriptEvent implements List
     // <entity> explodes
     //
     // @Regex ^on [^\s]+ explodes$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -35,11 +36,11 @@ public class EntityExplodesScriptEvent extends BukkitScriptEvent implements List
     // <context.blocks> returns a ListTag of blocks that the entity blew up.
     // <context.entity> returns the EntityTag that exploded.
     // <context.location> returns the LocationTag the entity blew up at.
-    // <context.strength> returns an Element(Decimal) of the strength of the explosion.
+    // <context.strength> returns an ElementTag(Decimal) of the strength of the explosion.
     //
     // @Determine
     // ListTag(LocationTag) to set a new lists of blocks that are to be affected by the explosion.
-    // Element(Decimal) to change the strength of the explosion.
+    // ElementTag(Decimal) to change the strength of the explosion.
     //
     // -->
 
@@ -72,7 +73,7 @@ public class EntityExplodesScriptEvent extends BukkitScriptEvent implements List
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -84,7 +85,7 @@ public class EntityExplodesScriptEvent extends BukkitScriptEvent implements List
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         String determination = determinationObj.toString();
         if (ArgumentHelper.matchesDouble(determination)) {
-            strength = ArgumentHelper.getFloatFrom(determination);
+            strength = Float.parseFloat(determination);
             return true;
         }
         if (ListTag.matches(determination)) {
@@ -96,7 +97,7 @@ public class EntityExplodesScriptEvent extends BukkitScriptEvent implements List
                     Debug.echoError("Invalid location '" + loc + "' check [" + getName() + "]: '  for " + path.container.getName());
                 }
                 else {
-                    blocks.add(location.identifySimple());
+                    blocks.addObject(location);
                 }
             }
             return true;
@@ -106,8 +107,7 @@ public class EntityExplodesScriptEvent extends BukkitScriptEvent implements List
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(entity.isPlayer() ? EntityTag.getPlayerFrom(event.getEntity()) : null,
-                entity.isCitizensNPC() ? EntityTag.getNPCFrom(event.getEntity()) : null);
+        return new BukkitScriptEntryData(entity);
     }
 
     @Override
@@ -135,7 +135,7 @@ public class EntityExplodesScriptEvent extends BukkitScriptEvent implements List
         blocks = new ListTag();
         blockSet = false;
         for (Block block : event.blockList()) {
-            blocks.add(new LocationTag(block.getLocation()).identify());
+            blocks.addObject(new LocationTag(block.getLocation()));
         }
         this.event = event;
         fire(event);

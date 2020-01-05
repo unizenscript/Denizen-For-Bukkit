@@ -19,6 +19,7 @@ import org.bukkit.craftbukkit.v1_13_R2.CraftServer;
 import org.bukkit.craftbukkit.v1_13_R2.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_13_R2.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.potion.PotionEffect;
@@ -29,6 +30,25 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 public class ItemHelperImpl extends ItemHelper {
+
+    public static IRecipe getNMSRecipe(NamespacedKey key) {
+        MinecraftKey nmsKey = CraftNamespacedKey.toMinecraft(key);
+        Object2ObjectLinkedOpenHashMap<MinecraftKey, IRecipe> recipeMap = ((CraftServer) Bukkit.getServer()).getServer().getCraftingManager().recipes;
+        IRecipe recipe = recipeMap.get(nmsKey);
+        if (recipe != null) {
+            return recipe;
+        }
+        return null;
+    }
+
+    @Override
+    public Recipe getRecipeById(NamespacedKey key) {
+        IRecipe recipe = getNMSRecipe(key);
+        if (recipe == null) {
+            return null;
+        }
+        return recipe.toBukkitRecipe();
+    }
 
     @Override
     public void removeRecipe(NamespacedKey key) {

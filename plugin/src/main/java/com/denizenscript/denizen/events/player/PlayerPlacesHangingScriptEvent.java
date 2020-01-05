@@ -3,12 +3,10 @@ package com.denizenscript.denizen.events.player;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -23,7 +21,8 @@ public class PlayerPlacesHangingScriptEvent extends BukkitScriptEvent implements
     // player places <hanging>
     //
     // @Regex ^on player places [^\s]+$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -32,6 +31,8 @@ public class PlayerPlacesHangingScriptEvent extends BukkitScriptEvent implements
     // @Context
     // <context.hanging> returns the EntityTag of the hanging.
     // <context.location> returns the LocationTag of the block the hanging was placed on.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -45,9 +46,8 @@ public class PlayerPlacesHangingScriptEvent extends BukkitScriptEvent implements
     public HangingPlaceEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        return lower.startsWith("player places");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player places");
     }
 
     @Override
@@ -57,8 +57,10 @@ public class PlayerPlacesHangingScriptEvent extends BukkitScriptEvent implements
             return false;
         }
 
-        return runInCheck(path, location);
-
+        if (!runInCheck(path, location)) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override
