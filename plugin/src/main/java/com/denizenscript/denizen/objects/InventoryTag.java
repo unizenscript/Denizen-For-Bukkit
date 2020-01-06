@@ -2160,9 +2160,6 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         // -->
         registerTag("location", (attribute, object) -> {
             LocationTag location = object.getLocation();
-            if (location == null) {
-                return null;
-            }
             return location;
         });
 
@@ -2292,9 +2289,6 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         // -->
         registerTag("equipment", (attribute, object) -> {
             ListTag equipment = object.getEquipment();
-            if (equipment == null) {
-                return null;
-            }
             return equipment;
         });
 
@@ -2383,12 +2377,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         // @description
         // Returns the item currently in the fuel section of a furnace or brewing stand inventory.
         // -->
-        registerTag("fuel", new TagRunnable.ObjectForm<InventoryTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, InventoryTag object) {
-                return object.getFuel();
-            }
-        });
+        registerTag("fuel", (attribute, object) -> object.getFuel());
 
         // <--[tag]
         // @attribute <InventoryTag.input>
@@ -2397,12 +2386,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         // @description
         // Returns the item currently in the smelting slot of a furnace inventory, or the ingredient slot of a brewing stand inventory.
         // -->
-        registerTag("input", new TagRunnable.ObjectForm<InventoryTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, InventoryTag object) {
-                return object.getSmelting();
-            }
-        });
+        registerTag("input", (attribute, object) -> object.getSmelting());
         registerTag("smelting", tagProcessor.registeredObjectTags.get("input"));
 
         // <--[tag]

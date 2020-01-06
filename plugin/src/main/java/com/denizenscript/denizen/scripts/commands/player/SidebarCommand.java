@@ -464,9 +464,7 @@ public class SidebarCommand extends AbstractCommand {
         @EventHandler
         public void onPlayerQuit(PlayerQuitEvent event) {
             UUID uuid = event.getPlayer().getUniqueId();
-            if (sidebars.containsKey(uuid)) {
-                sidebars.remove(uuid);
-            }
+            sidebars.remove(uuid);
         }
     }
 }

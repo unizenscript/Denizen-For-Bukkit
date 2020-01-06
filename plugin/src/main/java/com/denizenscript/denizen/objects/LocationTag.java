@@ -271,13 +271,12 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // x,y,z,pitch,yaw
         {
             try {
-                LocationTag output = new LocationTag(null,
+                return new LocationTag(null,
                         Double.valueOf(split.get(0)),
                         Double.valueOf(split.get(1)),
                         Double.valueOf(split.get(2)),
                         Float.valueOf(split.get(3)),
                         Float.valueOf(split.get(4)));
-                return output;
             }
             catch (Exception e) {
                 if (context == null || context.debug) {
@@ -1048,8 +1047,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             if (!object.isChunkLoadedSafe()) {
                 return null;
             }
-            ObjectTag obj = ElementTag.handleNull(object.identify() + ".inventory", object.getInventory(), "InventoryTag", attribute.hasAlternative());
-            return obj;
+            return ElementTag.handleNull(object.identify() + ".inventory", object.getInventory(), "InventoryTag", attribute.hasAlternative());
         });
 
         // <--[tag]
@@ -2039,6 +2037,52 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 });
 
                 return new ListTag(found.objectForms);
+            }
+
+            // <--[tag]
+            // @attribute <LocationTag.find.structure[<type>].within[<#.#>]>
+            // @returns LocationTag
+            // @description
+            // Returns the location of the nearest structure of the given type, within a maximum radius.
+            // To get a list of valid structure types, use <@link tag server.list_structure_types>.
+            // Note that structure type names are case sensitive, and likely to be all-lowercase in most cases.
+            // -->
+            else if (attribute.startsWith("structure", 2) && attribute.hasContext(2)) {
+                String typeName = attribute.getContext(2);
+                StructureType type = StructureType.getStructureTypes().get(typeName);
+                if (type == null) {
+                    attribute.echoError("Invalid structure type '" + typeName + "'.");
+                    return null;
+                }
+                attribute.fulfill(2);
+                Location result = object.getWorld().locateNearestStructure(object, type, (int) radius, false);
+                if (result == null) {
+                    return null;
+                }
+                return new LocationTag(result);
+            }
+
+            // <--[tag]
+            // @attribute <LocationTag.find.unexplored_structure[<type>].within[<#.#>]>
+            // @returns LocationTag
+            // @description
+            // Returns the location of the nearest unexplored structure of the given type, within a maximum radius.
+            // To get a list of valid structure types, use <@link tag server.list_structure_types>.
+            // Note that structure type names are case sensitive, and likely to be all-lowercase in most cases.
+            // -->
+            else if (attribute.startsWith("unexplored_structure", 2) && attribute.hasContext(2)) {
+                String typeName = attribute.getContext(2);
+                StructureType type = StructureType.getStructureTypes().get(typeName);
+                if (type == null) {
+                    attribute.echoError("Invalid structure type '" + typeName + "'.");
+                    return null;
+                }
+                attribute.fulfill(2);
+                Location result = object.getWorld().locateNearestStructure(object, type, (int) radius, true);
+                if (result == null) {
+                    return null;
+                }
+                return new LocationTag(result);
             }
             return null;
         });

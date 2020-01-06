@@ -154,9 +154,6 @@ public class InventoryHolder implements Property {
         // -->
         PropertyParser.<InventoryHolder>registerTag("id_holder", (attribute, object) -> {
             ObjectTag holder = object.holder;
-            if (holder == null) {
-                return null;
-            }
             return holder;
         });
     }

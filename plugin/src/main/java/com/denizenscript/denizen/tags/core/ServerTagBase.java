@@ -477,10 +477,7 @@ public class ServerTagBase {
         // Returns a list of all registered command names in Bukkit.
         // -->
         if (attribute.startsWith("list_commands")) {
-            ListTag list = new ListTag();
-            for (String cmd : CommandScriptHelper.knownCommands.keySet()) {
-                list.add(cmd);
-            }
+            ListTag list = new ListTag(CommandScriptHelper.knownCommands.keySet());
             event.setReplaced(list.getAttribute(attribute.fulfill(1)));
             return;
         }
@@ -804,6 +801,21 @@ public class ServerTagBase {
                 }
             }
             event.setReplaced(statisticTypes.getAttribute(attribute.fulfill(1)));
+        }
+
+        // <--[tag]
+        // @attribute <server.list_structure_types>
+        // @returns ListTag
+        // @description
+        // Returns a list of all structure types known to the server.
+        // Generally used with <@link tag LocationTag.find.structure.within>.
+        // This is NOT their Bukkit names, as seen at <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/StructureType.html>.
+        // Instead these are the internal names tracked by Spigot and presumably matching Minecraft internals.
+        // These are all lowercase, as the internal names are lowercase and supposedly are case-sensitive.
+        // It is unclear why the "StructureType" class in Bukkit is not simply an enum as most similar listings are.
+        // -->
+        if (attribute.startsWith("list_structure_types")) {
+            event.setReplaced(new ListTag(StructureType.getStructureTypes().keySet()).getAttribute(attribute.fulfill(1)));
         }
 
         // <--[tag]
@@ -1900,10 +1912,7 @@ public class ServerTagBase {
         // Returns a list of all currently active boss bar IDs.
         // -->
         else if (attribute.startsWith("current_bossbars")) {
-            ListTag dl = new ListTag();
-            for (String str : BossBarCommand.bossBarMap.keySet()) {
-                dl.add(str);
-            }
+            ListTag dl = new ListTag(BossBarCommand.bossBarMap.keySet());
             event.setReplaced(dl.getAttribute(attribute.fulfill(1)));
         }
 
