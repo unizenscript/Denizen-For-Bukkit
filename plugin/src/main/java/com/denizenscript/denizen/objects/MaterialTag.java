@@ -492,26 +492,9 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.age>, <@link tag MaterialTag.maximum_age>,
         // and <@link mechanism MaterialTag.age> are accessible.
         // -->
-        registerTag("is_ageable", (attribute, object) -> {
-            return new ElementTag(MaterialAge.describes(object));
-        });
+        registerTag("is_ageable", (attribute, object) -> new ElementTag(MaterialAge.describes(object)));
 
-        registerTag("is_plant", (attribute, object) -> {
-            return new ElementTag(MaterialAge.describes(object));
-        });
-
-        // <--[tag]
-        // @attribute <MaterialTag.is_campfire>
-        // @returns ElementTag(Boolean)
-        // @group properties
-        // @description
-        // Returns whether the material is a campfire material.
-        // When this returns true, <@link tag MaterialTag.signal_fire>,
-        // and <@link mechanism MaterialTag.signal_fire> are accessible.
-        // -->
-        registerTag("is_campfire", (attribute, object) -> {
-            return new ElementTag(MaterialCampfire.describes(object));
-        });
+        registerTag("is_plant", (attribute, object) -> new ElementTag(MaterialAge.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_attachable>
@@ -522,12 +505,18 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.is_attached>
         // and <@link mechanism MaterialTag.is_attached> are accessible.
         // -->
-        registerTag("is_attachable", new TagRunnable.ObjectForm<MaterialTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, MaterialTag object) {
-                return new ElementTag(MaterialAttached.describes(object));
-            }
-        });
+        registerTag("is_attachable", (attribute, object) -> new ElementTag(MaterialAttached.describes(object)));
+
+        // <--[tag]
+        // @attribute <MaterialTag.is_campfire>
+        // @returns ElementTag(Boolean)
+        // @group properties
+        // @description
+        // Returns whether the material is a campfire material.
+        // When this returns true, <@link tag MaterialTag.signal_fire>,
+        // and <@link mechanism MaterialTag.signal_fire> are accessible.
+        // -->
+        registerTag("is_campfire", (attribute, object) -> new ElementTag(MaterialCampfire.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_directional>
@@ -538,9 +527,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.direction>, <@link tag MaterialTag.valid_directions>,
         // and <@link mechanism MaterialTag.direction> are accessible.
         // -->
-        registerTag("is_directional", (attribute, object) -> {
-            return new ElementTag(MaterialDirectional.describes(object));
-        });
+        registerTag("is_directional", (attribute, object) -> new ElementTag(MaterialDirectional.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.has_multiple_faces>
@@ -551,9 +538,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.faces>, <@link tag MaterialTag.valid_faces>,
         // and <@link mechanism MaterialTag.faces> are accessible.
         // -->
-        registerTag("has_multiple_faces", (attribute, object) -> {
-            return new ElementTag(MaterialFaces.describes(object));
-        });
+        registerTag("has_multiple_faces", (attribute, object) -> new ElementTag(MaterialMultipleFacing.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_bisected>
@@ -564,9 +549,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.half>, <@link tag MaterialTag.relative_vector>
         // and <@link mechanism MaterialTag.half> are accessible.
         // -->
-        registerTag("is_bisected", (attribute, object) -> {
-            return new ElementTag(MaterialHalf.describes(object));
-        });
+        registerTag("is_bisected", (attribute, object) -> new ElementTag(MaterialHalf.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_bamboo>
@@ -577,9 +560,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.leaf_size>,
         // and <@link mechanism MaterialTag.leaf_size> are accessible.
         // -->
-        registerTag("is_bamboo", (attribute, object) -> {
-            return new ElementTag(MaterialLeafSize.describes(object));
-        });
+        registerTag("is_bamboo", (attribute, object) -> new ElementTag(MaterialLeafSize.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_levelable>
@@ -590,9 +571,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.level>, <@link tag MaterialTag.maximum_level>,
         // and <@link mechanism MaterialTag.level> are accessible.
         // -->
-        registerTag("is_levelable", (attribute, object) -> {
-            return new ElementTag(MaterialLevel.describes(object));
-        });
+        registerTag("is_levelable", (attribute, object) -> new ElementTag(MaterialLevel.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_lightable>
@@ -603,9 +582,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.lit>,
         // and <@link mechanism MaterialTag.lit> are accessible.
         // -->
-        registerTag("is_lightable", (attribute, object) -> {
-            return new ElementTag(MaterialLightable.describes(object));
-        });
+        registerTag("is_lightable", (attribute, object) -> new ElementTag(MaterialLightable.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_leaves>
@@ -617,9 +594,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // <@link tag MaterialTag.persistent>, and
         // <@link mechanism MaterialTag.persistent> are accessible.
         // -->
-        registerTag("is_leaves", (attribute, object) -> {
-            return new ElementTag(MaterialPersistent.describes(object));
-        });
+        registerTag("is_leaves", (attribute, object) -> new ElementTag(MaterialPersistent.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_pickle>
@@ -631,9 +606,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // <@link tag MaterialTag.pickle_max>, <@link tag MaterialTag.pickle_min>,
         // and <@link mechanism MaterialTag.pickle_count> are accessible.
         // -->
-        registerTag("is_pickle", (attribute, object) -> {
-            return new ElementTag(MaterialPickle.describes(object));
-        });
+        registerTag("is_pickle", (attribute, object) -> new ElementTag(MaterialPickle.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_slab>
@@ -644,9 +617,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.slab_type>,
         // and <@link mechanism MaterialTag.slab_type> are accessible.
         // -->
-        registerTag("is_slab", (attribute, object) -> {
-            return new ElementTag(MaterialSlab.describes(object));
-        });
+        registerTag("is_slab", (attribute, object) -> new ElementTag(MaterialSlab.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_snowable>
@@ -657,9 +628,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.snowy>,
         // and <@link mechanism MaterialTag.snowy> are accessible.
         // -->
-        registerTag("is_snowable", (attribute, object) -> {
-            return new ElementTag(MaterialSnowable.describes(object));
-        });
+        registerTag("is_snowable", (attribute, object) -> new ElementTag(MaterialSnowy.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_switch>
@@ -670,9 +639,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.switch_face>,
         // and <@link mechanism MaterialTag.switch_face> are accessible.
         // -->
-        registerTag("is_switch", (attribute, object) -> {
-            return new ElementTag(MaterialSnowable.describes(object));
-        });
+        registerTag("is_switch", (attribute, object) -> new ElementTag(MaterialSwitchFace.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_waterloggable>
@@ -683,9 +650,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.waterlogged>,
         // and <@link mechanism MaterialTag.waterlogged> are accessible.
         // -->
-        registerTag("is_waterloggable", (attribute, object) -> {
-            return new ElementTag(MaterialSnowable.describes(object));
-        });
+        registerTag("is_waterloggable", (attribute, object) -> new ElementTag(MaterialWaterlogged.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_multifacing>
@@ -696,12 +661,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.faces>, <@link tag MaterialTag.has_face[<face>]>,
         // <@link tag MaterialTag.allowed_faces>, and <@link mechanism MaterialTag.faces> are accessible.
         // -->
-        registerTag("is_multifacing", new TagRunnable.ObjectForm<MaterialTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, MaterialTag object) {
-                return new ElementTag(MaterialMultipleFacing.describes(object));
-            }
-        });
+        registerTag("is_multifacing", (attribute, object) -> new ElementTag(MaterialMultipleFacing.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_openable>
@@ -712,12 +672,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.is_open>
         // and <@link mechanism MaterialTag.is_open> are accessible.
         // -->
-        registerTag("is_openable", new TagRunnable.ObjectForm<MaterialTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, MaterialTag object) {
-                return new ElementTag(MaterialOpen.describes(object));
-            }
-        });
+        registerTag("is_openable", (attribute, object) -> new ElementTag(MaterialOpen.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_orientable>
@@ -728,12 +683,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.valid_orientations>, <@link tag MaterialTag.orientation>,
         // and <@link mechanism MaterialTag.orientation> are accessible.
         // -->
-        registerTag("is_orientable", new TagRunnable.ObjectForm<MaterialTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, MaterialTag object) {
-                return new ElementTag(MaterialOrientation.describes(object));
-            }
-        });
+        registerTag("is_orientable", (attribute, object) -> new ElementTag(MaterialOrientation.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_rail>
@@ -744,12 +694,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.valid_rail_shapes>, <@link tag MaterialTag.rail_shape>,
         // and <@link mechanism MaterialTag.rail_shape> are accessible.
         // -->
-        registerTag("is_rail", new TagRunnable.ObjectForm<MaterialTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, MaterialTag object) {
-                return new ElementTag(MaterialRailShape.describes(object));
-            }
-        });
+        registerTag("is_rail", (attribute, object) -> new ElementTag(MaterialRailShape.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_redstone_powerable>
@@ -761,12 +706,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // and <@link mechanism MaterialTag.redstone_power> are accessible.
         // NOTE: This returns true only for daylight detectors and redstone wires.
         // -->
-        registerTag("is_redstone_powerable", new TagRunnable.ObjectForm<MaterialTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, MaterialTag object) {
-                return new ElementTag(MaterialRedstonePower.describes(object));
-            }
-        });
+        registerTag("is_redstone_powerable", (attribute, object) -> new ElementTag(MaterialRedstonePower.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_rotatable>
@@ -778,12 +718,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // and <@link mechanism MaterialTag.rotation> are accessible.
         // NOTE: This returns true only for standing signs (not wall signs).
         // -->
-        registerTag("is_rotatable", new TagRunnable.ObjectForm<MaterialTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, MaterialTag object) {
-                return new ElementTag(MaterialRotation.describes(object));
-            }
-        });
+        registerTag("is_rotatable", (attribute, object) -> new ElementTag(MaterialRotation.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_snowable>
@@ -794,12 +729,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.snowy>
         // and <@link mechanism MaterialTag.snowy> are accessible.
         // -->
-        registerTag("is_snowable", new TagRunnable.ObjectForm<MaterialTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, MaterialTag object) {
-                return new ElementTag(MaterialOrientation.describes(object));
-            }
-        });
+        registerTag("is_snowable", (attribute, object) -> new ElementTag(MaterialSnowy.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_switch>
@@ -809,12 +739,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // Returns whether the material is a switch (button or lever).
         // When this is true, <@link tag MaterialTag.switch_face>
         // and <@link mechanism MaterialTag.switch_face> are accessible.
-        registerTag("is_switch", new TagRunnable.ObjectForm<MaterialTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, MaterialTag objectTag) {
-                return new ElementTag(MaterialSwitchFace.describes(objectTag));
-            }
-        });
+        registerTag("is_switch", (attribute, object) -> new ElementTag(MaterialSwitchFace.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_waterloggable>
@@ -825,12 +750,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // When this returns true, <@link tag MaterialTag.waterlogged>
         // and <@link mechanism MaterialTag.waterlogged> are accessible.
         // -->
-        registerTag("is_waterloggable", new TagRunnable.ObjectForm<MaterialTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, MaterialTag object) {
-                return new ElementTag(MaterialWaterlogged.describes(object));
-            }
-        });
+        registerTag("is_waterloggable", (attribute, object) -> new ElementTag(MaterialWaterlogged.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.has_gravity>
@@ -838,9 +758,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is affected by gravity.
         // -->
-        registerTag("has_gravity", (attribute, object) -> {
-            return new ElementTag(object.material.hasGravity());
-        });
+        registerTag("has_gravity", (attribute, object) -> new ElementTag(object.material.hasGravity()));
 
         // <--[tag]
         // @attribute <MaterialTag.is_block>
@@ -848,9 +766,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is a placeable block.
         // -->
-        registerTag("is_block", (attribute, object) -> {
-            return new ElementTag(object.material.isBlock());
-        });
+        registerTag("is_block", (attribute, object) -> new ElementTag(object.material.isBlock()));
 
         // <--[tag]
         // @attribute <MaterialTag.is_item>
@@ -860,9 +776,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // Note that most blocks are valid items as well.
         // This only returns "false" for certain non-holdable "special" blocks, like Fire.
         // -->
-        registerTag("is_item", (attribute, object) -> {
-            return new ElementTag(object.material.isItem());
-        });
+        registerTag("is_item", (attribute, object) -> new ElementTag(object.material.isItem()));
 
         // <--[tag]
         // @attribute <MaterialTag.is_burnable>
@@ -870,9 +784,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is a block that can burn away.
         // -->
-        registerTag("is_burnable", (attribute, object) -> {
-            return new ElementTag(object.material.isBurnable());
-        });
+        registerTag("is_burnable", (attribute, object) -> new ElementTag(object.material.isBurnable()));
 
         // <--[tag]
         // @attribute <MaterialTag.is_edible>
@@ -880,9 +792,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is edible.
         // -->
-        registerTag("is_edible", (attribute, object) -> {
-            return new ElementTag(object.material.isEdible());
-        });
+        registerTag("is_edible", (attribute, object) -> new ElementTag(object.material.isEdible()));
 
         // <--[tag]
         // @attribute <MaterialTag.is_flammable>
@@ -890,9 +800,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is a block that can catch fire.
         // -->
-        registerTag("is_flammable", (attribute, object) -> {
-            return new ElementTag(object.material.isFlammable());
-        });
+        registerTag("is_flammable", (attribute, object) -> new ElementTag(object.material.isFlammable()));
 
         // <--[tag]
         // @attribute <MaterialTag.is_occluding>
@@ -900,9 +808,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is a block that completely blocks vision.
         // -->
-        registerTag("is_occluding", (attribute, object) -> {
-            return new ElementTag(object.material.isOccluding());
-        });
+        registerTag("is_occluding", (attribute, object) -> new ElementTag(object.material.isOccluding()));
 
         // <--[tag]
         // @attribute <MaterialTag.is_record>
@@ -910,9 +816,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is a playable music disc.
         // -->
-        registerTag("is_record", (attribute, object) -> {
-            return new ElementTag(object.material.isRecord());
-        });
+        registerTag("is_record", (attribute, object) -> new ElementTag(object.material.isRecord()));
 
         // <--[tag]
         // @attribute <MaterialTag.is_solid>
@@ -920,9 +824,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is a block that is solid (cannot be walked through).
         // -->
-        registerTag("is_solid", (attribute, object) -> {
-            return new ElementTag(object.material.isSolid());
-        });
+        registerTag("is_solid", (attribute, object) -> new ElementTag(object.material.isSolid()));
 
         // <--[tag]
         // @attribute <MaterialTag.is_switchable>
@@ -930,9 +832,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is Openable, Powerable, or a Dispenser.
         // -->
-        registerTag("is_switchable", (attribute, object) -> {
-            return new ElementTag(MaterialSwitchable.describes(object));
-        });
+        registerTag("is_switchable", (attribute, object) -> new ElementTag(MaterialSwitchable.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_transparent>
@@ -940,9 +840,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns whether the material is a block that does not block any light.
         // -->
-        registerTag("is_transparent", (attribute, object) -> {
-            return new ElementTag(object.material.isTransparent());
-        });
+        registerTag("is_transparent", (attribute, object) -> new ElementTag(object.material.isTransparent()));
 
         // <--[tag]
         // @attribute <MaterialTag.max_durability>
@@ -950,9 +848,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns the maximum durability of this material.
         // -->
-        registerTag("max_durability", (attribute, object) -> {
-            return new ElementTag(object.material.getMaxDurability());
-        });
+        registerTag("max_durability", (attribute, object) -> new ElementTag(object.material.getMaxDurability()));
 
         // <--[tag]
         // @attribute <MaterialTag.block_resistance>
@@ -989,9 +885,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns the maximum amount of this material that can be held in a stack.
         // -->
-        registerTag("max_stack_size", (attribute, object) -> {
-            return new ElementTag(object.material.getMaxStackSize());
-        });
+        registerTag("max_stack_size", (attribute, object) -> new ElementTag(object.material.getMaxStackSize()));
 
         // <--[tag]
         // @attribute <MaterialTag.is_made_of[<material>]>
@@ -1014,9 +908,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // will return 'sapling'
         // Unneeded for 1.13+ servers.
         // -->
-        registerTag("bukkit_enum", (attribute, object) -> {
-            return new ElementTag(object.material.name());
-        });
+        registerTag("bukkit_enum", (attribute, object) -> new ElementTag(object.material.name()));
 
         // <--[tag]
         // @attribute <MaterialTag.name>
@@ -1024,10 +916,9 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns the name of the material.
         // -->
-        registerTag("name", (attribute, object) -> {
-            return new ElementTag(object.forcedIdentity != null ? object.forcedIdentityLow :
-                    CoreUtilities.toLowerCase(object.material.name()));
-        });
+        registerTag("name", (attribute, object) ->
+                new ElementTag(object.forcedIdentity != null ? object.forcedIdentityLow :
+                CoreUtilities.toLowerCase(object.material.name())));
 
         // <--[tag]
         // @attribute <MaterialTag.full>
@@ -1096,9 +987,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // Always returns 'Material' for MaterialTag objects. All objects fetchable by the Object Fetcher will return the
         // type of object that is fulfilling this attribute.
         // -->
-        registerTag("type", (attribute, object) -> {
-            return new ElementTag("Material");
-        });
+        registerTag("type", (attribute, object) -> new ElementTag("Material"));
 
 
         // <--[tag]

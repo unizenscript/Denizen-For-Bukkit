@@ -1679,15 +1679,12 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @description
         // Returns the current lines set on the player's Sidebar via the Sidebar command.
         // -->
-        registerOnlineOnlyTag("sidebar_lines", new TagRunnable.ObjectForm<PlayerTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, PlayerTag object) {
-                Sidebar sidebar = SidebarCommand.getSidebar(object);
-                if (sidebar == null) {
-                    return null;
-                }
-                return new ListTag(sidebar.getLines());
+        registerOnlineOnlyTag("sidebar_lines", (attribute, object) -> {
+            Sidebar sidebar = SidebarCommand.getSidebar(object);
+            if (sidebar == null) {
+                return null;
             }
+            return new ListTag(sidebar.getLines());
         });
 
         // <--[tag]
@@ -1731,7 +1728,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
                 if (sidebar == null) {
                     return null;
                 }
-                return new ListTag(sidebar.getLinesText());
+                return new ListTag(sidebar.getLines());
             }
             if (attribute.startsWith("title", 2)) {
                 attribute.fulfill(1);
@@ -1753,6 +1750,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
                 }
                 return scores;
             }
+            return null;
         });
 
         // <--[tag]
@@ -1761,15 +1759,12 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @description
         // Returns the current start score set on the player's Sidebar via the Sidebar command.
         // -->
-        registerOnlineOnlyTag("sidebar_start", new TagRunnable.ObjectForm<PlayerTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, PlayerTag object) {
-                Sidebar sidebar = SidebarCommand.getSidebar(object);
-                if (sidebar == null) {
-                    return null;
-                }
-                return new ElementTag(sidebar.getStart());
+        registerOnlineOnlyTag("sidebar_start", (attribute, object) -> {
+            Sidebar sidebar = SidebarCommand.getSidebar(object);
+            if (sidebar == null) {
+                return null;
             }
+            return new ElementTag(sidebar.getStart());
         });
 
         // <--[tag]
@@ -1778,67 +1773,61 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @description
         // Returns the current score increment set on the player's Sidebar via the Sidebar command.
         // -->
-        registerOnlineOnlyTag("sidebar_increment", new TagRunnable.ObjectForm<PlayerTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, PlayerTag object) {
+        registerOnlineOnlyTag("sidebar_increment", (attribute, object) -> {
+            Sidebar sidebar = SidebarCommand.getSidebar(object);
+            if (sidebar == null) {
+                return null;
+            }
+            return new ElementTag(sidebar.getIncrement());
+        });
+
+        registerOnlineOnlyTag("sidebar", (attribute, object) -> {
+            Deprecations.playerSidebarTags.warn(attribute.context);
+            if (attribute.startsWith("lines", 2)) {
+                attribute.fulfill(1);
+                Sidebar sidebar = SidebarCommand.getSidebar(object);
+                if (sidebar == null) {
+                    return null;
+                }
+                return new ListTag(sidebar.getLines());
+            }
+            if (attribute.startsWith("title", 2)) {
+                attribute.fulfill(1);
+                Sidebar sidebar = SidebarCommand.getSidebar(object);
+                if (sidebar == null) {
+                    return null;
+                }
+                return new ElementTag(sidebar.getTitle());
+            }
+            if (attribute.startsWith("scores", 2)) {
+                attribute.fulfill(1);
+                Sidebar sidebar = SidebarCommand.getSidebar(object);
+                if (sidebar == null) {
+                    return null;
+                }
+                ListTag scores = new ListTag();
+                for (int score : sidebar.getScores()) {
+                    scores.add(String.valueOf(score));
+                }
+                return scores;
+            }
+            if (attribute.startsWith("start", 2)) {
+                attribute.fulfill(1);
+                Sidebar sidebar = SidebarCommand.getSidebar(object);
+                if (sidebar == null) {
+                    return null;
+                }
+                return new ElementTag(sidebar.getStart());
+            }
+            if (attribute.startsWith("increment", 2)) {
+                attribute.fulfill(1);
                 Sidebar sidebar = SidebarCommand.getSidebar(object);
                 if (sidebar == null) {
                     return null;
                 }
                 return new ElementTag(sidebar.getIncrement());
             }
-        });
-
-        registerOnlineOnlyTag("sidebar", new TagRunnable.ObjectForm<PlayerTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, PlayerTag object) {
-                Deprecations.playerSidebarTags.warn(attribute.context);
-                if (attribute.startsWith("lines", 2)) {
-                    attribute.fulfill(1);
-                    Sidebar sidebar = SidebarCommand.getSidebar(object);
-                    if (sidebar == null) {
-                        return null;
-                    }
-                    return new ListTag(sidebar.getLines());
-                }
-                if (attribute.startsWith("title", 2)) {
-                    attribute.fulfill(1);
-                    Sidebar sidebar = SidebarCommand.getSidebar(object);
-                    if (sidebar == null) {
-                        return null;
-                    }
-                    return new ElementTag(sidebar.getTitle());
-                }
-                if (attribute.startsWith("scores", 2)) {
-                    attribute.fulfill(1);
-                    Sidebar sidebar = SidebarCommand.getSidebar(object);
-                    if (sidebar == null) {
-                        return null;
-                    }
-                    ListTag scores = new ListTag();
-                    for (int score : sidebar.getScores()) {
-                        scores.add(String.valueOf(score));
-                    }
-                    return scores;
-                }
-                if (attribute.startsWith("start", 2)) {
-                    attribute.fulfill(1);
-                    Sidebar sidebar = SidebarCommand.getSidebar(object);
-                    if (sidebar == null) {
-                        return null;
-                    }
-                    return new ElementTag(sidebar.getStart());
-                }
-                if (attribute.startsWith("increment", 2)) {
-                    attribute.fulfill(1);
-                    Sidebar sidebar = SidebarCommand.getSidebar(object);
-                    if (sidebar == null) {
-                        return null;
-                    }
-                    return new ElementTag(sidebar.getIncrement());
-                }
-                return null;
-            }
+            return null;
         });
 
         // <--[tag]

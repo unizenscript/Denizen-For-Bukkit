@@ -19,6 +19,7 @@ import com.denizenscript.denizen.nms.util.ReflectionHelper;
 import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
+import dev.unizen.denizen.nms.v1_15.helpers.ArrowHelperImpl;
 import net.minecraft.server.v1_15_R1.Entity;
 import net.minecraft.server.v1_15_R1.IInventory;
 import net.minecraft.server.v1_15_R1.INamableTileEntity;
@@ -44,6 +45,7 @@ public class Handler extends NMSHandler {
     public Handler() {
         advancementHelper = new AdvancementHelperImpl();
         animationHelper = new AnimationHelperImpl();
+        arrowHelper = new ArrowHelperImpl();
         blockHelper = new BlockHelperImpl();
         chunkHelper = new ChunkHelperImpl();
         customEntityHelper = new CustomEntityHelperImpl();

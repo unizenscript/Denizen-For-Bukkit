@@ -1,8 +1,6 @@
 package com.denizenscript.denizen.objects;
 
-import com.denizenscript.denizen.Settings;
-import com.denizenscript.denizen.utilities.DenizenAPI;
-import com.denizenscript.denizen.utilities.blocks.FakeBlock;
+import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizen.nms.NMSHandler;

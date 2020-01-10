@@ -2984,14 +2984,11 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // @description
         // Returns how much time is left in the brewing cycle of this brewing stand block.
         // -->
-        registerTag("brewing_time", new TagRunnable.ObjectForm<LocationTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, LocationTag object) {
-                if (object.getBlockStateForTag(attribute) instanceof BrewingStand) {
-                    return new DurationTag((long) ((BrewingStand) object.getBlockStateForTag(attribute)).getBrewingTime());
-                }
-                return null;
+        registerTag("brewing_time", (attribute, object) -> {
+            if (object.getBlockStateForTag(attribute) instanceof BrewingStand) {
+                return new DurationTag((long) ((BrewingStand) object.getBlockStateForTag(attribute)).getBrewingTime());
             }
+            return null;
         });
 
         // <--[tag]
@@ -3001,14 +2998,11 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // @description
         // Returns the fuel level of this brewing stand block.
         // -->
-        registerTag("brewing_fuel_level", new TagRunnable.ObjectForm<LocationTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, LocationTag object) {
-                if (object.getBlockStateForTag(attribute) instanceof BrewingStand) {
-                    return new ElementTag(((BrewingStand) object.getBlockStateForTag(attribute)).getFuelLevel());
-                }
-                return null;
+        registerTag("brewing_fuel_level", (attribute, object) -> {
+            if (object.getBlockStateForTag(attribute) instanceof BrewingStand) {
+                return new ElementTag(((BrewingStand) object.getBlockStateForTag(attribute)).getFuelLevel());
             }
+            return null;
         });
 
         // Unizen end

@@ -16,7 +16,6 @@ import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.core.QueueTag;
 import com.denizenscript.denizencore.objects.core.ScriptTag;
-import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.objects.properties.PropertyParser;
 import dev.unizen.denizen.objects.properties.entity.*;
 import dev.unizen.denizen.objects.properties.material.*;
@@ -175,7 +174,6 @@ public class PropertyRegistry {
                 PropertyParser.registerProperty(MaterialCampfire.class, MaterialTag.class);
             }
             PropertyParser.registerProperty(MaterialDirectional.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialFaces.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialHalf.class, MaterialTag.class);
             if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
                 PropertyParser.registerProperty(MaterialLeafSize.class, MaterialTag.class);
@@ -191,7 +189,6 @@ public class PropertyRegistry {
             PropertyParser.registerProperty(MaterialRedstonePower.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialRotation.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialSlab.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialSnowable.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialSnowy.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialSwitchable.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialSwitchFace.class, MaterialTag.class);

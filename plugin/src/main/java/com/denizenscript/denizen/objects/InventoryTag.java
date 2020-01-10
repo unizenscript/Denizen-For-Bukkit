@@ -811,7 +811,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
 
     public void setInput(ItemStack item) {
         if (inventory instanceof FurnaceInventory) {
-            ((FurnaceInventory) inventory).setInput(item);
+            ((FurnaceInventory) inventory).setFuel(item);
         }
         else if (inventory instanceof BrewerInventory) {
             ((BrewerInventory) inventory).setIngredient(item);
@@ -2322,12 +2322,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         // @description
         // Returns the item currently in the result section of a crafting inventory or furnace inventory.
         // -->
-        registerTag("result", new TagRunnable.ObjectForm<InventoryTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, InventoryTag object) {
-                return object.getResult();
-            }
-        });
+        registerTag("result", (attribute, object) -> object.getResult());
 
         // <--[tag]
         // @attribute <InventoryTag.anvil_repair_cost>
@@ -2386,7 +2381,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         // @description
         // Returns the item currently in the smelting slot of a furnace inventory, or the ingredient slot of a brewing stand inventory.
         // -->
-        registerTag("input", (attribute, object) -> object.getSmelting());
+        registerTag("input", (attribute, object) -> object.getInput());
         registerTag("smelting", tagProcessor.registeredObjectTags.get("input"));
 
         // <--[tag]
@@ -2409,14 +2404,11 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         // @description
         // Returns the item being used as the brewing ingredient in this brewer inventory.
         // -->
-        registerTag("brewing_ingredient", new TagRunnable.ObjectForm<InventoryTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, InventoryTag object) {
-                if (object.inventory instanceof BrewerInventory) {
-                    return new ItemTag(((BrewerInventory) object.inventory).getIngredient());
-                }
-                return null;
+        registerTag("brewing_ingredient", (attribute, object) -> {
+            if (object.inventory instanceof BrewerInventory) {
+                return new ItemTag(((BrewerInventory) object.inventory).getIngredient());
             }
+            return null;
         });
 
         // <--[tag]
@@ -2426,18 +2418,15 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         // @description
         // Returns the list of items in the result slots in this brewer inventory.
         // -->
-        registerTag("brewing_results", new TagRunnable.ObjectForm<InventoryTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, InventoryTag object) {
-                if (object.inventory instanceof BrewerInventory) {
-                    ListTag items = new ListTag();
-                    items.addObject(new ItemTag(object.inventory.getItem(0)));
-                    items.addObject(new ItemTag(object.inventory.getItem(1)));
-                    items.addObject(new ItemTag(object.inventory.getItem(2)));
-                    return items;
-                }
-                return null;
+        registerTag("brewing_results", (attribute, object) -> {
+            if (object.inventory instanceof BrewerInventory) {
+                ListTag items = new ListTag();
+                items.addObject(new ItemTag(object.inventory.getItem(0)));
+                items.addObject(new ItemTag(object.inventory.getItem(1)));
+                items.addObject(new ItemTag(object.inventory.getItem(2)));
+                return items;
             }
+            return null;
         });
 
         // Unizen end

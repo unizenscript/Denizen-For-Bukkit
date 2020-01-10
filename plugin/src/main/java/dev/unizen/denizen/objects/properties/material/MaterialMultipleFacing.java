@@ -4,8 +4,10 @@ import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizencore.objects.Mechanism;
 import com.denizenscript.denizencore.objects.ObjectTag;
+import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.properties.Property;
+import com.denizenscript.denizencore.objects.properties.PropertyParser;
 import com.denizenscript.denizencore.tags.Attribute;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.MultipleFacing;
@@ -59,6 +61,18 @@ public class MaterialMultipleFacing implements Property {
         return faces;
     }
 
+    private List<String> getValidFaces() {
+        List<String> faces = new ArrayList<>();
+        for (BlockFace face : getMultipleFacing().getAllowedFaces()) {
+            faces.add(face.name());
+        }
+        return faces;
+    }
+
+    private boolean hasFace(BlockFace face) {
+        return getMultipleFacing().hasFace(face);
+    }
+
     /////////
     // Property Methods
     ///////
@@ -77,11 +91,7 @@ public class MaterialMultipleFacing implements Property {
     // ObjectTag Attributes
     ////////
 
-    @Override
-    public String getAttribute(Attribute attribute) {
-        if (attribute == null) {
-            return null;
-        }
+    public static void registerTags() {
 
         // <--[tag]
         // @attribute <MaterialTag.valid_faces>
@@ -91,34 +101,7 @@ public class MaterialMultipleFacing implements Property {
         // If the material can have faces, returns which faces the material's texture can be displayed on.
         // A list of all faces can be found here: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/block/BlockFace.html>
         // -->
-        if (attribute.startsWith("valid_faces")) {
-            ListTag allowedFaces = new ListTag();
-            for (BlockFace face : getMultipleFacing().getAllowedFaces()) {
-                allowedFaces.add(face.name());
-            }
-            return allowedFaces.getAttribute(attribute.fulfill(1));
-        }
-
-        // <--[tag]
-        // @attribute <MaterialTag.has_face[<face>]>
-        // @returns ElementTag(Boolean)
-        // @mechanism MaterialTag.faces
-        // @group properties
-        // @description
-        // If the material can have faces, returns whether the material's texture are displayed on this face.
-        // A list of all faces can be found here: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/block/BlockFace.html>
-        // -->
-        if (attribute.startsWith("has_face") && attribute.hasContext(1)) {
-            String input = attribute.getContext(1);
-            BlockFace face;
-            try {
-                face = BlockFace.valueOf(input.toUpperCase());
-            }
-            catch (IllegalArgumentException e) {
-                Debug.echoError("Invalid face!");
-                return null;
-            }
-        }
+        PropertyParser.<MaterialMultipleFacing>registerTag("valid_faces", (attribute, material) -> new ListTag(material.getValidFaces()));
 
         // <--[tag]
         // @attribute <MaterialTag.faces>
@@ -129,11 +112,32 @@ public class MaterialMultipleFacing implements Property {
         // If the material can have faces, returns a list of faces that the material's texture are displayed on.
         // A list of all faces can be found here: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/block/BlockFace.html>
         // -->
-        if (attribute.startsWith("faces")) {
-            return new ListTag(getFaces()).getAttribute(attribute.fulfill(1));
-        }
+        PropertyParser.<MaterialMultipleFacing>registerTag("faces", (attribute, material) -> new ListTag(material.getFaces()));
 
-        return null;
+        // <--[tag]
+        // @attribute <MaterialTag.has_face[<face>]>
+        // @returns ElementTag(Boolean)
+        // @mechanism MaterialTag.faces
+        // @group properties
+        // @description
+        // If the material can have faces, returns whether the material's texture are displayed on this face.
+        // A list of all faces can be found here: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/block/BlockFace.html>
+        // -->
+        PropertyParser.<MaterialMultipleFacing>registerTag("has_face", (attribute, material) -> {
+            if (!attribute.hasContext(1)) {
+                Debug.echoError("Context is required for <MaterialTag.has_face[<face>]>!");
+                return null;
+            }
+            BlockFace face;
+            try {
+                face = BlockFace.valueOf(attribute.getContext(1).toUpperCase());
+            }
+            catch (Exception e) {
+                Debug.echoError("Invalid face specified!");
+                return null;
+            }
+            return new ElementTag(material.hasFace(face));
+        });
     }
 
     @Override

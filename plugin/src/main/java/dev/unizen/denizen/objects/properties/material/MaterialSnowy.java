@@ -5,6 +5,7 @@ import com.denizenscript.denizencore.objects.Mechanism;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
+import com.denizenscript.denizencore.objects.properties.PropertyParser;
 import com.denizenscript.denizencore.tags.Attribute;
 import org.bukkit.block.data.Snowable;
 
@@ -46,6 +47,14 @@ public class MaterialSnowy implements Property {
         return (Snowable) material.getModernData().data;
     }
 
+    private boolean isSnowy() {
+        return getSnowable().isSnowy();
+    }
+
+    private void setSnowy(boolean snowy) {
+        getSnowable().setSnowy(snowy);
+    }
+
     /////////
     // Property Methods
     ///////
@@ -64,11 +73,7 @@ public class MaterialSnowy implements Property {
     // ObjectTag Attributes
     ////////
 
-    @Override
-    public String getAttribute(Attribute attribute) {
-        if (attribute == null) {
-            return null;
-        }
+    public static void registerTags() {
 
         // <--[tag]
         // @attribute <MaterialTag.snowy>
@@ -78,11 +83,7 @@ public class MaterialSnowy implements Property {
         // @description
         // Returns whether this material is covered with snow, if it has a special texture when snow is on top of it.
         // -->
-        if (attribute.startsWith("snowy")) {
-            return new ElementTag(getSnowable().isSnowy()).getAttribute(attribute.fulfill(1));
-        }
-
-        return null;
+        PropertyParser.<MaterialSnowy>registerTag("snowy", (attribute, material) -> new ElementTag(material.isSnowy()));
     }
 
     @Override
@@ -98,7 +99,7 @@ public class MaterialSnowy implements Property {
         // <MaterialTag.snowy>
         // -->
         if (mechanism.matches("snowy") && mechanism.requireBoolean()) {
-            getSnowable().setSnowy(mechanism.getValue().asBoolean());
+            setSnowy(mechanism.getValue().asBoolean());
         }
     }
 }

@@ -432,7 +432,7 @@ public class BukkitElementProperties implements Property {
         // Returns a copy of the element that displays the specified hover text when the mouse is left over the element.
         // Equivalent to <&hover[<text>]><ElementTag><&end_hover>
         // -->
-        PropertyParser.<BukkitElementProperties>registerTag("text_hover", (object, attribute) -> {
+        PropertyParser.<BukkitElementProperties>registerTag("text_hover", (attribute, object) -> {
             String hoverText = attribute.getContext(1);
             return new ElementTag(textComponentSecret + "[hover=SHOW_TEXT;" +
                     FormattedTextHelper.escape(hoverText) + "]" +
@@ -449,7 +449,7 @@ public class BukkitElementProperties implements Property {
         // If text is used, then it must specify a valid item in JSON format.
         // Equivalent to <&hover[<text>].type[SHOW_ITEM]><ElementTag><&end_hover>
         // -->
-        PropertyParser.<BukkitElementProperties>registerTag("item_hover", (object, attribute) -> {
+        PropertyParser.<BukkitElementProperties>registerTag("item_hover", (attribute, object) -> {
             String hoverText = attribute.getContext(1);
             return new ElementTag(textComponentSecret + "[hover=SHOW_ITEM;" +
                     FormattedTextHelper.escape(hoverText) + "]" +
@@ -466,7 +466,7 @@ public class BukkitElementProperties implements Property {
         // If text is used, then it must follow the JSON format {"id":"UUID","type":"ENTITY_TYPE","name":"CUSTOM NAME"} (but none of the three keys are required).
         // Equivalent to <&hover[<text>].type[SHOW_ENTITY]><ElementTag><&end_hover>
         // -->
-        PropertyParser.<BukkitElementProperties>registerTag("entity_hover", (object, attribute) -> {
+        PropertyParser.<BukkitElementProperties>registerTag("entity_hover", (attribute, object) -> {
             String hoverText = attribute.getContext(1);
             return new ElementTag(textComponentSecret + "[hover=SHOW_ENTITY;" +
                     FormattedTextHelper.escape(hoverText) + "]" +
@@ -482,7 +482,7 @@ public class BukkitElementProperties implements Property {
         // Returns a copy of the element that runs the specified command as the player who clicked the element.
         // Equivalent to <&click[<command>]><ElementTag><&end_click>
         // -->
-        PropertyParser.<BukkitElementProperties>registerTag("run_on_click", (object, attribute) -> {
+        PropertyParser.<BukkitElementProperties>registerTag("run_on_click", (attribute, object) -> {
             String clickText = attribute.getContext(1);
             return new ElementTag(textComponentSecret + "[click=RUN_COMMAND;" +
                     FormattedTextHelper.escape(clickText) + "]" +
@@ -498,7 +498,7 @@ public class BukkitElementProperties implements Property {
         // Returns a copy of the element that suggests the specified command to the player who clicked the element.
         // Equivalent to <&click[<command>].type[SUGGEST_COMMAND]><ElementTag><&end_click>
         // -->
-        PropertyParser.<BukkitElementProperties>registerTag("suggest_on_click", (object, attribute) -> {
+        PropertyParser.<BukkitElementProperties>registerTag("suggest_on_click", (attribute, object) -> {
             String clickText = attribute.getContext(1);
             return new ElementTag(textComponentSecret + "[click=SUGGEST_COMMAND;" +
                     FormattedTextHelper.escape(clickText) + "]" +
@@ -515,7 +515,7 @@ public class BukkitElementProperties implements Property {
         // A number input is required for this tag!
         // Equivalent to <&click[<#>].type[CHANGE_PAGE]><ElementTag><&end_click>
         // -->
-        PropertyParser.<BukkitElementProperties>registerTag("page_on_click", (object, attribute) -> {
+        PropertyParser.<BukkitElementProperties>registerTag("page_on_click", (attribute, object) -> {
             if (!attribute.hasContext(1)) {
                 Debug.echoError("An input is required for attribute 'page_on_click'!");
                 return null;
@@ -540,7 +540,7 @@ public class BukkitElementProperties implements Property {
         // Returns a copy of the element that makes the player who clicked the element open the specified URL.
         // Equivalent to <&click[<url>].type[OPEN_URL]><ElementTag><&end_click>
         // -->
-        PropertyParser.<BukkitElementProperties>registerTag("url_on_click", (object, attribute) ->  {
+        PropertyParser.<BukkitElementProperties>registerTag("url_on_click", (attribute, object) ->  {
             String clickText = attribute.getContext(1);
             return new ElementTag(textComponentSecret + "[click=OPEN_URL;" +
                     FormattedTextHelper.escape(clickText) + "]" +
@@ -556,7 +556,7 @@ public class BukkitElementProperties implements Property {
         // Returns a copy of the element that makes the player who clicked the element open a file on their computer.
         // Equivalent to <&click[<filepath>].type[OPEN_FILE]><ElementTag><&end_click>
         // -->
-        PropertyParser.<BukkitElementProperties>registerTag("file_on_click", (object, attribute) -> {
+        PropertyParser.<BukkitElementProperties>registerTag("file_on_click", (attribute, object) -> {
             String clickText = attribute.getContext(1);
             return new ElementTag(textComponentSecret + "[click=OPEN_FILE;" +
                     FormattedTextHelper.escape(clickText) + "]" +
