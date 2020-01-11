@@ -66,11 +66,9 @@ public class MaterialTag implements ObjectTag, Adjustable {
         return this;
     }
 
-
     //////////////////
     //    OBJECT FETCHER
     ////////////////
-
 
     public static MaterialTag valueOf(String string) {
         return valueOf(string, null);
@@ -228,7 +226,6 @@ public class MaterialTag implements ObjectTag, Adjustable {
         return matchesMaterialData(b.getType().getNewData(b.getData()));
     }
 
-
     ///////////////
     //   Constructors
     /////////////
@@ -328,7 +325,6 @@ public class MaterialTag implements ObjectTag, Adjustable {
     public String name() {
         return material.name();
     }
-
 
     public byte getData(byte fallback) {
         if (data == null) {
@@ -988,7 +984,6 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // type of object that is fulfilling this attribute.
         // -->
         registerTag("type", (attribute, object) -> new ElementTag("Material"));
-
 
         // <--[tag]
         // @attribute <MaterialTag.with[<mechanism>=<value>;...]>

@@ -55,7 +55,6 @@ import java.util.regex.Pattern;
 
 public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
 
-
     // <--[language]
     // @name PlayerTag Objects
     // @group Object System
@@ -69,7 +68,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
     /////////////////////
     //   STATIC METHODS
     /////////////////
-
 
     public static PlayerTag mirrorBukkitPlayer(OfflinePlayer player) {
         if (player == null) {
@@ -103,7 +101,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         return playerNames;
     }
 
-
     /////////////////////
     //   OBJECT FETCHER
     /////////////////
@@ -119,8 +116,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
     // For general info, see <@link language PlayerTag Objects>
     //
     // -->
-
-
 
     public static PlayerTag valueOf(String string) {
         return valueOf(string, null);
@@ -179,7 +174,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         return null;
     }
 
-
     public static boolean matches(String arg) {
         // If passed null, of course it doesn't match!
         if (arg == null) {
@@ -214,7 +208,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         return playerNames.containsKey(CoreUtilities.toLowerCase(name));
     }
 
-
     /////////////////////
     //   CONSTRUCTORS
     /////////////////
@@ -233,7 +226,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             throw new IllegalStateException("NPCs are not allowed as PlayerTag objects!");
         }
     }
-
 
     /////////////////////
     //   INSTANCE FIELDS/METHODS
@@ -596,7 +588,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         return NMSHandler.getPlayerHelper().hasChunkLoaded(getPlayerEntity(), chunk);
     }
 
-
     /////////////////////
     //   ObjectTag Methods
     /////////////////
@@ -802,7 +793,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
                     : searchFlags;
         });
 
-
         registerTag("current_step", (attribute, object) -> {
             Deprecations.playerStepTag.warn(attribute.context);
             String outcome = "null";
@@ -817,7 +807,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             }
             return new ElementTag(outcome);
         });
-
 
         /////////////////////
         //   ECONOMY ATTRIBUTES
@@ -878,7 +867,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             return new ElementTag(Depends.economy.getBalance(object.getOfflinePlayer()));
 
         });
-
 
         /////////////////////
         //   ENTITY LIST ATTRIBUTES
@@ -1005,7 +993,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             return null;
         });
 
-
         /////////////////////
         //   IDENTIFICATION ATTRIBUTES
         /////////////////
@@ -1031,7 +1018,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         registerTag("save_name", (attribute, object) -> {
             return new ElementTag(object.getSaveName());
         });
-
 
         /////////////////////
         //   LOCATION ATTRIBUTES
@@ -1069,7 +1055,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         registerTag("world", (attribute, object) -> {
             return new WorldTag(object.getWorld());
         });
-
 
         /////////////////////
         //   STATE ATTRIBUTES
@@ -1587,7 +1572,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             return object.getEnderChest();
         });
 
-
         /////////////////////
         //   ONLINE ATTRIBUTES
         /////////////////
@@ -1903,7 +1887,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             return null;
         });
 
-
         /////////////////////
         //   CITIZENS ATTRIBUTES
         /////////////////
@@ -1922,7 +1905,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             return null;
         });
 
-
         /////////////////////
         //   CONVERSION ATTRIBUTES
         /////////////////
@@ -1937,7 +1919,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         registerOnlineOnlyTag("entity", (attribute, object) -> {
             return new EntityTag(object.getPlayerEntity());
         });
-
 
         /////////////////////
         //   IDENTIFICATION ATTRIBUTES
@@ -2019,7 +2000,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             }
             return new ElementTag(chunk.isLoadedSafe() && object.hasChunkLoaded(chunk.getChunkForTag(attribute)));
         });
-
 
         /////////////////////
         //   STATE ATTRIBUTES
@@ -3555,7 +3535,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
                 String[] split = mechanism.getValue().asString().split("[\\|" + ListTag.internal_escape + "]", 2);
                 if (LocationTag.matches(split[0]) && split.length > 1) {
                     ListTag lines = ListTag.valueOf(split[1]);
-                    getPlayerEntity().sendSignChange(LocationTag.valueOf(split[0]), lines.toArray(4));
+                    getPlayerEntity().sendSignChange(LocationTag.valueOf(split[0]), lines.toArray(new String[4]));
                 }
                 else {
                     Debug.echoError("Must specify a valid location and at least one sign line!");
@@ -3682,8 +3662,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @name skin
         // @input ElementTag
         // @description
-        // Changes the skin of the player to the skin of the given
-        // player name.
+        // Changes the skin of the player to the skin of the given player name.
         // -->
         if (mechanism.matches("skin")) {
             String name = mechanism.getValue().asString();

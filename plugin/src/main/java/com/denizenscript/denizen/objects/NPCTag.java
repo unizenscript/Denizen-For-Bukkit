@@ -79,7 +79,6 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         return mirrorCitizensNPC(CitizensAPI.getNPCRegistry().getNPC(entity));
     }
 
-
     public static NPCTag valueOf(String string) {
         return valueOf(string, null);
     }
@@ -106,7 +105,6 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
 
         return null;
     }
-
 
     public static boolean matches(String string) {
 
@@ -193,7 +191,6 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
             return null;
         }
     }
-
 
     @Override
     public EntityTag getDenizenEntity() {
@@ -574,7 +571,6 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
             return new ElementTag(trait.hasTrigger(attribute.getContext(1)));
         });
 
-
         // <--[tag]
         // @attribute <NPCTag.has_anchors>
         // @returns ElementTag(Boolean)
@@ -584,7 +580,6 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         registerTag("has_anchors", (attribute, object) -> {
             return (new ElementTag(object.getCitizen().getTrait(Anchors.class).getAnchors().size() > 0));
         });
-
 
         // <--[tag]
         // @attribute <NPCTag.list_anchors>
@@ -849,7 +844,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // @returns ElementTag
         // @mechanism NPCTag.skin
         // @description
-        // Returns whether the NPC has a custom skinskin.
+        // Returns whether the NPC has a custom skin.
         // -->
         registerTag("has_skin", (attribute, object) -> {
             return new ElementTag(object.getCitizen().data().has(NPC.PLAYER_SKIN_UUID_METADATA));
