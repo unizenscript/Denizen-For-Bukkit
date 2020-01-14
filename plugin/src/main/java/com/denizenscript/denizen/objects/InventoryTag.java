@@ -1492,7 +1492,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
             if (!attribute.hasContext(1)) {
                 return null;
             }
-            List<ItemTag> items = ListTag.valueOf(attribute.getContext(1)).filter(ItemTag.class, attribute.context, !attribute.hasAlternative());
+            List<ItemTag> items = ListTag.valueOf(attribute.getContext(1), attribute.context).filter(ItemTag.class, attribute.context, !attribute.hasAlternative());
             if (items == null || items.isEmpty()) {
                 return null;
             }
@@ -1562,7 +1562,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
             if (!attribute.hasContext(1) || !ItemTag.matches(attribute.getContext(1))) {
                 return null;
             }
-            List<ItemTag> items = ListTag.getListFor(attribute.getContextObject(1)).filter(ItemTag.class, attribute.context);
+            List<ItemTag> items = ListTag.getListFor(attribute.getContextObject(1), attribute.context).filter(ItemTag.class, attribute.context);
             if (items.isEmpty()) {
                 return null;
             }
@@ -1740,7 +1740,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
                 if (search_string.length() == 0) {
                     return null;
                 }
-                ListTag lore = ListTag.valueOf(search_string);
+                ListTag lore = ListTag.valueOf(search_string, attribute.context);
                 int qty = 1;
 
                 // <--[tag]
@@ -1934,7 +1934,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
             if (!attribute.hasContext(1)) {
                 return null;
             }
-            ListTag list = ListTag.valueOf(attribute.getContext(1));
+            ListTag list = ListTag.valueOf(attribute.getContext(1), attribute.context);
             if (list.isEmpty()) {
                 return null;
             }
@@ -1975,7 +1975,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
             if (!attribute.hasContext(1)) {
                 return null;
             }
-            ListTag list = ListTag.valueOf(attribute.getContext(1));
+            ListTag list = ListTag.valueOf(attribute.getContext(1), attribute.context);
             if (list.isEmpty()) {
                 return null;
             }
@@ -2227,7 +2227,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
             if (!attribute.hasContext(1)) {
                 return null;
             }
-            ListTag slots = ListTag.getListFor(attribute.getContextObject(1));
+            ListTag slots = ListTag.getListFor(attribute.getContextObject(1), attribute.context);
             if (slots.size() == 0) {
                 if (!attribute.hasAlternative()) {
                     Debug.echoError("Cannot get a list of zero slots.");

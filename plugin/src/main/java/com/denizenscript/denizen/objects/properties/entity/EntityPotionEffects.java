@@ -141,7 +141,7 @@ public class EntityPotionEffects implements Property {
         // <EntityTag.list_effects>
         // -->
         if (mechanism.matches("potion_effects")) {
-            ListTag effects = ListTag.valueOf(mechanism.getValue().asString());
+            ListTag effects = ListTag.valueOf(mechanism.getValue().asString(), mechanism.context);
             for (String effectStr : effects) {
                 PotionEffect effect = ItemPotion.parseEffect(effectStr);
                 if (entity.isLivingEntity()) {

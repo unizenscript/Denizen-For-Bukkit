@@ -8,7 +8,6 @@ import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.abstracts.Sidebar;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.tags.BukkitTagContext;
-import com.denizenscript.denizencore.DenizenCore;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -182,7 +181,7 @@ public class SidebarCommand extends AbstractCommand {
         ElementTag elPlayers = scriptEntry.getElement("players");
         ElementTag elPerPlayer = scriptEntry.getElement("per_player");
 
-        ListTag players = ListTag.valueOf(TagManager.tag(elPlayers.asString(), new BukkitTagContext(scriptEntry, false)));
+        ListTag players = ListTag.valueOf(TagManager.tag(elPlayers.asString(), scriptEntry.getContext()), scriptEntry.getContext());
         boolean per_player = elPerPlayer.asBoolean();
 
         String perTitle = null;
@@ -224,15 +223,15 @@ public class SidebarCommand extends AbstractCommand {
                     players.debug();
         }
         else {
-            BukkitTagContext context = (BukkitTagContext) DenizenCore.getImplementation().getTagContextFor(scriptEntry, false);
+            BukkitTagContext context = (BukkitTagContext) scriptEntry.getContext();
             if (elTitle != null) {
                 title = new ElementTag(TagManager.tag(elTitle.asString(), context));
             }
             if (elLines != null) {
-                lines = ListTag.valueOf(TagManager.tag(elLines.asString(), context));
+                lines = ListTag.valueOf(TagManager.tag(elLines.asString(), context), context);
             }
             if (elValue != null) {
-                value = ListTag.valueOf(TagManager.tag(elValue.asString(), context));
+                value = ListTag.getListFor(TagManager.tagObject(elValue.asString(), context), context);
             }
             if (elIncrement != null) {
                 increment = new ElementTag(TagManager.tag(elIncrement.asString(), context));
@@ -269,9 +268,9 @@ public class SidebarCommand extends AbstractCommand {
                     if (per_player) {
                         TagContext context = new BukkitTagContext(player, Utilities.getEntryNPC(scriptEntry),
                                 false, scriptEntry, scriptEntry.shouldDebug(), scriptEntry.getScript());
-                        value = ListTag.valueOf(TagManager.tag(perValue, context));
+                        value = ListTag.valueOf(TagManager.tag(perValue, context), context);
                         if (perLines != null) {
-                            lines = ListTag.valueOf(TagManager.tag(perLines, context));
+                            lines = ListTag.valueOf(TagManager.tag(perLines, context), context);
                         }
                     }
                     if (lines != null) {
@@ -310,10 +309,10 @@ public class SidebarCommand extends AbstractCommand {
                         TagContext context = new BukkitTagContext(player, Utilities.getEntryNPC(scriptEntry),
                                 false, scriptEntry, scriptEntry.shouldDebug(), scriptEntry.getScript());
                         if (perValue != null) {
-                            value = ListTag.valueOf(TagManager.tag(perValue, context));
+                            value = ListTag.getListFor(TagManager.tagObject(perValue, context), context);
                         }
                         if (perLines != null) {
-                            lines = ListTag.valueOf(TagManager.tag(perLines, context));
+                            lines = ListTag.valueOf(TagManager.tag(perLines, context), context);
                         }
                     }
                     if (lines != null) {
@@ -381,10 +380,10 @@ public class SidebarCommand extends AbstractCommand {
                         TagContext context = new BukkitTagContext(player, Utilities.getEntryNPC(scriptEntry),
                                 false, scriptEntry, scriptEntry.shouldDebug(), scriptEntry.getScript());
                         if (perValue != null) {
-                            value = ListTag.valueOf(TagManager.tag(perValue, context));
+                            value = ListTag.getListFor(TagManager.tagObject(perValue, context), context);
                         }
                         if (perLines != null) {
-                            lines = ListTag.valueOf(TagManager.tag(perLines, context));
+                            lines = ListTag.valueOf(TagManager.tag(perLines, context), context);
                         }
                         if (perStart != null) {
                             start = new ElementTag(TagManager.tag(perStart, context));
