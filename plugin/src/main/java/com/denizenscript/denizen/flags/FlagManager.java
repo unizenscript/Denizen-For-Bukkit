@@ -202,6 +202,13 @@ public class FlagManager {
         }
 
         /**
+         * Gets whether this flag is a list of values (even if only one) or a single first value.
+         */
+        public boolean isList() {
+            return value.values != null;
+        }
+
+        /**
          * Gets a specific value stored in a flag when given an index.
          */
         public Value get(int index) {

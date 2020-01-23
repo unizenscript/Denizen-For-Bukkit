@@ -448,7 +448,7 @@ public class ServerTagBase {
                     event.setReplacedObject(flag.expiration().getObjectAttribute(attribute.fulfill(1)));
                     return;
                 }
-                if (flag.size() > 1) {
+                if (flag.isList()) {
                     event.setReplacedObject(new ListTag(flag.toString(), true, flag.values())
                             .getObjectAttribute(attribute));
                 }
