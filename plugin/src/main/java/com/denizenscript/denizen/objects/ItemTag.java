@@ -166,7 +166,7 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
                 stack = new ItemTag(Integer.valueOf(string));
             }
             else {
-                MaterialTag mat = MaterialTag.valueOf(string.toUpperCase());
+                MaterialTag mat = MaterialTag.valueOf(string.toUpperCase(), context);
                 stack = new ItemTag(mat.getMaterial());
                 if (mat.hasData() && NMSHandler.getVersion().isAtMost(NMSVersion.v1_12)) {
                     stack.setDurability(mat.getData());
