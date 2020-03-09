@@ -676,8 +676,10 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
                     attribute.fulfill(1);
                     return flag.expiration();
                 }
-
-                return new ListTag(flag.toString(), true, flag.values());
+                if (flag.isList()) {
+                    return new ListTag(flag.toString(), true, flag.values());
+                }
+                return ObjectFetcher.pickObjectFor(flag.getFirst().asString());
             }
             return null;
         });

@@ -448,9 +448,14 @@ public class ServerTagBase {
                     event.setReplacedObject(flag.expiration().getObjectAttribute(attribute.fulfill(1)));
                     return;
                 }
-
-                event.setReplacedObject(new ListTag(flag.toString(), true, flag.values())
-                        .getObjectAttribute(attribute));
+                if (flag.isList()) {
+                    event.setReplacedObject(new ListTag(flag.toString(), true, flag.values())
+                            .getObjectAttribute(attribute));
+                }
+                else {
+                    event.setReplacedObject(ObjectFetcher.pickObjectFor(flag.getFirst().asString())
+                            .getObjectAttribute(attribute));
+                }
             }
             return;
         }

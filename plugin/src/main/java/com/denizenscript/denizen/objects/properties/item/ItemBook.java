@@ -176,7 +176,7 @@ public class ItemBook implements Property {
     @Override
     public String getPropertyString() {
         String output = getOutputString();
-        if (output.equals("raw_pages")) {
+        if (output != null && output.equals("raw_pages")) {
             return null;
         }
         return output;
@@ -190,13 +190,13 @@ public class ItemBook implements Property {
             output.append("author|").append(EscapeTagBase.escape(bookInfo.getAuthor()))
                     .append("|title|").append(EscapeTagBase.escape(bookInfo.getTitle())).append("|");
         }
-        output.append("pages|");
         if (bookInfo.hasPages()) {
+            output.append("pages|");
             for (BaseComponent[] page : bookInfo.spigot().getPages()) {
                 output.append(EscapeTagBase.escape(FormattedTextHelper.stringify(page))).append("|");
             }
         }
-        return output.substring(0, output.length() - 1);
+        return output.length() > 0 ? output.substring(0, output.length() - 1) : null;
     }
 
     @Override

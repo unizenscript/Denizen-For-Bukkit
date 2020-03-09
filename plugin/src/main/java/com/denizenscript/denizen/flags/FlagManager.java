@@ -1,16 +1,17 @@
 package com.denizenscript.denizen.flags;
 
+import com.denizenscript.denizen.Denizen;
+import com.denizenscript.denizen.events.core.FlagSmartEvent;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.NPCTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.depends.Depends;
-import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
-import com.denizenscript.denizen.Denizen;
-import com.denizenscript.denizen.events.core.FlagSmartEvent;
 import com.denizenscript.denizencore.DenizenCore;
 import com.denizenscript.denizencore.events.OldEventManager;
+import com.denizenscript.denizencore.objects.ArgumentHelper;
+import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
@@ -202,6 +203,13 @@ public class FlagManager {
         }
 
         /**
+         * Gets whether this flag is a list of values (even if only one) or a single first value.
+         */
+        public boolean isList() {
+            return value.values != null;
+        }
+
+        /**
          * Gets a specific value stored in a flag when given an index.
          */
         public Value get(int index) {
@@ -302,7 +310,7 @@ public class FlagManager {
                 value.size = 1;
                 value.firstValue = (String) obj;
             }
-            else if (size() == 0) {
+            else if (value.size == 0) {
                 value.firstValue = (String) obj;
                 value.size = 1;
             }
@@ -336,7 +344,7 @@ public class FlagManager {
             valid = true;
             save();
             rebuild();
-            return size();
+            return value.size;
         }
 
         /**
@@ -357,7 +365,7 @@ public class FlagManager {
                 save();
                 rebuild();
             }
-            return size();
+            return value.size;
         }
 
         public int splitNew(Object obj) {
@@ -379,7 +387,7 @@ public class FlagManager {
             else {
                 clear();
             }
-            return size();
+            return value.size;
         }
 
         /**
