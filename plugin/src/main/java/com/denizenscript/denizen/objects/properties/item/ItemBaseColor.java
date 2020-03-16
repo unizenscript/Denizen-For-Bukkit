@@ -42,7 +42,6 @@ public class ItemBaseColor implements Property {
             "base_color"
     };
 
-
     private ItemBaseColor(ItemTag item) {
         this.item = item;
     }
@@ -102,7 +101,6 @@ public class ItemBaseColor implements Property {
         return null;
     }
 
-
     @Override
     public String getPropertyString() {
         DyeColor baseColor = getBaseColor();
@@ -131,7 +129,6 @@ public class ItemBaseColor implements Property {
         // @tags
         // <ItemTag.base_color>
         // -->
-
         if (mechanism.matches("base_color")) {
             setBaseColor(DyeColor.valueOf(mechanism.getValue().asString().toUpperCase()));
         }

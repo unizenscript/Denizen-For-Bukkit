@@ -19,6 +19,7 @@ import org.bukkit.craftbukkit.v1_13_R2.CraftServer;
 import org.bukkit.craftbukkit.v1_13_R2.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_13_R2.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.potion.PotionEffect;
@@ -27,8 +28,25 @@ import org.bukkit.potion.PotionEffectType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.stream.Stream;
 
 public class ItemHelperImpl extends ItemHelper {
+
+    public static IRecipe getNMSRecipe(NamespacedKey key) {
+        MinecraftKey nmsKey = CraftNamespacedKey.toMinecraft(key);
+        Object2ObjectLinkedOpenHashMap<MinecraftKey, IRecipe> recipeMap = ((CraftServer) Bukkit.getServer()).getServer().getCraftingManager().recipes;
+        IRecipe recipe = recipeMap.get(nmsKey);
+        return recipe;
+    }
+
+    @Override
+    public Recipe getRecipeById(NamespacedKey key) {
+        IRecipe recipe = getNMSRecipe(key);
+        if (recipe == null) {
+            return null;
+        }
+        return recipe.toBukkitRecipe();
+    }
 
     @Override
     public void removeRecipe(NamespacedKey key) {
@@ -60,7 +78,7 @@ public class ItemHelperImpl extends ItemHelper {
     @Override
     public void registerFurnaceRecipe(String keyName, String group, ItemStack result, ItemStack ingredient, float exp, int time, String type, boolean exact) {
         MinecraftKey key = new MinecraftKey("denizen", keyName);
-        RecipeItemStack itemRecipe = new RecipeItemStack(Arrays.asList(new RecipeItemStack.StackProvider(CraftItemStack.asNMSCopy(ingredient))).stream());
+        RecipeItemStack itemRecipe = new RecipeItemStack(Stream.of(new RecipeItemStack.StackProvider(CraftItemStack.asNMSCopy(ingredient))));
         itemRecipe.exact = exact;
         FurnaceRecipe recipe = new FurnaceRecipe(key, group, itemRecipe, CraftItemStack.asNMSCopy(result), exp, time);
         ((CraftServer) Bukkit.getServer()).getServer().getCraftingManager().a(recipe);
@@ -71,7 +89,7 @@ public class ItemHelperImpl extends ItemHelper {
         MinecraftKey key = new MinecraftKey("denizen", keyName);
         ArrayList<RecipeItemStack> ingredientList = new ArrayList<>();
         for (int i = 0; i < ingredients.length; i++) {
-            RecipeItemStack itemRecipe = new RecipeItemStack(Arrays.asList(new RecipeItemStack.StackProvider(CraftItemStack.asNMSCopy(ingredients[i]))).stream());
+            RecipeItemStack itemRecipe = new RecipeItemStack(Stream.of(new RecipeItemStack.StackProvider(CraftItemStack.asNMSCopy(ingredients[i]))));
             itemRecipe.exact = exact[i];
             ingredientList.add(itemRecipe);
         }

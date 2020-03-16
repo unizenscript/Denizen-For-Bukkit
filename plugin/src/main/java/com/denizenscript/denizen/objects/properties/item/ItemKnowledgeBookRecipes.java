@@ -38,7 +38,6 @@ public class ItemKnowledgeBookRecipes implements Property {
             "knowledge_book_recipes"
     };
 
-
     private ItemKnowledgeBookRecipes(ItemTag _item) {
         item = _item;
     }
@@ -79,7 +78,6 @@ public class ItemKnowledgeBookRecipes implements Property {
         return null;
     }
 
-
     @Override
     public String getPropertyString() {
         ListTag recipes = recipeList();
@@ -108,7 +106,6 @@ public class ItemKnowledgeBookRecipes implements Property {
         // @tags
         // <ItemTag.knowledge_book_recipes>
         // -->
-
         if (mechanism.matches("knowledge_book_recipes")) {
             KnowledgeBookMeta meta = (KnowledgeBookMeta) item.getItemStack().getItemMeta();
             List<NamespacedKey> recipes = new ArrayList<>();

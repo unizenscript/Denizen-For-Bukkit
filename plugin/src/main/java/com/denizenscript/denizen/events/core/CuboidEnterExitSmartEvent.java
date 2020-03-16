@@ -20,17 +20,14 @@ import org.bukkit.event.player.*;
 import org.bukkit.event.vehicle.VehicleMoveEvent;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class CuboidEnterExitSmartEvent implements OldSmartEvent, Listener {
 
-
     ///////////////////
     // SMARTEVENT METHODS
     ///////////////
-
 
     ArrayList<String> cuboids_to_watch = new ArrayList<>();
 
@@ -72,7 +69,6 @@ public class CuboidEnterExitSmartEvent implements OldSmartEvent, Listener {
 
     }
 
-
     @Override
     public void _initialize() {
         DenizenAPI.getCurrentInstance().getServer().getPluginManager()
@@ -80,12 +76,14 @@ public class CuboidEnterExitSmartEvent implements OldSmartEvent, Listener {
         Debug.log("Loaded Cuboid Enter & Exit SmartEvent.");
     }
 
-
     @Override
     public void breakDown() {
         PlayerMoveEvent.getHandlerList().unregister(this);
         PlayerTeleportEvent.getHandlerList().unregister(this);
         PlayerChangedWorldEvent.getHandlerList().unregister(this);
+        PlayerQuitEvent.getHandlerList().unregister(this);
+        PlayerJoinEvent.getHandlerList().unregister(this);
+        VehicleMoveEvent.getHandlerList().unregister(this);
     }
 
     //////////////
@@ -93,7 +91,7 @@ public class CuboidEnterExitSmartEvent implements OldSmartEvent, Listener {
     ///////////
 
     private boolean broad_detection = false;
-    private Map<String, List<CuboidTag>> player_cuboids = new ConcurrentHashMap<>();
+    private Map<String, List<CuboidTag>> player_cuboids = new HashMap<>();
 
     // <--[event]
     // @Events
@@ -149,6 +147,7 @@ public class CuboidEnterExitSmartEvent implements OldSmartEvent, Listener {
         internalRun(pme, "join");
     }
 
+    @EventHandler
     public void onWorldChange(PlayerChangedWorldEvent event) {
         if (EntityTag.isNPC(event.getPlayer())) {
             return;
@@ -207,14 +206,14 @@ public class CuboidEnterExitSmartEvent implements OldSmartEvent, Listener {
             if (broad_detection) {
                 ListTag cuboid_context = new ListTag();
                 for (CuboidTag cuboid : exits) {
-                    cuboid_context.add(cuboid.identify());
+                    cuboid_context.addObject(cuboid);
                 }
                 if (Fire(event, cuboid_context, "player exits notable cuboid", cause)) {
                     return;
                 }
             }
             for (CuboidTag cuboid : exits) {
-                if (Fire(event, new ListTag(cuboid.identify()), "player exits " + cuboid.identifySimple(), cause)) {
+                if (Fire(event, new ListTag(cuboid), "player exits " + cuboid.identifySimple(), cause)) {
                     return;
                 }
             }
@@ -224,14 +223,14 @@ public class CuboidEnterExitSmartEvent implements OldSmartEvent, Listener {
             if (broad_detection) {
                 ListTag cuboid_context = new ListTag();
                 for (CuboidTag cuboid : enters) {
-                    cuboid_context.add(cuboid.identify());
+                    cuboid_context.addObject(cuboid);
                 }
                 if (Fire(event, cuboid_context, "player enters notable cuboid", cause)) {
                     return;
                 }
             }
             for (CuboidTag cuboid : enters) {
-                if (Fire(event, new ListTag(cuboid.identify()), "player enters " + cuboid.identifySimple(), cause)) {
+                if (Fire(event, new ListTag(cuboid), "player enters " + cuboid.identifySimple(), cause)) {
                     return;
                 }
             }

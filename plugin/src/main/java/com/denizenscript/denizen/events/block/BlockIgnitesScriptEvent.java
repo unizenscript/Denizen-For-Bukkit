@@ -15,22 +15,20 @@ public class BlockIgnitesScriptEvent extends BukkitScriptEvent implements Listen
     // <--[event]
     // @Events
     // block ignites
-    // <material> ignites
     //
     // @Regex ^on [^\s]+ ignites$
     //
     // @Group Block
     //
-    // @Switch in <area>
-    // @Switch cause <cause>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Switch cause:<cause> to only process the event when it came from a specified cause.
     //
     // @Cancellable true
     //
     // @Triggers when a block is set on fire.
     //
     // @Context
-    // <context.location> returns the LocationTag of the block was set on fire at.
-    // <context.material> returns the MaterialTag of the block that was set on fire.
+    // <context.location> returns the LocationTag of the block that was set on fire.
     // <context.entity> returns the EntityTag of the entity that ignited the block.
     // <context.origin_location> returns the LocationTag of the fire block that ignited this block.
     // <context.cause> returns an ElementTag of the cause of the event: ENDER_CRYSTAL, EXPLOSION, FIREBALL, FLINT_AND_STEEL, LAVA, or SPREAD.
@@ -60,8 +58,7 @@ public class BlockIgnitesScriptEvent extends BukkitScriptEvent implements Listen
         if (!runGenericSwitchCheck(path, "cause", cause.asString())) {
             return false;
         }
-        String mat = path.eventArgLowerAt(0);
-        return tryMaterial(material, mat);
+        return super.matches(path);
     }
 
     @Override
@@ -75,7 +72,7 @@ public class BlockIgnitesScriptEvent extends BukkitScriptEvent implements Listen
             return location;
         }
         else if (name.equals("material")) {
-            return material;
+            return new MaterialTag(event.getBlock());
         }
         else if (name.equals("entity") && event.getIgnitingEntity() != null) {
             return new EntityTag(event.getIgnitingEntity());
@@ -92,7 +89,6 @@ public class BlockIgnitesScriptEvent extends BukkitScriptEvent implements Listen
     @EventHandler
     public void onBlockIgnites(BlockIgniteEvent event) {
         location = new LocationTag(event.getBlock().getLocation());
-        material = new MaterialTag(event.getBlock());
         cause = new ElementTag(event.getCause().name());
         this.event = event;
         fire(event);

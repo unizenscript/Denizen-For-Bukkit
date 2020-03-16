@@ -39,15 +39,15 @@ public class ScribeCommand extends AbstractCommand {
     //
     // @Usage
     // Gives the book "Cosmos Book" to the player
-    // - scribe "Cosmos_Book" give
+    // - scribe Cosmos_Book give
     //
     // @Usage
     // Drops the "Cosmos Book" at the players location
-    // - scribe "Cosmos_Book" drop <player.location>
+    // - scribe Cosmos_Book drop <player.location>
     //
     // @Usage
     // Puts the "Cosmos Book" in the players hand
-    // - scribe "Cosmos_Book" equip
+    // - scribe Cosmos_Book equip
     // -->
 
     private enum BookAction {GIVE, DROP, EQUIP, NONE}
@@ -140,7 +140,7 @@ public class ScribeCommand extends AbstractCommand {
     }
 
     private void equipBook(Player player, ItemStack book) {
-        ItemStack currItem = player.getItemInHand();
+        ItemStack currItem = player.getEquipment().getItemInMainHand();
         Inventory inv = player.getInventory();
         int emptySpot = inv.firstEmpty();
 

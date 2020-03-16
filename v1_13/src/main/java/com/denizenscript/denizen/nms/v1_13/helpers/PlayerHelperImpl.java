@@ -10,6 +10,7 @@ import com.denizenscript.denizencore.utilities.debugging.Debug;
 import net.minecraft.server.v1_13_R2.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
+import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.craftbukkit.v1_13_R2.CraftServer;
 import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
@@ -17,6 +18,7 @@ import org.bukkit.craftbukkit.v1_13_R2.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
 import java.lang.reflect.Field;
+import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
@@ -59,16 +61,6 @@ public class PlayerHelperImpl extends PlayerHelper {
         catch (IllegalAccessException e) {
             Debug.echoError(e);
         }
-    }
-
-    @Override
-    public float getAbsorption(Player player) {
-        return ((CraftPlayer) player).getHandle().getDataWatcher().get(DataWatcherRegistry.c.a(11));
-    }
-
-    @Override
-    public void setAbsorption(Player player, float value) {
-        ((CraftPlayer) player).getHandle().getDataWatcher().set(DataWatcherRegistry.c.a(11), value);
     }
 
     @Override
@@ -147,5 +139,30 @@ public class PlayerHelperImpl extends PlayerHelper {
     @Override
     public ImprovedOfflinePlayer getOfflineData(OfflinePlayer offlinePlayer) {
         return new ImprovedOfflinePlayerImpl(offlinePlayer.getUniqueId());
+    }
+
+    @Override
+    public void resendRecipeDetails(Player player) {
+        Collection<IRecipe> recipes = ((CraftServer) Bukkit.getServer()).getServer().getCraftingManager().b();
+        PacketPlayOutRecipeUpdate updatePacket = new PacketPlayOutRecipeUpdate(recipes);
+        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(updatePacket);
+    }
+
+    @Override
+    public void resendDiscoveredRecipes(Player player) {
+        RecipeBookServer recipeBook = ((CraftPlayer) player).getHandle().B();
+        recipeBook.a(((CraftPlayer) player).getHandle());
+    }
+
+    @Override
+    public void quietlyAddRecipe(Player player, NamespacedKey key) {
+        RecipeBookServer recipeBook = ((CraftPlayer) player).getHandle().B();
+        IRecipe recipe = ItemHelperImpl.getNMSRecipe(key);
+        if (recipe == null) {
+            Debug.echoError("Cannot add recipe '" + key + "': it does not exist.");
+            return;
+        }
+        recipeBook.a(recipe);
+        recipeBook.f(recipe);
     }
 }

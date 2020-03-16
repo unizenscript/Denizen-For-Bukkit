@@ -31,20 +31,11 @@ public class EntityCritical implements Property {
             "critical"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityCritical(EntityTag entity) {
         this.entity = entity;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -55,10 +46,6 @@ public class EntityCritical implements Property {
     public String getPropertyId() {
         return "critical";
     }
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -89,13 +76,12 @@ public class EntityCritical implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name critical
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Changes whether an arrow/trident is a critical arrow/trident.
         // @tags
         // <EntityTag.critical>
         // -->
-
         if (mechanism.matches("critical") && mechanism.requireBoolean()) {
             NMSHandler.getArrowHelper().setCritical(entity.getBukkitEntity(), mechanism.getValue().asBoolean());
         }

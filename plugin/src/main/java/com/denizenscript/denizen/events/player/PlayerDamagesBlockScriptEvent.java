@@ -1,12 +1,11 @@
 package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.*;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -20,7 +19,9 @@ public class PlayerDamagesBlockScriptEvent extends BukkitScriptEvent implements 
     // player damages <material>
     //
     // @Regex ^on player damages [^\s]+$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Switch with:<item> to only process the event when the player is hitting the block with a specified item.
     //
     // @Cancellable true
     //
@@ -33,6 +34,8 @@ public class PlayerDamagesBlockScriptEvent extends BukkitScriptEvent implements 
     // @Determine
     // "INSTABREAK" to make the block get broken instantly.
     //
+    // @Player Always.
+    //
     // -->
 
     public PlayerDamagesBlockScriptEvent() {
@@ -42,15 +45,18 @@ public class PlayerDamagesBlockScriptEvent extends BukkitScriptEvent implements 
     public static PlayerDamagesBlockScriptEvent instance;
     public LocationTag location;
     public MaterialTag material;
-    public Boolean instabreak;
     public BlockDamageEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        String mat = CoreUtilities.getXthArg(2, lower);
-        return lower.startsWith("player damages")
-                && (mat.equals("block") || MaterialTag.matches(mat));
+    public boolean couldMatch(ScriptPath path) {
+        if (!path.eventLower.startsWith("player damages")) {
+            return false;
+        }
+        String mat = path.eventArgLowerAt(2);
+        if (!mat.equals("block") && !MaterialTag.matches(mat)) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -64,8 +70,11 @@ public class PlayerDamagesBlockScriptEvent extends BukkitScriptEvent implements 
         if (!runInCheck(path, location)) {
             return false;
         }
+        if (!runWithCheck(path, new ItemTag(event.getPlayer().getEquipment().getItemInMainHand()))) {
+            return false;
+        }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -77,7 +86,7 @@ public class PlayerDamagesBlockScriptEvent extends BukkitScriptEvent implements 
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         if (determinationObj instanceof ElementTag) {
             if (CoreUtilities.toLowerCase(determinationObj.toString()).equals("instabreak")) {
-                instabreak = true;
+                event.setInstaBreak(true);
                 return true;
             }
         }
@@ -107,10 +116,8 @@ public class PlayerDamagesBlockScriptEvent extends BukkitScriptEvent implements 
         }
         material = new MaterialTag(event.getBlock());
         location = new LocationTag(event.getBlock().getLocation());
-        instabreak = event.getInstaBreak();
         this.event = event;
         fire(event);
-        event.setInstaBreak(instabreak);
     }
 
 }

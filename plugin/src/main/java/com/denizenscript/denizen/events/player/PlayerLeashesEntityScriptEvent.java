@@ -2,12 +2,10 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerLeashEntityEvent;
@@ -20,7 +18,8 @@ public class PlayerLeashesEntityScriptEvent extends BukkitScriptEvent implements
     // player leashes <entity>
     //
     // @Regex ^on player leashes [^\s]+$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -29,6 +28,8 @@ public class PlayerLeashesEntityScriptEvent extends BukkitScriptEvent implements
     // @Context
     // <context.entity> returns the EntityTag of the leashed entity.
     // <context.holder> returns the EntityTag that is holding the leash.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -42,8 +43,8 @@ public class PlayerLeashesEntityScriptEvent extends BukkitScriptEvent implements
     public PlayerLeashEntityEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.toLowerCase(s).startsWith("player leashes");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player leashes");
     }
 
     @Override
@@ -57,7 +58,7 @@ public class PlayerLeashesEntityScriptEvent extends BukkitScriptEvent implements
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override

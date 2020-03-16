@@ -5,7 +5,7 @@ import com.denizenscript.denizen.scripts.containers.core.InteractScriptHelper;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.Settings;
+import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.npc.traits.TriggerTrait;
 import com.denizenscript.denizen.objects.NPCTag;
@@ -150,7 +150,6 @@ public class ChatTrigger extends AbstractTrigger implements Listener {
         // if enabled. Should the Player chat only when looking at the NPC? This may
         // reduce accidental chats with NPCs.
 
-
         if (Settings.chatMustSeeNPC()) {
             if (!player.hasLineOfSight(npc.getEntity())) {
                 if (HyperDebug) {
@@ -250,7 +249,6 @@ public class ChatTrigger extends AbstractTrigger implements Listener {
             }
         }
 
-
         // Parse the script and match Triggers.. if found, cancel the text! The
         // parser will take care of everything else.
         String id = null;
@@ -262,8 +260,7 @@ public class ChatTrigger extends AbstractTrigger implements Listener {
         String messageLow = CoreUtilities.toLowerCase(message);
 
         // Use TreeMap to sort chat triggers alphabetically
-        TreeMap<String, String> idMap = new TreeMap<>();
-        idMap.putAll(script.getIdMapFor(ChatTrigger.class, denizenPlayer));
+        TreeMap<String, String> idMap = new TreeMap<>(script.getIdMapFor(ChatTrigger.class, denizenPlayer));
 
         if (!idMap.isEmpty()) {
             // Iterate through the different id entries in the step's chat trigger
@@ -378,7 +375,6 @@ public class ChatTrigger extends AbstractTrigger implements Listener {
         return new ChatContext(message, ret);
     }
 
-
     @EventHandler
     public void asyncChatTrigger(final AsyncPlayerChatEvent event) {
         if (HyperDebug) {
@@ -438,12 +434,10 @@ public class ChatTrigger extends AbstractTrigger implements Listener {
             event.setCancelled(true);
         }
 
-
         if (chat.hasChanges()) {
             event.setMessage(chat.getChanges());
         }
     }
-
 
     /**
      * Contains whether the chat trigger successfully 'triggered' and any context that was

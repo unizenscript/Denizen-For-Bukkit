@@ -1,19 +1,16 @@
 package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.*;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.Deprecations;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
-
 
 public class PlayerRightClicksEntityScriptEvent extends BukkitScriptEvent implements Listener {
 
@@ -24,8 +21,8 @@ public class PlayerRightClicksEntityScriptEvent extends BukkitScriptEvent implem
     //
     // @Regex ^on player right clicks [^\s]+$
     //
-    // @Switch in <area>
-    // @Switch with <item>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Switch with:<item> to only process the event when the player is holding a specified item.
     //
     // @Cancellable true
     //
@@ -36,6 +33,8 @@ public class PlayerRightClicksEntityScriptEvent extends BukkitScriptEvent implem
     // <context.item> returns the ItemTag the player is clicking with.
     // <context.click_position> returns a LocationTag of the click position (as a world-less vector, relative to the entity's center). This is only available when clicking armor stands.
     //
+    // @Player Always.
+    //
     // -->
 
     public static PlayerRightClicksEntityScriptEvent instance;
@@ -44,9 +43,8 @@ public class PlayerRightClicksEntityScriptEvent extends BukkitScriptEvent implem
     ItemTag item;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        return lower.startsWith("player right clicks");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player right clicks");
     }
 
     @Override
@@ -65,14 +63,13 @@ public class PlayerRightClicksEntityScriptEvent extends BukkitScriptEvent implem
         if (path.eventArgLowerAt(isAt ? 5 : 4).equals("with") && !tryItem(item, path.eventArgLowerAt(isAt ? 6 : 5))) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override
     public String getName() {
         return "PlayerRightClicksEntity";
     }
-
 
     @Override
     public ScriptEntryData getScriptEntryData() {
@@ -115,7 +112,7 @@ public class PlayerRightClicksEntityScriptEvent extends BukkitScriptEvent implem
             return;
         }
         entity = new EntityTag(event.getRightClicked());
-        item = new ItemTag(event.getPlayer().getItemInHand());
+        item = new ItemTag(event.getPlayer().getEquipment().getItemInMainHand());
         this.event = event;
         fire(event);
     }

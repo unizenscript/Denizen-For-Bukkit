@@ -2,7 +2,7 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.BiomeTag;
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -23,7 +23,7 @@ public class BiomeEnterExitScriptEvent extends BukkitScriptEvent implements List
     //
     // @Regex ^on player (enters|exits) [^\s]+$
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Warning Cancelling this event will fire a similar event immediately after.
     //
@@ -36,6 +36,8 @@ public class BiomeEnterExitScriptEvent extends BukkitScriptEvent implements List
     // <context.to> returns the block location moved to.
     // <context.old_biome> returns the biome being left.
     // <context.new_biome> returns the biome being entered.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -74,7 +76,7 @@ public class BiomeEnterExitScriptEvent extends BukkitScriptEvent implements List
         if (!biome_test.equals("biome") && !biome_test.equals(CoreUtilities.toLowerCase(biome.getBiome().getName()))) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -84,7 +86,7 @@ public class BiomeEnterExitScriptEvent extends BukkitScriptEvent implements List
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(event != null ? EntityTag.getPlayerFrom(event.getPlayer()) : null, null);
+        return new BukkitScriptEntryData(EntityTag.getPlayerFrom(event.getPlayer()), null);
     }
 
     @Override

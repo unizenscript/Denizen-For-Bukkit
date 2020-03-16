@@ -10,6 +10,7 @@ import com.denizenscript.denizencore.utilities.debugging.Debug;
 import net.minecraft.server.v1_12_R1.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
+import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.craftbukkit.v1_12_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
@@ -59,16 +60,6 @@ public class PlayerHelperImpl extends PlayerHelper {
         catch (IllegalAccessException e) {
             Debug.echoError(e);
         }
-    }
-
-    @Override
-    public float getAbsorption(Player player) {
-        return ((CraftPlayer) player).getHandle().getDataWatcher().get(DataWatcherRegistry.c.a(11));
-    }
-
-    @Override
-    public void setAbsorption(Player player, float value) {
-        ((CraftPlayer) player).getHandle().getDataWatcher().set(DataWatcherRegistry.c.a(11), value);
     }
 
     @Override
@@ -146,5 +137,20 @@ public class PlayerHelperImpl extends PlayerHelper {
     @Override
     public ImprovedOfflinePlayer getOfflineData(OfflinePlayer offlinePlayer) {
         return new ImprovedOfflinePlayerImpl(offlinePlayer.getUniqueId());
+    }
+
+    @Override
+    public void resendRecipeDetails(Player player) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void resendDiscoveredRecipes(Player player) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void quietlyAddRecipe(Player player, NamespacedKey key) {
+        throw new UnsupportedOperationException();
     }
 }

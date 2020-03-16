@@ -32,20 +32,11 @@ public class EntityMaxFuseTicks implements Property {
             "max_fuse_ticks"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityMaxFuseTicks(EntityTag entity) {
         this.entity = entity;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -86,7 +77,7 @@ public class EntityMaxFuseTicks implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name max_fuse_ticks
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Sets the default number of ticks until the creeper explodes when primed (NOT the time remaining if already primed).
         // @tags

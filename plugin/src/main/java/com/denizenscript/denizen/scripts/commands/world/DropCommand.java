@@ -42,10 +42,11 @@ public class DropCommand extends AbstractCommand {
     // @Tags
     // <EntityTag.item>
     // <entry[saveName].dropped_entities> returns a list of entities that were dropped.
+    // <entry[saveName].dropped_entity> returns a single entity that was dropped (if only one).
     //
     // @Usage
     // Use to drop some loot around the player.
-    // - drop gold_nugget <cuboid[cu@<player.location.add[-2,-2,-2]>|<player.location.add[2,2,2]>].spawnable_blocks.random>
+    // - drop gold_nugget <cuboid[<player.location.add[-2,-2,-2]>|<player.location.add[2,2,2]>].spawnable_blocks.random>
     //
     // @Usage
     // Use to reward a player with 500 xp.
@@ -136,7 +137,6 @@ public class DropCommand extends AbstractCommand {
         // Okay!
     }
 
-
     @Override
     public void execute(ScriptEntry scriptEntry) {
 
@@ -148,7 +148,6 @@ public class DropCommand extends AbstractCommand {
         List<ItemTag> items = (List<ItemTag>) scriptEntry.getObject("item");
         EntityTag entity = (EntityTag) scriptEntry.getObject("entity");
         DurationTag delay = (DurationTag) scriptEntry.getObject("delay");
-
 
         // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
@@ -212,6 +211,9 @@ public class DropCommand extends AbstractCommand {
 
         // Add entities to context so that the specific entities dropped can be fetched.
         scriptEntry.addObject("dropped_entities", entityList);
+        if (entityList.size() == 1) {
+            scriptEntry.addObject("dropped_entity", entityList.get(0));
+        }
 
     }
 }

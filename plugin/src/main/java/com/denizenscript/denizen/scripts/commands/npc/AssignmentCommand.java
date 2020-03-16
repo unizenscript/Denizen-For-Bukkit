@@ -19,11 +19,14 @@ public class AssignmentCommand extends AbstractCommand {
     // @Plugin Citizens
     // @Short Changes an NPC's assignment.
     // @Group npc
+    // @Guide https://guide.denizenscript.com/guides/npcs/assignment-scripts.html
     //
     // @Description
     // Changes an NPC's assignment as though you used the '/npc assignment' command.
-    // Uses the script: argument, which accepts an assignment script type. For this command to work an npc must
-    // be attached to the script queue or an npc specified with npc:NPCTag.
+    //
+    // Uses the script: argument, which accepts an assignment-type script.
+    //
+    // For this command to work an npc must be attached to the script queue or an npc specified with npc:NPCTag.
     //
     // @Tags
     // <NPCTag.script>
@@ -31,12 +34,12 @@ public class AssignmentCommand extends AbstractCommand {
     // <server.list_npcs_assigned[<assignment_script>]>
     //
     // @Usage
-    // Use to assign an npc with an assignment script named 'Bob the Builder'.
-    // - assignment set "script:Bob the Builder"
+    // Use to assign an npc with an assignment script named 'Bob_the_Builder'.
+    // - assignment set script:Bob_the_Builder
     //
     // @Usage
-    // Use to give an npc with the id of 3 an assignment.
-    // - assignment set "script:Bob the Builder" npc:n@3
+    // Use to give a different NPC an assignment.
+    // - assignment set script:Bob_the_Builder npc:<[some_npc]>
     //
     // @Usage
     // Use to remove an npc's assignment.

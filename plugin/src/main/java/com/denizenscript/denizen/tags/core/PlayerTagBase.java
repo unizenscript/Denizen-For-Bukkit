@@ -3,7 +3,7 @@ package com.denizenscript.denizen.tags.core;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.Settings;
+import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizencore.tags.TagRunnable;
 import com.denizenscript.denizencore.tags.Attribute;
@@ -17,15 +17,19 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
 
 public class PlayerTagBase implements Listener {
 
     public PlayerTagBase() {
+
+        // <--[tag]
+        // @attribute <player[(<player>)]>
+        // @returns PlayerTag
+        // @description
+        // Returns a player object constructed from the input value.
+        // If no input value is specified, returns the linked player.
+        // -->
         Bukkit.getServer().getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
         TagManager.registerTagHandler(new TagRunnable.RootForm() {
             @Override
@@ -39,7 +43,7 @@ public class PlayerTagBase implements Listener {
     // Player Chat History
     /////////
 
-    public static Map<UUID, List<String>> playerChatHistory = new ConcurrentHashMap<>(8, 0.9f, 2);
+    public static Map<UUID, List<String>> playerChatHistory = new HashMap<>();
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void addMessage(final AsyncPlayerChatEvent event) {
@@ -66,11 +70,9 @@ public class PlayerTagBase implements Listener {
         }
     }
 
-
     //////////
     //  ReplaceableTagEvent handler
     ////////
-
 
     public void playerTags(ReplaceableTagEvent event) {
 
@@ -102,5 +104,4 @@ public class PlayerTagBase implements Listener {
         event.setReplacedObject(CoreUtilities.autoAttrib(p, attribute.fulfill(1)));
     }
 }
-
 

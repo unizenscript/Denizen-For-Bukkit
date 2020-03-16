@@ -33,20 +33,11 @@ public class EntityBeamTarget implements Property {
             "beam_target"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityBeamTarget(EntityTag entity) {
         dentity = entity;
     }
 
     EntityTag dentity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -57,10 +48,6 @@ public class EntityBeamTarget implements Property {
     public String getPropertyId() {
         return "beam_target";
     }
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -100,7 +87,6 @@ public class EntityBeamTarget implements Property {
         // @tags
         // <EntityTag.beam_target>
         // -->
-
         if (mechanism.matches("beam_target")) {
             if (mechanism.hasValue()) {
                 if (mechanism.requireObject(LocationTag.class)) {

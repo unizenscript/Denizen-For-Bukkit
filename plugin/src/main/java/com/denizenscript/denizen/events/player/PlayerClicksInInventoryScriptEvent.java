@@ -1,6 +1,6 @@
 package com.denizenscript.denizen.events.player;
 
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizen.objects.*;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -69,14 +69,12 @@ public class PlayerClicksInInventoryScriptEvent extends BukkitScriptEvent implem
     // <--[event]
     // @Events
     // player clicks in inventory
-    // player (<click type>) clicks (<item>) (in <inventory>) (with <item>)
-    // player (<click type>) clicks (<material>) (in <inventory>) (with <item>)
-    // player (<click type>) clicks (<item>) (in <inventory>) (with <material>)
-    // player (<click type>) clicks (<material>) (in <inventory>) (with <material>)
+    // player (<click type>) clicks (<item>) in <inventory> (with <item>)
     //
     // @Regex ^on player( [^\s]+)? clicks [^\s]+( in [^\s]+)?( with [^\s]+)?$
     //
-    // @Triggers when a player clicks in an inventory.
+    // @Triggers when a player clicks in an inventory. Note that you likely will also want to listen to <@link event player drags in inventory>.
+    //
     // @Context
     // <context.item> returns the ItemTag the player has clicked on.
     // <context.inventory> returns the InventoryTag (the 'top' inventory, regardless of which slot was clicked).
@@ -94,6 +92,8 @@ public class PlayerClicksInInventoryScriptEvent extends BukkitScriptEvent implem
     // "CANCELLED" to stop the player from clicking.
     // ItemTag to set the current item for the event.
     //
+    // @Player Always.
+    //
     // -->
 
     public PlayerClicksInInventoryScriptEvent() {
@@ -104,6 +104,7 @@ public class PlayerClicksInInventoryScriptEvent extends BukkitScriptEvent implem
 
     public InventoryTag inventory;
     public ItemTag item;
+    public ItemTag cursor; // Needed due to internal oddity
     public InventoryClickEvent event;
 
     @Override
@@ -128,7 +129,8 @@ public class PlayerClicksInInventoryScriptEvent extends BukkitScriptEvent implem
         if (hasClickType && !path.eventArgLowerAt(1).equals(CoreUtilities.toLowerCase(event.getClick().name()))) {
             return false;
         }
-        if (!path.eventArgLowerAt(hasClickType ? 3 : 2).equals("in") && !tryItem(item, path.eventArgLowerAt(hasClickType ? 3 : 2))) {
+        String clickedItemText = path.eventArgLowerAt(hasClickType ? 3 : 2);
+        if (!clickedItemText.equals("in") && !tryItem(item, clickedItemText)) {
             return false;
         }
         int inIndex = -1;
@@ -149,7 +151,7 @@ public class PlayerClicksInInventoryScriptEvent extends BukkitScriptEvent implem
         if (withIndex > 0 && (event.getCursor() == null || !tryItem(new ItemTag(event.getCursor()), path.eventArgLowerAt(withIndex + 1)))) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -171,7 +173,7 @@ public class PlayerClicksInInventoryScriptEvent extends BukkitScriptEvent implem
             return item;
         }
         else if (name.equals("cursor_item")) {
-            return new ItemTag(event.getCursor() == null ? new ItemStack(Material.AIR) : event.getCursor());
+            return cursor;
         }
         else if (name.equals("click")) {
             return new ElementTag(event.getClick().name());
@@ -185,7 +187,7 @@ public class PlayerClicksInInventoryScriptEvent extends BukkitScriptEvent implem
         else if (name.equals("is_shift_click")) {
             return new ElementTag(event.isShiftClick());
         }
-        else if (name.equals("clicked_inventory")) {
+        else if (name.equals("clicked_inventory") && event.getClickedInventory() != null) {
             return InventoryTag.mirrorBukkitInventory(event.getClickedInventory());
         }
         else if (name.equals("slot")) {
@@ -203,7 +205,8 @@ public class PlayerClicksInInventoryScriptEvent extends BukkitScriptEvent implem
     @EventHandler
     public void inventoryClickEvent(InventoryClickEvent event) {
         inventory = InventoryTag.mirrorBukkitInventory(event.getInventory());
-        item = event.getCurrentItem() == null ? new ItemTag(Material.AIR) : new ItemTag(event.getCurrentItem());
+        item = event.getCurrentItem() == null ? new ItemTag(Material.AIR) : new ItemTag(event.getCurrentItem().clone());
+        cursor = new ItemTag(event.getCursor() == null ? new ItemStack(Material.AIR) : event.getCursor().clone());
         this.event = event;
         fire(event);
     }

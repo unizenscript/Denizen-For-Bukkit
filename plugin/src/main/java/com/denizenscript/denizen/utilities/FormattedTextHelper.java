@@ -117,12 +117,21 @@ public class FormattedTextHelper {
 
     public static final String RESET = ChatColor.RESET.toString();
 
+    public static TextComponent copyFormatToNewText(TextComponent last) {
+        TextComponent toRet = new TextComponent();
+        toRet.setObfuscated(last.isObfuscatedRaw());
+        toRet.setBold(last.isBoldRaw());
+        toRet.setStrikethrough(last.isStrikethroughRaw());
+        toRet.setUnderlined(last.isUnderlinedRaw());
+        toRet.setItalic(last.isItalicRaw());
+        toRet.setColor(last.getColorRaw());
+        return toRet;
+    }
+
     public static BaseComponent[] parse(String str) {
         char[] chars = str.toCharArray();
         List<BaseComponent> outputList = new ArrayList<>();
         int started = 0;
-        //TextComponent lastText = new TextComponent();
-        //outputList.add(lastText);
         TextComponent nextText = new TextComponent();
         for (int i = 0; i < chars.length; i++) {
             if (chars[i] == ChatColor.COLOR_CHAR && i + 1 < chars.length) {
@@ -141,7 +150,7 @@ public class FormattedTextHelper {
                         nextText.setText(nextText.getText() + str.substring(started, i));
                         outputList.add(nextText);
                         TextComponent lastText = nextText;
-                        nextText = new TextComponent(lastText);
+                        nextText = copyFormatToNewText(lastText);
                         nextText.setText("");
                         if (innardType.equals("score") && innardParts.size() == 2) {
                             ScoreComponent component = new ScoreComponent(unescape(innardBase.get(1)), unescape(innardParts.get(0)), unescape(innardParts.get(1)));
@@ -230,6 +239,28 @@ public class FormattedTextHelper {
                             lastText.addExtra(insertableText);
                             endBracket = endIndex + "&[/insertion".length();
                         }
+                        else if (innardType.equals("reset")) {
+                            char subCode = innardBase.get(1).charAt(0);
+                            if (subCode == 'k' || subCode == 'K') {
+                                nextText.setObfuscated(false);
+                            }
+                            else if (subCode == 'l' || subCode == 'L') {
+                                nextText.setBold(false);
+                            }
+                            else if (subCode == 'm' || subCode == 'M') {
+                                nextText.setStrikethrough(false);
+                            }
+                            else if (subCode == 'n' || subCode == 'N') {
+                                nextText.setUnderlined(false);
+                            }
+                            else if (subCode == 'o' || subCode == 'O') {
+                                nextText.setItalic(false);
+                            }
+                        }
+                        else if (innardType.equals("color")) {
+                            String colorChar = innardBase.get(1);
+                            nextText.setColor(ChatColor.getByChar(colorChar.charAt(0)));
+                        }
                     }
                     i = endBracket;
                     started = endBracket + 1;
@@ -238,11 +269,13 @@ public class FormattedTextHelper {
                 else if ((code >= '0' && code <= '9') || (code >= 'a' && code <= 'f') || (code >= 'A' && code <= 'F')) {
                     nextText.setText(nextText.getText() + str.substring(started, i));
                     outputList.add(nextText);
-                    //lastText = nextText;
                     nextText = new TextComponent();
                     nextText.setColor(ChatColor.getByChar(code));
                 }
                 else if ((code >= 'k' && code <= 'o') || (code >= 'K' && code <= 'O')) {
+                    nextText.setText(nextText.getText() + str.substring(started, i));
+                    outputList.add(nextText);
+                    nextText = copyFormatToNewText(nextText);
                     if (code == 'k' || code == 'K') {
                         nextText.setObfuscated(true);
                     }
@@ -262,7 +295,6 @@ public class FormattedTextHelper {
                 else if (code == 'r' || code == 'R') {
                     nextText.setText(nextText.getText() + str.substring(started, i));
                     outputList.add(nextText);
-                    //lastText = nextText;
                     nextText = new TextComponent();
                 }
                 else {

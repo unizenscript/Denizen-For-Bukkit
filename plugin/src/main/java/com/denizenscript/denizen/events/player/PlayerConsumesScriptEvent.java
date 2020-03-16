@@ -4,13 +4,11 @@ import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ScriptTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
@@ -23,7 +21,8 @@ public class PlayerConsumesScriptEvent extends BukkitScriptEvent implements List
     // player consumes <item>
     //
     // @Regex ^on player consumes [^\s]+$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -34,6 +33,8 @@ public class PlayerConsumesScriptEvent extends BukkitScriptEvent implements List
     //
     // @Determine
     // ItemTag to change the item being consumed.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -47,14 +48,20 @@ public class PlayerConsumesScriptEvent extends BukkitScriptEvent implements List
     public PlayerItemConsumeEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.toLowerCase(s).startsWith("player consumes");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player consumes");
     }
 
     @Override
     public boolean matches(ScriptPath path) {
         String iCheck = path.eventArgLowerAt(2);
-        return tryItem(item, iCheck) && runInCheck(path, event.getPlayer().getLocation());
+        if (!tryItem(item, iCheck)) {
+            return false;
+        }
+        if (!runInCheck(path, event.getPlayer().getLocation())) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override

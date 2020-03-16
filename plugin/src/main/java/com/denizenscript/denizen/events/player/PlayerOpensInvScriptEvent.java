@@ -2,13 +2,10 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.InventoryTag;
-import com.denizenscript.denizen.objects.notable.NotableManager;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryOpenEvent;
@@ -28,6 +25,8 @@ public class PlayerOpensInvScriptEvent extends BukkitScriptEvent implements List
     // @Context
     // <context.inventory> returns the InventoryTag.
     //
+    // @Player Always.
+    //
     // -->
 
     public PlayerOpensInvScriptEvent() {
@@ -40,25 +39,16 @@ public class PlayerOpensInvScriptEvent extends BukkitScriptEvent implements List
     public InventoryOpenEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        return lower.startsWith("player opens");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player opens");
     }
 
     @Override
     public boolean matches(ScriptPath path) {
-        String inv = path.eventArgLowerAt(2);
-        String nname = NotableManager.isSaved(inventory) ?
-                CoreUtilities.toLowerCase(NotableManager.getSavedId(inventory)) :
-                "\0";
-        if (!inv.equals("inventory")
-                && !inv.equals(CoreUtilities.toLowerCase(inventory.getInventoryType().name()))
-                && !inv.equals(CoreUtilities.toLowerCase(inventory.getIdHolder()))
-                && !(inv.equals("notable") && !nname.equals("\0"))
-                && !inv.equals(nname)) {
+        if (!tryInventory(inventory, path.eventArgLowerAt(2))) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override

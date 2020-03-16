@@ -43,7 +43,6 @@ public class ItemBook implements Property {
             "book", "book_raw_pages", "book_pages", "book_author", "book_title"
     };
 
-
     private ItemBook(ItemTag _item) {
         item = _item;
     }
@@ -177,7 +176,7 @@ public class ItemBook implements Property {
     @Override
     public String getPropertyString() {
         String output = getOutputString();
-        if (output.equals("raw_pages")) {
+        if (output != null && output.equals("raw_pages")) {
             return null;
         }
         return output;
@@ -191,13 +190,13 @@ public class ItemBook implements Property {
             output.append("author|").append(EscapeTagBase.escape(bookInfo.getAuthor()))
                     .append("|title|").append(EscapeTagBase.escape(bookInfo.getTitle())).append("|");
         }
-        output.append("pages|");
         if (bookInfo.hasPages()) {
+            output.append("pages|");
             for (BaseComponent[] page : bookInfo.spigot().getPages()) {
                 output.append(EscapeTagBase.escape(FormattedTextHelper.stringify(page))).append("|");
             }
         }
-        return output.substring(0, output.length() - 1);
+        return output.length() > 0 ? output.substring(0, output.length() - 1) : null;
     }
 
     @Override
@@ -228,11 +227,8 @@ public class ItemBook implements Property {
         // Changes the plain-text pages of a book item.
         // See <@link language Property Escaping>
         // @tags
-        // <ItemTag.book.page_count>
-        // <ItemTag.book.page[<#>]>
-        // <ItemTag.book.pages>
+        // <ItemTag.book_pages>
         // -->
-
         if (mechanism.matches("book_pages")) {
             BookMeta meta = (BookMeta) item.getItemStack().getItemMeta();
             ListTag data = mechanism.valueAsType(ListTag.class);
@@ -251,9 +247,8 @@ public class ItemBook implements Property {
         // @description
         // Changes the author of a book item.
         // @tags
-        // <ItemTag.book.author>
+        // <ItemTag.book_author>
         // -->
-
         if (mechanism.matches("book_author")) {
             if (!item.getItemStack().getType().equals(Material.WRITTEN_BOOK)) {
                 Debug.echoError("Only WRITTEN_BOOK (not WRITABLE_BOOK) can have a title or author!");
@@ -272,9 +267,8 @@ public class ItemBook implements Property {
         // @description
         // Changes the title of a book item.
         // @tags
-        // <ItemTag.book.title>
+        // <ItemTag.book_title>
         // -->
-
         if (mechanism.matches("book_title")) {
             if (!item.getItemStack().getType().equals(Material.WRITTEN_BOOK)) {
                 Debug.echoError("Only WRITTEN_BOOK (not WRITABLE_BOOK) can have a title or author!");
@@ -295,14 +289,10 @@ public class ItemBook implements Property {
         // See <@link language Property Escaping>
         // @tags
         // <ItemTag.is_book>
-        // <ItemTag.book.author>
-        // <ItemTag.book.title>
-        // <ItemTag.book.page_count>
-        // <ItemTag.book.page[<#>]>
-        // <ItemTag.book.pages>
-        // <ItemTag.book>
+        // <ItemTag.book_title>
+        // <ItemTag.book_author>
+        // <ItemTag.book_pages>
         // -->
-
         if (mechanism.matches("book")) {
             BookMeta meta = (BookMeta) item.getItemStack().getItemMeta();
             ListTag data = mechanism.valueAsType(ListTag.class);

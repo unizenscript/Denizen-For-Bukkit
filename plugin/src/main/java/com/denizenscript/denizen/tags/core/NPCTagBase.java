@@ -7,7 +7,7 @@ import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.depends.Depends;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.npc.traits.AssignmentTrait;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizencore.events.OldEventManager;
@@ -38,6 +38,14 @@ import java.util.Map;
 public class NPCTagBase implements Listener {
 
     public NPCTagBase() {
+
+        // <--[tag]
+        // @attribute <npc[(<npc>)]>
+        // @returns NPCTag
+        // @description
+        // Returns an npc object constructed from the input value.
+        // If no input value is specified, returns the linked NPC.
+        // -->
         if (Depends.citizens != null) {
             Bukkit.getServer().getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
             TagManager.registerTagHandler(new TagRunnable.RootForm() {
@@ -50,23 +58,14 @@ public class NPCTagBase implements Listener {
     }
 
     public void npcTags(ReplaceableTagEvent event) {
-
         if (!event.matches("npc") || event.replaced()) {
             return;
         }
-
-        // Build a new attribute out of the raw_tag supplied in the script to be fulfilled
         Attribute attribute = event.getAttributes();
-
-        // NPCTags require a... NPCTag!
-        NPCTag n = ((BukkitTagContext) event.getContext()).npc;
-
-        // Player tag may specify a new player in the <player[context]...> portion of the tag.
-        if (attribute.hasContext(1))
-        // Check if this is a valid player and update the PlayerTag object reference.
-        {
+        NPCTag npc = ((BukkitTagContext) event.getContext()).npc;
+        if (attribute.hasContext(1)) {
             if (NPCTag.matches(attribute.getContext(1))) {
-                n = NPCTag.valueOf(attribute.getContext(1), attribute.context);
+                npc = NPCTag.valueOf(attribute.getContext(1), attribute.context);
             }
             else {
                 if (!event.hasAlternative()) {
@@ -75,19 +74,15 @@ public class NPCTagBase implements Listener {
                 return;
             }
         }
-
-
-        if (n == null || !n.isValid()) {
+        if (npc == null || !npc.isValid()) {
             if (!event.hasAlternative()) {
                 Debug.echoError("Invalid or missing NPC for tag <" + event.raw_tag + ">!");
             }
             return;
         }
-
-        event.setReplacedObject(CoreUtilities.autoAttrib(n, attribute.fulfill(1)));
+        event.setReplacedObject(CoreUtilities.autoAttrib(npc, attribute.fulfill(1)));
 
     }
-
 
     ///////
     // Keep track of previous locations and fire navigation actions

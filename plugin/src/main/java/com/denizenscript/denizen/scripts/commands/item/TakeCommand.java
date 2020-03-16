@@ -30,11 +30,26 @@ public class TakeCommand extends AbstractCommand {
     //
     // @Description
     // Takes items from a player or inventory.
+    //
     // If the player or inventory does not have the item being taken, nothing happens.
-    // Specifying a slot will take the items from that specific slot.
-    // Specifying 'nbt' with a key will take items with the specified NBT key, as see by <@link command nbt>.
-    // If an economy is registered, specifying money instead of a item will take money from the player's economy.
+    //
+    // Using 'slot:' will take the items from that specific slot.
+    //
+    // Using 'nbt:' with a key will take items with the specified NBT key, as set by <@link mechanism ItemTag.nbt>.
+    //
+    // Using 'iteminhand' will take from the player's held item slot.
+    //
+    // Using 'scriptname:' will take items with the specified item script name.
+    //
+    // Using 'bydisplay:' will take items with the specified display name.
+    //
+    // Using 'bycover:' will take a written book by the specified book title + author pair.
+    //
+    // If an economy is registered, using 'money' instead of an item will take money from the player's economy balance.
+    //
     // If no quantity is specified, exactly 1 item will be taken.
+    //
+    // Optionally using 'from:' to specify a specific inventory to take from. If not specified, the linked player's inventory will be used.
     //
     // @Tags
     // <PlayerTag.item_in_hand>
@@ -107,7 +122,7 @@ public class TakeCommand extends AbstractCommand {
             else if (!scriptEntry.hasObject("items")
                     && !scriptEntry.hasObject("type")
                     && arg.matchesArgumentList(ItemTag.class)) {
-                scriptEntry.addObject("items", ListTag.valueOf(arg.raw_value.replace("item:", "")).filter(ItemTag.class, scriptEntry));
+                scriptEntry.addObject("items", ListTag.valueOf(arg.raw_value.replace("item:", ""), scriptEntry.getContext()).filter(ItemTag.class, scriptEntry));
             }
             else if (!scriptEntry.hasObject("inventory")
                     && arg.matchesPrefix("f", "from")
@@ -183,7 +198,7 @@ public class TakeCommand extends AbstractCommand {
             }
 
             case ITEMINHAND: {
-                int inHandAmt = Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().getItemInHand().getAmount();
+                int inHandAmt = Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().getEquipment().getItemInMainHand().getAmount();
                 int theAmount = (int) qty.asDouble();
                 ItemStack newHandItem = new ItemStack(Material.AIR);
                 if (theAmount > inHandAmt) {
@@ -198,7 +213,7 @@ public class TakeCommand extends AbstractCommand {
                     }
                     else {
                         // amount is less than what's in hand, need to make a new itemstack of what's left...
-                        newHandItem = Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().getItemInHand().clone();
+                        newHandItem = Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().getEquipment().getItemInMainHand().clone();
                         newHandItem.setAmount(inHandAmt - theAmount);
                         Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().setItemInHand(newHandItem);
                         Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().updateInventory();

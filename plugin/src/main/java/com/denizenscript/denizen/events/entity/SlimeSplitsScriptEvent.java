@@ -17,7 +17,8 @@ public class SlimeSplitsScriptEvent extends BukkitScriptEvent implements Listene
     // slime splits (into <#>)
     //
     // @Regex ^on slime splits( into [^\s]+)?$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -25,10 +26,10 @@ public class SlimeSplitsScriptEvent extends BukkitScriptEvent implements Listene
     //
     // @Context
     // <context.entity> returns the EntityTag of the slime.
-    // <context.count> returns an Element(Number) of the number of smaller slimes it will split into.
+    // <context.count> returns an ElementTag(Number) of the number of smaller slimes it will split into.
     //
     // @Determine
-    // Element(Number) to set the number of smaller slimes it will split into.
+    // ElementTag(Number) to set the number of smaller slimes it will split into.
     //
     // -->
 
@@ -40,7 +41,6 @@ public class SlimeSplitsScriptEvent extends BukkitScriptEvent implements Listene
     public EntityTag entity;
     public int count;
     public SlimeSplitEvent event;
-
 
     @Override
     public boolean couldMatch(ScriptContainer scriptContainer, String s) {
@@ -67,7 +67,7 @@ public class SlimeSplitsScriptEvent extends BukkitScriptEvent implements Listene
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override

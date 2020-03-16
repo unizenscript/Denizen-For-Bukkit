@@ -5,6 +5,7 @@ import com.denizenscript.denizencore.objects.Mechanism;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
+import com.denizenscript.denizencore.objects.properties.PropertyParser;
 import com.denizenscript.denizencore.tags.Attribute;
 import org.bukkit.block.data.Waterlogged;
 
@@ -46,6 +47,14 @@ public class MaterialWaterlogged implements Property {
         return (Waterlogged) material.getModernData().data;
     }
 
+    private boolean isWaterlogged() {
+        return getWaterlogged().isWaterlogged();
+    }
+
+    private void setWaterlogged(boolean waterlogged) {
+        getWaterlogged().setWaterlogged(waterlogged);
+    }
+
     /////////
     // Property Methods
     ///////
@@ -64,11 +73,7 @@ public class MaterialWaterlogged implements Property {
     // ObjectTag Attributes
     ////////
 
-    @Override
-    public String getAttribute(Attribute attribute) {
-        if (attribute == null) {
-            return null;
-        }
+    public static void registerTags() {
 
         // <--[tag]
         // @attribute <MaterialTag.waterlogged>
@@ -78,11 +83,7 @@ public class MaterialWaterlogged implements Property {
         // @description
         // Returns whether the material is waterlogged, if it can be waterlogged.
         // -->
-        if (attribute.startsWith("waterlogged")) {
-            return new ElementTag(getWaterlogged().isWaterlogged()).getAttribute(attribute.fulfill(1));
-        }
-
-        return null;
+        PropertyParser.<MaterialWaterlogged>registerTag("waterlogged", (attribute, material) -> new ElementTag(material.isWaterlogged()));
     }
 
     @Override
@@ -98,7 +99,7 @@ public class MaterialWaterlogged implements Property {
         // <MaterialTag.waterlogged>
         // -->
         if (mechanism.matches("waterlogged") && mechanism.requireBoolean()) {
-            getWaterlogged().setWaterlogged(mechanism.getValue().asBoolean());
+            setWaterlogged(mechanism.getValue().asBoolean());
         }
     }
 }

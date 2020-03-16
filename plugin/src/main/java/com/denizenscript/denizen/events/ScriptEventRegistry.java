@@ -2,7 +2,7 @@ package com.denizenscript.denizen.events;
 
 import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.events.block.*;
-import com.denizenscript.denizen.events.core.ServerPrestartScriptEvent;
+import com.denizenscript.denizen.events.core.*;
 import com.denizenscript.denizen.events.entity.*;
 import com.denizenscript.denizen.events.player.*;
 import com.denizenscript.denizen.events.world.*;
@@ -28,6 +28,7 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(new BlockIgnitesScriptEvent());
         ScriptEvent.registerScriptEvent(new BlockPhysicsScriptEvent());
         ScriptEvent.registerScriptEvent(new BlockSpreadsScriptEvent());
+        ScriptEvent.registerScriptEvent(new BrewingStandFueledScriptEvent());
         ScriptEvent.registerScriptEvent(new BrewsScriptEvent());
         ScriptEvent.registerScriptEvent(new CauldronLevelChangeScriptEvent());
         ScriptEvent.registerScriptEvent(new FurnaceBurnsItemScriptEvent());
@@ -39,7 +40,10 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(new RedstoneScriptEvent());
 
         // Core events
+        ScriptEvent.registerScriptEvent(new ListPingScriptEvent());
         ScriptEvent.registerScriptEvent(new ServerPrestartScriptEvent());
+        ScriptEvent.registerScriptEvent(new ServerStartScriptEvent());
+        ScriptEvent.registerScriptEvent(new TabCompleteScriptEvent());
 
         // Entity events
         ScriptEvent.registerScriptEvent(new CreeperPoweredScriptEvent());
@@ -110,7 +114,6 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(new ExperienceBottleBreaksScriptEvent());
         ScriptEvent.registerScriptEvent(new ItemRecipeFormedScriptEvent());
         ScriptEvent.registerScriptEvent(new ItemScrollScriptEvent());
-        ScriptEvent.registerScriptEvent(new ListPingScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerAnimatesScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerBreaksBlockScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerBreaksItemScriptEvent());
@@ -133,6 +136,7 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(new PlayerFillsBucketScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerFishesScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerFlyingScriptEvent());
+        ScriptEvent.registerScriptEvent(new PlayerHoldsShieldEvent());
         ScriptEvent.registerScriptEvent(new PlayerItemTakesDamageScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerJoinsScriptEvent());
         if (!Denizen.supportsPaper) {
@@ -167,7 +171,6 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(new PlayerSteersEntityScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerStepsOnScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerSwapsItemsScriptEvent());
-        ScriptEvent.registerScriptEvent(new PlayerTabCompleteScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerTakesFromFurnaceScriptEvent());
         if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
             ScriptEvent.registerScriptEvent(new PlayerTakesFromLecternScriptEvent());
@@ -181,6 +184,7 @@ public class ScriptEventRegistry {
         // World events
         ScriptEvent.registerScriptEvent(new ChunkLoadScriptEvent());
         ScriptEvent.registerScriptEvent(new ChunkUnloadScriptEvent());
+        ScriptEvent.registerScriptEvent(new CommandScriptEvent());
         ScriptEvent.registerScriptEvent(new InventoryPicksUpItemScriptEvent());
         ScriptEvent.registerScriptEvent(new ItemMoveScriptEvent());
         ScriptEvent.registerScriptEvent(new LightningStrikesScriptEvent());

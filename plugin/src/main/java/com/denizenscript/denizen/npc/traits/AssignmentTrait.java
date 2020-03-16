@@ -5,7 +5,7 @@ import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.scripts.containers.core.AssignmentScriptContainer;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.Settings;
+import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizen.npc.DenizenNPCHelper;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ArgumentHelper;
@@ -274,7 +274,7 @@ public class AssignmentTrait extends Trait {
             }
             else if (killerEntity instanceof Projectile) {
                 ProjectileSource shooter = ((Projectile) killerEntity).getShooter();
-                if (shooter != null && shooter instanceof LivingEntity) {
+                if (shooter instanceof LivingEntity) {
 
                     context.put("shooter", new EntityTag((LivingEntity) shooter).getDenizenObject());
                     if (shooter instanceof Player) {
@@ -298,7 +298,6 @@ public class AssignmentTrait extends Trait {
     }
 
     private UUID entityId;
-
 
     // <--[action]
     // @Actions

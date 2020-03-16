@@ -2,7 +2,7 @@ package com.denizenscript.denizen.scripts.commands.player;
 
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.Settings;
+import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizen.npc.speech.DenizenSpeechContext;
 import com.denizenscript.denizen.npc.speech.DenizenSpeechController;
 import com.denizenscript.denizen.objects.EntityTag;
@@ -42,7 +42,7 @@ public class ChatCommand extends AbstractCommand {
     // </code>
     // The player being chatted to, by default the attached Player to the script queue, will see a message
     // 'Jack says to you, Hello!', however surrounding entities will see something along the lines of
-    // 'Jack says to aufdemrand, Hello!'. The format for this is configurable.
+    // 'Jack says to Bob, Hello!'. The format for this is configurable.
     //
     // If sending messages to the Player without any surrounding entities hearing the message is desirable,
     // it is often times recommended to instead use the 'narrate' command. Alternatively, on a server-wide scale,
@@ -101,12 +101,12 @@ public class ChatCommand extends AbstractCommand {
 
         // Add default recipient as the attached Player if no recipients set otherwise
         if (!scriptEntry.hasObject("targets") && Utilities.entryHasPlayer(scriptEntry) && !specified_targets) {
-            scriptEntry.defaultObject("targets", new ListTag(Utilities.getEntryPlayer(scriptEntry).identify()));
+            scriptEntry.defaultObject("targets", new ListTag(Utilities.getEntryPlayer(scriptEntry)));
         }
 
         // Add default talker as the attached NPC if no recipients set otherwise
         if (!scriptEntry.hasObject("talkers") && Utilities.entryHasNPC(scriptEntry) && !specified_talker) {
-            scriptEntry.defaultObject("talkers", new ListTag(Utilities.getEntryNPC(scriptEntry).identify()));
+            scriptEntry.defaultObject("talkers", new ListTag(Utilities.getEntryNPC(scriptEntry)));
         }
 
         // Verify essential fields are set

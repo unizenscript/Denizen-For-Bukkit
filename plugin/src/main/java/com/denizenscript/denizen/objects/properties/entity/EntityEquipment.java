@@ -35,20 +35,11 @@ public class EntityEquipment implements Property {
             "equipment"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityEquipment(EntityTag ent) {
         entity = ent;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -59,11 +50,6 @@ public class EntityEquipment implements Property {
     public String getPropertyId() {
         return "equipment";
     }
-
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -150,6 +136,7 @@ public class EntityEquipment implements Property {
         // <--[tag]
         // @attribute <EntityTag.equipment>
         // @returns ListTag
+        // @mechanism EntityTag.equipment
         // @group inventory
         // @description
         // Returns a ListTag containing the entity's equipment.
@@ -176,7 +163,7 @@ public class EntityEquipment implements Property {
         // <EntityTag.equipment>
         // -->
         if (mechanism.matches("equipment")) {
-            ListTag list = ListTag.valueOf(mechanism.getValue().asString());
+            ListTag list = ListTag.valueOf(mechanism.getValue().asString(), mechanism.context);
             ItemStack[] stacks = new ItemStack[list.size()];
             for (int i = 0; i < list.size(); i++) {
                 stacks[i] = ItemTag.valueOf(list.get(i), mechanism.context).getItemStack();

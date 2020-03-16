@@ -19,7 +19,6 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 
-
 public class GiveCommand extends AbstractCommand {
 
     // <--[command]
@@ -91,7 +90,7 @@ public class GiveCommand extends AbstractCommand {
                     && !scriptEntry.hasObject("type")
                     && (arg.matchesArgumentList(ItemTag.class) || arg.startsWith("item:"))) {
                 scriptEntry.addObject("items", ListTag.valueOf(arg.raw_value.startsWith("item:") ?
-                        arg.raw_value.substring("item:".length()) : arg.raw_value).filter(ItemTag.class, scriptEntry));
+                        arg.raw_value.substring("item:".length()) : arg.raw_value, scriptEntry.getContext()).filter(ItemTag.class, scriptEntry));
             }
             else if (!scriptEntry.hasObject("inventory")
                     && arg.matchesPrefix("t", "to")

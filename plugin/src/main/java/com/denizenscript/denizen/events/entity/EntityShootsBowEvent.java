@@ -4,7 +4,7 @@ import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.utilities.Conversion;
 import com.denizenscript.denizen.utilities.entity.Position;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -29,7 +29,8 @@ public class EntityShootsBowEvent extends BukkitScriptEvent implements Listener 
     // <entity> shoots <item>
     //
     // @Regex ^on [^\s]+ shoots [^\s]+$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -42,7 +43,7 @@ public class EntityShootsBowEvent extends BukkitScriptEvent implements Listener 
     // <context.force> returns the force of the shot.
     //
     // @Determine
-    // ListTag(EntityTag) to change the projectile(s) being shot.
+    // ListTag(EntityTag) to change the projectile(s) being shot. (Note that in certain cases, determining an arrow may not be valid).
     //
     // @Player when the entity that shot the bow is a player.
     //
@@ -84,7 +85,7 @@ public class EntityShootsBowEvent extends BukkitScriptEvent implements Listener 
             return false;
         }
 
-        return true;
+        return super.matches(path);
 
     }
 
@@ -100,11 +101,10 @@ public class EntityShootsBowEvent extends BukkitScriptEvent implements Listener 
             cancelled = true;
 
             // Get the list of entities
-            List<EntityTag> newProjectiles = ListTag.getListFor(determinationObj).filter(EntityTag.class, path.container, true);
+            List<EntityTag> newProjectiles = ListTag.getListFor(determinationObj, getTagContext(path)).filter(EntityTag.class, path.container, true);
             // Go through all the entities, spawning/teleporting them
             for (EntityTag newProjectile : newProjectiles) {
-                newProjectile.spawnAt(entity.getEyeLocation()
-                        .add(entity.getEyeLocation().getDirection()));
+                newProjectile.spawnAt(entity.getEyeLocation().add(entity.getEyeLocation().getDirection()));
                 // Set the entity as the shooter of the projectile,
                 // where applicable
                 if (newProjectile.isProjectile()) {
@@ -130,8 +130,7 @@ public class EntityShootsBowEvent extends BukkitScriptEvent implements Listener 
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(entity.isPlayer() ? EntityTag.getPlayerFrom(event.getEntity()) : null,
-                entity.isCitizensNPC() ? EntityTag.getNPCFrom(event.getEntity()) : null);
+        return new BukkitScriptEntryData(entity);
     }
 
     @Override

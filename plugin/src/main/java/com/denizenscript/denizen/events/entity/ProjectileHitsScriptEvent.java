@@ -3,7 +3,7 @@ package com.denizenscript.denizen.events.entity;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.MaterialTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
@@ -24,7 +24,8 @@ public class ProjectileHitsScriptEvent extends BukkitScriptEvent implements List
     // <projectile> hits <material>
     //
     // @Regex ^on [^\s]+ hits [^\s]+$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Triggers when a projectile hits a block.
     //
@@ -43,7 +44,8 @@ public class ProjectileHitsScriptEvent extends BukkitScriptEvent implements List
     // <entity> shoots <material> (with <projectile>)
     //
     // @Regex ^on [^\s]+ shoots [^\s]+$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Triggers when a projectile shot by an entity hits a block.
     //
@@ -98,10 +100,9 @@ public class ProjectileHitsScriptEvent extends BukkitScriptEvent implements List
         if (!runInCheck(path, location)) {
             return false;
         }
-        return true;
+        return super.matches(path);
 
     }
-
 
     @Override
     public String getName() {
@@ -110,8 +111,7 @@ public class ProjectileHitsScriptEvent extends BukkitScriptEvent implements List
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(shooter != null && shooter.isPlayer() ? EntityTag.getPlayerFrom(event.getEntity()) : null,
-                shooter != null && shooter.isCitizensNPC() ? EntityTag.getNPCFrom(event.getEntity()) : null);
+        return new BukkitScriptEntryData(shooter);
     }
 
     @Override

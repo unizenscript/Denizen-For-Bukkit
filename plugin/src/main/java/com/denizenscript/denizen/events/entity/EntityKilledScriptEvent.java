@@ -3,7 +3,7 @@ package com.denizenscript.denizen.events.entity;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.NPCTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -34,7 +34,8 @@ public class EntityKilledScriptEvent extends BukkitScriptEvent implements Listen
     // <entity> kills <entity>
     //
     // @Regex ^on [^\s]+ ((kills [^\s]+)|killed( by [^\s]+)?)$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -45,14 +46,14 @@ public class EntityKilledScriptEvent extends BukkitScriptEvent implements Listen
     // @Context
     // <context.entity> returns the EntityTag that was killed.
     // <context.cause> returns the an ElementTag of reason the entity was damaged - see <@link language damage cause> for causes.
-    // <context.damage> returns an Element(Decimal) of the amount of damage dealt.
-    // <context.final_damage> returns an Element(Decimal) of the amount of damage dealt, after armor is calculated.
+    // <context.damage> returns an ElementTag(Decimal) of the amount of damage dealt.
+    // <context.final_damage> returns an ElementTag(Decimal) of the amount of damage dealt, after armor is calculated.
     // <context.damager> returns the EntityTag damaging the other entity.
     // <context.projectile> returns a EntityTag of the projectile shot by the damager, if any.
     // <context.damage_TYPE> returns the damage dealt by a specific damage type where TYPE can be any of: BASE, HARD_HAT, BLOCKING, ARMOR, RESISTANCE, MAGIC, ABSORPTION.
     //
     // @Determine
-    // Element(Decimal) to set the amount of damage the entity receives, instead of dying.
+    // ElementTag(Decimal) to set the amount of damage the entity receives, instead of dying.
     //
     // @Player when the killer or entity that was killed is a player. Cannot be both.
     //
@@ -110,7 +111,7 @@ public class EntityKilledScriptEvent extends BukkitScriptEvent implements Listen
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -133,9 +134,9 @@ public class EntityKilledScriptEvent extends BukkitScriptEvent implements Listen
         if (damager != null && player == null && damager.isPlayer()) {
             player = EntityTag.getPlayerFrom(damager.getBukkitEntity());
         }
-        NPCTag npc = entity.isCitizensNPC() ? EntityTag.getNPCFrom(event.getEntity()) : null;
+        NPCTag npc = entity.isCitizensNPC() ? entity.getDenizenNPC() : null;
         if (damager != null && npc == null && damager.isCitizensNPC()) {
-            npc = EntityTag.getNPCFrom(damager.getBukkitEntity());
+            npc = damager.getDenizenNPC();
         }
         return new BukkitScriptEntryData(player, npc);
     }

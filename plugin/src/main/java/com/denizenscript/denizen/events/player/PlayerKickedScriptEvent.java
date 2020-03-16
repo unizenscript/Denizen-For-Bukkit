@@ -2,14 +2,13 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -37,6 +36,8 @@ public class PlayerKickedScriptEvent extends BukkitScriptEvent implements Listen
     // "REASON:" + ElementTag to change the kick reason.
     // "FLY_COOLDOWN:" + DurationTag to cancel the automatic fly kick and set its next cooldown.
     //
+    // @Player Always.
+    //
     // -->
 
     public PlayerKickedScriptEvent() {
@@ -45,8 +46,6 @@ public class PlayerKickedScriptEvent extends BukkitScriptEvent implements Listen
 
     public static PlayerKickedScriptEvent instance;
     public PlayerTag player;
-    public ElementTag message;
-    public ElementTag reason;
     public PlayerKickEvent event;
 
     public boolean isFlying() {
@@ -54,8 +53,8 @@ public class PlayerKickedScriptEvent extends BukkitScriptEvent implements Listen
     }
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.toLowerCase(s).startsWith("player kicked");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player kicked");
     }
 
     @Override
@@ -63,7 +62,7 @@ public class PlayerKickedScriptEvent extends BukkitScriptEvent implements Listen
         if (path.eventArgLowerAt(3).equals("flying")) {
             return isFlying();
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -76,11 +75,11 @@ public class PlayerKickedScriptEvent extends BukkitScriptEvent implements Listen
         if (determinationObj instanceof ElementTag) {
             String lower = CoreUtilities.toLowerCase(determinationObj.toString());
             if (lower.startsWith("message:")) {
-                message = new ElementTag(lower.substring("message:".length()));
+                event.setLeaveMessage(lower.substring("message:".length()));
                 return true;
             }
             else if (lower.startsWith("reason:")) {
-                reason = new ElementTag(lower.substring("reason:".length()));
+                event.setReason(lower.substring("reason:".length()));
                 return true;
             }
             else if (lower.startsWith("fly_cooldown:")) {
@@ -103,10 +102,10 @@ public class PlayerKickedScriptEvent extends BukkitScriptEvent implements Listen
     @Override
     public ObjectTag getContext(String name) {
         if (name.equals("message")) {
-            return message;
+            return new ElementTag(event.getLeaveMessage());
         }
         else if (name.equals("reason")) {
-            return reason;
+            return new ElementTag(event.getReason());
         }
         else if (name.equals("flying")) {
             return new ElementTag(isFlying());
@@ -120,11 +119,7 @@ public class PlayerKickedScriptEvent extends BukkitScriptEvent implements Listen
             return;
         }
         player = PlayerTag.mirrorBukkitPlayer(event.getPlayer());
-        message = new ElementTag(event.getLeaveMessage());
-        reason = new ElementTag(event.getReason());
         this.event = event;
         fire(event);
-        event.setLeaveMessage(message.asString());
-        event.setReason(reason.asString());
     }
 }

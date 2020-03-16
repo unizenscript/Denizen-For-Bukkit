@@ -32,11 +32,6 @@ public class EntityPowered implements Property {
             "powered"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityPowered(EntityTag entity) {
         powered = entity;
     }
@@ -55,10 +50,6 @@ public class EntityPowered implements Property {
         ((Creeper) (powered.getBukkitEntity())).setPowered(power);
     }
 
-    /////////
-    // Property Methods
-    ///////
-
     @Override
     public String getPropertyString() {
         if (!getPowered()) {
@@ -73,10 +64,6 @@ public class EntityPowered implements Property {
     public String getPropertyId() {
         return "powered";
     }
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -107,13 +94,12 @@ public class EntityPowered implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name powered
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Changes the powered state of a Creeper.
         // @tags
         // <EntityTag.powered>
         // -->
-
         if (mechanism.matches("powered") && mechanism.requireBoolean()) {
             setPowered(mechanism.getValue().asBoolean());
         }

@@ -4,12 +4,11 @@ import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.objects.notable.NotableManager;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -23,7 +22,8 @@ public class PlayerWalksOverScriptEvent extends BukkitScriptEvent implements Lis
     // player walks over <location>
     //
     // @Regex ^on player walks over [^\s]+$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -31,6 +31,8 @@ public class PlayerWalksOverScriptEvent extends BukkitScriptEvent implements Lis
     //
     // @Context
     // <context.notable> returns an ElementTag of the notable location's name.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -43,14 +45,17 @@ public class PlayerWalksOverScriptEvent extends BukkitScriptEvent implements Lis
     public PlayerMoveEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.toLowerCase(s).startsWith("player walks over");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player walks over");
     }
 
     @Override
     public boolean matches(ScriptPath path) {
         String loc = path.eventArgLowerAt(3);
-        return loc.equals(CoreUtilities.toLowerCase(notable)) || tryLocation(new LocationTag(event.getPlayer().getLocation()), loc);
+        if (!loc.equals(CoreUtilities.toLowerCase(notable)) || tryLocation(new LocationTag(event.getPlayer().getLocation()), loc)) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override

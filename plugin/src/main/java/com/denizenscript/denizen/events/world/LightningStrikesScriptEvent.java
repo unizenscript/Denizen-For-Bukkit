@@ -20,7 +20,7 @@ public class LightningStrikesScriptEvent extends BukkitScriptEvent implements Li
     //
     // @Group World
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -47,7 +47,10 @@ public class LightningStrikesScriptEvent extends BukkitScriptEvent implements Li
 
     @Override
     public boolean matches(ScriptPath path) {
-        return runInCheck(path, location);
+        if (!runInCheck(path, location)) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override

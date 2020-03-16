@@ -2,7 +2,6 @@ package com.denizenscript.denizen.objects.properties.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.objects.Mechanism;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -42,20 +41,11 @@ public class EntityAttributes implements Property {
             "attributes"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityAttributes(EntityTag entity) {
         this.entity = entity;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     public static String stringify(AttributeModifier modifier) {
         return EscapeTagBase.escape(modifier.getName()) + "/" + modifier.getAmount() + "/" + modifier.getOperation().name()
@@ -92,10 +82,6 @@ public class EntityAttributes implements Property {
         return "attributes";
     }
 
-    ///////////
-    // ObjectTag Attributes
-    ////////
-
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
 
@@ -106,7 +92,7 @@ public class EntityAttributes implements Property {
         // <--[tag]
         // @attribute <EntityTag.attributes>
         // @returns ListTag
-        // @mechanism attributes
+        // @mechanism EntityTag.attributes
         // @group properties
         // @description
         // Returns a list of all attributes on the entity, formatted in a way that can be sent back into the 'attributes' mechanism.
@@ -118,7 +104,7 @@ public class EntityAttributes implements Property {
         // <--[tag]
         // @attribute <EntityTag.has_attribute[<attribute>]>
         // @returns ElementTag(Boolean)
-        // @mechanism attributes
+        // @mechanism EntityTag.attributes
         // @group properties
         // @description
         // Returns whether the entity has the named attribute.
@@ -133,7 +119,7 @@ public class EntityAttributes implements Property {
         // <--[tag]
         // @attribute <EntityTag.attribute_value[<attribute>]>
         // @returns ElementTag(Decimal)
-        // @mechanism attributes
+        // @mechanism EntityTag.attributes
         // @group properties
         // @description
         // Returns the final calculated value of the named attribute for the entity.
@@ -155,7 +141,7 @@ public class EntityAttributes implements Property {
         // <--[tag]
         // @attribute <EntityTag.attribute_base_value[<attribute>]>
         // @returns ElementTag(Decimal)
-        // @mechanism attributes
+        // @mechanism EntityTag.attributes
         // @group properties
         // @description
         // Returns the base value of the named attribute for the entity.
@@ -177,7 +163,7 @@ public class EntityAttributes implements Property {
         // <--[tag]
         // @attribute <EntityTag.attribute_default_value[<attribute>]>
         // @returns ElementTag(Decimal)
-        // @mechanism attributes
+        // @mechanism EntityTag.attributes
         // @group properties
         // @description
         // Returns the default value of the named attribute for the entity.
@@ -231,14 +217,14 @@ public class EntityAttributes implements Property {
                     Debug.echoError("Attribute " + attr.name() + " is not applicable to entity of type " + entity.getBukkitEntity().getType().name());
                     continue;
                 }
-                instance.setBaseValue(ArgumentHelper.getDoubleFrom(subList.get(1)));
+                instance.setBaseValue(Double.parseDouble(subList.get(1)));
                 for (AttributeModifier modifier : instance.getModifiers()) {
                     instance.removeModifier(modifier);
                 }
                 for (int x = 2; x < subList.size(); x += 4) {
                     String slot = subList.get(x + 3).toUpperCase();
                     AttributeModifier modifier = new AttributeModifier(UUID.randomUUID(), EscapeTagBase.unEscape(subList.get(x)),
-                            ArgumentHelper.getDoubleFrom(subList.get(x + 1)), AttributeModifier.Operation.valueOf(subList.get(x + 2).toUpperCase()),
+                            Double.parseDouble(subList.get(x + 1)), AttributeModifier.Operation.valueOf(subList.get(x + 2).toUpperCase()),
                                     slot.equals("ANY") ? null : EquipmentSlot.valueOf(slot));
                     instance.addModifier(modifier);
                 }

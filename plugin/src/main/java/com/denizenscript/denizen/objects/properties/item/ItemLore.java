@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.objects.properties.item;
 
 import com.denizenscript.denizen.scripts.containers.core.ItemScriptHelper;
-import com.denizenscript.denizen.Settings;
+import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -39,12 +39,10 @@ public class ItemLore implements Property {
             "lore"
     };
 
-
     public boolean hasLore() {
         return item.getItemStack().hasItemMeta()
                 && (item.getItemStack().getItemMeta().hasLore());
     }
-
 
     private ItemLore(ItemTag _item) {
         item = _item;
@@ -97,7 +95,6 @@ public class ItemLore implements Property {
         return null;
     }
 
-
     @Override
     public String getPropertyString() {
         if (hasLore()) {
@@ -133,7 +130,6 @@ public class ItemLore implements Property {
         // @tags
         // <ItemTag.lore>
         // -->
-
         if (mechanism.matches("lore")) {
             ItemMeta meta = item.getItemStack().getItemMeta();
             ListTag lore = mechanism.valueAsType(ListTag.class);

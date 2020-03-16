@@ -2,12 +2,10 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.LocationTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerPortalEvent;
@@ -19,7 +17,8 @@ public class PlayerUsesPortalScriptEvent extends BukkitScriptEvent implements Li
     // player uses portal
     //
     // @Regex ^on player uses portal$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Triggers when a player enters a portal.
     //
@@ -29,6 +28,9 @@ public class PlayerUsesPortalScriptEvent extends BukkitScriptEvent implements Li
     //
     // @Determine
     // LocationTag to change the destination.
+    //
+    // @Player Always.
+    //
     // -->
 
     public PlayerUsesPortalScriptEvent() {
@@ -42,13 +44,16 @@ public class PlayerUsesPortalScriptEvent extends BukkitScriptEvent implements Li
     public PlayerPortalEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.toLowerCase(s).startsWith("player uses portal");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player uses portal");
     }
 
     @Override
     public boolean matches(ScriptPath path) {
-        return runInCheck(path, to) || runInCheck(path, from);
+        if (!runInCheck(path, to) && !runInCheck(path, from)) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override
@@ -61,6 +66,7 @@ public class PlayerUsesPortalScriptEvent extends BukkitScriptEvent implements Li
         String determination = determinationObj.toString();
         if (LocationTag.matches(determination)) {
             to = LocationTag.valueOf(determination);
+            event.setTo(to);
             return true;
         }
         return super.applyDetermination(path, determinationObj);
@@ -95,6 +101,5 @@ public class PlayerUsesPortalScriptEvent extends BukkitScriptEvent implements Li
         from = new LocationTag(event.getFrom());
         this.event = event;
         fire(event);
-        event.setTo(to);
     }
 }

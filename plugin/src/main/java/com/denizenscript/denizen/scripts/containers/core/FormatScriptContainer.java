@@ -1,6 +1,6 @@
 package com.denizenscript.denizen.scripts.containers.core;
 
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.objects.NPCTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.tags.BukkitTagContext;
@@ -26,6 +26,7 @@ public class FormatScriptContainer extends ScriptContainer {
     //
     //   # The only key is the format. The format can use '<text>' as a special tag to contain the message being sent.
     //   # '<name>' is available as a special tag as well for use with the 'on player chats' event to fill the player's name properly.
+    //   # | All format scripts MUST have this key!
     //   format: <name> says <text>
     // </code>
     //
@@ -36,13 +37,11 @@ public class FormatScriptContainer extends ScriptContainer {
     }
 
     public String getFormat() {
-        return getString("FORMAT", "<text>");
+        return getString("format", "<text>");
     }
 
-    public String getFormattedText(ScriptEntry entry) {
-        return getFormattedText(entry.getElement("text").asString(),
-                ((BukkitScriptEntryData) entry.entryData).getNPC(),
-                ((BukkitScriptEntryData) entry.entryData).getPlayer());
+    public String getFormattedText(String text, ScriptEntry entry) {
+        return getFormattedText(text, Utilities.getEntryNPC(entry), Utilities.getEntryPlayer(entry));
     }
 
     public String getFormattedText(String textToReplace, NPCTag npc, PlayerTag player) {

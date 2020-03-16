@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.events.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -21,9 +21,10 @@ public class DragonPhaseChangeScriptEvent extends BukkitScriptEvent implements L
     // <entity> changes phase
     //
     // @Regex ^on [^\s]+ changes phase$
-    // @Switch in <area>
-    // @Switch from <phase>
-    // @Switch to <phase>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Switch from:<phase> to only process the event if the dragon was previously in the specified phase.
+    // @Switch to:<phase> to only process the event if the dragon is changing to the specified phase.
     //
     // @Cancellable true
     //
@@ -72,7 +73,7 @@ public class DragonPhaseChangeScriptEvent extends BukkitScriptEvent implements L
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override

@@ -22,7 +22,7 @@ public class ItemMoveScriptEvent extends BukkitScriptEvent implements Listener {
     //
     // @Regex ^on [^\s]+ moves from [^\s]+( to [^\s]+)?$
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -71,7 +71,7 @@ public class ItemMoveScriptEvent extends BukkitScriptEvent implements Listener {
         if (!runInCheck(path, origin.getLocation())) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.*;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -23,8 +23,8 @@ public class PlayerBreaksBlockScriptEvent extends BukkitScriptEvent implements L
     //
     // @Regex ^on player breaks [^\s]+$
     //
-    // @Switch in <area>
-    // @Switch with <item>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Switch with:<item> to only process the event when the player is breaking the block with a specified item.
     //
     // @Cancellable true
     //
@@ -38,7 +38,9 @@ public class PlayerBreaksBlockScriptEvent extends BukkitScriptEvent implements L
     // @Determine
     // "NOTHING" to make the block drop no items.
     // ListTag(ItemTag) to make the block drop a specified list of items.
-    // Element(Number) to set the amount of xp to drop.
+    // ElementTag(Number) to set the amount of xp to drop.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -68,15 +70,15 @@ public class PlayerBreaksBlockScriptEvent extends BukkitScriptEvent implements L
         if (!runInCheck(path, location)) {
             return false;
         }
-        if (!runWithCheck(path, new ItemTag(event.getPlayer().getItemInHand()))) {
+        if (!runWithCheck(path, new ItemTag(event.getPlayer().getEquipment().getItemInMainHand()))) {
             return false;
         }
         // Deprecated in favor of with: format
         if (path.eventArgLowerAt(3).equals("with")
-                && !tryItem(new ItemTag(event.getPlayer().getItemInHand()), path.eventArgLowerAt(4))) {
+                && !tryItem(new ItemTag(event.getPlayer().getEquipment().getItemInMainHand()), path.eventArgLowerAt(4))) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -103,7 +105,7 @@ public class PlayerBreaksBlockScriptEvent extends BukkitScriptEvent implements L
         if (Argument.valueOf(determination).matchesArgumentList(ItemTag.class)) {
             cancelled = true;
             block.setType(Material.AIR);
-            for (ItemTag newItem : ListTag.valueOf(determination).filter(ItemTag.class, path.container, true)) {
+            for (ItemTag newItem : ListTag.valueOf(determination, getTagContext(path)).filter(ItemTag.class, path.container, true)) {
                 block.getWorld().dropItemNaturally(block.getLocation(), newItem.getItemStack()); // Drop each item
             }
             return true;

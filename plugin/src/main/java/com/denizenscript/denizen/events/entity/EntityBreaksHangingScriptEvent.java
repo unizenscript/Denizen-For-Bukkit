@@ -2,7 +2,7 @@ package com.denizenscript.denizen.events.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.LocationTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -24,7 +24,8 @@ public class EntityBreaksHangingScriptEvent extends BukkitScriptEvent implements
     // <entity> breaks <hanging> (because <cause>)
     //
     // @Regex ^on [^\s]+ breaks [^\s]+( because [^\s]+)?$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -80,7 +81,7 @@ public class EntityBreaksHangingScriptEvent extends BukkitScriptEvent implements
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -90,9 +91,7 @@ public class EntityBreaksHangingScriptEvent extends BukkitScriptEvent implements
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        // TODO: What if the hanging is an NPC?
-        return new BukkitScriptEntryData(breaker.isPlayer() ? breaker.getDenizenPlayer() : null,
-                breaker.isCitizensNPC() ? breaker.getDenizenNPC() : null);
+        return new BukkitScriptEntryData(breaker);
     }
 
     @Override

@@ -1,5 +1,8 @@
 package com.denizenscript.denizen.objects.properties.item;
 
+import com.denizenscript.denizen.nms.NMSHandler;
+import com.denizenscript.denizen.nms.NMSVersion;
+import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -39,9 +42,15 @@ public class ItemEnchantments implements Property {
             "remove_enchantments", "enchantments"
     };
 
-
     private ItemEnchantments(ItemTag _item) {
         item = _item;
+    }
+
+    public static String getName(Enchantment enchantment) {
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
+            return enchantment.getKey().getKey();
+        }
+        return enchantment.getName();
     }
 
     ItemTag item;
@@ -73,13 +82,13 @@ public class ItemEnchantments implements Property {
         // @group properties
         // @description
         // Returns a list of enchantments on the item, with their levels listed too.
-        // In the format of ENCHANTMENT,LEVEL - For example: DAMAGE_ALL,3
+        // In the format of ENCHANTMENT,LEVEL - For example: sharpness,3
         // -->
         if (attribute.startsWith("enchantments.with_levels")) {
             Set<Map.Entry<Enchantment, Integer>> enchantments = getEnchantments();
             ListTag enchants = new ListTag();
             for (Map.Entry<Enchantment, Integer> enchantment : enchantments) {
-                enchants.add(enchantment.getKey().getName() + "," + enchantment.getValue());
+                enchants.add(getName(enchantment.getKey()) + "," + enchantment.getValue());
             }
             return enchants.getObjectAttribute(attribute.fulfill(2));
         }
@@ -114,7 +123,8 @@ public class ItemEnchantments implements Property {
             Set<Map.Entry<Enchantment, Integer>> enchantments = getEnchantments();
             if (enchantments.size() > 0) {
                 for (Map.Entry<Enchantment, Integer> enchantment : enchantments) {
-                    if (enchantment.getKey().getName().equalsIgnoreCase(attribute.getContext(2))) {
+                    if (enchantment.getKey().getName().equalsIgnoreCase(attribute.getContext(2))
+                            || getName(enchantment.getKey()).equalsIgnoreCase(attribute.getContext(2))) {
                         return new ElementTag(enchantment.getValue())
                                 .getObjectAttribute(attribute.fulfill(2));
                     }
@@ -136,7 +146,7 @@ public class ItemEnchantments implements Property {
             Set<Map.Entry<Enchantment, Integer>> enchantments = getEnchantments();
             ListTag enchants = new ListTag();
             for (Map.Entry<Enchantment, Integer> enchantment : enchantments) {
-                enchants.add(enchantment.getKey().getName());
+                enchants.add(getName(enchantment.getKey()));
             }
             return enchants.getObjectAttribute(attribute.fulfill(1));
         }
@@ -154,14 +164,13 @@ public class ItemEnchantments implements Property {
         return new HashSet<>();
     }
 
-
     @Override
     public String getPropertyString() {
         Set<Map.Entry<Enchantment, Integer>> enchants = getEnchantments();
         if (enchants.size() > 0) {
             StringBuilder returnable = new StringBuilder();
             for (Map.Entry<Enchantment, Integer> enchantment : enchants) {
-                returnable.append(enchantment.getKey().getName()).append(",").append(enchantment.getValue()).append("|");
+                returnable.append(getName(enchantment.getKey())).append(",").append(enchantment.getValue()).append("|");
             }
             return returnable.substring(0, returnable.length() - 1);
         }
@@ -200,16 +209,18 @@ public class ItemEnchantments implements Property {
             }
             if (item.getItemStack().getType() == Material.ENCHANTED_BOOK) {
                 EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemStack().getItemMeta();
-                for (Enchantment ench : meta.getStoredEnchants().keySet()) {
-                    if (names == null || names.contains(CoreUtilities.toLowerCase(ench.getName()))) {
+                for (Enchantment ench : new ArrayList<>(meta.getStoredEnchants().keySet())) {
+                    if (names == null || names.contains(CoreUtilities.toLowerCase(ench.getName())) ||
+                            names.contains(CoreUtilities.toLowerCase(getName(ench)))) {
                         meta.removeStoredEnchant(ench);
                     }
                 }
                 item.getItemStack().setItemMeta(meta);
             }
             else {
-                for (Enchantment ench : item.getItemStack().getEnchantments().keySet()) {
-                    if (names == null || names.contains(CoreUtilities.toLowerCase(ench.getName()))) {
+                for (Enchantment ench : new ArrayList<>(item.getItemStack().getEnchantments().keySet())) {
+                    if (names == null || names.contains(CoreUtilities.toLowerCase(ench.getName())) ||
+                            names.contains(CoreUtilities.toLowerCase(getName(ench)))) {
                         item.getItemStack().removeEnchantment(ench);
                     }
                 }
@@ -222,13 +233,12 @@ public class ItemEnchantments implements Property {
         // @input ListTag
         // @description
         // Sets the item's enchantments.
-        // For a list of valid enchantment names, refer to <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/enchantments/Enchantment.html>
+        // In the format of ENCHANTMENT,LEVEL - For example: sharpness,3
         // @tags
         // <ItemTag.enchantments>
         // <ItemTag.enchantments.levels>
         // <ItemTag.enchantments.with_levels>
         // -->
-
         if (mechanism.matches("enchantments")) {
             for (String enchant : mechanism.valueAsType(ListTag.class)) {
                 if (!enchant.contains(",")) {
@@ -241,7 +251,7 @@ public class ItemEnchantments implements Property {
                     }
                     else {
                         try {
-                            Enchantment ench = Enchantment.getByName(data[0].toUpperCase());
+                            Enchantment ench = Utilities.getEnchantmentByName(data[0]);
                             if (ench != null) {
                                 if (item.getItemStack().getType() == Material.ENCHANTED_BOOK) {
                                     EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemStack().getItemMeta();

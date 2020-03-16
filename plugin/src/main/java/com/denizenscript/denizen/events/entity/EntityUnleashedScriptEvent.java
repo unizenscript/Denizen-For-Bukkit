@@ -18,7 +18,8 @@ public class EntityUnleashedScriptEvent extends BukkitScriptEvent implements Lis
     // <entity> unleashed (because <reason>)
     //
     // @Regex ^on [^\s]+ unleashed( because [^\s]+)?$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -42,7 +43,6 @@ public class EntityUnleashedScriptEvent extends BukkitScriptEvent implements Lis
     public ElementTag reason;
     public EntityUnleashEvent event;
 
-
     @Override
     public boolean couldMatch(ScriptContainer scriptContainer, String s) {
         String lower = CoreUtilities.toLowerCase(s);
@@ -64,7 +64,7 @@ public class EntityUnleashedScriptEvent extends BukkitScriptEvent implements Lis
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override

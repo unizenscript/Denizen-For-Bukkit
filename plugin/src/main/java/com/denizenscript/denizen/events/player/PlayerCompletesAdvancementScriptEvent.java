@@ -1,13 +1,11 @@
 package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerAdvancementDoneEvent;
@@ -25,6 +23,8 @@ public class PlayerCompletesAdvancementScriptEvent extends BukkitScriptEvent imp
     // @Context
     // <context.criteria> returns all the criteria present in this advancement.
     //
+    // @Player Always.
+    //
     // -->
 
     public PlayerCompletesAdvancementScriptEvent() {
@@ -32,18 +32,11 @@ public class PlayerCompletesAdvancementScriptEvent extends BukkitScriptEvent imp
     }
 
     public static PlayerCompletesAdvancementScriptEvent instance;
-    public ListTag criteria;
     public PlayerAdvancementDoneEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        return lower.startsWith("player completes advancement");
-    }
-
-    @Override
-    public boolean matches(ScriptPath path) {
-        return true;
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player completes advancement");
     }
 
     @Override
@@ -59,6 +52,8 @@ public class PlayerCompletesAdvancementScriptEvent extends BukkitScriptEvent imp
     @Override
     public ObjectTag getContext(String name) {
         if (name.equals("criteria")) {
+            ListTag criteria = new ListTag();
+            criteria.addAll(event.getAdvancement().getCriteria());
             return criteria;
         }
         return super.getContext(name);
@@ -66,9 +61,7 @@ public class PlayerCompletesAdvancementScriptEvent extends BukkitScriptEvent imp
 
     @EventHandler
     public void onPlayerCompletesAdvancement(PlayerAdvancementDoneEvent event) {
-        // Should this not fire if it's a 'fake' advancement created by Denizen?
-        criteria = new ListTag();
-        criteria.addAll(event.getAdvancement().getCriteria());
+        // TODO: Should this not fire if it's a 'fake' advancement created by Denizen?
         this.event = event;
         fire(event);
     }

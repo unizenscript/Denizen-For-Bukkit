@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.events.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -20,7 +20,8 @@ public class EntityHealsScriptEvent extends BukkitScriptEvent implements Listene
     // <entity> heals (because <cause>)
     //
     // @Regex ^on [^\s]+ heals( because [^\s]+)?$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -32,7 +33,7 @@ public class EntityHealsScriptEvent extends BukkitScriptEvent implements Listene
     // <context.reason> returns the cause of the entity healing. Can be: <@link url http://bit.ly/2GTtxsf>
     //
     // @Determine
-    // Element(Decimal) to set the amount of health the entity receives.
+    // ElementTag(Decimal) to set the amount of health the entity receives.
     //
     // @Player when the entity that was healed is a player.
     //
@@ -71,7 +72,7 @@ public class EntityHealsScriptEvent extends BukkitScriptEvent implements Listene
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -90,8 +91,7 @@ public class EntityHealsScriptEvent extends BukkitScriptEvent implements Listene
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(entity.isPlayer() ? EntityTag.getPlayerFrom(event.getEntity()) : null,
-                entity.isCitizensNPC() ? EntityTag.getNPCFrom(event.getEntity()) : null);
+        return new BukkitScriptEntryData(entity);
     }
 
     @Override

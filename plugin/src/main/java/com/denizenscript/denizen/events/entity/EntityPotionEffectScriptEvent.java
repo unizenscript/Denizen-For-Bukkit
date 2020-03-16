@@ -1,8 +1,8 @@
 package com.denizenscript.denizen.events.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizen.objects.properties.entity.EntityPotionEffects;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.objects.properties.item.ItemPotion;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -23,9 +23,10 @@ public class EntityPotionEffectScriptEvent extends BukkitScriptEvent implements 
     // <entity> potion effects <change action>
     //
     // @Regex ^on [^\s]+ potion effects [^\s]+$
-    // @Switch in <area>
-    // @Switch cause <cause>
-    // @Switch effect <effect type>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Switch cause:<cause> to only process the event when it came from a specified cause.
+    // @Switch effect:<effect type> to only process the event when a specified potion effect is applied.
     //
     // @Cancellable true
     //
@@ -41,7 +42,7 @@ public class EntityPotionEffectScriptEvent extends BukkitScriptEvent implements 
     // <context.effect_type> returns the name of the modified potion effect type.
     //
     // @Determine
-    // "OVERRIDE:" + Element(Boolean) to set whether the new potion effect should override.
+    // "OVERRIDE:" + ElementTag(Boolean) to set whether the new potion effect should override.
     //
     // @Player when the entity that has changed is a player.
     //
@@ -87,7 +88,7 @@ public class EntityPotionEffectScriptEvent extends BukkitScriptEvent implements 
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -109,8 +110,7 @@ public class EntityPotionEffectScriptEvent extends BukkitScriptEvent implements 
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(entity.isPlayer() ? EntityTag.getPlayerFrom(event.getEntity()) : null,
-                entity.isCitizensNPC() ? EntityTag.getNPCFrom(event.getEntity()) : null);
+        return new BukkitScriptEntryData(entity);
     }
 
     @Override
@@ -131,10 +131,10 @@ public class EntityPotionEffectScriptEvent extends BukkitScriptEvent implements 
             return new ElementTag(event.isOverride());
         }
         else if (name.equals("new_effect") && event.getNewEffect() != null) {
-            return new ElementTag(EntityPotionEffects.stringify(event.getNewEffect()));
+            return new ElementTag(ItemPotion.stringifyEffect(event.getNewEffect()));
         }
         else if (name.equals("old_effect") && event.getOldEffect() != null) {
-            return new ElementTag(EntityPotionEffects.stringify(event.getOldEffect()));
+            return new ElementTag(ItemPotion.stringifyEffect(event.getOldEffect()));
         }
         return super.getContext(name);
     }

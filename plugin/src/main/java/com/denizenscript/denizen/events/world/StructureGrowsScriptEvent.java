@@ -1,6 +1,5 @@
 package com.denizenscript.denizen.events.world;
 
-
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizen.objects.WorldTag;
@@ -27,7 +26,7 @@ public class StructureGrowsScriptEvent extends BukkitScriptEvent implements List
     //
     // @Group World
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -78,7 +77,7 @@ public class StructureGrowsScriptEvent extends BukkitScriptEvent implements List
         if (!runInCheck(path, location)) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override

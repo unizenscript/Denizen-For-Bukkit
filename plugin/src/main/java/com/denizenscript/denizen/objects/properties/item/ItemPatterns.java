@@ -49,7 +49,6 @@ public class ItemPatterns implements Property {
             "patterns"
     };
 
-
     private ItemPatterns(ItemTag item) {
         this.item = item;
     }
@@ -115,8 +114,7 @@ public class ItemPatterns implements Property {
         // @group properties
         // @mechanism ItemTag.patterns
         // @description
-        // Lists a banner's patterns in the form "li@COLOR/PATTERN|COLOR/PATTERN" etc.
-        // TODO: Local meta for these links
+        // Lists a banner's patterns in the form "COLOR/PATTERN|COLOR/PATTERN" etc.
         // For the list of possible colors, see <@link url http://bit.ly/1dydq12>.
         // For the list of possible patterns, see <@link url http://bit.ly/1MqRn7T>.
         // -->
@@ -126,7 +124,6 @@ public class ItemPatterns implements Property {
 
         return null;
     }
-
 
     @Override
     public String getPropertyString() {
@@ -151,14 +148,13 @@ public class ItemPatterns implements Property {
         // @input ListTag
         // @description
         // Changes the patterns of a banner. Input must be in the form
-        // "li@COLOR/PATTERN|COLOR/PATTERN" etc.
+        // "COLOR/PATTERN|COLOR/PATTERN" etc.
         // For the list of possible colors, see <@link url http://bit.ly/1dydq12>.
         // For the list of possible patterns, see <@link url http://bit.ly/1MqRn7T>.
         // @tags
         // <ItemTag.patterns>
         // <server.list_patterns>
         // -->
-
         if (mechanism.matches("patterns")) {
             List<Pattern> patterns = new ArrayList<>();
             ListTag list = mechanism.valueAsType(ListTag.class);

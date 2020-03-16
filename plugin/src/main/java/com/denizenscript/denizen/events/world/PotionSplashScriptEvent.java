@@ -22,7 +22,7 @@ public class PotionSplashScriptEvent extends BukkitScriptEvent implements Listen
     //
     // @Group World
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -54,7 +54,13 @@ public class PotionSplashScriptEvent extends BukkitScriptEvent implements Listen
     @Override
     public boolean matches(ScriptPath path) {
         String iTest = path.eventArgLowerAt(0);
-        return tryItem(potion, iTest) && runInCheck(path, location);
+        if (!tryItem(potion, iTest)) {
+            return false;
+        }
+        if (!runInCheck(path, location)) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override

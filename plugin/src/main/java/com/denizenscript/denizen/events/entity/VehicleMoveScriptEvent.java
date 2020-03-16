@@ -18,7 +18,8 @@ public class VehicleMoveScriptEvent extends BukkitScriptEvent implements Listene
     // <vehicle> moves
     //
     // @Regex ^on [^\s]+ moves$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Warning This event fires very very rapidly!
     //
@@ -58,7 +59,7 @@ public class VehicleMoveScriptEvent extends BukkitScriptEvent implements Listene
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     // TODO: Can the vehicle be an NPC?

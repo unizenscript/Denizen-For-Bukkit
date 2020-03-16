@@ -8,7 +8,6 @@ import com.denizenscript.denizen.npc.traits.TriggerTrait;
 import com.denizenscript.denizen.objects.NPCTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.scripts.triggers.AbstractTrigger;
-import com.denizenscript.denizencore.scripts.ScriptRegistry;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.Bukkit;
@@ -18,7 +17,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ProximityTrigger extends AbstractTrigger implements Listener {
 
@@ -46,7 +44,6 @@ public class ProximityTrigger extends AbstractTrigger implements Listener {
     // logic is run in checking.
     //
     private static int maxProximityDistance = 75; // TODO: is this reasonable to have?
-
 
     // <--[action]
     // @Actions
@@ -156,7 +153,6 @@ public class ProximityTrigger extends AbstractTrigger implements Listener {
                         double entryRadius = triggerTrait.getRadius(name);
                         double exitRadius = triggerTrait.getRadius(name);
                         double moveRadius = triggerTrait.getRadius(name);
-
 
                         //
                         // If a script was found, it might have custom ranges.
@@ -294,16 +290,16 @@ public class ProximityTrigger extends AbstractTrigger implements Listener {
     @EventHandler // TODO: Does this have any point?
     public void checkMaxProximities(ScriptReloadEvent event) {
 
-        for (String script : ScriptRegistry._getScriptNames()) {
+        //for (String script : ScriptRegistry._getScriptNames()) {
             //
             // TODO: Check interact scripts for proximity triggers and ranges.
             // Find largest number, add 10, and set it as maxProximityRange.
             // For now, let's assume 25.
             //
-        }
+        //}
     }
 
-    private static Map<UUID, Set<Integer>> proximityTracker = new ConcurrentHashMap<>(8, 0.9f, 1);
+    private static Map<UUID, Set<Integer>> proximityTracker = new HashMap<>();
 
     //
     // Ensures that a Player who has entered proximity of an NPC also fires Exit Proximity.

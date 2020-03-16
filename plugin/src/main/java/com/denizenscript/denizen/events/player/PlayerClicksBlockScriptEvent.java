@@ -2,12 +2,11 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.*;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.Material;
 import org.bukkit.event.Event;
@@ -17,7 +16,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashSet;
 
 public class PlayerClicksBlockScriptEvent extends BukkitScriptEvent implements Listener {
 
@@ -31,7 +30,7 @@ public class PlayerClicksBlockScriptEvent extends BukkitScriptEvent implements L
     //
     // @Regex ^on player (((([^\s]+ )?clicks [^\s]+( with [^\s]+)?( in [^\s]+)?)))$
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Triggers when a player clicks on a block or in the air.
     //
@@ -42,20 +41,21 @@ public class PlayerClicksBlockScriptEvent extends BukkitScriptEvent implements L
     // <context.click_type> returns an ElementTag of the Spigot API click type <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/event/block/Action.html>.
     // <context.hand> returns an ElementTag of the used hand.
     //
+    // @Player Always.
+    //
     // -->
 
     public PlayerClicksBlockScriptEvent() {
         instance = this;
     }
 
-    PlayerClicksBlockScriptEvent instance;
-    PlayerInteractEvent event;
-    ItemTag item;
-    LocationTag location;
-    ElementTag click_type;
-    ElementTag hand;
-    LocationTag relative;
-    MaterialTag blockMaterial;
+    public PlayerClicksBlockScriptEvent instance;
+    public PlayerInteractEvent event;
+    public ItemTag item;
+    public LocationTag location;
+    public ElementTag click_type;
+    public ElementTag hand;
+    public MaterialTag blockMaterial;
 
     private boolean couldMatchIn(String lower) {
         int index = CoreUtilities.split(lower, ' ').indexOf("in");
@@ -90,7 +90,6 @@ public class PlayerClicksBlockScriptEvent extends BukkitScriptEvent implements L
         else {
             using = path.eventArgLowerAt(index + 1);
         }
-
         if (!using.equals("hand") && !using.equals("off_hand") && !using.equals("either_hand")) {
             Debug.echoError("Invalid USING hand in " + getName() + " for '" + path.event + "' in " + path.container.getName());
             return false;
@@ -120,51 +119,40 @@ public class PlayerClicksBlockScriptEvent extends BukkitScriptEvent implements L
         return true;
     }
 
-    private static final List<String> matchHelpList = Arrays.asList("at", "entity", "npc", "player", "vehicle", "projectile", "hanging");
+    private static final HashSet<String> matchHelpList = new HashSet<>(Arrays.asList("at", "entity", "npc", "player", "vehicle", "projectile", "hanging"));
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        return (lower.startsWith("player clicks")
-                || lower.startsWith("player left clicks")
-                || (lower.startsWith("player right clicks")
-                && !matchHelpList.contains(CoreUtilities.getXthArg(3, lower))
-                && !EntityTag.matches(CoreUtilities.getXthArg(3, lower))))
-                && couldMatchIn(lower);  // Avoid matching "clicks in inventory"
+    public boolean couldMatch(ScriptPath path) {
+        return (path.eventLower.startsWith("player clicks")
+                || path.eventLower.startsWith("player left clicks")
+                || (path.eventLower.startsWith("player right clicks")
+                && !matchHelpList.contains(path.eventArgLowerAt(3))
+                && !EntityTag.matches(path.eventArgLowerAt(3))))
+                && couldMatchIn(path.eventLower);  // Avoid matching "clicks in inventory"
     }
 
-    private static final List<String> withHelpList = Arrays.asList("with", "using", "in");
+    private static final HashSet<String> withHelpList = new HashSet<>(Arrays.asList("with", "using", "in"));
 
     @Override
     public boolean matches(ScriptPath path) {
         int index = path.eventArgLowerAt(1).equals("clicks") ? 1 : 2;
-
-        if (index == 2
-                && !click_type.identify().startsWith(path.eventArgLowerAt(1).toUpperCase())) {
+        if (index == 2 && !click_type.identify().startsWith(path.eventArgLowerAt(1).toUpperCase())) {
             return false;
         }
-
         String mat = path.eventArgLowerAt(index + 1);
-        if (mat.length() > 0
-                && !withHelpList.contains(mat)
-                && !tryMaterial(blockMaterial, mat)) {
+        if (mat.length() > 0 && !withHelpList.contains(mat) && !tryMaterial(blockMaterial, mat)) {
             return false;
         }
-
         if (!nonSwitchWithCheck(path, new ItemTag(event.getItem()))) {
             return false;
         }
-
         if (!runUsingCheck(path)) {
             return false;
         }
-
-        if (location != null ? !runInCheck(path, location)
-                : !runInCheck(path, event.getPlayer().getLocation())) {
+        if (!runInCheck(path, location != null ? location : event.getPlayer().getLocation())) {
             return false;
         }
-
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -200,7 +188,7 @@ public class PlayerClicksBlockScriptEvent extends BukkitScriptEvent implements L
             return hand;
         }
         else if (name.equals("relative")) {
-            return relative;
+            return event.hasBlock() ? new LocationTag(event.getClickedBlock().getRelative(event.getBlockFace()).getLocation()) : null;
         }
         return super.getContext(name);
     }
@@ -214,7 +202,6 @@ public class PlayerClicksBlockScriptEvent extends BukkitScriptEvent implements L
         hand = new ElementTag(event.getHand().name());
         item = new ItemTag(event.getItem());
         location = event.hasBlock() ? new LocationTag(event.getClickedBlock().getLocation()) : null;
-        relative = event.hasBlock() ? new LocationTag(event.getClickedBlock().getRelative(event.getBlockFace()).getLocation()) : null;
         click_type = new ElementTag(event.getAction().name());
         cancelled = event.isCancelled() && event.useItemInHand() == Event.Result.DENY; // Spigot is dumb!
         this.event = event;

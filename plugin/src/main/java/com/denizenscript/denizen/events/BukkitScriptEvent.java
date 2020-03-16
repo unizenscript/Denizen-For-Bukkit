@@ -1,14 +1,17 @@
 package com.denizenscript.denizen.events;
 
+import com.denizenscript.denizen.flags.FlagManager;
 import com.denizenscript.denizen.objects.*;
 import com.denizenscript.denizen.objects.notable.NotableManager;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.tags.BukkitTagContext;
+import com.denizenscript.denizen.utilities.DenizenAPI;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
+import com.denizenscript.denizencore.objects.core.ScriptTag;
+import com.denizenscript.denizencore.utilities.Deprecations;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import com.denizenscript.denizencore.events.ScriptEvent;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.tags.TagContext;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.*;
 import org.bukkit.event.*;
@@ -16,6 +19,7 @@ import org.bukkit.plugin.EventExecutor;
 import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -47,6 +51,12 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
             return true;
         }
         return false;
+    }
+
+    public BukkitTagContext getTagContext(ScriptPath path) {
+        BukkitTagContext context = (BukkitTagContext) getScriptEntryData().getTagContext();
+        context.script = new ScriptTag(path.container);
+        return context;
     }
 
     public static Class<? extends Event> getRegistrationClass(Class<? extends Event> clazz) {
@@ -114,6 +124,24 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
     // Monitor is executed last, and is intended to only be used when reading the results of an event but not changing it.
     // The default priority is "normal".
     // -->
+
+    @Override
+    public void fire() {
+        if (!Bukkit.isPrimaryThread()) {
+            if (Debug.verbose) {
+                Debug.log("Event is firing async: " + getName());
+            }
+            BukkitScriptEvent altEvent = (BukkitScriptEvent) clone();
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    altEvent.fire();
+                }
+            }.runTask(DenizenAPI.getCurrentInstance());
+            return;
+        }
+        super.fire();
+    }
 
     public void fire(Event event) {
         if (event instanceof Cancellable) {
@@ -202,24 +230,11 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
         }
     }
 
-    @Deprecated
-    public boolean runInCheck(ScriptContainer scriptContainer, String s, String lower, Location location) {
-        return runInCheck(scriptContainer, s, lower, location, "in");
-    }
-
-    @Deprecated
-    public boolean runInCheck(ScriptContainer scriptContainer, String s, String lower, Location location, String innote) {
-        return runInCheck(new ScriptPath(scriptContainer, s), location, innote);
-    }
-
     public boolean runInCheck(ScriptPath path, Location location) {
         return runInCheck(path, location, "in");
     }
 
     public boolean runInCheck(ScriptPath path, Location location, String innote) {
-        if (location == null) {
-            return false;
-        }
         String it = path.switches.get(innote);
         if (it == null) {
             int index;
@@ -232,6 +247,10 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
                 // No 'in ...' specified
                 return true;
             }
+            if (location == null) {
+                return false;
+            }
+            Deprecations.inAreaSwitchFormat.warn();
             it = path.eventArgLowerAt(index + 1);
             if (it.equals("notable")) {
                 String subit = path.eventArgLowerAt(index + 2);
@@ -246,6 +265,9 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
                     return false;
                 }
             }
+        }
+        if (location == null) {
+            return false;
         }
         String lower = CoreUtilities.toLowerCase(it);
         if (lower.equals("cuboid")) {
@@ -296,44 +318,6 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
         return loc.getBlock().equals(location.getBlock());
     }
 
-    @Deprecated
-    public boolean runWithCheck(ScriptContainer scriptContainer, String s, String lower, ItemTag held) {
-        return runWithCheck(new ScriptPath(scriptContainer, s), held);
-    }
-
-    public static TagContext noDebugTagContext = new BukkitTagContext(null, null, false, null, false, null);
-
-    public boolean runGenericCheck(String inputValue, String trueValue) {
-        if (inputValue != null) {
-            trueValue = CoreUtilities.toLowerCase(trueValue);
-            inputValue = CoreUtilities.toLowerCase(inputValue);
-            if (inputValue.equalsIgnoreCase(trueValue)) {
-                return true;
-            }
-            Pattern regexd = regexHandle(inputValue);
-            if (!equalityCheck(trueValue, inputValue, regexd)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public boolean runGenericSwitchCheck(ScriptPath path, String switchName, String value) {
-        String with = path.switches.get(switchName);
-        if (with != null) {
-            value = CoreUtilities.toLowerCase(value);
-            with = CoreUtilities.toLowerCase(with);
-            if (with.equalsIgnoreCase(value)) {
-                return true;
-            }
-            Pattern regexd = regexHandle(with);
-            if (!equalityCheck(value, with, regexd)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public boolean runWithCheck(ScriptPath path, ItemTag held) {
         String with = path.switches.get("with");
         if (with != null) {
@@ -347,6 +331,80 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
         return true;
     }
 
+    public boolean runFlaggedCheck(ScriptPath path, PlayerTag player) {
+        return runFlaggedCheck(path, "flagged", player);
+    }
+
+    public boolean runFlaggedCheck(ScriptPath path, String switchName, PlayerTag player) {
+        String flagged = path.switches.get(switchName);
+        if (flagged == null) {
+            return true;
+        }
+        if (player == null) {
+            return false;
+        }
+        if (!FlagManager.playerHasFlag(player, flagged)) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean runPermissionCheck(ScriptPath path, PlayerTag player) {
+        return runPermissionCheck(path, "permission", player);
+    }
+
+    public boolean runPermissionCheck(ScriptPath path, String switchName, PlayerTag player) {
+        String perm = path.switches.get(switchName);
+        if (perm == null) {
+            return true;
+        }
+        if (player == null || !player.isOnline()) {
+            return false;
+        }
+        if (!player.getPlayerEntity().hasPermission(perm)) {
+            return false;
+        }
+        return true;
+    }
+
+    // <--[language]
+    // @name Player Event Switches
+    // @group Script Events
+    // @description
+    // There are a few special switches available to any script event with a linked player.
+    //
+    // The "flagged:<flag name>" will limit the event to only fire when the player has the flag with the specified name.
+    // It can be used like "on player breaks block flagged:nobreak:" (that would be used alongside "- flag player nobreak").
+    //
+    // The "permission:<perm key>" will limit the event to only fire when the player has the specified permission key.
+    // It can be used like "on player breaks block permission:denizen.my.perm:"
+    //
+    // Note that these switches will be ignored for events that do not have a linked player.
+    // Be cautious with events that will only sometimes have a linked player.
+    // -->
+
+    public boolean runAutomaticPlayerSwitches(ScriptPath path) {
+        BukkitScriptEntryData data = (BukkitScriptEntryData) getScriptEntryData();
+        if (!data.hasPlayer()) {
+            return true;
+        }
+        if (!runFlaggedCheck(path, data.getPlayer())) {
+            return false;
+        }
+        if (!runPermissionCheck(path, data.getPlayer())) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean matches(ScriptPath path) {
+        if (!runAutomaticPlayerSwitches(path)) {
+            return false;
+        }
+        return true;
+    }
+
     // <--[language]
     // @name Safety In Events
     // @group Script Events
@@ -356,11 +414,11 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
     //
     // The most common example of this is editing a player's inventory, within an inventory-related event.
     // Generally speaking, this problem becomes relevant any time an edit is made to something involved with an event,
-    // within the firing of an example.
+    // within the firing of that event.
     // Take the following examples:
     // <code>
     // on player clicks in inventory:
-    // - take <player.item_in_hand>
+    // - take iteminhand
     // on entity damaged:
     // - remove <context.entity>
     // </code>
@@ -380,7 +438,7 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
     // <code>
     // on player clicks in inventory:
     // - wait 1t
-    // - take <player.item_in_hand>
+    // - take iteminhand
     // on entity damaged:
     // - wait 1t
     // - if <context.entity.is_spawned||false>:
@@ -415,10 +473,9 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
         if (inv.scriptName != null && equalityCheck(inv.scriptName, comparedto, regexd)) {
             return true;
         }
-        if (NotableManager.isSaved(inv)) {
-            if (equalityCheck(NotableManager.getSavedId(inv), comparedto, regexd)) {
-                return true;
-            }
+        String notedId = NotableManager.getSavedId(inv);
+        if (notedId != null && equalityCheck(notedId, comparedto, regexd)) {
+            return true;
         }
         return false;
     }

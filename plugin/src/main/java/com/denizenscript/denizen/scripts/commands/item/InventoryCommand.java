@@ -48,7 +48,7 @@ public class InventoryCommand extends AbstractCommand {
     // open random inventory:
     //   type: task
     //   script:
-    //   - inventory open "d:in@generic[size=18;title=<red>My <green>Awesome <blue>Inventory;contents=li@air|snow_ball]"
+    //   - inventory open "d:generic[size=18;title=<red>My <green>Awesome <blue>Inventory;contents=air|snow_ball]"
     // </code>
     //
     // -->
@@ -70,6 +70,9 @@ public class InventoryCommand extends AbstractCommand {
     // destination to be a valid player inventory.
     // Using "close" closes any inventory that the currently attached player has opened.
     //
+    // Note that instead of "add", you should usually use <@link command give>,
+    // and instead of "remove", you should usually use <@link command take>.
+    //
     // @Tags
     // <PlayerTag.inventory>
     // <PlayerTag.enderchest>
@@ -79,31 +82,35 @@ public class InventoryCommand extends AbstractCommand {
     //
     // @Usage
     // Use to open a chest inventory, at a location.
-    // - inventory open d:l@123,123,123,world
+    // - inventory open d:<context.location>
     //
     // @Usage
     // Use to open a virtual inventory with a title and some items.
-    // - inventory open d:in@generic[size=27;title=BestInventory;contents=li@snow_ball|clay_brick]
+    // - inventory open d:generic[size=27;title=BestInventory;contents=snow_ball|clay_brick]
     //
     // @Usage
     // Use to open another player's inventory.
-    // - inventory open d:<p@calico-kid.inventory>
+    // - inventory open d:<[player].inventory>
     //
     // @Usage
     // Use to remove all items from a chest, except any items in the specified list.
-    // - inventory keep d:in@location[holder=l@123,123,123,world] o:li@snow_ball|ItemScript
+    // - inventory keep d:<context.location.inventory> o:snow_ball|ItemScript
     //
     // @Usage
     // Use to remove items specified in a chest from the current player's inventory, regardless of the item count.
-    // - inventory exclude origin:l@123,123,123,world
+    // - inventory exclude origin:<context.location.inventory>
     //
     // @Usage
     // Use to swap two players' inventories.
-    // - inventory swap d:in@player[holder=p@mcmonkey4eva] o:<p@fullwall.inventory>
+    // - inventory swap d:<[playerOne].inventory> o:<[playerTwo].inventory>
     //
     // @Usage
     // Use to adjust a specific item in the player's inventory.
     // - inventory adjust slot:5 "lore:Item modified!"
+    //
+    // @Usage
+    // Use to set a single stick into slot 10 of the player's inventory.
+    // - inventory set d:<player.inventory> o:stick slot:10
     // -->
 
     private enum Action {OPEN, CLOSE, COPY, MOVE, SWAP, ADD, REMOVE, SET, KEEP, EXCLUDE, FILL, CLEAR, UPDATE, ADJUST}

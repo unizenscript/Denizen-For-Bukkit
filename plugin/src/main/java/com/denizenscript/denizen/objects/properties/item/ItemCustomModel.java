@@ -31,7 +31,6 @@ public class ItemCustomModel implements Property {
             "custom_model_data"
     };
 
-
     private ItemCustomModel(ItemTag _item) {
         item = _item;
     }
@@ -79,7 +78,6 @@ public class ItemCustomModel implements Property {
         return null;
     }
 
-
     @Override
     public String getPropertyString() {
         if (item.getItemStack().getItemMeta().hasCustomModelData()) {
@@ -101,7 +99,7 @@ public class ItemCustomModel implements Property {
         // <--[mechanism]
         // @object ItemTag
         // @name custom_model_data
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Changes the custom model data ID number of the item.
         // Use with no input to remove the custom model data.

@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.events.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -20,7 +20,8 @@ public class EntityAirLevelChangeScriptEvent extends BukkitScriptEvent implement
     // <entity> changes air level
     //
     // @Regex ^on [^\s]+ changes air level$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -28,10 +29,10 @@ public class EntityAirLevelChangeScriptEvent extends BukkitScriptEvent implement
     //
     // @Context
     // <context.entity> returns the EntityTag.
-    // <context.air> returns an Element(Number) of the entity's new air level (measured in ticks).
+    // <context.air> returns an ElementTag(Number) of the entity's new air level (measured in ticks).
     //
     // @Determine
-    // Element(Decimal) to set the entity's new air level.
+    // ElementTag(Decimal) to set the entity's new air level.
     //
     // @Player when the entity that's air level has changed is a player.
     //
@@ -65,7 +66,7 @@ public class EntityAirLevelChangeScriptEvent extends BukkitScriptEvent implement
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -84,8 +85,7 @@ public class EntityAirLevelChangeScriptEvent extends BukkitScriptEvent implement
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(entity.isPlayer() ? EntityTag.getPlayerFrom(event.getEntity()) : null,
-                entity.isCitizensNPC() ? EntityTag.getNPCFrom(event.getEntity()) : null);
+        return new BukkitScriptEntryData(entity);
     }
 
     @Override

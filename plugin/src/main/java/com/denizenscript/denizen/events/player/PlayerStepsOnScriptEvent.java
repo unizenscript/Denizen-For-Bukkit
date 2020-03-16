@@ -1,12 +1,10 @@
 package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.*;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -20,7 +18,8 @@ public class PlayerStepsOnScriptEvent extends BukkitScriptEvent implements Liste
     // player steps on <material>
     //
     // @Regex ^on player steps on [^\s]+$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Warning This event may fire very rapidly.
     //
@@ -32,6 +31,8 @@ public class PlayerStepsOnScriptEvent extends BukkitScriptEvent implements Liste
     // <context.location> returns a LocationTag of the block the player is stepping on.
     // <context.previous_location> returns a LocationTag of where the player was before stepping onto the block.
     // <context.new_location> returns a LocationTag of where the player is now.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -46,8 +47,8 @@ public class PlayerStepsOnScriptEvent extends BukkitScriptEvent implements Liste
     public PlayerMoveEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.toLowerCase(s).startsWith("player steps on");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player steps on");
     }
 
     @Override
@@ -63,7 +64,7 @@ public class PlayerStepsOnScriptEvent extends BukkitScriptEvent implements Liste
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override

@@ -36,11 +36,6 @@ public class EntityVisible implements Property {
             "visible"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityVisible(EntityTag ent) {
         entity = ent;
         stand = (ArmorStand) ent.getBukkitEntity();
@@ -49,10 +44,6 @@ public class EntityVisible implements Property {
     EntityTag entity;
 
     ArmorStand stand;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -67,11 +58,6 @@ public class EntityVisible implements Property {
         return "visible";
     }
 
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
-
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
 
@@ -82,6 +68,7 @@ public class EntityVisible implements Property {
         // <--[tag]
         // @attribute <EntityTag.visible>
         // @returns ElementTag(Boolean)
+        // @mechanism EntityTag.visible
         // @group attributes
         // @description
         // Returns whether the armor stand is visible.
@@ -89,7 +76,6 @@ public class EntityVisible implements Property {
         if (attribute.startsWith("visible")) {
             return new ElementTag(stand.isVisible()).getObjectAttribute(attribute.fulfill(1));
         }
-
 
         return null;
     }
@@ -100,7 +86,7 @@ public class EntityVisible implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name visible
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Sets whether the armor stand is visible.
         // @tags

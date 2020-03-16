@@ -33,7 +33,6 @@ public class ItemRepairCost implements Property {
             "repair_cost"
     };
 
-
     private ItemRepairCost(ItemTag _item) {
         item = _item;
     }
@@ -64,7 +63,6 @@ public class ItemRepairCost implements Property {
         return null;
     }
 
-
     @Override
     public String getPropertyString() {
         int cost = ((Repairable) item.getItemStack().getItemMeta()).getRepairCost();
@@ -87,7 +85,7 @@ public class ItemRepairCost implements Property {
         // <--[mechanism]
         // @object ItemTag
         // @name repair_cost
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Changes the repair cost (on an anvil) of the item.
         // @tags

@@ -45,11 +45,11 @@ public class CopyBlockCommand extends AbstractCommand {
     //
     // @Usage
     // Use to copy the block the player is looking at to their current location
-    // - copyblock <player.location.cursor_on> to:<player.location>
+    // - copyblock <player.cursor_on> to:<player.location>
     //
     // @Usage
     // Use to move the block the player is looking at to their current location (removing it from its original location)
-    // - copyblock <player.location.cursor_on> to:<player.location> remove_original
+    // - copyblock <player.cursor_on> to:<player.location> remove_original
     // -->
 
     @Override
@@ -234,21 +234,20 @@ public class CopyBlockCommand extends AbstractCommand {
     }
 
     private void replaceBlock(Block origin, Block destination, boolean removeOrigin) {
-        BlockState originState = LocationTag.getBlockStateFor(origin);
+        BlockState originState = origin.getState();
         BlockData originData = NMSHandler.getBlockHelper().getBlockData(origin);
         originData.setBlock(destination, false);
-        BlockState destState = LocationTag.getBlockStateFor(destination);
+        BlockState destState = destination.getState();
 
         if (originState instanceof InventoryHolder) {
             ((InventoryHolder) destState).getInventory()
                     .setContents(((InventoryHolder) originState).getInventory().getContents());
         }
         else if (originState instanceof Sign) {
-            int n = 0;
-
-            for (String line : ((Sign) originState).getLines()) {
-                ((Sign) destState).setLine(n, line);
-                n++;
+            Sign destSign = (Sign) destState;
+            String[] origSignLines = ((Sign) originState).getLines();
+            for (int i = 0; i < origSignLines.length; i++) {
+                destSign.setLine(i, origSignLines[i]);
             }
         }
         else if (originState instanceof NoteBlock) {

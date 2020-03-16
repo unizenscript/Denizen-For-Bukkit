@@ -2,12 +2,11 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -26,8 +25,10 @@ public class PlayerChangesGamemodeScriptEvent extends BukkitScriptEvent implemen
     // @Triggers when a player's gamemode is changed.
     //
     // @Context
-    // <context.gamemode> returns an ElementTag of the gamemode.
-    // Game Modes: <@link url http://bit.ly/1KHab43>
+    // <context.gamemode> returns an ElementTag of the gamemode. Game Modes: <@link url http://bit.ly/1KHab43>
+    //
+    // @Player Always.
+    //
     // -->
 
     public PlayerChangesGamemodeScriptEvent() {
@@ -39,8 +40,8 @@ public class PlayerChangesGamemodeScriptEvent extends BukkitScriptEvent implemen
     public PlayerGameModeChangeEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.toLowerCase(s).startsWith("player changes gamemode");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player changes gamemode");
     }
 
     @Override
@@ -51,7 +52,7 @@ public class PlayerChangesGamemodeScriptEvent extends BukkitScriptEvent implemen
                 return false;
             }
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override

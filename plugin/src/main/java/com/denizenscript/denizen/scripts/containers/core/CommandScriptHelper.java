@@ -1,12 +1,12 @@
 package com.denizenscript.denizen.scripts.containers.core;
 
 import com.denizenscript.denizen.utilities.DenizenAPI;
-import com.denizenscript.denizen.utilities.command.DenizenAliasHelpTopic;
-import com.denizenscript.denizen.utilities.command.DenizenCommand;
-import com.denizenscript.denizen.utilities.command.DenizenCommandHelpTopic;
+import com.denizenscript.denizen.utilities.command.scripted.DenizenAliasHelpTopic;
+import com.denizenscript.denizen.utilities.command.scripted.DenizenCommand;
+import com.denizenscript.denizen.utilities.command.scripted.DenizenCommandHelpTopic;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.google.common.base.Predicate;
-import com.denizenscript.denizen.Settings;
+import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizen.events.bukkit.ScriptReloadEvent;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.NMSVersion;
@@ -25,11 +25,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class CommandScriptHelper implements Listener {
 
-    public static Map<String, DenizenCommand> denizenCommands = new ConcurrentHashMap<>(8, 0.9f, 1);
+    public static Map<String, DenizenCommand> denizenCommands = new HashMap<>();
     public static Map<String, Command> overriddenCommands = new HashMap<>();
     public static Map<String, HelpTopic> overriddenHelpTopics = new HashMap<>();
     public static Map<String, Command> knownCommands = null;

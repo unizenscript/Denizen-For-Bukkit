@@ -35,20 +35,11 @@ public class EntityInventory implements Property {
             "inventory_contents"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityInventory(EntityTag ent) {
         entity = ent;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -59,11 +50,6 @@ public class EntityInventory implements Property {
     public String getPropertyId() {
         return "inventory_contents";
     }
-
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -89,7 +75,6 @@ public class EntityInventory implements Property {
             }
         }
 
-
         return null;
     }
 
@@ -107,7 +92,7 @@ public class EntityInventory implements Property {
         // <InventoryTag.list_contents>
         // -->
         if (mechanism.matches("inventory_contents")) {
-            ListTag list = ListTag.valueOf(mechanism.getValue().asString());
+            ListTag list = ListTag.valueOf(mechanism.getValue().asString(), mechanism.context);
             InventoryTag inv = entity.getInventory();
             inv.clear();
             int i = 0;

@@ -9,7 +9,6 @@ import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 import org.bukkit.entity.Player;
 
-
 public class ExperienceCommand extends AbstractCommand {
 
     // <--[command]
@@ -45,8 +44,8 @@ public class ExperienceCommand extends AbstractCommand {
     //
     // - experience take level 1
     // @Usage
-    // Use to give a player with the name Morphan1 10 experience points.
-    // - experience give 10 player:p@Morphan1
+    // Use to give a player with the name steve 10 experience points.
+    // - experience give 10 player:<[someplayer]>
     // -->
 
     private enum Type {SET, GIVE, TAKE}
@@ -110,7 +109,6 @@ public class ExperienceCommand extends AbstractCommand {
                 .addObject("silent", silent);
 
     }
-
 
     @Override
     public void execute(ScriptEntry scriptEntry) {

@@ -2,12 +2,11 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -33,6 +32,8 @@ public class PlayerSwapsItemsScriptEvent extends BukkitScriptEvent implements Li
     // "MAIN:" + ItemTag to set the item in the main hand.
     // "OFFHAND:" + ItemTag to set the item in the off hand.
     //
+    // @Player Always.
+    //
     // -->
 
     public PlayerSwapsItemsScriptEvent() {
@@ -41,18 +42,11 @@ public class PlayerSwapsItemsScriptEvent extends BukkitScriptEvent implements Li
 
     public static PlayerSwapsItemsScriptEvent instance;
     public PlayerTag player;
-    public ItemTag mainhand;
-    public ItemTag offhand;
     public PlayerSwapHandItemsEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.toLowerCase(s).startsWith("player swaps items");
-    }
-
-    @Override
-    public boolean matches(ScriptPath path) {
-        return true;
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player swaps items");
     }
 
     @Override
@@ -85,10 +79,10 @@ public class PlayerSwapsItemsScriptEvent extends BukkitScriptEvent implements Li
     @Override
     public ObjectTag getContext(String name) {
         if (name.equals("main")) {
-            return mainhand;
+            return new ItemTag(event.getMainHandItem());
         }
         else if (name.equals("offhand")) {
-            return offhand;
+            return new ItemTag(event.getOffHandItem());
         }
         return super.getContext(name);
     }
@@ -96,8 +90,6 @@ public class PlayerSwapsItemsScriptEvent extends BukkitScriptEvent implements Li
     @EventHandler
     public void playerSwapsItems(PlayerSwapHandItemsEvent event) {
         player = PlayerTag.mirrorBukkitPlayer(event.getPlayer());
-        mainhand = new ItemTag(event.getMainHandItem());
-        offhand = new ItemTag(event.getOffHandItem());
         this.event = event;
         fire(event);
     }

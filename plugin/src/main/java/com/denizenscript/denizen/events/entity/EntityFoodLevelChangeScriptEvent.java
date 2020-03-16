@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.events.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -20,7 +20,8 @@ public class EntityFoodLevelChangeScriptEvent extends BukkitScriptEvent implemen
     // <entity> changes food level
     //
     // @Regex ^on [^\s]+ changes food level$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -28,10 +29,10 @@ public class EntityFoodLevelChangeScriptEvent extends BukkitScriptEvent implemen
     //
     // @Context
     // <context.entity> returns the EntityTag.
-    // <context.food> returns an Element(Number) of the entity's new food level.
+    // <context.food> returns an ElementTag(Number) of the entity's new food level.
     //
     // @Determine
-    // Element(Decimal) to set the entity's new food level.
+    // ElementTag(Decimal) to set the entity's new food level.
     //
     // @Player when the entity that's food level has changed is a player.
     //
@@ -65,7 +66,7 @@ public class EntityFoodLevelChangeScriptEvent extends BukkitScriptEvent implemen
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -84,8 +85,7 @@ public class EntityFoodLevelChangeScriptEvent extends BukkitScriptEvent implemen
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(entity.isPlayer() ? EntityTag.getPlayerFrom(event.getEntity()) : null,
-                entity.isCitizensNPC() ? EntityTag.getNPCFrom(event.getEntity()) : null);
+        return new BukkitScriptEntryData(entity);
     }
 
     @Override

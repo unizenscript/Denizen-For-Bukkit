@@ -14,7 +14,6 @@ import org.bukkit.entity.Hanging;
 
 public class EntityRotation implements Property {
 
-
     public static boolean describes(ObjectTag entity) {
         if (!(entity instanceof EntityTag)) {
             return false;
@@ -40,11 +39,6 @@ public class EntityRotation implements Property {
             "rotation"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityRotation(EntityTag entity) {
         this.entity = entity;
     }
@@ -59,11 +53,6 @@ public class EntityRotation implements Property {
         ((Hanging) entity.getBukkitEntity()).setFacingDirection(direction, true);
     }
 
-
-    /////////
-    // Property Methods
-    ///////
-
     @Override
     public String getPropertyString() {
         return CoreUtilities.toLowerCase(getRotation().name());
@@ -73,11 +62,6 @@ public class EntityRotation implements Property {
     public String getPropertyId() {
         return "rotation";
     }
-
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -131,7 +115,6 @@ public class EntityRotation implements Property {
         // <EntityTag.rotation>
         // <EntityTag.rotation_vector>
         // -->
-
         if (mechanism.matches("rotation") && mechanism.requireEnum(false, BlockFace.values())) {
             setRotation(BlockFace.valueOf(mechanism.getValue().asString().toUpperCase()));
         }

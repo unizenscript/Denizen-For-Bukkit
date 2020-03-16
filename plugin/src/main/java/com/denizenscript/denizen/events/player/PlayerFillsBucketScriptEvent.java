@@ -4,12 +4,10 @@ import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.MaterialTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerBucketFillEvent;
@@ -22,7 +20,8 @@ public class PlayerFillsBucketScriptEvent extends BukkitScriptEvent implements L
     // player fills <bucket>
     //
     // @Regex ^on player fills [^\s]+$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Triggers when a player fills a bucket.
     //
@@ -33,8 +32,9 @@ public class PlayerFillsBucketScriptEvent extends BukkitScriptEvent implements L
     // <context.location> returns the LocationTag of the block clicked with the bucket.
     // <context.material> returns the MaterialTag of the LocationTag.
     //
+    // @Player Always.
+    //
     // -->
-
 
     public PlayerFillsBucketScriptEvent() {
         instance = this;
@@ -48,18 +48,18 @@ public class PlayerFillsBucketScriptEvent extends BukkitScriptEvent implements L
     public LocationTag location;
     public PlayerBucketFillEvent event;
 
-
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        return lower.startsWith("player fills");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player fills");
     }
 
     @Override
     public boolean matches(ScriptPath path) {
         String iTest = path.eventArgLowerAt(2);
-        return (iTest.equals("bucket") || tryItem(item, iTest))
-                && runInCheck(path, location);
+        if ((!iTest.equals("bucket") && !tryItem(item, iTest)) || !runInCheck(path, location)) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override

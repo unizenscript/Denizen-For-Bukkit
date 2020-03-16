@@ -2,26 +2,24 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerExpChangeEvent;
 
 public class PlayerChangesXPScriptEvent extends BukkitScriptEvent implements Listener {
 
-    // TODO: in area
     // <--[event]
     // @Events
     // player changes xp
     //
     // @Regex ^on player changes xp$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -31,7 +29,9 @@ public class PlayerChangesXPScriptEvent extends BukkitScriptEvent implements Lis
     // <context.amount> returns the amount of changed experience.
     //
     // @Determine
-    // Element(Number) to set the amount of changed experience.
+    // ElementTag(Number) to set the amount of changed experience.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -41,12 +41,11 @@ public class PlayerChangesXPScriptEvent extends BukkitScriptEvent implements Lis
 
     public static PlayerChangesXPScriptEvent instance;
     public PlayerExpChangeEvent event;
-    public int amount;
     public PlayerTag player;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.toLowerCase(s).startsWith("player changes xp");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player changes xp");
     }
 
     @Override
@@ -55,7 +54,7 @@ public class PlayerChangesXPScriptEvent extends BukkitScriptEvent implements Lis
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -66,7 +65,7 @@ public class PlayerChangesXPScriptEvent extends BukkitScriptEvent implements Lis
     @Override
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         if (determinationObj instanceof ElementTag && ((ElementTag) determinationObj).isInt()) {
-            amount = ((ElementTag) determinationObj).asInt();
+            event.setAmount(((ElementTag) determinationObj).asInt());
             return true;
         }
         return super.applyDetermination(path, determinationObj);
@@ -80,7 +79,7 @@ public class PlayerChangesXPScriptEvent extends BukkitScriptEvent implements Lis
     @Override
     public ObjectTag getContext(String name) {
         if (name.equals("amount")) {
-            return new ElementTag(amount);
+            return new ElementTag(event.getAmount());
         }
         return super.getContext(name);
     }
@@ -90,14 +89,12 @@ public class PlayerChangesXPScriptEvent extends BukkitScriptEvent implements Lis
         if (EntityTag.isNPC(event.getPlayer())) {
             return;
         }
-        amount = event.getAmount();
         player = PlayerTag.mirrorBukkitPlayer(event.getPlayer());
         this.event = event;
         cancelled = false;
         fire(event);
         if (cancelled) {
-            amount = 0;
+            event.setAmount(0);
         }
-        event.setAmount(amount);
     }
 }

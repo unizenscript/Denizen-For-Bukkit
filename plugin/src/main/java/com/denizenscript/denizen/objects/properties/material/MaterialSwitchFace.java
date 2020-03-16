@@ -5,7 +5,7 @@ import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.Mechanism;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.properties.Property;
-import com.denizenscript.denizencore.tags.Attribute;
+import com.denizenscript.denizencore.objects.properties.PropertyParser;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Switch;
 
@@ -26,14 +26,9 @@ public class MaterialSwitchFace implements Property {
         }
     }
 
-    public static final String[] handledTags = new String[] {
-            "switch_face"
-    };
-
     public static final String[] handledMechs = new String[] {
             "switch_face"
     };
-
 
     private MaterialSwitchFace(MaterialTag _material) {
         material = _material;
@@ -41,12 +36,7 @@ public class MaterialSwitchFace implements Property {
 
     MaterialTag material;
 
-    @Override
-    public ObjectTag getObjectAttribute(Attribute attribute) {
-
-        if (attribute == null) {
-            return null;
-        }
+    public static void registerTags() {
 
         // <--[tag]
         // @attribute <MaterialTag.switch_face>
@@ -57,11 +47,9 @@ public class MaterialSwitchFace implements Property {
         // Returns the current attach direction for a switch.
         // Output is "CEILING", "FLOOR", or "WALL".
         // -->
-        if (attribute.startsWith("switch_face")) {
-            return new ElementTag(getSwitch().getFace().name()).getObjectAttribute(attribute.fulfill(1));
-        }
-
-        return null;
+        PropertyParser.<MaterialSwitchFace>registerTag("switch_face", (attribute, material) -> {
+            return new ElementTag(material.getSwitch().getFace().name());
+        });
     }
 
     public Switch getSwitch() {

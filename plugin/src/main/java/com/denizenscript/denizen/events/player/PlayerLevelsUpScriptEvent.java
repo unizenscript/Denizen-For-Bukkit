@@ -2,14 +2,11 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
-import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerLevelChangeEvent;
@@ -21,13 +18,16 @@ public class PlayerLevelsUpScriptEvent extends BukkitScriptEvent implements List
     // player levels up (from <level>) (to <level>)
     //
     // @Regex ^on player levels up( from [^\s]+)?( to [^\s]+)?$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Triggers when a player levels up.
     //
     // @Context
     // <context.new_level> returns an ElementTag of the player's new level.
     // <context.old_level> returns an ElementTag of the player's old level.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -42,8 +42,8 @@ public class PlayerLevelsUpScriptEvent extends BukkitScriptEvent implements List
     public PlayerLevelChangeEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.toLowerCase(s).startsWith("player levels up");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player levels up");
     }
 
     @Override
@@ -51,12 +51,12 @@ public class PlayerLevelsUpScriptEvent extends BukkitScriptEvent implements List
         String[] data = path.eventArgsLower;
         for (int index = 3; index < data.length; index++) {
             if (data[index].equals("from")) {
-                if (ArgumentHelper.getIntegerFrom(data[index + 1]) != old_level) {
+                if (Integer.parseInt(data[index + 1]) != old_level) {
                     return false;
                 }
             }
             if (data[index].equals("to")) {
-                if (ArgumentHelper.getIntegerFrom(data[index + 1]) != new_level) {
+                if (Integer.parseInt(data[index + 1]) != new_level) {
                     return false;
                 }
             }
@@ -66,7 +66,7 @@ public class PlayerLevelsUpScriptEvent extends BukkitScriptEvent implements List
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override

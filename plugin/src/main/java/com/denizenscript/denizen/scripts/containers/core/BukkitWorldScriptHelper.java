@@ -4,8 +4,8 @@ import com.denizenscript.denizen.objects.*;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.ScoreboardHelper;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.BukkitScriptEntryData;
-import com.denizenscript.denizen.Settings;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizencore.events.OldEventManager;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -28,12 +28,7 @@ import java.util.Map;
 public class BukkitWorldScriptHelper implements Listener {
 
     public BukkitWorldScriptHelper() {
-        DenizenAPI.getCurrentInstance().getServer().getPluginManager()
-                .registerEvents(this, DenizenAPI.getCurrentInstance());
-    }
-
-    public static String doEvents(List<String> events, NPCTag npc, PlayerTag player, Map<String, ObjectTag> context) {
-        return doEvents(events, npc, player, context, false);
+        DenizenAPI.getCurrentInstance().getServer().getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
     }
 
     public static String doEvents(List<String> events, NPCTag npc, PlayerTag player, Map<String, ObjectTag> context, boolean useids) {
@@ -51,15 +46,6 @@ public class BukkitWorldScriptHelper implements Listener {
     //   CUSTOM EVENTS
     /////////////////
 
-    // <--[event]
-    // @Events
-    // server start
-    //
-    // @Regex ^on server start$
-    //
-    // @Triggers when the server starts
-    //
-    // -->
     public void serverStartEvent() {
         long ticks = Settings.worldScriptTimeEventFrequency().getTicks();
         Bukkit.getScheduler().scheduleSyncRepeatingTask(DenizenAPI.getCurrentInstance(),
@@ -69,9 +55,6 @@ public class BukkitWorldScriptHelper implements Listener {
                         timeEvent();
                     }
                 }, ticks, ticks);
-
-        // Fire the 'Server Start' event
-        doEvents(Arrays.asList("server start"), null, null, null);
     }
 
     private final Map<String, Integer> current_time = new HashMap<>();
@@ -92,7 +75,7 @@ public class BukkitWorldScriptHelper implements Listener {
     // -->
     public void timeEvent() {
         for (World world : Bukkit.getWorlds()) {
-            int hour = Double.valueOf(world.getTime() / 1000).intValue(); // TODO: What is this conversion math
+            int hour = (int) (world.getTime() / 1000);
             hour = hour + 6;
             // Get the hour
             if (hour >= 24) {
@@ -138,8 +121,7 @@ public class BukkitWorldScriptHelper implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
-        final String message = ChatColor.DARK_GREEN + "CHAT: " +
-                event.getPlayer().getName() + ": " + event.getMessage();
+        final String message = ChatColor.DARK_GREEN + "CHAT: " + event.getPlayer().getName() + ": " + event.getMessage();
         Bukkit.getScheduler().runTaskLater(DenizenAPI.getCurrentInstance(), new Runnable() {
             @Override
             public void run() {
@@ -153,11 +135,9 @@ public class BukkitWorldScriptHelper implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void playerLogin(PlayerLoginEvent event) {
-
         if (EntityTag.isNPC(event.getPlayer())) {
             return;
         }
-
         PlayerTag.notePlayer(event.getPlayer());
     }
 

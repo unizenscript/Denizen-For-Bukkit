@@ -1,16 +1,17 @@
 package com.denizenscript.denizen.flags;
 
+import com.denizenscript.denizen.Denizen;
+import com.denizenscript.denizen.events.core.FlagSmartEvent;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.NPCTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.depends.Depends;
-import com.denizenscript.denizencore.objects.*;
-import com.denizenscript.denizen.BukkitScriptEntryData;
-import com.denizenscript.denizen.Denizen;
-import com.denizenscript.denizen.events.core.FlagSmartEvent;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizencore.DenizenCore;
 import com.denizenscript.denizencore.events.OldEventManager;
+import com.denizenscript.denizencore.objects.ArgumentHelper;
+import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
@@ -27,7 +28,6 @@ public class FlagManager {
         DIVIDE, INSERT, REMOVE, SPLIT, SPLIT_NEW, DELETE
     }
 
-
     // Constructor
     private Denizen denizen;
 
@@ -40,32 +40,28 @@ public class FlagManager {
         if (player == null || flagName == null) {
             return false;
         }
-        return DenizenAPI.getCurrentInstance().flagManager()
-                .getPlayerFlag(player, flagName).size() > 0;
+        return DenizenAPI.getCurrentInstance().flagManager().getPlayerFlag(player, flagName).size() > 0;
     }
 
     public static boolean entityHasFlag(EntityTag entity, String flagName) {
         if (entity == null || flagName == null) {
             return false;
         }
-        return DenizenAPI.getCurrentInstance().flagManager()
-                .getEntityFlag(entity, flagName).size() > 0;
+        return DenizenAPI.getCurrentInstance().flagManager().getEntityFlag(entity, flagName).size() > 0;
     }
 
     public static boolean npcHasFlag(NPCTag npc, String flagName) {
         if (npc == null || flagName == null) {
             return false;
         }
-        return DenizenAPI.getCurrentInstance().flagManager()
-                .getNPCFlag(npc.getId(), flagName).size() > 0;
+        return DenizenAPI.getCurrentInstance().flagManager().getNPCFlag(npc.getId(), flagName).size() > 0;
     }
 
     public static boolean serverHasFlag(String flagName) {
         if (flagName == null) {
             return false;
         }
-        return DenizenAPI.getCurrentInstance().flagManager()
-                .getGlobalFlag(flagName).size() > 0;
+        return DenizenAPI.getCurrentInstance().flagManager().getGlobalFlag(flagName).size() > 0;
     }
 
     public static void clearNPCFlags(int npcid) {
@@ -207,35 +203,19 @@ public class FlagManager {
         }
 
         /**
+         * Gets whether this flag is a list of values (even if only one) or a single first value.
+         */
+        public boolean isList() {
+            return value.values != null;
+        }
+
+        /**
          * Gets a specific value stored in a flag when given an index.
          */
         public Value get(int index) {
             checkExpired();
             return value.get(index);
         }
-
-        // <--[event]
-        // @Events
-        // flag cleared
-        // player flag cleared
-        // player flag <flagname> cleared
-        // npc flag cleared
-        // npc flag <flagname> cleared
-        // server flag cleared
-        // server flag <flagname> cleared
-        //
-        // @Regex ^on (player |entity |npc |server )flag( [^\s]+)? cleared$
-        //
-        // @Warning This event will fire rapidly and not exactly when you might expect it to fire. Generally, do not use this event unless you know what you're doing.
-        //
-        // @Triggers when a flag is cleared
-        // @Context
-        // <context.owner> returns an ElementTag of the flag owner's object.
-        // <context.name> returns an ElementTag of the flag name.
-        // <context.type> returns an ElementTag of the flag type.
-        // <context.old_value> returns an ElementTag of the flag's previous value.
-        //
-        // -->
 
         /**
          * Clears all values from a flag, essentially making it null.
@@ -330,7 +310,7 @@ public class FlagManager {
                 value.size = 1;
                 value.firstValue = (String) obj;
             }
-            else if (size() == 0) {
+            else if (value.size == 0) {
                 value.firstValue = (String) obj;
                 value.size = 1;
             }
@@ -364,7 +344,7 @@ public class FlagManager {
             valid = true;
             save();
             rebuild();
-            return size();
+            return value.size;
         }
 
         /**
@@ -385,7 +365,7 @@ public class FlagManager {
                 save();
                 rebuild();
             }
-            return size();
+            return value.size;
         }
 
         public int splitNew(Object obj) {
@@ -407,7 +387,7 @@ public class FlagManager {
             else {
                 clear();
             }
-            return size();
+            return value.size;
         }
 
         /**
@@ -429,22 +409,15 @@ public class FlagManager {
         public void remove(Object obj, int index) {
             checkExpired();
             boolean isDouble = ArgumentHelper.matchesDouble((String) obj);
-
             value.mustBeList();
-            // No index? Match object and remove it.
             if (index <= 0 && obj != null) {
                 int x = 0;
                 for (String val : value.values) {
-
-                    // Evaluate as String
                     if (val.equalsIgnoreCase(String.valueOf(obj))) {
-
                         value.values.remove(x);
                         value.size--;
                         break;
                     }
-
-                    // Evaluate as number
                     try {
                         if (isDouble && ArgumentHelper.matchesDouble(val) && Double.valueOf(val).equals(Double.valueOf((String) obj))) {
                             value.values.remove(x);
@@ -455,17 +428,13 @@ public class FlagManager {
                     catch (NumberFormatException e) {
                         // Ignore
                     }
-
                     x++;
                 }
-
-                // Else, remove specified index
             }
-            else if (index <= size()) {
+            else if (index <= value.size()) {
                 value.values.remove(index - 1);
                 value.size--;
             }
-
             valid = true;
             save();
             rebuild();
@@ -494,31 +463,6 @@ public class FlagManager {
             checkExpired();
             return value.size();
         }
-
-        // <--[event]
-        // @Events
-        // flag changed
-        // player flag changed
-        // player flag <flagname> changed
-        // npc flag changed
-        // npc flag <flagname> changed
-        // server flag changed
-        // server flag <flagname> changed
-        // entity flag changed
-        // entity flag <flagname> changed
-        //
-        // @Regex ^on (player |entity |npc |server )flag( [^\s]+)? changed$
-        //
-        // @Warning This event will fire rapidly and not exactly when you might expect it to fire. Generally, do not use this event unless you know what you're doing.
-        //
-        // @Triggers when a flag is changed
-        // @Context
-        // <context.owner> returns an ElementTag of the flag owner's object.
-        // <context.name> returns an ElementTag of the flag name.
-        // <context.type> returns an ElementTag of the flag type.
-        // <context.old_value> returns an ElementTag of the flag's previous value.
-        //
-        // -->
 
         /**
          * Saves the current values in this object to the Denizen saves.yml.
@@ -594,31 +538,6 @@ public class FlagManager {
         public String toString() {
             return flagOwner + ":" + flagName;
         }
-
-        // <--[event]
-        // @Events
-        // flag expires
-        // player flag expires
-        // player flag <flagname> expires
-        // npc flag expires
-        // npc flag <flagname> expires
-        // server flag expires
-        // server flag <flagname> expires
-        // entity flag expires
-        // entity flag <flagname> expires
-        //
-        // @Regex ^on (player |entity |npc |server )flag( [^\s]+)? expires$
-        //
-        // @Warning This event will fire rapidly and not exactly when you might expect it to fire. Generally, do not use this event unless you know what you're doing.
-        //
-        // @Triggers when a flag expires
-        // @Context
-        // <context.owner> returns an ElementTag of the flag owner's object.
-        // <context.name> returns an ElementTag of the flag name.
-        // <context.type> returns an ElementTag of the flag type.
-        // <context.old_value> returns an ElementTag of the flag's previous value.
-        //
-        // -->
 
         /**
          * Removes flag if expiration is found to be up. This is called when an action
@@ -841,7 +760,6 @@ public class FlagManager {
         }
 
     }
-
 
     /**
      * Value object that is in charge of holding values that belong to a flag.

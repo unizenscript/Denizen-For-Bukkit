@@ -44,12 +44,17 @@ public class WalkCommand extends AbstractCommand implements Holdable {
     // (if not specified, an NPC will not be able to walk to a location outside of its existing path range, by default 25 blocks).
     // (Does not apply to non-NPC entities).
     //
+    // Note that in most cases, the walk command should not be used for paths longer than 100 blocks.
+    // For ideal performance, keep it below 25.
+    //
     // Optionally, specify a list of entities to give them all the same walk instruction at the same time.
     // If the list is of NPCs, optionally specify a "radius:<#.#>" argument to change the flocking radius.
     // ('Radius' does not apply to non-NPC entities).
     //
     // Optionally, specify "lookat:<location>" to cause the NPCs to stare at a specific location while walking (as opposed to straight ahead).
     // ('Radius' does not apply to non-NPC entities).
+    //
+    // The walk command is ~waitable. Refer to <@link language ~waitable>.
     //
     // @Tags
     // <NPCTag.is_navigating>
@@ -68,6 +73,11 @@ public class WalkCommand extends AbstractCommand implements Holdable {
     // @Usage
     // Use to make the NPC walk to an anchored position while looking backwards.
     // - walk <npc> <npc.anchor[spot3]> lookat:<npc.anchor[spot2]>
+    //
+    // @Usage
+    // Use to make the NPC walk to an anchored position, and then say something after arrival, using ~waitable syntax.
+    // - ~walk <npc> <npc.anchor[spot4]>
+    // - chat "I'm here!"
     //
     // @Usage
     // Use to make a list of NPCs stored in a flag all move together, with a flocking radius based on the number of NPCs included.
@@ -117,7 +127,6 @@ public class WalkCommand extends AbstractCommand implements Holdable {
             }
         }
 
-
         // Check for required information
 
         if (!scriptEntry.hasObject("location") && !scriptEntry.hasObject("stop")) {
@@ -139,7 +148,6 @@ public class WalkCommand extends AbstractCommand implements Holdable {
         scriptEntry.defaultObject("stop", new ElementTag(false));
     }
 
-
     @Override
     public void execute(ScriptEntry scriptEntry) {
 
@@ -152,7 +160,6 @@ public class WalkCommand extends AbstractCommand implements Holdable {
         ElementTag stop = scriptEntry.getElement("stop");
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
         final LocationTag lookat = scriptEntry.getObjectTag("lookat");
-
 
         // Debug the execution
 
@@ -244,7 +251,6 @@ public class WalkCommand extends AbstractCommand implements Holdable {
         }
 
     }
-
 
     // Held script entries
     public static List<ScriptEntry> held = new ArrayList<>();

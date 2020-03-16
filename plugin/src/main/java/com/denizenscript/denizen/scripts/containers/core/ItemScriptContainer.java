@@ -1,6 +1,7 @@
 package com.denizenscript.denizen.scripts.containers.core;
 
-import com.denizenscript.denizen.utilities.debugging.Debug;
+import com.denizenscript.denizen.utilities.Utilities;
+import com.denizenscript.denizencore.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.nbt.LeatherColorer;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.tags.BukkitTagContext;
@@ -36,38 +37,45 @@ public class ItemScriptContainer extends ScriptContainer {
     //
     // <code>
     // # The name of the item script is the same name that you can use to construct a new
-    // # ItemTag based on this item script. For example, an item script named 'sword of swiftness'
-    // # can be referred to as 'sword of swiftness'.
-    // Item Script Name:
+    // # ItemTag based on this item script. For example, an item script named 'sword_of_swiftness'
+    // # can be referred to as simply 'sword_of_swiftness'.
+    // Item_Script_Name:
     //
     //   type: item
     //
-    //   # Must be a valid ItemTag (EG red_wool or potion,8226) See 'ItemTag' for more information.
+    //   # Must be a valid ItemTag. See 'ItemTag' for more information.
+    //   # | All item scripts MUST have this key!
     //   material: base_material
     //
     //   # List any mechanisms you want to apply to the item within
+    //   # | Some item scripts should have this key!
     //   mechanisms:
     //     # An example of a mechanism to apply
     //     unbreakable: true
     //
     //   # The 'custom name' can be anything you wish. Use color tags to make colored custom names.
+    //   # | Some item scripts should have this key!
     //   display name: custom name
     //
     //   # Lore lines can make items extra unique. This is a list, so multiple entries will result in multiple lores.
     //   # If using a replaceable tag, they are filled in when the item script is given/created/dropped/etc.
+    //   # | Some item scripts should have this key!
     //   lore:
     //   - item
     //   - ...
     //
     //   # If you want an item to be damaged on creation, you can change its durability.
+    //   # | Most item scripts should exclude this key!
     //   durability: 12
     //
-    //   # Each line must specify a valid Bukkit enchantment. See 'enchantments' for more information.
+    //   # Each line must specify a valid Minecranft enchantment name.
+    //   # | Some item scripts should have this key!
     //   enchantments:
     //   - enchantment_name:level
     //   - ...
     //
     //   # You can optionally add crafting recipes for your item script.
+    //   # | Most item scripts should exclude this key, unless you're specifically building craftable items.
     //   recipes:
     //       1:
     //           # The type can be: shaped, shapeless, stonecutting, furnace, blast, smoker, or campfire.
@@ -116,14 +124,17 @@ public class ItemScriptContainer extends ScriptContainer {
     //
     //   # Set to true to not store the scriptID on the item, treating it as an item dropped by any other plugin.
     //   # NOTE: THIS IS NOT RECOMMENDED UNLESS YOU HAVE A SPECIFIC REASON TO USE IT.
+    //   # | Most item scripts should exclude this key!
     //   no_id: true/false
     //
     //   # For colorable items, such as leather armor, you can specify a valid ColorTag to specify the item's appearance.
     //   # See 'ColorTag' for more information.
+    //   # | Most item scripts should exclude this key!
     //   color: ColorTag
     //
     //   # If your material is a 'm@written_book', you can specify a book script to automatically scribe your item
     //   # upon creation. See 'book script containers' for more information.
+    //   # | Most item scripts should exclude this key, though there are certain rare cases it may be useful to.
     //   book: book_script_name
     // </code>
     //
@@ -170,18 +181,24 @@ public class ItemScriptContainer extends ScriptContainer {
         if (context == null) {
             context = new BukkitTagContext(null, null, new ScriptTag(this));
         }
+        else {
+            context = new BukkitTagContext(context);
+            context.script = new ScriptTag(this);
+        }
         // Try to use this script to make an item.
         ItemTag stack = null;
         isProcessing = true;
         try {
-            // Check validity of material
-            if (contains("MATERIAL")) {
-                String material = TagManager.tag(getString("MATERIAL"), context);
-                if (material.startsWith("m@")) {
-                    material = material.substring(2);
-                }
-                stack = ItemTag.valueOf(material, this);
+            if (!contains("material")) {
+                Debug.echoError("Item script '" + getName() + "' does not contain a material. Script cannot function.");
+                return null;
             }
+            // Check validity of material
+            String material = TagManager.tag(getString("material"), context);
+            if (material.startsWith("m@")) {
+                material = material.substring(2);
+            }
+            stack = ItemTag.valueOf(material, this);
 
             // Make sure we're working with a valid base ItemStack
             if (stack == null) {
@@ -189,8 +206,8 @@ public class ItemScriptContainer extends ScriptContainer {
             }
 
             // Handle listed mechanisms
-            if (contains("MECHANISMS")) {
-                YamlConfiguration mechs = getConfigurationSection("MECHANISMS");
+            if (contains("mechanisms")) {
+                YamlConfiguration mechs = getConfigurationSection("mechanisms");
                 for (StringHolder key : mechs.getKeys(false)) {
                     String val;
                     if (mechs.isList(key.str)) {
@@ -211,23 +228,23 @@ public class ItemScriptContainer extends ScriptContainer {
             List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
 
             // Set Display Name
-            if (contains("DISPLAY NAME")) {
-                String displayName = TagManager.tag(getString("DISPLAY NAME"), context);
+            if (contains("display name")) {
+                String displayName = TagManager.tag(getString("display name"), context);
                 meta.setDisplayName(displayName);
             }
 
             // Set if the object is bound to the player
-            if (contains("BOUND")) {
+            if (contains("bound")) {
                 Deprecations.boundWarning.warn(context);
-                bound = Boolean.valueOf(TagManager.tag(getString("BOUND"), context));
+                bound = Boolean.valueOf(TagManager.tag(getString("bound"), context));
             }
 
             // Set Lore
-            if (contains("LORE")) {
+            if (contains("lore")) {
 
-                for (String l : getStringList("LORE")) {
-                    l = TagManager.tag(l, context);
-                    lore.add(l);
+                for (String line : getStringList("lore")) {
+                    line = TagManager.tag(line, context);
+                    lore.add(line);
                 }
             }
 
@@ -235,14 +252,14 @@ public class ItemScriptContainer extends ScriptContainer {
             stack.getItemStack().setItemMeta(meta);
 
             // Set Durability
-            if (contains("DURABILITY")) {
-                short durability = Short.valueOf(getString("DURABILITY"));
+            if (contains("durability")) {
+                short durability = Short.valueOf(getString("durability"));
                 stack.setDurability(durability);
             }
 
             // Set Enchantments
-            if (contains("ENCHANTMENTS")) {
-                for (String enchantment : getStringList("ENCHANTMENTS")) {
+            if (contains("enchantments")) {
+                for (String enchantment : getStringList("enchantments")) {
 
                     enchantment = TagManager.tag(enchantment, context);
                     try {
@@ -254,26 +271,29 @@ public class ItemScriptContainer extends ScriptContainer {
                             enchantment = split[0].replace(" ", "");
                         }
                         // Add enchantment
-                        Enchantment ench = Enchantment.getByName(enchantment.toUpperCase());
+                        Enchantment ench = Utilities.getEnchantmentByName(enchantment);
                         stack.getItemStack().addUnsafeEnchantment(ench, level);
                     }
-                    catch (Exception e) {
+                    catch (Exception ex) {
                         Debug.echoError("While constructing '" + getName() + "', encountered error: '"
-                                + enchantment + "' is an invalid enchantment!");
+                                + enchantment + "' is an invalid enchantment: " + ex.getClass().getName() + ": " + ex.getMessage());
+                        if (Debug.verbose) {
+                            Debug.echoError(ex);
+                        }
                     }
                 }
             }
 
             // Set Color
-            if (contains("COLOR")) {
-                String color = TagManager.tag(getString("COLOR"), context);
+            if (contains("color")) {
+                String color = TagManager.tag(getString("color"), context);
                 LeatherColorer.colorArmor(stack, color);
             }
 
             // Set Book
-            if (contains("BOOK")) {
+            if (contains("book")) {
                 BookScriptContainer book = ScriptRegistry
-                        .getScriptContainer(TagManager.tag(getString("BOOK"),
+                        .getScriptContainer(TagManager.tag(getString("book"),
                                 context).replace("s@", ""));
 
                 stack = book.writeBookTo(stack, context);

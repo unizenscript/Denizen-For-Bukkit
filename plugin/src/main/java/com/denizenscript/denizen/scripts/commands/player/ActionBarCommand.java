@@ -3,7 +3,7 @@ package com.denizenscript.denizen.scripts.commands.player;
 import com.denizenscript.denizen.scripts.containers.core.FormatScriptContainer;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
@@ -42,11 +42,11 @@ public class ActionBarCommand extends AbstractCommand {
     //
     // @Usage
     // Use to send a message to a list of players.
-    // - actionbar "Hey, welcome to the server!" targets:p@Fortifier42|p@mcmonkey4eva|p@Morphan1
+    // - actionbar "Hey, welcome to the server!" targets:<[thatplayer]>|<[player]>|<[someplayer]>
     //
     // @Usage
     // Use to send a message to a list of players, with a formatted message.
-    // - actionbar "Hey there!" targets:p@Fortifier42|p@mcmonkey4eva format:ServerChat
+    // - actionbar "Hey there!" targets:<[thatplayer]>|<[player]> format:ServerChat
     // -->
 
     @Override
@@ -105,7 +105,7 @@ public class ActionBarCommand extends AbstractCommand {
 
         }
         if (format != null) {
-            text = new ElementTag(format.getFormattedText(scriptEntry));
+            text = new ElementTag(format.getFormattedText(text.asString(), scriptEntry));
         }
 
         for (PlayerTag player : targets) {

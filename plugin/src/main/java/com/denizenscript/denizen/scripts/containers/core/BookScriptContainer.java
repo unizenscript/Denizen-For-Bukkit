@@ -30,16 +30,20 @@ public class BookScriptContainer extends ScriptContainer {
     //   type: book
     //
     //   # The 'custom name' can be anything you wish.
+    //   # | All book scripts MUST have this key!
     //   title: custom name
     //
     //   # The 'custom name' can be anything you wish.
+    //   # | All book scripts MUST have this key!
     //   author: custom name
     //
     //   # Defaults to true. Set to false to spawn a 'book and quill' instead of a 'written book'.
+    //   # | Some book scripts might have this key!
     //   signed: true/false
     //
     //   # Each -line in the text section represents an entire page.
     //   # To create a newline, use the tag <n>. To create a paragraph, use <p>.
+    //   # | All book scripts MUST have this key!
     //   text:
     //   - page
     //   - ...
@@ -66,26 +70,26 @@ public class BookScriptContainer extends ScriptContainer {
         // Get current ItemMeta from the book
         BookMeta bookInfo = (BookMeta) book.getItemStack().getItemMeta();
 
-        if (contains("TITLE")) {
-            String title = getString("TITLE");
+        if (contains("title")) {
+            String title = getString("title");
             title = TagManager.tag(title, context);
             bookInfo.setTitle(title);
         }
 
-        if (contains("SIGNED")) {
-            if (getString("SIGNED").equalsIgnoreCase("false")) {
+        if (contains("signed")) {
+            if (getString("signed").equalsIgnoreCase("false")) {
                 book.getItemStack().setType(MaterialCompat.WRITABLE_BOOK);
             }
         }
 
-        if (contains("AUTHOR")) {
-            String author = getString("AUTHOR");
+        if (contains("author")) {
+            String author = getString("author");
             author = TagManager.tag(author, context);
             bookInfo.setAuthor(author);
         }
 
-        if (contains("TEXT")) {
-            List<String> pages = getStringList("TEXT");
+        if (contains("text")) {
+            List<String> pages = getStringList("text");
 
             for (String page : pages) {
                 page = TagManager.tag(page, context);

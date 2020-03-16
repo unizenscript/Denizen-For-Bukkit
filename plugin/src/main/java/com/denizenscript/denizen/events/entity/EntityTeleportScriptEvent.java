@@ -2,7 +2,7 @@ package com.denizenscript.denizen.events.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.LocationTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -24,8 +24,8 @@ public class EntityTeleportScriptEvent extends BukkitScriptEvent implements List
     //
     // @Regex ^on [^\s]+ teleports$
     //
-    // @Switch in <area>
-    // @Switch cause <cause>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Switch cause:<cause> to only process the event when it came from a specified cause.
     //
     // @Triggers when an entity teleports.
     //
@@ -81,7 +81,7 @@ public class EntityTeleportScriptEvent extends BukkitScriptEvent implements List
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -119,9 +119,7 @@ public class EntityTeleportScriptEvent extends BukkitScriptEvent implements List
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        // TODO: Store the player / npc?
-        return new BukkitScriptEntryData(pEvent != null ? EntityTag.getPlayerFrom(pEvent.getPlayer()) : null,
-                entity.isCitizensNPC() ? entity.getDenizenNPC() : null);
+        return new BukkitScriptEntryData(entity);
     }
 
     @Override

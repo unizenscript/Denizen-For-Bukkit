@@ -5,7 +5,7 @@ import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.Mechanism;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.properties.Property;
-import com.denizenscript.denizencore.tags.Attribute;
+import com.denizenscript.denizencore.objects.properties.PropertyParser;
 
 public class InventorySize implements Property {
 
@@ -21,17 +21,9 @@ public class InventorySize implements Property {
         return new InventorySize((InventoryTag) inventory);
     }
 
-    public static final String[] handledTags = new String[] {
-            "size"
-    };
-
     public static final String[] handledMechs = new String[] {
             "size"
     };
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
 
     InventoryTag inventory;
 
@@ -50,11 +42,6 @@ public class InventorySize implements Property {
         inventory.setSize(size);
     }
 
-
-    /////////
-    // Property Methods
-    ///////
-
     @Override
     public String getPropertyString() {
         if (getSize() > 0 && inventory.getIdType().equals("generic")
@@ -71,17 +58,7 @@ public class InventorySize implements Property {
         return "size";
     }
 
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
-
-    @Override
-    public ObjectTag getObjectAttribute(Attribute attribute) {
-
-        if (attribute == null) {
-            return null;
-        }
+    public static void registerTags() {
 
         // <--[tag]
         // @attribute <InventoryTag.size>
@@ -91,13 +68,9 @@ public class InventorySize implements Property {
         // @description
         // Return the number of slots in the inventory.
         // -->
-        if (attribute.startsWith("size")) {
-            return new ElementTag(getSize())
-                    .getObjectAttribute(attribute.fulfill(1));
-        }
-
-        return null;
-
+        PropertyParser.<InventorySize>registerTag("size", (attribute, inventory) -> {
+            return new ElementTag(inventory.getSize());
+        });
     }
 
     @Override
@@ -106,7 +79,7 @@ public class InventorySize implements Property {
         // <--[mechanism]
         // @object InventoryTag
         // @name size
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Sets the size of the inventory. (Only works for "generic" chest inventories.)
         // @tags

@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -20,6 +20,8 @@ public class ResourcePackStatusScriptEvent extends BukkitScriptEvent {
     // @Context
     // <context.status> returns an ElementTag of the status. Can be: SUCCESSFULLY_LOADED, DECLINED, FAILED_DOWNLOAD, ACCEPTED.
     //
+    // @Player Always.
+    //
     // -->
 
     public ResourcePackStatusScriptEvent() {
@@ -34,11 +36,6 @@ public class ResourcePackStatusScriptEvent extends BukkitScriptEvent {
     @Override
     public boolean couldMatch(ScriptPath path) {
         return path.eventLower.startsWith("resource pack status");
-    }
-
-    @Override
-    public boolean matches(ScriptPath path) {
-        return true;
     }
 
     @Override

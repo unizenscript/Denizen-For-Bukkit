@@ -45,7 +45,6 @@ public class ItemPlantgrowth implements Property {
             "plant_growth"
     };
 
-
     private ItemPlantgrowth(ItemTag _item) {
         item = _item;
     }
@@ -94,7 +93,6 @@ public class ItemPlantgrowth implements Property {
         return null;
     }
 
-
     @Override
     public String getPropertyString() {
         String state;
@@ -139,7 +137,6 @@ public class ItemPlantgrowth implements Property {
         // <ItemTag.is_crop>
         // <ItemTag.plant_growth>
         // -->
-
         if (mechanism.matches("plant_growth")) {
             ElementTag inputValue = new ElementTag(mechanism.getValue().asString().toUpperCase());
             if (item.getItemStack().getData() instanceof Crops && inputValue.matchesEnum(CropState.values())) {

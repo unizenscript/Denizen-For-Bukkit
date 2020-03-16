@@ -30,7 +30,6 @@ public class ItemUnbreakable implements Property {
             "unbreakable"
     };
 
-
     private ItemUnbreakable(ItemTag item) {
         this.item = item;
     }
@@ -72,7 +71,7 @@ public class ItemUnbreakable implements Property {
         // <--[mechanism]
         // @object ItemTag
         // @name unbreakable
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Changes whether an item has the unbreakable item flag.
         // @tags

@@ -3,7 +3,7 @@ package com.denizenscript.denizen.npc.traits;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.NPCTag;
 import com.denizenscript.denizen.utilities.DenizenAPI;
-import com.denizenscript.denizen.Settings;
+import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.tags.TagManager;
@@ -44,15 +44,15 @@ public class HealthTrait extends Trait implements Listener {
     // Set respawn location: - flag <npc> respawn_location:<location>
     //
     // Related Tags
-    // <@link tag NPCTag.health>
-    // <@link tag NPCTag.health.formatted>
-    // <@link tag NPCTag.health.max>
-    // <@link tag NPCTag.health.percentage>
+    // <@link tag EntityTag.health>
+    // <@link tag EntityTag.formatted_health>
+    // <@link tag EntityTag.health_max>
+    // <@link tag EntityTag.health_percentage>
     // <@link tag NPCTag.has_trait[health]>
     //
     // Related Mechanisms
-    // <@link mechanism health>
-    // <@link mechanism max_health>
+    // <@link mechanism EntityTag.health>
+    // <@link mechanism EntityTag.max_health>
     //
     // Related Commands
     // <@link command heal>
@@ -86,7 +86,6 @@ public class HealthTrait extends Trait implements Listener {
     private boolean dying = false;
     private Location loc;
     private UUID entityId = null;
-
 
     public DurationTag getRespawnDelay() {
         return DurationTag.valueOf(respawnDelay);
@@ -128,7 +127,6 @@ public class HealthTrait extends Trait implements Listener {
     public boolean animatesOnDeath() {
         return animatedeath;
     }
-
 
     public Integer void_watcher_task = null;
 

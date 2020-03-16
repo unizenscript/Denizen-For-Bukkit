@@ -38,12 +38,12 @@ public class HeadCommand extends AbstractCommand {
     // <ItemTag.has_skin>
     //
     // @Usage
-    // Use to stick an awesome head on your head with the head command.
-    // - head <player> skin:mcmonkey4eva
+    // Use to stick a player's head on your head with the head command.
+    // - head <player> skin:Notch
     //
     // @Usage
-    // Use to equip an npc with id 5 with your own head.
-    // - head n@5 skin:<player.name>
+    // Use to equip a different NPC with your own head.
+    // - head <[some_npc]> skin:<player.name>
     //
     // @Usage
     // Use to equip all online players with Notch's head.
@@ -109,7 +109,7 @@ public class HeadCommand extends AbstractCommand {
         if (skin != null) {
             item = MaterialCompat.createPlayerHead();
             ItemMeta itemMeta = item.getItemMeta();
-            ((SkullMeta) itemMeta).setOwner(skin.asString().replaceAll("[pP]@", "")); // TODO: 1.12 and up - switch to setOwningPlayer?
+            ((SkullMeta) itemMeta).setOwner(skin.asString());
             item.setItemMeta(itemMeta);
 
         }

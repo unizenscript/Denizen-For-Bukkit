@@ -10,7 +10,6 @@ import org.bukkit.entity.ArmorStand;
 
 public class EntitySmall implements Property {
 
-
     public static boolean describes(ObjectTag entity) {
         return entity instanceof EntityTag &&
                 ((EntityTag) entity).getBukkitEntity() instanceof ArmorStand;
@@ -33,20 +32,11 @@ public class EntitySmall implements Property {
             "is_small"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntitySmall(EntityTag entity) {
         this.entity = entity;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -60,11 +50,6 @@ public class EntitySmall implements Property {
     public String getPropertyId() {
         return "small";
     }
-
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -95,7 +80,7 @@ public class EntitySmall implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name is_small
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Sets whether the armor stand is small.
         // @tags

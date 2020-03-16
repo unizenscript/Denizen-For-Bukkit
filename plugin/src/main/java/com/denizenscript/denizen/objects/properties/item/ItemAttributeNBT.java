@@ -60,7 +60,7 @@ public class ItemAttributeNBT implements Property {
         // @group properties
         // @mechanism ItemTag.nbt_attributes
         // @description
-        // Returns the NBT attribute data (as matches the mechanism input), if any.
+        // Returns the NBT attribute data from the item, in a format that matches the mechanism input.
         // -->
         if (attribute.startsWith("nbt_attributes")) {
             return getList().getObjectAttribute(attribute.fulfill(1));
@@ -104,7 +104,7 @@ public class ItemAttributeNBT implements Property {
         // @input ListTag
         // @description
         // Sets the Denizen NBT attributes for this item in the format attribute/slot/op/amount|...
-        // Attribute is text ( http://minecraft.gamepedia.com/Attribute ), slot is the name of the slot,
+        // Attribute is text (<@link url http://minecraft.gamepedia.com/Attribute>), slot is the name of the slot,
         // op is the number code for operation, and amount is a decimal.
         // @tags
         // <ItemTag.nbt_attributes>

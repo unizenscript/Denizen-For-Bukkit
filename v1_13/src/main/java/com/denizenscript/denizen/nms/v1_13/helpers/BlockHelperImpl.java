@@ -20,6 +20,7 @@ import org.bukkit.block.Skull;
 import org.bukkit.craftbukkit.v1_13_R2.block.CraftBlockEntityState;
 import org.bukkit.craftbukkit.v1_13_R2.block.CraftBlockState;
 import org.bukkit.craftbukkit.v1_13_R2.block.CraftSkull;
+import org.bukkit.craftbukkit.v1_13_R2.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.v1_13_R2.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_13_R2.util.CraftLegacy;
 import org.bukkit.event.world.PortalCreateEvent;
@@ -41,16 +42,19 @@ public class BlockHelperImpl implements BlockHelper {
         return blocks;
     }
 
+    @Override
+    public ModernBlockData parseBlockData(Material material, String otherData) {
+        CraftBlockData data = CraftBlockData.newData(material, otherData);
+        return new ModernBlockData(data);
+    }
+
     public <T extends TileEntity> T getTE(CraftBlockEntityState<T> cbs) {
         try {
             Field f = CraftBlockEntityState.class.getDeclaredField("tileEntity");
             f.setAccessible(true);
             return (T) f.get(cbs);
         }
-        catch (IllegalAccessException e) {
-            Debug.echoError(e);
-        }
-        catch (NoSuchFieldException e) {
+        catch (IllegalAccessException | NoSuchFieldException e) {
             Debug.echoError(e);
         }
         return null;
@@ -100,7 +104,7 @@ public class BlockHelperImpl implements BlockHelper {
 
     @Override
     public CompoundTag getNbtData(Block block) {
-        TileEntity tileEntity = getTE((CraftBlockEntityState) (CraftBlockState) block.getState());
+        TileEntity tileEntity = getTE((CraftBlockEntityState) block.getState());
         if (tileEntity == null) {
             return null;
         }
@@ -109,7 +113,7 @@ public class BlockHelperImpl implements BlockHelper {
 
     @Override
     public void setNbtData(Block block, CompoundTag compoundTag) {
-        TileEntity tileEntity = getTE((CraftBlockEntityState) (CraftBlockState) block.getState());
+        TileEntity tileEntity = getTE((CraftBlockEntityState) block.getState());
         if (tileEntity == null) {
             return;
         }

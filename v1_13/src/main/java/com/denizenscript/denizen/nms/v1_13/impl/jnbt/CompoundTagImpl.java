@@ -43,9 +43,9 @@ public class CompoundTagImpl extends CompoundTag {
             else if (entry.getValue() instanceof IntArrayTag) {
                 tag.setIntArray(entry.getKey(), ((IntArrayTag) entry.getValue()).getValue());
             }
-            else if (entry.getValue() instanceof ListTag) {
+            else if (entry.getValue() instanceof JNBTListTag) {
                 NBTTagList list = new NBTTagList();
-                List<Tag> tags = ((ListTag) entry.getValue()).getValue();
+                List<Tag> tags = ((JNBTListTag) entry.getValue()).getValue();
                 for (com.denizenscript.denizen.nms.util.jnbt.Tag btag : tags) {
                     HashMap<String, com.denizenscript.denizen.nms.util.jnbt.Tag> btags = new HashMap<>();
                     btags.put("test", btag);
@@ -102,7 +102,7 @@ public class CompoundTagImpl extends CompoundTag {
                 tags.put(key, new ShortTag(((NBTTagShort) base).asShort()));
             }
             else if (base instanceof NBTTagString) {
-                tags.put(key, new StringTag(((NBTTagString) base).asString()));
+                tags.put(key, new StringTag(base.asString()));
             }
             else if (base instanceof NBTTagList) {
                 NBTTagList list = (NBTTagList) base;

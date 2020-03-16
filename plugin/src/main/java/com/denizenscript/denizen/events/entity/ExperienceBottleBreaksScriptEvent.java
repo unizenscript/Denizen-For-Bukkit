@@ -17,7 +17,7 @@ public class ExperienceBottleBreaksScriptEvent extends BukkitScriptEvent impleme
     //
     // @Regex ^on experience bottle breaks$
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -48,7 +48,10 @@ public class ExperienceBottleBreaksScriptEvent extends BukkitScriptEvent impleme
 
     @Override
     public boolean matches(ScriptPath path) {
-        return runInCheck(path, event.getEntity().getLocation());
+        if (!runInCheck(path, event.getEntity().getLocation())) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override

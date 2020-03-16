@@ -31,20 +31,11 @@ public class EntityArmorBonus implements Property {
             "armor_bonus"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityArmorBonus(EntityTag ent) {
         entity = ent;
     }
 
     EntityTag entity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -62,11 +53,6 @@ public class EntityArmorBonus implements Property {
     public ElementTag getArmorBonus() {
         return new ElementTag(entity.getLivingEntity().getAttribute(org.bukkit.attribute.Attribute.GENERIC_ARMOR).getValue());
     }
-
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -87,7 +73,6 @@ public class EntityArmorBonus implements Property {
             return getArmorBonus().getObjectAttribute(attribute.fulfill(1));
         }
 
-
         return null;
     }
 
@@ -97,7 +82,7 @@ public class EntityArmorBonus implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name armor_bonus
-        // @input Element(Decimal)
+        // @input ElementTag(Decimal)
         // @description
         // Sets the entity's base armor bonus.
         // @tags

@@ -2,7 +2,7 @@ package com.denizenscript.denizen.events.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.ItemTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -23,7 +23,7 @@ public class EntityBreedScriptEvent extends BukkitScriptEvent implements Listene
     //
     // @Regex ^on [^\s]+ breeds$
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -38,7 +38,7 @@ public class EntityBreedScriptEvent extends BukkitScriptEvent implements Listene
     // <context.experience> returns the amount of experience granted by breeding.
     //
     // @Determine
-    // Element(Number) to set the amount of experience granted by breeding.
+    // ElementTag(Number) to set the amount of experience granted by breeding.
     //
     // -->
 
@@ -67,7 +67,10 @@ public class EntityBreedScriptEvent extends BukkitScriptEvent implements Listene
             return false;
         }
 
-        return runInCheck(path, entity.getLocation());
+        if (!runInCheck(path, entity.getLocation())) {
+            return false;
+        }
+        return super.matches(path);
     }
 
     @Override

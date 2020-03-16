@@ -21,7 +21,8 @@ public class ItemMergesScriptEvent extends BukkitScriptEvent implements Listener
     // <material> merges
     //
     // @Regex ^on [^\s]+ merges$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -64,7 +65,7 @@ public class ItemMergesScriptEvent extends BukkitScriptEvent implements Listener
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override

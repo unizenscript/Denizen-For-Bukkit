@@ -19,7 +19,7 @@ public class BlockBurnsScriptEvent extends BukkitScriptEvent implements Listener
     //
     // @Group Block
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -52,8 +52,10 @@ public class BlockBurnsScriptEvent extends BukkitScriptEvent implements Listener
             return false;
         }
 
-        String mat = path.eventArgLowerAt(0);
-        return tryMaterial(material, mat);
+        if (!tryMaterial(material, path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return super.matches(path);
 
     }
 

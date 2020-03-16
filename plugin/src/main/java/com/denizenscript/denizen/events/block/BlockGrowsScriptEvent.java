@@ -1,8 +1,11 @@
 package com.denizenscript.denizen.events.block;
 
+import com.denizenscript.denizen.nms.NMSHandler;
+import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
+import com.denizenscript.denizen.objects.properties.material.MaterialAge;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -19,14 +22,16 @@ public class BlockGrowsScriptEvent extends BukkitScriptEvent implements Listener
     //
     // @Group Block
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Switch from:<age> to only process the event if the material started at a specific age.
+    // @Switch to:<age> to only process the event if the material ended at a specific age.
     //
     // @Cancellable true
     //
     // @Triggers when a block grows naturally in the world, EG, when wheat, sugar canes, cacti, watermelons or pumpkins grow.
     // @Context
-    // <context.location> returns the LocationTag of the block that grew.
-    // <context.material> returns the MaterialTag of the block that grew.
+    // <context.location> returns the LocationTag of the block that grew (still at original material state when event fires).
+    // <context.material> returns the MaterialTag of the block's newly grown state.
     //
     // -->
 
@@ -54,14 +59,20 @@ public class BlockGrowsScriptEvent extends BukkitScriptEvent implements Listener
 
     @Override
     public boolean matches(ScriptPath path) {
-        String mat = path.eventArgLowerAt(0);
-        if (!tryMaterial(material, mat)) {
+        if (!runInCheck(path, location)) {
             return false;
         }
-        if (material.isStructure()) {
+        if (!tryMaterial(material, path.eventArgLowerAt(0))) {
             return false;
         }
-        return runInCheck(path, location);
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13) && MaterialAge.describes(material)) {
+            int oldState = MaterialAge.getFrom(new MaterialTag(location.getBlockState())).getCurrent();
+            int newState = MaterialAge.getFrom(material).getCurrent();
+            if (!path.checkSwitch("from", String.valueOf(oldState)) || !path.checkSwitch("to", String.valueOf(newState))) {
+                return false;
+            }
+        }
+        return super.matches(path);
     }
 
     @Override
@@ -84,6 +95,9 @@ public class BlockGrowsScriptEvent extends BukkitScriptEvent implements Listener
     public void onBlockGrows(BlockGrowEvent event) {
         location = new LocationTag(event.getBlock().getLocation());
         material = new MaterialTag(event.getNewState());
+        if (material.isStructure()) {
+            return;
+        }
         this.event = event;
         fire(event);
     }

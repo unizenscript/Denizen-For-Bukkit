@@ -21,7 +21,8 @@ public class ItemDespawnsScriptEvent extends BukkitScriptEvent implements Listen
     // <material> despawns
     //
     // @Regex ^on [^\s]+ despawns$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -63,7 +64,7 @@ public class ItemDespawnsScriptEvent extends BukkitScriptEvent implements Listen
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override

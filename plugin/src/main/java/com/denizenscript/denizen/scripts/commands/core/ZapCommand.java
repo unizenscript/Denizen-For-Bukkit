@@ -13,9 +13,8 @@ import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 import org.bukkit.event.Listener;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 
 public class ZapCommand extends AbstractCommand implements Listener {
 
@@ -23,11 +22,22 @@ public class ZapCommand extends AbstractCommand implements Listener {
     // @Name Zap
     // @Syntax zap (<script>) [<step>] (<duration>)
     // @Required 0
-    // @Short Changes the current script step.
+    // @Short Changes the current interact script step.
     // @Group core
+    // @Guide https://guide.denizenscript.com/guides/npcs/interact-scripts.html
     //
     // @Description
-    // TODO: Document Command Details
+    // Changes the current interact script step for the linked player.
+    //
+    // The step name input should match the name of a step in the interact script.
+    //
+    // If used inside an interact script, will default to the current interact script.
+    // For anywhere else, you must specify the script by name.
+    //
+    // Optionally specify a duration. When the duration is up, the script will zap back to the step it was previously on.
+    // If any zap commands are used during the duration, that duration will be discarded.
+    //
+    // The command's name was inspired by a command in the language "ZZT-OOP", from a 1991 DOS game enjoyed by the original developer of Denizen.
     //
     // @Tags
     // <ScriptTag.step[<player>]>
@@ -38,11 +48,11 @@ public class ZapCommand extends AbstractCommand implements Listener {
     //
     // @Usage
     // Use to change the step to 3 in a script called Interact_Example.
-    // - zap 3 s@Interact_Example
+    // - zap 3 Interact_Example
     //
     // @Usage
     // Use to change the step to 1 for player bob in a script called InteractScript.
-    // - zap 1 s@InteractScript player:p@bob
+    // - zap 1 InteractScript player:<[player]>
     // -->
 
     @Override
@@ -90,7 +100,7 @@ public class ZapCommand extends AbstractCommand implements Listener {
     }
 
     //"PlayerName,ScriptName", TaskID
-    private static Map<String, Integer> durations = new ConcurrentHashMap<>(8, 0.9f, 1);
+    private static Map<String, Integer> durations = new HashMap<>();
 
     @Override
     public void execute(final ScriptEntry scriptEntry) {
@@ -119,7 +129,7 @@ public class ZapCommand extends AbstractCommand implements Listener {
             // If the currentStep is a number, increment it. If not, set it
             // to '1' so it can be incremented next time.
             if (ArgumentHelper.matchesInteger(currentStep)) {
-                step = String.valueOf(ArgumentHelper.getIntegerFrom(currentStep) + 1);
+                step = String.valueOf(Integer.parseInt(currentStep) + 1);
             }
             else {
                 step = "1";
@@ -134,11 +144,14 @@ public class ZapCommand extends AbstractCommand implements Listener {
         // If the durationsMap already contains an entry for this player/script combination,
         // cancel the task since it's probably not desired to change back anymore if another
         // ZAP for this script is taking place.
-        if (durations.containsKey(Utilities.getEntryPlayer(scriptEntry).getSaveName() + "," + script.getName())) {
+        String durationKey = Utilities.getEntryPlayer(scriptEntry).getSaveName() + "," + script.getName();
+        Integer durationObj = durations.get(durationKey);
+        if (durationObj != null) {
             try {
-                DenizenAPI.getCurrentInstance().getServer().getScheduler().cancelTask(durations.get(Utilities.getEntryPlayer(scriptEntry).getSaveName() + "," + script.getName()));
+                DenizenAPI.getCurrentInstance().getServer().getScheduler().cancelTask(durationObj);
             }
-            catch (Exception e) {
+            catch (Exception ex) {
+                Debug.echoError(ex);
             }
         }
 
@@ -159,13 +172,13 @@ public class ZapCommand extends AbstractCommand implements Listener {
 
             // Set delayed task and put id in a map
             Debug.log("Setting delayed task 'RESET ZAP' for '" + script.identify() + "'");
-            durations.put(Utilities.getEntryPlayer(scriptEntry).getSaveName() + "," + script.getName(),
+            durations.put(durationKey,
                     DenizenAPI.getCurrentInstance().getServer().getScheduler().scheduleSyncDelayedTask(DenizenAPI.getCurrentInstance(),
                             new Runnable() {
                                 @Override
                                 public void run() {
                                     Debug.log("Running delayed task 'RESET ZAP' for '" + script.identify() + "'");
-                                    durations.remove(Utilities.getEntryPlayer(scriptEntry).getSaveName() + "," + script.getName().toUpperCase());
+                                    durations.remove(durationKey);
                                     execute(scriptEntry);
                                 }
                             }, delay));

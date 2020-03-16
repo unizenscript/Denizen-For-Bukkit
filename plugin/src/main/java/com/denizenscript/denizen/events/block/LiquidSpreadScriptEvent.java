@@ -21,7 +21,7 @@ public class LiquidSpreadScriptEvent extends BukkitScriptEvent implements Listen
     //
     // @Group Block
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -71,7 +71,7 @@ public class LiquidSpreadScriptEvent extends BukkitScriptEvent implements Listen
         if (!runInCheck(path, location) && !runInCheck(path, destination)) {
             return false;
         }
-        return true;
+        return super.matches(path);
     }
 
     @Override

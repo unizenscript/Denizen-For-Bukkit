@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.events.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -23,7 +23,8 @@ public class VehicleCollidesEntityScriptEvent extends BukkitScriptEvent implemen
     // <vehicle> collides with <entity>
     //
     // @Regex ^on [^\s]+ collides with [^\s]+$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -75,7 +76,7 @@ public class VehicleCollidesEntityScriptEvent extends BukkitScriptEvent implemen
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -97,8 +98,7 @@ public class VehicleCollidesEntityScriptEvent extends BukkitScriptEvent implemen
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(entity.isPlayer() ? entity.getDenizenPlayer() : null,
-                entity.isCitizensNPC() ? entity.getDenizenNPC() : null);
+        return new BukkitScriptEntryData(entity);
     }
 
     @Override

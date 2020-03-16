@@ -2,14 +2,12 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.ItemTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
@@ -24,7 +22,8 @@ public class PlayerFishesScriptEvent extends BukkitScriptEvent implements Listen
     // player fishes (<entity>/<item>) (while <state>)
     //
     // @Regex ^on player fishes( [^\s]+)?( while [^\s]+)?$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -37,7 +36,9 @@ public class PlayerFishesScriptEvent extends BukkitScriptEvent implements Listen
     // <context.item> returns a ItemTag of the item gotten, if any.
     //
     // @Determine
-    // "caught:" + ItemTag to change the the item that was caught (only if an item was already being caught).
+    // "CAUGHT:" + ItemTag to change the the item that was caught (only if an item was already being caught).
+    //
+    // @Player Always.
     //
     // -->
 
@@ -53,8 +54,8 @@ public class PlayerFishesScriptEvent extends BukkitScriptEvent implements Listen
     public PlayerFishEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.toLowerCase(s).startsWith("player fishes");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player fishes");
     }
 
     @Override
@@ -86,7 +87,7 @@ public class PlayerFishesScriptEvent extends BukkitScriptEvent implements Listen
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override

@@ -3,12 +3,10 @@ package com.denizenscript.denizen.events.player;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.MaterialTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -22,16 +20,17 @@ public class PlayerStandsOnScriptEvent extends BukkitScriptEvent implements List
     // player stands on (<material>)
     //
     // @Regex ^on player stands on [^\s]+$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
-    // @Triggers when a player stands on a pressure plate, tripwire, or redstone ore.
+    // @Triggers when a player stands on a physical-interactable block (such as a pressure plate, tripwire, or redstone ore).
     // @Context
     // <context.location> returns the LocationTag the player is interacting with.
     // <context.material> returns the MaterialTag the player is interacting with.
     //
-    // @Determine
+    // @Player Always.
     //
     // -->
 
@@ -45,9 +44,8 @@ public class PlayerStandsOnScriptEvent extends BukkitScriptEvent implements List
     MaterialTag material;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        return lower.startsWith("player stands on");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player stands on");
     }
 
     @Override
@@ -64,7 +62,7 @@ public class PlayerStandsOnScriptEvent extends BukkitScriptEvent implements List
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override

@@ -31,20 +31,11 @@ public class EntitySpell implements Property {
             "spell"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntitySpell(EntityTag entity) {
         dentity = entity;
     }
 
     EntityTag dentity;
-
-    /////////
-    // Property Methods
-    ///////
 
     @Override
     public String getPropertyString() {
@@ -55,10 +46,6 @@ public class EntitySpell implements Property {
     public String getPropertyId() {
         return "spell";
     }
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -96,7 +83,6 @@ public class EntitySpell implements Property {
         // @tags
         // <EntityTag.spell>
         // -->
-
         if (mechanism.matches("spell") && mechanism.requireEnum(false, Spellcaster.Spell.values())) {
             ((Spellcaster) dentity.getBukkitEntity()).setSpell(Spellcaster.Spell.valueOf(mechanism.getValue().asString().toUpperCase()));
         }

@@ -36,13 +36,7 @@ public class EntityCustomName implements Property {
 
     @Override
     public String getPropertyString() {
-        String name = entity.getBukkitEntity().getCustomName();
-        if (name == null) {
-            return null;
-        }
-        else {
-            return name;
-        }
+        return entity.getBukkitEntity().getCustomName();
     }
 
     @Override
@@ -60,6 +54,7 @@ public class EntityCustomName implements Property {
         // <--[tag]
         // @attribute <EntityTag.custom_name_visible>
         // @returns ElementTag(Boolean)
+        // @mechanism EntityTag.custom_name_visible
         // @group attributes
         // @description
         // Returns true if the entity's custom name is visible.
@@ -75,6 +70,7 @@ public class EntityCustomName implements Property {
         // <--[tag]
         // @attribute <EntityTag.custom_name>
         // @returns ElementTag
+        // @mechanism EntityTag.custom_name
         // @group attributes
         // @description
         // Returns the entity's custom name, if any.
@@ -99,7 +95,7 @@ public class EntityCustomName implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name custom_name_visible
-        // @input Element(Boolean)
+        // @input ElementTag(Boolean)
         // @description
         // Sets whether the custom name is visible.
         // @tags

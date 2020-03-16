@@ -2,7 +2,7 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -19,7 +19,7 @@ public class PlayerAnimatesScriptEvent extends BukkitScriptEvent implements List
     //
     // @Regex ^on player animates [^\s]+$
     //
-    // @Switch in <area>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
@@ -27,6 +27,8 @@ public class PlayerAnimatesScriptEvent extends BukkitScriptEvent implements List
     //
     // @Context
     // <context.animation> returns the name of the animation.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -53,7 +55,7 @@ public class PlayerAnimatesScriptEvent extends BukkitScriptEvent implements List
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override

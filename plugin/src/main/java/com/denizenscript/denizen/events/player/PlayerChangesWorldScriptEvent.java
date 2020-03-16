@@ -3,11 +3,10 @@ package com.denizenscript.denizen.events.player;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.objects.WorldTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -20,13 +19,16 @@ public class PlayerChangesWorldScriptEvent extends BukkitScriptEvent implements 
     // player changes world (from <world>) (to <world>)
     //
     // @Regex ^on player world( from [^\s]+)?( to [^\s]+)?$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Triggers when a player moves to a different world.
     //
     // @Context
     // <context.origin_world> returns the WorldTag that the player was previously on.
     // <context.destination_world> returns the WorldTag that the player is now in.
+    //
+    // @Player Always.
     //
     // -->
 
@@ -40,8 +42,8 @@ public class PlayerChangesWorldScriptEvent extends BukkitScriptEvent implements 
     public PlayerChangedWorldEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.toLowerCase(s).startsWith("player changes world");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("player changes world");
     }
 
     @Override
@@ -61,7 +63,7 @@ public class PlayerChangesWorldScriptEvent extends BukkitScriptEvent implements 
             }
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override

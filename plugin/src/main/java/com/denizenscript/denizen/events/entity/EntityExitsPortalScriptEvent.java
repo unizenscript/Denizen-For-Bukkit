@@ -2,7 +2,7 @@ package com.denizenscript.denizen.events.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.LocationTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
@@ -20,7 +20,8 @@ public class EntityExitsPortalScriptEvent extends BukkitScriptEvent implements L
     // <entity> exits portal
     //
     // @Regex ^on [^\s]+ exits portal$
-    // @Switch in <area>
+    //
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Triggers when an entity exits a portal.
     //
@@ -60,7 +61,7 @@ public class EntityExitsPortalScriptEvent extends BukkitScriptEvent implements L
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -70,8 +71,7 @@ public class EntityExitsPortalScriptEvent extends BukkitScriptEvent implements L
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(entity.isPlayer() ? EntityTag.getPlayerFrom(event.getEntity()) : null,
-                entity.isCitizensNPC() ? EntityTag.getNPCFrom(event.getEntity()) : null);
+        return new BukkitScriptEntryData(entity);
     }
 
     @Override

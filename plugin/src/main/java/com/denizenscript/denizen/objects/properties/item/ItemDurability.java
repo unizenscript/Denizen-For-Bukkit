@@ -31,7 +31,6 @@ public class ItemDurability implements Property {
             "durability"
     };
 
-
     private ItemDurability(ItemTag _item) {
         item = _item;
     }
@@ -74,7 +73,6 @@ public class ItemDurability implements Property {
         return null;
     }
 
-
     @Override
     public String getPropertyString() {
         if (item.getItemStack().getDurability() != 0) {
@@ -96,7 +94,7 @@ public class ItemDurability implements Property {
         // <--[mechanism]
         // @object ItemTag
         // @name durability
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Changes the durability of damageable items.
         // @tags
@@ -104,7 +102,6 @@ public class ItemDurability implements Property {
         // <ItemTag.max_durability>
         // <ItemTag.repairable>
         // -->
-
         if (mechanism.matches("durability") && mechanism.requireInteger()) {
             item.getItemStack().getData().setData((byte) mechanism.getValue().asInt());
             item.setDurability((short) mechanism.getValue().asInt());

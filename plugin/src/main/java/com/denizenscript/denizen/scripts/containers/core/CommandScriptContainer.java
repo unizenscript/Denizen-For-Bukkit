@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.scripts.containers.core;
 
-import com.denizenscript.denizen.utilities.command.DenizenCommand;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.command.scripted.DenizenCommand;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.objects.NPCTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.tags.BukkitTagContext;
@@ -50,20 +50,23 @@ public class CommandScriptContainer extends ScriptContainer {
     //
     //   type: command
     //
-    //   # The name of the command. This will show up in the default list in the '/help' command
-    //   # and will be the default method for running the command.
+    //   # The name of the command. This will be the default method for running the command, and will show in '/help'.
+    //   # | All command scripts MUST have this key!
     //   name: mycmd
     //
     //   # The description of the command. This will be shown in the '/help' command.
     //   # Multiple lines are acceptable, via <&nl> (the tag for a new line), but you should
     //   # make the first line a brief summary of what your command does.
+    //   # | All command scripts MUST have this key!
     //   description: My command.
     //
     //   # Correct usage for the command. This will show in the '/help' command.
+    //   # This is NOT the name of the command, and it is NOT used to control input parsing. It is EXCLUSIVELY for '/help'.
+    //   # | All command scripts MUST have this key!
     //   usage: /mycmd <&lt>myArg1<&gt>
     //
-    //   # A list of aliases for the command. These will show in the '/help' command, and
-    //   # are alternatives to the default name.
+    //   # A list of aliases for the command. These will be used as alternative ways to trigger the command, and will show in the '/help' command.
+    //   # | Some command scripts might have this key, but it's optional.
     //   aliases:
     //   - myalias
     //   - mycommand
@@ -71,10 +74,12 @@ public class CommandScriptContainer extends ScriptContainer {
     //   # The permission node to check for permissions plugins. This will automatically
     //   # block players without the permission from accessing the command and help for
     //   # the command.
+    //   # | Most command scripts should have this key!
     //   permission: my.permission.node
     //
     //   # The message to send to the player when they try to use the command without
     //   # permission. If this is not specified, the default Bukkit message will be sent.
+    //   # | Most command scripts should NOT have this key, but it's available.
     //   permission message: Sorry, <player.name>, you can't use my command because you don't have the permission '<permission>'!
     //
     //   # The procedure-based script that will be checked when a player or the console
@@ -82,6 +87,7 @@ public class CommandScriptContainer extends ScriptContainer {
     //   # or false. If there is no script, it's assumed that all players and the console
     //   # should be allowed to view the help for this command.
     //   # Available context: <context.server> returns whether the server is viewing the help (a player if false).
+    //   # | Most command scripts should NOT have this key, but it's available.
     //   allowed help:
     //   - determine <player.is_op||<context.server>>
     //
@@ -93,6 +99,7 @@ public class CommandScriptContainer extends ScriptContainer {
     //   # <context.raw_args> returns all the arguments as raw text.
     //   # <context.server> returns whether the server is using tab completion (a player if false).
     //   # <context.alias> returns the command alias being used.
+    //   # | This key is great to have when used well, but if you're not going to take full advantage of it and write a complex handler, leave it off.
     //   tab complete:
     //   - if !<player.is_op||<context.server>>:
     //     - stop
@@ -103,10 +110,11 @@ public class CommandScriptContainer extends ScriptContainer {
     //   # Available context:
     //   # <context.args> returns a list of input arguments.
     //   # <context.raw_args> returns all the arguments as raw text.
-    //   # <context.server> returns whether the server is running the command (a player if false).
+    //   # <context.source_type> returns the source of the command. Can be: PLAYER, SERVER, COMMAND_BLOCK, or COMMAND_MINECART.
     //   # <context.alias> returns the command alias being used.
     //   # <context.command_block_location> returns the command block's location (if the command was run from one).
     //   # <context.command_minecart> returns the EntityTag of the command minecart (if the command was run from one).
+    //   # | All command scripts MUST have this key!
     //   script:
     //   - if !<player.is_op||<context.server>>:
     //     - narrate "<red>You do not have permission for that command."
@@ -124,31 +132,31 @@ public class CommandScriptContainer extends ScriptContainer {
     }
 
     public String getCommandName() {
-        return CoreUtilities.toLowerCase(getString("NAME", null));
+        return CoreUtilities.toLowerCase(getString("name", null));
     }
 
     public String getDescription() {
         // Replace new lines with a space and a new line, to allow full brief descriptions in /help.
         // Without this, "line<n>line"s brief description would be "lin", because who doesn't like
         // random cutoff-
-        return TagManager.tag((getString("DESCRIPTION", "")).replace("\n", " \n"), new BukkitTagContext(null, null, new ScriptTag(this)));
+        return TagManager.tag((getString("description", "")).replace("\n", " \n"), new BukkitTagContext(null, null, new ScriptTag(this)));
     }
 
     public String getUsage() {
-        return TagManager.tag((getString("USAGE", "")), new BukkitTagContext(null, null, new ScriptTag(this)));
+        return TagManager.tag((getString("usage", "")), new BukkitTagContext(null, null, new ScriptTag(this)));
     }
 
     public List<String> getAliases() {
-        List<String> aliases = getStringList("ALIASES");
+        List<String> aliases = getStringList("aliases");
         return aliases != null ? aliases : new ArrayList<>();
     }
 
     public String getPermission() {
-        return getString("PERMISSION");
+        return getString("permission");
     }
 
     public String getPermissionMessage() {
-        return getString("PERMISSION MESSAGE");
+        return getString("permission message");
     }
 
     public ScriptQueue runCommandScript(PlayerTag player, NPCTag npc, Map<String, ObjectTag> context) {
@@ -164,7 +172,7 @@ public class CommandScriptContainer extends ScriptContainer {
     }
 
     public boolean runAllowedHelpProcedure(PlayerTag player, NPCTag npc, Map<String, ObjectTag> context) {
-        List<ScriptEntry> entries = getEntries(new BukkitScriptEntryData(player, npc), "ALLOWED HELP");
+        List<ScriptEntry> entries = getEntries(new BukkitScriptEntryData(player, npc), "allowed help");
 
         ScriptQueue queue = new InstantQueue(getName()).addEntries(entries);
         if (context != null) {
@@ -177,7 +185,7 @@ public class CommandScriptContainer extends ScriptContainer {
     }
 
     public List<String> runTabCompleteProcedure(PlayerTag player, NPCTag npc, Map<String, ObjectTag> context) {
-        List<ScriptEntry> entries = getEntries(new BukkitScriptEntryData(player, npc), "TAB COMPLETE");
+        List<ScriptEntry> entries = getEntries(new BukkitScriptEntryData(player, npc), "tab complete");
 
         ScriptQueue queue = new InstantQueue(getName()).addEntries(entries);
         if (context != null) {
@@ -187,7 +195,8 @@ public class CommandScriptContainer extends ScriptContainer {
         }
         queue.start();
         if (queue.determinations != null && queue.determinations.size() > 0) {
-            return ListTag.getListFor(queue.determinations.getObject(0));
+            BukkitTagContext tagContext = new BukkitTagContext(player, npc, new ScriptTag(this));
+            return ListTag.getListFor(queue.determinations.getObject(0), tagContext);
         }
         else {
             return new ArrayList<>();
@@ -195,10 +204,10 @@ public class CommandScriptContainer extends ScriptContainer {
     }
 
     public boolean hasAllowedHelpProcedure() {
-        return contains("ALLOWED HELP");
+        return contains("allowed help");
     }
 
     public boolean hasTabCompleteProcedure() {
-        return contains("TAB COMPLETE");
+        return contains("tab complete");
     }
 }

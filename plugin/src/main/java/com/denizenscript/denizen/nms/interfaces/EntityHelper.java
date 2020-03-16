@@ -3,6 +3,7 @@ package com.denizenscript.denizen.nms.interfaces;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.util.BoundingBox;
 import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
+import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -21,6 +22,14 @@ import org.bukkit.util.Vector;
 import java.util.*;
 
 public abstract class EntityHelper {
+
+    public abstract double getAbsorption(LivingEntity entity);
+
+    public abstract void setAbsorption(LivingEntity entity, double value);
+
+    public void setSneaking(Player player, boolean sneak) {
+        player.setSneaking(sneak);
+    }
 
     public abstract double getDamageTo(LivingEntity attacker, Entity target);
 
@@ -87,8 +96,8 @@ public abstract class EntityHelper {
         public void onPlayerJoin(PlayerJoinEvent event) {
             for (UUID id : hiddenByDefaultPlayers) {
                 Entity pTarget = Bukkit.getEntity(id);
-                if (pTarget != null && pTarget instanceof Player) {
-                    event.getPlayer().hidePlayer((Player) pTarget);
+                if (pTarget instanceof Player) {
+                    event.getPlayer().hidePlayer(DenizenAPI.getCurrentInstance(), (Player) pTarget);
                 }
             }
             final Player pl = event.getPlayer();

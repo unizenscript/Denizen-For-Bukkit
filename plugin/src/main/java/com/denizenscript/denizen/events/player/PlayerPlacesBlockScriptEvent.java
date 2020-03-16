@@ -1,13 +1,11 @@
 package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.*;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -21,8 +19,8 @@ public class PlayerPlacesBlockScriptEvent extends BukkitScriptEvent implements L
     //
     // @Regex ^on player places [^\s]+$
     //
-    // @Switch in <area>
-    // @Switch using HAND/OFF_HAND
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Switch using:<hand type> to only process the event if the player is using the specified hand type (HAND or OFF_HAND).
     //
     // @Cancellable true
     //
@@ -34,6 +32,8 @@ public class PlayerPlacesBlockScriptEvent extends BukkitScriptEvent implements L
     // <context.old_material> returns the MaterialTag of the block that was replaced.
     // <context.item_in_hand> returns the ItemTag of the item in hand.
     // <context.hand> returns the name of the hand that the block was in (HAND or OFF_HAND).
+    //
+    // @Player Always.
     //
     // -->
 
@@ -49,10 +49,9 @@ public class PlayerPlacesBlockScriptEvent extends BukkitScriptEvent implements L
     public BlockPlaceEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        String mat = CoreUtilities.getXthArg(2, lower);
-        return lower.startsWith("player places")
+    public boolean couldMatch(ScriptPath path) {
+        String mat = path.eventArgLowerAt(2);
+        return path.eventLower.startsWith("player places")
                 && (!mat.equals("hanging") && !mat.equals("painting") && !mat.equals("item_frame") && !mat.equals("leash_hitch"));
     }
 
@@ -71,8 +70,7 @@ public class PlayerPlacesBlockScriptEvent extends BukkitScriptEvent implements L
         if (!runInCheck(path, location)) {
             return false;
         }
-
-        return true;
+        return super.matches(path);
     }
 
     @Override

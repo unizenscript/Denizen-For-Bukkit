@@ -6,7 +6,7 @@ import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.Mechanism;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.properties.Property;
-import com.denizenscript.denizencore.tags.Attribute;
+import com.denizenscript.denizencore.objects.properties.PropertyParser;
 
 public class InventoryTitle implements Property {
 
@@ -22,17 +22,9 @@ public class InventoryTitle implements Property {
         return new InventoryTitle((InventoryTag) inventory);
     }
 
-    public static final String[] handledTags = new String[] {
-            "title"
-    };
-
     public static final String[] handledMechs = new String[] {
             "title"
     };
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
 
     InventoryTag inventory;
 
@@ -55,11 +47,6 @@ public class InventoryTitle implements Property {
         return null;
     }
 
-
-    /////////
-    // Property Methods
-    ///////
-
     @Override
     public String getPropertyString() {
         // Only show a property string for titles that can actually change
@@ -78,12 +65,7 @@ public class InventoryTitle implements Property {
         return "title";
     }
 
-    @Override
-    public ObjectTag getObjectAttribute(Attribute attribute) {
-
-        if (attribute == null) {
-            return null;
-        }
+    public static void registerTags() {
 
         // <--[tag]
         // @attribute <InventoryTag.title>
@@ -93,11 +75,9 @@ public class InventoryTitle implements Property {
         // @description
         // Returns the title of the inventory.
         // -->
-        if (attribute.startsWith("title")) {
-            return new ElementTag(getTitle()).getObjectAttribute(attribute.fulfill(1));
-        }
-
-        return null;
+        PropertyParser.<InventoryTitle>registerTag("title", (attribute, inventory) -> {
+            return new ElementTag(inventory.getTitle());
+        });
     }
 
     @Override

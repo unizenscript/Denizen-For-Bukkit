@@ -7,7 +7,7 @@ import com.denizenscript.denizen.objects.NPCTag;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.depends.Depends;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.nms.util.ReflectionHelper;
 import com.denizenscript.denizencore.events.OldEventManager;
 import net.citizensnpcs.api.CitizensAPI;
@@ -53,7 +53,6 @@ public class DenizenNPCHelper implements Listener {
     public ActionHandler getActionHandler() {
         return actionHandler;
     }
-
 
     /**
      * Returns a NPCTag object when given a valid NPC. DenizenNPCs have some methods
@@ -134,7 +133,6 @@ public class DenizenNPCHelper implements Listener {
         new NPCTag(event.getNPC()).action("spawn", null);
     }
 
-
     // <--[action]
     // @Actions
     // despawn
@@ -163,7 +161,6 @@ public class DenizenNPCHelper implements Listener {
             npc.action("despawn", null);
         }
     }
-
 
     // <--[action]
     // @Actions

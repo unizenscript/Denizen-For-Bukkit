@@ -35,7 +35,6 @@ public class ItemFlags implements Property {
             "flags"
     };
 
-
     private ItemFlags(ItemTag _item) {
         item = _item;
     }
@@ -78,7 +77,6 @@ public class ItemFlags implements Property {
         return null;
     }
 
-
     @Override
     public String getPropertyString() {
         ListTag flags = flags();
@@ -107,7 +105,6 @@ public class ItemFlags implements Property {
         // @tags
         // <ItemTag.flags>
         // -->
-
         if (mechanism.matches("flags")) {
             ItemMeta meta = item.getItemStack().getItemMeta();
             meta.removeItemFlags(ItemFlag.values());

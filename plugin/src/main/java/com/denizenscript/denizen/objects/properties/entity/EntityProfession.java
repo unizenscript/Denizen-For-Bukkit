@@ -13,7 +13,6 @@ import org.bukkit.entity.ZombieVillager;
 
 public class EntityProfession implements Property {
 
-
     public static boolean describes(ObjectTag entity) {
         if (!(entity instanceof EntityTag)) {
             return false;
@@ -40,11 +39,6 @@ public class EntityProfession implements Property {
             "profession"
     };
 
-
-    ///////////////////
-    // Instance Fields and Methods
-    /////////////
-
     private EntityProfession(EntityTag entity) {
         professional = entity;
     }
@@ -67,11 +61,6 @@ public class EntityProfession implements Property {
         }
     }
 
-
-    /////////
-    // Property Methods
-    ///////
-
     @Override
     public String getPropertyString() {
         return CoreUtilities.toLowerCase(getProfession().name());
@@ -81,11 +70,6 @@ public class EntityProfession implements Property {
     public String getPropertyId() {
         return "profession";
     }
-
-
-    ///////////
-    // ObjectTag Attributes
-    ////////
 
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
@@ -126,7 +110,6 @@ public class EntityProfession implements Property {
         // @tags
         // <EntityTag.profession>
         // -->
-
         if (mechanism.matches("profession") && mechanism.requireEnum(false, Villager.Profession.values())) {
             setProfession(Villager.Profession.valueOf(mechanism.getValue().asString().toUpperCase()));
         }

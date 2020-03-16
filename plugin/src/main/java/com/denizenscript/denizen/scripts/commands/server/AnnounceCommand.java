@@ -125,7 +125,7 @@ public class AnnounceCommand extends AbstractCommand {
                             + (flag != null ? ArgumentHelper.debugObj("Flag_Name", flag) : ""));
         }
 
-        String message = format != null ? format.getFormattedText(scriptEntry) : text.asString();
+        String message = format != null ? format.getFormattedText(text.asString(), scriptEntry) : text.asString();
 
         // Use Bukkit to broadcast the message to everybody in the server.
         if (type == AnnounceType.ALL) {
@@ -150,5 +150,4 @@ public class AnnounceCommand extends AbstractCommand {
         }
     }
 }
-
 

@@ -2,7 +2,7 @@ package com.denizenscript.denizen.events.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.ItemTag;
-import com.denizenscript.denizen.BukkitScriptEntryData;
+import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -18,10 +18,10 @@ public class EntityDamagedScriptEvent extends BukkitScriptEvent implements Liste
 
     // <--[language]
     // @name Damage Cause
-    // @group Events
+    // @group Useful Lists
     // @description
-    // Possible damage causes
-    // See list in Spigot source here: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/event/entity/EntityDamageEvent.DamageCause.html>
+    // Possible damage causes: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/event/entity/EntityDamageEvent.DamageCause.html>
+    // These are used in <@link event entity damage>, <@link tag server.list_damage_causes>, <@link tag EntityTag.last_damage.cause>, ...
     // -->
 
     // <--[event]
@@ -38,9 +38,10 @@ public class EntityDamagedScriptEvent extends BukkitScriptEvent implements Liste
     // <entity> damages <entity>
     //
     // @Regex ^on [^\s]+ ((damages [^\s]+)|damaged( by [^\s]+)?)$
-    // @Switch in <area>
     //
-    // @Switch with <item>
+    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    //
+    // @Switch with:<item> to only process the event when the item used to cause damage (in the damager's hand) is a specified item.
     //
     // @Cancellable true
     //
@@ -50,13 +51,13 @@ public class EntityDamagedScriptEvent extends BukkitScriptEvent implements Liste
     // <context.entity> returns the EntityTag that was damaged.
     // <context.damager> returns the EntityTag damaging the other entity, if any.
     // <context.cause> returns the an ElementTag of reason the entity was damaged - see <@link language damage cause> for causes.
-    // <context.damage> returns an Element(Decimal) of the amount of damage dealt.
-    // <context.final_damage> returns an Element(Decimal) of the amount of damage dealt, after armor is calculated.
+    // <context.damage> returns an ElementTag(Decimal) of the amount of damage dealt.
+    // <context.final_damage> returns an ElementTag(Decimal) of the amount of damage dealt, after armor is calculated.
     // <context.projectile> returns a EntityTag of the projectile, if one caused the event.
     // <context.damage_TYPE> returns the damage dealt by a specific damage type where TYPE can be any of: BASE, HARD_HAT, BLOCKING, ARMOR, RESISTANCE, MAGIC, ABSORPTION.
     //
     // @Determine
-    // Element(Decimal) to set the amount of damage the entity receives.
+    // ElementTag(Decimal) to set the amount of damage the entity receives.
     //
     // @Player when the damager or damaged entity is a player. Cannot be both.
     //
@@ -118,7 +119,7 @@ public class EntityDamagedScriptEvent extends BukkitScriptEvent implements Liste
             return false;
         }
 
-        return true;
+        return super.matches(path);
     }
 
     @Override
@@ -138,7 +139,7 @@ public class EntityDamagedScriptEvent extends BukkitScriptEvent implements Liste
     @Override
     public ScriptEntryData getScriptEntryData() {
         return new BukkitScriptEntryData(damager != null && damager.isPlayer() ? damager.getDenizenPlayer() : entity.isPlayer() ? entity.getDenizenPlayer() : null,
-                damager != null && damager.isCitizensNPC() ? damager.getDenizenNPC() : entity.isCitizensNPC() ? EntityTag.getNPCFrom(event.getEntity()) : null);
+                damager != null && damager.isCitizensNPC() ? damager.getDenizenNPC() : entity.isCitizensNPC() ? entity.getDenizenNPC() : null);
     }
 
     @Override

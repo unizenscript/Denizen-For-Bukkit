@@ -15,7 +15,7 @@ import org.bukkit.plugin.Plugin;
 public class PluginTag implements ObjectTag {
 
     // <--[language]
-    // @name PluginTag
+    // @name PluginTag Objects
     // @group Object System
     // @description
     // A PluginTag represents a Bukkit plugin on the server.
@@ -32,14 +32,13 @@ public class PluginTag implements ObjectTag {
     // Fetcher. The constructor for a PluginTag is the plugin's registered name.
     // For example, 'pl@Denizen'.
     //
-    // For general info, see <@link language PluginTag>
+    // For general info, see <@link language PluginTag Objects>
     //
     // -->
 
     //////////////////
     //    Object Fetcher
     ////////////////
-
 
     public static PluginTag valueOf(String string) {
         return valueOf(string, null);
@@ -89,7 +88,6 @@ public class PluginTag implements ObjectTag {
         return false;
     }
 
-
     /////////////////////
     //   Constructors
     //////////////////
@@ -97,7 +95,6 @@ public class PluginTag implements ObjectTag {
     public PluginTag(Plugin plugin) {
         this.plugin = plugin;
     }
-
 
     /////////////////////
     //   Instance Fields/Methods
@@ -108,7 +105,6 @@ public class PluginTag implements ObjectTag {
     public Plugin getPlugin() {
         return plugin;
     }
-
 
     /////////////////////
     //  ObjectTag Methods
@@ -160,11 +156,8 @@ public class PluginTag implements ObjectTag {
         // @description
         // Gets the name of this plugin.
         // -->
-        registerTag("name", new TagRunnable.ObjectForm<PluginTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, PluginTag object) {
-                return new ElementTag(object.plugin.getName());
-            }
+        registerTag("name", (attribute, object) -> {
+            return new ElementTag(object.plugin.getName());
         });
 
         // <--[tag]
@@ -173,11 +166,8 @@ public class PluginTag implements ObjectTag {
         // @description
         // Gets the version for the plugin specified.
         // -->
-        registerTag("version", new TagRunnable.ObjectForm<PluginTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, PluginTag object) {
-                return new ElementTag(object.plugin.getDescription().getVersion());
-            }
+        registerTag("version", (attribute, object) -> {
+            return new ElementTag(object.plugin.getDescription().getVersion());
         });
 
         // <--[tag]
@@ -186,11 +176,8 @@ public class PluginTag implements ObjectTag {
         // @description
         // Gets the description for the plugin specified.
         // -->
-        registerTag("description", new TagRunnable.ObjectForm<PluginTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, PluginTag object) {
-                return new ElementTag(object.plugin.getDescription().getDescription());
-            }
+        registerTag("description", (attribute, object) -> {
+            return new ElementTag(object.plugin.getDescription().getDescription());
         });
 
         // <--[tag]
@@ -199,11 +186,8 @@ public class PluginTag implements ObjectTag {
         // @description
         // Gets the list of authors for the plugin specified.
         // -->
-        registerTag("authors", new TagRunnable.ObjectForm<PluginTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, PluginTag object) {
-                return new ListTag(object.plugin.getDescription().getAuthors());
-            }
+        registerTag("authors", (attribute, object) -> {
+            return new ListTag(object.plugin.getDescription().getAuthors());
         });
 
         // <--[tag]
@@ -213,18 +197,15 @@ public class PluginTag implements ObjectTag {
         // Always returns 'Plugin' for PluginTag objects. All objects fetchable by the Object Fetcher will return the
         // type of object that is fulfilling this attribute.
         // -->
-        registerTag("type", new TagRunnable.ObjectForm<PluginTag>() {
-            @Override
-            public ObjectTag run(Attribute attribute, PluginTag object) {
-                return new ElementTag("Plugin");
-            }
+        registerTag("type", (attribute, object) -> {
+            return new ElementTag("Plugin");
         });
     }
 
     public static ObjectTagProcessor<PluginTag> tagProcessor = new ObjectTagProcessor<>();
 
-    public static void registerTag(String name, TagRunnable.ObjectForm<PluginTag> runnable) {
-        tagProcessor.registerTag(name, runnable);
+    public static void registerTag(String name, TagRunnable.ObjectInterface<PluginTag> runnable, String... variants) {
+        tagProcessor.registerTag(name, runnable, variants);
     }
 
     @Override
