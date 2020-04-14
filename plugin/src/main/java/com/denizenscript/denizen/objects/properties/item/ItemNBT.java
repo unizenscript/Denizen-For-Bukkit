@@ -1,5 +1,7 @@
 package com.denizenscript.denizen.objects.properties.item;
 
+import com.denizenscript.denizen.nms.NMSHandler;
+import com.denizenscript.denizen.nms.util.jnbt.*;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.nbt.CustomNBT;
 import com.denizenscript.denizen.objects.ItemTag;
@@ -10,10 +12,12 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
 import com.denizenscript.denizencore.tags.core.EscapeTagBase;
+import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
+import java.util.Map;
 
 public class ItemNBT implements Property {
 
@@ -31,7 +35,7 @@ public class ItemNBT implements Property {
     }
 
     public static final String[] handledTags = new String[] {
-            "has_nbt", "nbt_keys", "nbt"
+            "raw_nbt", "has_raw_nbt", "raw_nbt_keys", "has_nbt", "nbt_keys", "nbt"
     };
 
     public static final String[] handledMechs = new String[] {
@@ -44,12 +48,202 @@ public class ItemNBT implements Property {
 
     ItemTag item;
 
+    // Unizen start
+
+    private Map<String, Tag> getRawNBTMap() {
+        return NMSHandler.getItemHelper().getNbtData(item.getItemStack()).getValue();
+    }
+
+    private String rawNbtKeyToString(Tag tag) {
+        if (tag instanceof CompoundTag) {
+            return unwrapCompoundTag((CompoundTag) tag);
+        }
+        if (tag instanceof StringTag) {
+            return "\"" + ((StringTag) tag).getValue().replace("\"", "\\\"") + "\"";
+        }
+        if (tag instanceof ByteTag) {
+            return tag.getValue() + "b";
+        }
+        if (tag instanceof ShortTag) {
+            return tag.getValue() + "s";
+        }
+        if (tag instanceof DoubleTag) {
+            return tag.getValue() + "d";
+        }
+        if (tag instanceof FloatTag) {
+            return tag.getValue() + "f";
+        }
+        ListTag listResult = rawNbtTagToList(tag);
+        if (listResult != null) {
+            StringBuilder build = new StringBuilder("[");
+            for (int i = 0; i < listResult.size(); i++) {
+                build.append(listResult.get(i)).append(",");
+            }
+            return build.substring(0, build.length() - 1) + "]";
+        }
+        return String.valueOf(tag.getValue());
+    }
+
+    private String unwrapCompoundTag(CompoundTag tag) {
+        Map<String, Tag> tagMap = tag.getValue();
+        if (tagMap.isEmpty()) {
+            return "{}";
+        }
+        StringBuilder output = new StringBuilder("{");
+        for (String key : tagMap.keySet()) {
+            output.append(key).append(":");
+            Tag result = tagMap.get(key);
+            output.append(rawNbtKeyToString(result));
+            output.append(",");
+        }
+        return output.substring(0, output.length() - 1) + "}";
+    }
+
+    private ListTag rawNbtTagToList(Tag tag) {
+        if (tag instanceof JNBTListTag) {
+            return rawNbtTagToList((JNBTListTag) tag);
+        }
+        else if (tag instanceof IntArrayTag) {
+            return rawNbtTagToList((IntArrayTag) tag);
+        }
+        else if (tag instanceof ByteArrayTag) {
+            return rawNbtTagToList((ByteArrayTag) tag);
+        }
+        return null;
+    }
+
+    private ListTag rawNbtTagToList(JNBTListTag listNBT) {
+        ListTag list = new ListTag();
+        for (Tag inList : listNBT.getValue()) {
+            String result = inList.getValue().toString();
+            if (inList instanceof CompoundTag) {
+                result = unwrapCompoundTag((CompoundTag) inList);
+            }
+            list.add(result);
+        }
+        return list;
+    }
+
+    private ListTag rawNbtTagToList(IntArrayTag intArray) {
+        ListTag list = new ListTag();
+        for (int inList : intArray.getValue()) {
+            list.add(String.valueOf(inList));
+        }
+        return list;
+    }
+
+    private ListTag rawNbtTagToList(ByteArrayTag byteArray) {
+        ListTag list = new ListTag();
+        for (int inList : byteArray.getValue()) {
+            list.add(inList + "b");
+        }
+        return list;
+    }
+
+    private Tag getRawNbtTagForKey(String key) {
+        if (key == null) {
+            return null;
+        }
+
+        List<String> parts = CoreUtilities.split(key, '.');
+        Tag getForKey = getRawNBTMap().get(parts.get(0));
+        for (int i = 1; i < parts.size(); i++) {
+            if (getForKey instanceof CompoundTag) {
+                getForKey = ((CompoundTag) getForKey).getValue().get(parts.get(i));
+            }
+            else {
+                return null;
+            }
+        }
+        return getForKey;
+    }
+
+
+    private ListTag listRawNbtKeys(String startKey) {
+        ListTag list = new ListTag();
+        Map<String, Tag> startMap = getRawNBTMap();
+        if (startKey != null) {
+            if (startMap.get(startKey) instanceof CompoundTag) {
+                startMap = ((CompoundTag) startMap.get(startKey)).getValue();
+            }
+        }
+        String keyPrefix = startKey == null ? "" : startKey + ".";
+        for (String key : startMap.keySet()) {
+            list.add(keyPrefix + key);
+            if (getRawNBTMap().get(key) instanceof CompoundTag) {
+                for (String nestedKey : listRawNbtKeys(key)) {
+                    list.add(keyPrefix + nestedKey);
+                }
+            }
+        }
+        return list;
+    }
+
+    // Unizen end
+
     @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
 
         if (attribute == null) {
             return null;
         }
+
+        // Unizen start
+
+        // <--[tag]
+        // @attribute <ItemTag.has_raw_nbt[<key>]>
+        // @returns ElementTag(Boolean)
+        // @group properties
+        // @description
+        // Returns whether the item has the specified raw NBT key.
+        // -->
+        if (attribute.startsWith("has_raw_nbt")) {
+            if (!attribute.hasContext(1)) {
+                Debug.echoError("Must specify an NBT key for <ItemTag.has_raw_nbt[<key>]>!");
+                return null;
+            }
+            return new ElementTag(getRawNbtTagForKey(attribute.getContext(1)) != null)
+                    .getObjectAttribute(attribute.fulfill(1));
+        }
+
+        // <--[tag]
+        // @attribute <ItemTag.raw_nbt_keys[(<key>)]>
+        // @returns ListTag
+        // @group properties
+        // @description
+        // Returns a list of all raw NBT keys on the item.
+        // -->
+        if (attribute.startsWith("raw_nbt_keys")) {
+            return listRawNbtKeys(attribute.getContext(1)).getObjectAttribute(attribute.fulfill(1));
+        }
+
+        // <--[tag]
+        // @attribute <ItemTag.raw_nbt[<key>]>
+        // @returns ElementTag/ListTag
+        // @group properties
+        // @description
+        // Returns the value of the raw NBT key specified.
+        // If the NBT value is a list or array, a ListTag is returned.
+        // -->
+        if (attribute.startsWith("raw_nbt")) {
+            if (!attribute.hasContext(1)) {
+                Debug.echoError("Must specify an NBT key for <ItemTag.raw_nbt[<key>]>!");
+                return null;
+            }
+            String key = attribute.getContext(1);
+            Tag tag = getRawNbtTagForKey(key);
+            ListTag listTag = rawNbtTagToList(tag);
+            if (tag == null) {
+                Debug.echoError("Could not find the value for the raw NBT key \"" + key + "\"!");
+                return null;
+            }
+            if (listTag != null) {
+                return listTag.getObjectAttribute(attribute.fulfill(1));
+            }
+            return new ElementTag(rawNbtKeyToString(tag)).getObjectAttribute(attribute.fulfill(1));
+        }
+
+        // Unizen end
 
         // <--[tag]
         // @attribute <ItemTag.has_nbt[<key>]>
