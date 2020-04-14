@@ -88,7 +88,7 @@ public class DisplayItemCommand extends AbstractCommand implements Listener {
                     && !scriptEntry.hasObject("item")) {
                 scriptEntry.addObject("item", arg.asType(ItemTag.class));
             }
-            else if (!scriptEntry.hasObject("gravity")
+            else if (!scriptEntry.hasObject("no_gravity")
                     && arg.matches("no_gravity")) {
                 scriptEntry.addObject("no_gravity", new ElementTag(true));
             }
