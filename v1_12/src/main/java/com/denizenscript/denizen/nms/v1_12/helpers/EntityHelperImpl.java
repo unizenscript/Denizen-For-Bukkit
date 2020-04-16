@@ -8,6 +8,7 @@ import com.denizenscript.denizen.nms.util.BoundingBox;
 import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.Utilities;
+import com.denizenscript.denizen.utilities.debugging.Debug;
 import net.minecraft.server.v1_12_R1.*;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -15,14 +16,11 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_12_R1.entity.CraftAnimals;
-import org.bukkit.craftbukkit.v1_12_R1.entity.CraftCreature;
-import org.bukkit.craftbukkit.v1_12_R1.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_12_R1.entity.CraftLivingEntity;
-import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_12_R1.entity.*;
 import org.bukkit.craftbukkit.v1_12_R1.inventory.CraftItemStack;
 import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.inventory.ItemStack;
@@ -31,6 +29,7 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -579,4 +578,23 @@ public class EntityHelperImpl extends EntityHelper {
             ((ChestedHorse) horse).setCarryingChest(carrying);
         }
     }
+
+    // Unizen start
+
+    private final static Field ITEM_ENTITY_AGE_FIELD = ReflectionHelper.getFields(EntityItem.class).get("age");
+
+    @Override
+    public void makeItemDisplayOnly(Item entity) {
+        EntityItem item = (EntityItem) ((CraftItem) entity).getHandle();
+        try {
+            ITEM_ENTITY_AGE_FIELD.setShort(item, (short) -32768);
+        }
+        catch (Exception e) {
+            Debug.echoError("Could not set the age of this entity, is it an item entity?");
+        }
+        item.pickupDelay = 32767;
+        entity.setVelocity(entity.getVelocity().multiply(0));
+    }
+
+    // Unizen end
 }

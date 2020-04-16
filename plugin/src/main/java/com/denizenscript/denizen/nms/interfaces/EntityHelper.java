@@ -500,4 +500,10 @@ public abstract class EntityHelper {
     public BlockData getBlockDataFor(FallingBlock entity) {
         return NMSHandler.getBlockHelper().getBlockData(entity.getMaterial(), (byte) 0);
     }
+
+    // Unizen start
+
+    public abstract void makeItemDisplayOnly(Item entity);
+
+    // Unizen end
 }

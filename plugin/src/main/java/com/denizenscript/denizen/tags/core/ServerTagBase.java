@@ -4,6 +4,7 @@ import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizen.flags.FlagManager;
 import com.denizenscript.denizen.objects.*;
 import com.denizenscript.denizen.objects.notable.NotableManager;
+import com.denizenscript.denizen.scripts.commands.item.DisplayItemCommand;
 import com.denizenscript.denizen.scripts.commands.server.BossBarCommand;
 import com.denizenscript.denizen.scripts.containers.core.AssignmentScriptContainer;
 import com.denizenscript.denizen.scripts.containers.core.CommandScriptHelper;
@@ -22,6 +23,8 @@ import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.core.ScriptTag;
+import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
+import com.denizenscript.denizencore.scripts.commands.CommandRegistry;
 import com.denizenscript.denizencore.scripts.commands.core.SQLCommand;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizencore.DenizenCore;
@@ -1997,6 +2000,62 @@ public class ServerTagBase {
                 }
             }
         }
+
+        // Unizen start
+
+        // <--[tag]
+        // @attribute <server.list_display_items>
+        // @returns ListTag(EntityTag)
+        // @description
+        // Returns a list of all dropped item entities created by the "displayitem" command.
+        // -->
+        else if (attribute.startsWith("list_display_items")) {
+            ListTag entities = new ListTag();
+            DisplayItemCommand displayItemCommand = (DisplayItemCommand) DenizenCore.getCommandRegistry().instances.get("displayitem");
+
+            HashSet<UUID> allEntities = new HashSet<>();
+            allEntities.addAll(displayItemCommand.getProtectedEntities());
+            allEntities.addAll(displayItemCommand.getProtectedPermanentEntities());
+            for (UUID uuid : allEntities) {
+                entities.addObject(EntityTag.valueOf(uuid.toString()));
+            }
+
+            event.setReplacedObject(entities.getObjectAttribute(attribute.fulfill(1)));
+        }
+
+        // <--[tag]
+        // @attribute <server.list_temporary_display_items>
+        // @returns ListTag(EntityTag)
+        // @description
+        // Returns a list of all temporary dropped item entities created by the "displayitem" command.
+        // -->
+        else if (attribute.startsWith("list_temporary_display_items")) {
+            ListTag entities = new ListTag();
+            DisplayItemCommand displayItemCommand = (DisplayItemCommand) DenizenCore.getCommandRegistry().instances.get("displayitem");
+            for (UUID uuid : displayItemCommand.getProtectedEntities()) {
+                entities.addObject(EntityTag.valueOf(uuid.toString()));
+            }
+
+            event.setReplacedObject(entities.getObjectAttribute(attribute.fulfill(1)));
+        }
+
+        // <--[tag]
+        // @attribute <server.list_permanent_display_items>
+        // @returns ListTag(EntityTag)
+        // @description
+        // Returns a list of all permanent/persistent dropped item entities created by the "displayitem" command.
+        // -->
+        else if (attribute.startsWith("list_permanent_display_items")) {
+            ListTag entities = new ListTag();
+            DisplayItemCommand displayItemCommand = (DisplayItemCommand) DenizenCore.getCommandRegistry().instances.get("displayitem");
+            for (UUID uuid : displayItemCommand.getProtectedPermanentEntities()) {
+                entities.addObject(EntityTag.valueOf(uuid.toString()));
+            }
+
+            event.setReplacedObject(entities.getObjectAttribute(attribute.fulfill(1)));
+        }
+
+        // Unizen end
     }
 
     public static ListTag getHandlerPluginList(Class eventClass) {

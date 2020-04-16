@@ -24,6 +24,7 @@ import org.bukkit.craftbukkit.v1_15_R1.entity.*;
 import org.bukkit.craftbukkit.v1_15_R1.inventory.CraftItemStack;
 import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.inventory.ItemStack;
@@ -646,4 +647,16 @@ public class EntityHelperImpl extends EntityHelper {
     public BlockData getBlockDataFor(FallingBlock entity) {
         return new BlockDataImpl(entity.getBlockData());
     }
+
+    // Unizen start
+
+    @Override
+    public void makeItemDisplayOnly(Item entity) {
+        EntityItem itemEntity = (EntityItem) ((CraftItem) entity).getHandle();
+        itemEntity.age = -32768;
+        itemEntity.pickupDelay = 32767;
+        entity.setVelocity(entity.getVelocity().multiply(0));
+    }
+
+    // Unizen end
 }
