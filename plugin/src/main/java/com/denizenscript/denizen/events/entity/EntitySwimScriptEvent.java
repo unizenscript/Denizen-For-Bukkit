@@ -6,8 +6,6 @@ import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityToggleSwimEvent;
@@ -43,11 +41,11 @@ public class EntitySwimScriptEvent extends BukkitScriptEvent implements Listener
 
     public static EntitySwimScriptEvent instance;
     public EntityTag entity;
-    public Boolean state;
+    public boolean state;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.getXthArg(2, CoreUtilities.toLowerCase(s)).equals("swimming");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventArgLowerAt(2).equals("swimming");
     }
 
     @Override

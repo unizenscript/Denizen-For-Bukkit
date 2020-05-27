@@ -3,7 +3,6 @@ package com.denizenscript.denizen.scripts.commands.player;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.abstracts.Sidebar;
 import com.denizenscript.denizen.objects.PlayerTag;
@@ -30,10 +29,19 @@ import java.util.UUID;
 
 public class SidebarCommand extends AbstractCommand {
 
+    public SidebarCommand() {
+        setName("sidebar");
+        setSyntax("sidebar (add/remove/{set}/set_line) (title:<title>) (scores:<#>|...) (values:<line>|...) (start:<#>/{num_of_lines}) (increment:<#>/{-1}) (players:<player>|...) (per_player)");
+        setRequiredArguments(1, 8);
+        setParseArgs(false);
+        DenizenAPI.getCurrentInstance().getServer().getPluginManager().registerEvents(new SidebarEvents(), DenizenAPI.getCurrentInstance());
+    }
+
     // <--[command]
     // @Name Sidebar
     // @Syntax sidebar (add/remove/{set}) (title:<title>) (lines:<#>|...) (values:<line>|...) (start:<#>/{num_of_lines}) (increment:<#>/{-1}) (players:<player>|...) (per_player)
     // @Required 1
+    // @Maximum 8
     // @Short Controls clientside-only sidebars.
     // @Group player
     //
@@ -99,18 +107,11 @@ public class SidebarCommand extends AbstractCommand {
     private enum Action {ADD, REMOVE, SET}
 
     @Override
-    public void onEnable() {
-        setParseArgs(false);
-        DenizenAPI.getCurrentInstance().getServer().getPluginManager()
-                .registerEvents(new SidebarEvents(), DenizenAPI.getCurrentInstance());
-    }
-
-    @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
         Action action = Action.SET;
 
-        for (Argument arg : ArgumentHelper.interpret(scriptEntry.getOriginalArguments())) {
+        for (Argument arg : ArgumentHelper.interpret(scriptEntry, scriptEntry.getOriginalArguments())) {
 
             if (!scriptEntry.hasObject("action")
                     && arg.matchesEnum(Action.values())) {
@@ -164,9 +165,8 @@ public class SidebarCommand extends AbstractCommand {
 
         scriptEntry.addObject("action", new ElementTag(action.name()));
 
-        BukkitScriptEntryData entryData = (BukkitScriptEntryData) scriptEntry.entryData;
         scriptEntry.defaultObject("per_player", new ElementTag(false))
-                .defaultObject("players", new ElementTag(entryData.hasPlayer() ? entryData.getPlayer().identify() : "li@"));
+                .defaultObject("players", new ElementTag(Utilities.entryHasPlayer(scriptEntry) ? Utilities.getEntryPlayer(scriptEntry).identify() : "li@"));
     }
 
     @Override
@@ -307,7 +307,7 @@ public class SidebarCommand extends AbstractCommand {
                     List<String> current = sidebar.getLines();
                     if (per_player) {
                         TagContext context = new BukkitTagContext(player, Utilities.getEntryNPC(scriptEntry),
-                                false, scriptEntry, scriptEntry.shouldDebug(), scriptEntry.getScript());
+                                scriptEntry, scriptEntry.shouldDebug(), scriptEntry.getScript());
                         if (perValue != null) {
                             value = ListTag.getListFor(TagManager.tagObject(perValue, context), context);
                         }
@@ -330,6 +330,7 @@ public class SidebarCommand extends AbstractCommand {
                         }
                         sidebar.setLines(current);
                         sidebar.sendUpdate();
+                        removedAny = true;
                     }
                     else if (value != null) {
                         try {
@@ -356,8 +357,9 @@ public class SidebarCommand extends AbstractCommand {
                         }
                         sidebar.setLines(current);
                         sidebar.sendUpdate();
+                        removedAny = true;
                     }
-                    else {
+                    if (!removedAny) {
                         sidebar.remove();
                         sidebars.remove(player.getPlayerEntity().getUniqueId());
                     }
@@ -378,7 +380,7 @@ public class SidebarCommand extends AbstractCommand {
                     boolean currEdited = false;
                     if (per_player) {
                         TagContext context = new BukkitTagContext(player, Utilities.getEntryNPC(scriptEntry),
-                                false, scriptEntry, scriptEntry.shouldDebug(), scriptEntry.getScript());
+                                scriptEntry, scriptEntry.shouldDebug(), scriptEntry.getScript());
                         if (perValue != null) {
                             value = ListTag.getListFor(TagManager.tagObject(perValue, context), context);
                         }

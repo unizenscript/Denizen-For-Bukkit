@@ -279,13 +279,11 @@ public class ChatTrigger extends AbstractTrigger implements Listener {
                 // Check if the chat trigger specified in the specified id's 'trigger:' key
                 // matches the text the player has said
                 // TODO: script arg?
-                String triggerText = TagManager.tag(entry.getValue(), new BukkitTagContext
-                        (denizenPlayer, npc, false, null, false, null));
+                String triggerText = TagManager.tag(entry.getValue(), new BukkitTagContext(denizenPlayer, npc, null, false, null));
                 Matcher matcher = triggerPattern.matcher(triggerText);
                 while (matcher.find()) {
                     // TODO: script arg?
-                    String keyword = TagManager.tag(matcher.group().replace("/", ""), new BukkitTagContext
-                            (denizenPlayer, npc, false, null, false, null));
+                    String keyword = TagManager.tag(matcher.group().replace("/", ""), new BukkitTagContext(denizenPlayer, npc, null, false, null));
                     String[] split = keyword.split("\\\\\\+REPLACE:", 2);
                     String replace = null;
                     if (split.length == 2) {
@@ -465,7 +463,7 @@ public class ChatTrigger extends AbstractTrigger implements Listener {
             return changed_text != null ? changed_text : DetermineCommand.DETERMINE_NONE;
         }
 
-        public Boolean wasTriggered() {
+        public boolean wasTriggered() {
             return triggered;
         }
 

@@ -3,6 +3,7 @@ package com.denizenscript.denizen.nms.interfaces;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.util.BoundingBox;
 import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
+import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import org.bukkit.Bukkit;
@@ -167,7 +168,7 @@ public abstract class EntityHelper {
             }
             return;
         }
-        if (isHiddenByDefault(entity)) {
+        if (isHiddenByDefault(entity.getUniqueId())) {
             removeHide(player.getUniqueId(), entity.getUniqueId());
         }
         else {
@@ -211,7 +212,7 @@ public abstract class EntityHelper {
             }
             return;
         }
-        if (isHiddenByDefault(entity)) {
+        if (isHiddenByDefault(entity.getUniqueId())) {
             addHide(player.getUniqueId(), entity.getUniqueId());
         }
         else {
@@ -222,17 +223,17 @@ public abstract class EntityHelper {
 
     public static UUID DEFAULT_HIDE = new UUID(0, 0);
 
-    public boolean isHiddenByDefault(Entity ent) {
-        Set<UUID> hiding = hiddenEntitiesEntPl.get(ent.getUniqueId());
+    public boolean isHiddenByDefault(UUID id) {
+        Set<UUID> hiding = hiddenEntitiesEntPl.get(id);
         return hiding != null && hiding.contains(DEFAULT_HIDE);
     }
 
-    public boolean isHidden(Player player, Entity entity) {
-        if (isHiddenByDefault(entity)) {
-            Set<UUID> hiding = hiddenEntitiesEntPl.get(entity.getUniqueId());
+    public boolean isHidden(Player player, UUID id) {
+        if (isHiddenByDefault(id)) {
+            Set<UUID> hiding = hiddenEntitiesEntPl.get(id);
             return hiding == null || !hiding.contains(player.getUniqueId());
         }
-        Set<UUID> hiding = hiddenEntitiesEntPl.get(entity.getUniqueId());
+        Set<UUID> hiding = hiddenEntitiesEntPl.get(id);
         return hiding != null && hiding.contains(player.getUniqueId());
     }
 
@@ -320,7 +321,7 @@ public abstract class EntityHelper {
             return;
         }
         Location origin = from instanceof LivingEntity ? ((LivingEntity) from).getEyeLocation()
-                : from.getLocation().getBlock().getLocation().add(0.5, 0.5, 0.5);
+                : new LocationTag(from.getLocation()).getBlockLocation().add(0.5, 0.5, 0.5);
         Location rotated = faceLocation(origin, at);
         rotate(from, rotated.getYaw(), rotated.getPitch());
     }

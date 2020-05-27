@@ -6,7 +6,10 @@ import com.denizenscript.denizen.scripts.containers.core.FormatScriptContainer;
 import com.denizenscript.denizen.scripts.containers.core.ItemScriptHelper;
 import com.denizenscript.denizen.utilities.FormattedTextHelper;
 import com.denizenscript.denizencore.objects.Argument;
+import com.denizenscript.denizen.utilities.TextWidthHelper;
+import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.properties.PropertyParser;
+import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.tags.BukkitTagContext;
@@ -61,7 +64,7 @@ public class BukkitElementProperties implements Property {
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("as_chunk", (attribute, object) -> {
             return ElementTag.handleNull(object.asString(), ChunkTag.valueOf(object.asString(),
-                    new BukkitTagContext(attribute.getScriptEntry(), false)), "ChunkTag", attribute.hasAlternative());
+                    new BukkitTagContext(attribute.getScriptEntry())), "ChunkTag", attribute.hasAlternative());
         }, "aschunk");
 
         // <--[tag]
@@ -73,7 +76,7 @@ public class BukkitElementProperties implements Property {
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("as_color", (attribute, object) -> {
             return ElementTag.handleNull(object.asString(), ColorTag.valueOf(object.asString(),
-                    new BukkitTagContext(attribute.getScriptEntry(), false)), "ColorTag", attribute.hasAlternative());
+                    new BukkitTagContext(attribute.getScriptEntry())), "ColorTag", attribute.hasAlternative());
         }, "ascolor");
 
         // <--[tag]
@@ -85,7 +88,7 @@ public class BukkitElementProperties implements Property {
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("as_cuboid", (attribute, object) -> {
             return ElementTag.handleNull(object.asString(), CuboidTag.valueOf(object.asString(),
-                    new BukkitTagContext(attribute.getScriptEntry(), false)), "CuboidTag", attribute.hasAlternative());
+                    new BukkitTagContext(attribute.getScriptEntry())), "CuboidTag", attribute.hasAlternative());
         }, "ascuboid");
 
         // <--[tag]
@@ -97,7 +100,7 @@ public class BukkitElementProperties implements Property {
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("as_entity", (attribute, object) -> {
             return ElementTag.handleNull(object.asString(), EntityTag.valueOf(object.asString(),
-                    new BukkitTagContext(attribute.getScriptEntry(), false)), "EntityTag", attribute.hasAlternative());
+                    new BukkitTagContext(attribute.getScriptEntry())), "EntityTag", attribute.hasAlternative());
         }, "asentity");
 
         // <--[tag]
@@ -109,7 +112,7 @@ public class BukkitElementProperties implements Property {
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("as_inventory", (attribute, object) -> {
             return ElementTag.handleNull(object.asString(), InventoryTag.valueOf(object.asString(),
-                    new BukkitTagContext(attribute.getScriptEntry(), false)), "InventoryTag", attribute.hasAlternative());
+                    new BukkitTagContext(attribute.getScriptEntry())), "InventoryTag", attribute.hasAlternative());
         }, "asinventory");
 
         // <--[tag]
@@ -121,7 +124,7 @@ public class BukkitElementProperties implements Property {
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("as_item", (attribute, object) -> {
             return ElementTag.handleNull(object.asString(), ItemTag.valueOf(object.asString(),
-                    new BukkitTagContext(attribute.getScriptEntry(), false)), "ItemTag", attribute.hasAlternative());
+                    new BukkitTagContext(attribute.getScriptEntry())), "ItemTag", attribute.hasAlternative());
         }, "asitem");
 
         // <--[tag]
@@ -133,7 +136,7 @@ public class BukkitElementProperties implements Property {
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("as_location", (attribute, object) -> {
             return ElementTag.handleNull(object.asString(), LocationTag.valueOf(object.asString(),
-                    new BukkitTagContext(attribute.getScriptEntry(), false)), "LocationTag", attribute.hasAlternative());
+                    new BukkitTagContext(attribute.getScriptEntry())), "LocationTag", attribute.hasAlternative());
         }, "aslocation");
 
         // <--[tag]
@@ -145,7 +148,7 @@ public class BukkitElementProperties implements Property {
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("as_material", (attribute, object) -> {
             return ElementTag.handleNull(object.asString(), MaterialTag.valueOf(object.asString(),
-                    new BukkitTagContext(attribute.getScriptEntry(), false)), "MaterialTag", attribute.hasAlternative());
+                    new BukkitTagContext(attribute.getScriptEntry())), "MaterialTag", attribute.hasAlternative());
         }, "asmaterial");
 
         // <--[tag]
@@ -157,7 +160,7 @@ public class BukkitElementProperties implements Property {
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("as_npc", (attribute, object) -> {
             return ElementTag.handleNull(object.asString(), NPCTag.valueOf(object.asString(),
-                    new BukkitTagContext(attribute.getScriptEntry(), false)), "NPCTag", attribute.hasAlternative());
+                    new BukkitTagContext(attribute.getScriptEntry())), "NPCTag", attribute.hasAlternative());
         }, "asnpc");
 
         // <--[tag]
@@ -169,7 +172,7 @@ public class BukkitElementProperties implements Property {
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("as_player", (attribute, object) -> {
             return ElementTag.handleNull(object.asString(), PlayerTag.valueOf(object.asString(),
-                    new BukkitTagContext(attribute.getScriptEntry(), false)), "PlayerTag", attribute.hasAlternative());
+                    new BukkitTagContext(attribute.getScriptEntry())), "PlayerTag", attribute.hasAlternative());
         }, "asplayer");
 
         // <--[tag]
@@ -181,7 +184,7 @@ public class BukkitElementProperties implements Property {
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("as_world", (attribute, object) -> {
             return ElementTag.handleNull(object.asString(), WorldTag.valueOf(object.asString(),
-                    new BukkitTagContext(attribute.getScriptEntry(), false)), "WorldTag", attribute.hasAlternative());
+                    new BukkitTagContext(attribute.getScriptEntry())), "WorldTag", attribute.hasAlternative());
         }, "asworld");
 
         // <--[tag]
@@ -193,19 +196,8 @@ public class BukkitElementProperties implements Property {
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("as_plugin", (attribute, object) -> {
             return ElementTag.handleNull(object.asString(), PluginTag.valueOf(object.asString(),
-                    new BukkitTagContext(attribute.getScriptEntry(), false)), "PluginTag", attribute.hasAlternative());
+                    new BukkitTagContext(attribute.getScriptEntry())), "PluginTag", attribute.hasAlternative());
         }, "asplugin");
-
-        // <--[tag]
-        // @attribute <ElementTag.last_color>
-        // @returns ElementTag
-        // @group text checking
-        // @description
-        // Returns the ChatColors used last in an element.
-        // -->
-        PropertyParser.<BukkitElementProperties>registerTag("last_color", (attribute, object) -> {
-            return new ElementTag(ChatColor.getLastColors(object.asString()));
-        });
 
         // <--[tag]
         // @attribute <ElementTag.format[<script>]>
@@ -228,6 +220,66 @@ public class BukkitElementProperties implements Property {
                         attribute.getScriptEntry() != null ? ((BukkitScriptEntryData) attribute.getScriptEntry().entryData).getNPC() : null,
                         attribute.getScriptEntry() != null ? ((BukkitScriptEntryData) attribute.getScriptEntry().entryData).getPlayer() : null));
             }
+        });
+
+        // <--[tag]
+        // @attribute <ElementTag.split_lines_by_width[<#>]>
+        // @returns ElementTag
+        // @group element manipulation
+        // @description
+        // Returns the element split into separate lines based on a maximum width in pixels per line.
+        // This uses character width, so for example 20 "W"s and 20 "i"s will be treated differently.
+        // The width used is based on the vanilla minecraft font. This will not be accurate for other fonts.
+        // This only currently supports ASCII symbols properly. Unicode symbols will be estimated as 6 pixels.
+        // Spaces will be preferred to become newlines, unless a line does not contain any spaces.
+        // This will transfer colors over to new lines as well.
+        // -->
+        PropertyParser.<BukkitElementProperties>registerTag("split_lines_by_width", (attribute, object) -> {
+            int width = attribute.getIntContext(1);
+            return new ElementTag(TextWidthHelper.splitLines(object.asString(), width));
+        });
+
+        // <--[tag]
+        // @attribute <ElementTag.text_width>
+        // @returns ElementTag(Number)
+        // @group element manipulation
+        // @description
+        // Returns the width, in pixels, of the text.
+        // The width used is based on the vanilla minecraft font. This will not be accurate for other fonts.
+        // This only currently supports ASCII symbols properly. Unicode symbols will be estimated as 6 pixels.
+        // This will not work well with elements that contain newlines.
+        // -->
+        PropertyParser.<BukkitElementProperties>registerTag("text_width", (attribute, object) -> {
+            return new ElementTag(TextWidthHelper.getWidth(object.asString()));
+        });
+
+        // <--[tag]
+        // @attribute <ElementTag.lines_to_colored_list>
+        // @returns ListTag
+        // @group element manipulation
+        // @description
+        // Returns a list of lines in the element, with colors spread over the lines manually.
+        // Useful for things like item lore.
+        // -->
+        PropertyParser.<BukkitElementProperties>registerTag("lines_to_colored_list", (attribute, object) -> {
+            ListTag output = new ListTag();
+            String colors = "";
+            for (String line : CoreUtilities.split(object.asString(), '\n')) {
+                output.add(colors + line);
+                colors = ChatColor.getLastColors(colors + line);
+            }
+            return output;
+        });
+
+        // <--[tag]
+        // @attribute <ElementTag.last_color>
+        // @returns ElementTag
+        // @group text checking
+        // @description
+        // Returns the ChatColors used last in an element.
+        // -->
+        PropertyParser.<BukkitElementProperties>registerTag("last_color", (attribute, object) -> {
+            return new ElementTag(ChatColor.getLastColors(object.asString()));
         });
 
         // <--[tag]
@@ -332,7 +384,10 @@ public class BukkitElementProperties implements Property {
         // @description
         // Adds a hover message to the element, which makes the element display the input hover text when the mouse is left over it.
         //
-        // This tag works for chat outputs and books. It does not work in other places (inside an item, title command, etc. this is not valid).
+        // Note that this is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
+        // This instead generates the special modern Minecraft JSON codes for hoverable text through the Denizen message processor.
+        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
+        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("on_hover", (attribute, object) -> {
             if (!attribute.hasContext(1)) {
@@ -350,7 +405,10 @@ public class BukkitElementProperties implements Property {
             // Optionally specify the hover type as one of: SHOW_TEXT, SHOW_ACHIEVEMENT, SHOW_ITEM, or SHOW_ENTITY.
             // Note: for "SHOW_ITEM", replace the text with a valid ItemTag. For "SHOW_ENTITY", replace the text with a valid spawned EntityTag (requires F3+H to see entities).
             //
-            // This tag works for chat outputs and books. It does not work in other places (inside an item, title command, etc. this is not valid).
+            // Note that this is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
+            // This instead generates the special modern Minecraft JSON codes for hoverable text through the Denizen message processor.
+            // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
+            // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
             // -->
             if (attribute.startsWith("type", 2)) {
                 type = attribute.getContext(2);
@@ -377,8 +435,14 @@ public class BukkitElementProperties implements Property {
         // @group text manipulation
         // @description
         // Adds a click command to the element, which makes the element execute the input command when clicked.
+        // To execute a command "/" should be used at the start. Otherwise, it will display as chat.
+        // For example: - narrate "You can <element[click here].on_click[wow]> to say wow!"
+        // For example: - narrate "You can <element[click here].on_click[/help]> for help!"
         //
-        // This tag works for chat outputs and books. It does not work in other places (inside an item, title command, etc. this is not valid).
+        // Note that this is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
+        // This instead generates the special modern Minecraft JSON codes for clickable text through the Denizen message processor.
+        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
+        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("on_click", (attribute, object) -> {
             if (!attribute.hasContext(1)) {
@@ -394,8 +458,12 @@ public class BukkitElementProperties implements Property {
             // @description
             // Adds a click command to the element, which makes the element execute the input command when clicked.
             // Optionally specify the hover type as one of: OPEN_URL, OPEN_FILE, RUN_COMMAND, SUGGEST_COMMAND, or CHANGE_PAGE.
+            // For example: - narrate "You can <element[click here].on_click[https://denizenscript.com].type[OPEN_URL]> to learn about Denizen!"
             //
-            // This tag works for chat outputs and books. It does not work in other places (inside an item, title command, etc. this is not valid).
+            // Note that this is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
+            // This instead generates the special modern Minecraft JSON codes for clickable text through the Denizen message processor.
+            // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
+            // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
             // -->
             if (attribute.startsWith("type", 2)) {
                 type = attribute.getContext(2);
@@ -412,7 +480,10 @@ public class BukkitElementProperties implements Property {
         // @description
         // Adds an insertion message to the element, which makes the element insert the input message to chat when shift-clicked.
         //
-        // This tag works for chat outputs and books. It does not work in other places (inside an item, title command, etc. this is not valid).
+        // Note that this is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
+        // This instead generates the special modern Minecraft JSON codes for insertion text through the Denizen message processor.
+        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
+        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("with_insertion", (attribute, object) -> {
             if (!attribute.hasContext(1)) {
@@ -570,7 +641,9 @@ public class BukkitElementProperties implements Property {
         // Makes a color code (&0123456789abcdef) not reset other formatting details.
         // Use like '<&c.no_reset>' or '<red.no_reset>'.
         //
-        // This tag works for chat outputs and books. It does not work in other places (inside an item, title command, etc. this is not valid).
+        // Note that end_format is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
+        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
+        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("no_reset", (attribute, object) -> {
             if (object.asString().length() == 2 && object.asString().charAt(0) == ChatColor.COLOR_CHAR) {
@@ -587,7 +660,9 @@ public class BukkitElementProperties implements Property {
         // Makes a chat format code (&klmno) be the end of a format, as opposed to the start.
         // Use like '<&o.end_format>' or '<italic.end_format>'.
         //
-        // This tag works for chat outputs and books. It does not work in other places (inside an item, title command, etc. this is not valid).
+        // Note that end_format is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
+        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
+        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("end_format", (attribute, object) -> {
             if (object.asString().length() == 2 && object.asString().charAt(0) == ChatColor.COLOR_CHAR) {
@@ -603,7 +678,9 @@ public class BukkitElementProperties implements Property {
         // @description
         // Makes the input text italic. Equivalent to "<&o><ELEMENT_HERE><&o.end_format>"
         //
-        // This tag works for chat outputs and books. It does not work in other places (inside an item, title command, etc. this is not valid).
+        // Note that end_format is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
+        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
+        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("italicize", (attribute, object) -> {
             return new ElementTag(ChatColor.ITALIC + object.asString() + ChatColor.COLOR_CHAR + "[reset=o]");
@@ -616,7 +693,9 @@ public class BukkitElementProperties implements Property {
         // @description
         // Makes the input text bold. Equivalent to "<&l><ELEMENT_HERE><&l.end_format>"
         //
-        // This tag works for chat outputs and books. It does not work in other places (inside an item, title command, etc. this is not valid).
+        // Note that end_format is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
+        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
+        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("bold", (attribute, object) -> {
             return new ElementTag(ChatColor.BOLD + object.asString() + ChatColor.COLOR_CHAR + "[reset=l]");
@@ -629,7 +708,9 @@ public class BukkitElementProperties implements Property {
         // @description
         // Makes the input text underlined. Equivalent to "<&n><ELEMENT_HERE><&n.end_format>"
         //
-        // This tag works for chat outputs and books. It does not work in other places (inside an item, title command, etc. this is not valid).
+        // Note that end_format is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
+        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
+        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("underline", (attribute, object) -> {
             return new ElementTag(ChatColor.UNDERLINE + object.asString() + ChatColor.COLOR_CHAR + "[reset=n]");
@@ -642,7 +723,9 @@ public class BukkitElementProperties implements Property {
         // @description
         // Makes the input text struck-through. Equivalent to "<&m><ELEMENT_HERE><&m.end_format>"
         //
-        // This tag works for chat outputs and books. It does not work in other places (inside an item, title command, etc. this is not valid).
+        // Note that end_format is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
+        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
+        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("strikethrough", (attribute, object) -> {
             return new ElementTag(ChatColor.STRIKETHROUGH + object.asString() + ChatColor.COLOR_CHAR + "[reset=m]");
@@ -655,7 +738,9 @@ public class BukkitElementProperties implements Property {
         // @description
         // Makes the input text obfuscated. Equivalent to "<&k><ELEMENT_HERE><&k.end_format>"
         //
-        // This tag works for chat outputs and books. It does not work in other places (inside an item, title command, etc. this is not valid).
+        // Note that end_format is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
+        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
+        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("obfuscate", (attribute, object) -> {
             return new ElementTag(ChatColor.MAGIC + object.asString() + ChatColor.COLOR_CHAR + "[reset=k]");
@@ -667,10 +752,11 @@ public class BukkitElementProperties implements Property {
         // @group text manipulation
         // @description
         // Makes the input text colored by the input color. Equivalent to "<COLOR><ELEMENT_HERE><COLOR.end_format>"
-        // Color can be either a color name, or code.
-        // That is: ".color[gold]" and ".color[6]" are both valid.
+        // Color can be either a color name, or code... that is: ".color[gold]" and ".color[6]" are both valid.
         //
-        // This tag works for chat outputs and books. It does not work in other places (inside an item, title command, etc. this is not valid).
+        // Note that end_format is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
+        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
+        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("color", (attribute, object) -> {
             if (!attribute.hasContext(1)) {
@@ -693,6 +779,28 @@ public class BukkitElementProperties implements Property {
                 }
             }
             return new ElementTag(color + object.asString() + ChatColor.COLOR_CHAR + "[reset=" + color.getChar() + "]");
+        });
+
+        // <--[tag]
+        // @attribute <ElementTag.rainbow[(<pattern>)]>
+        // @returns ElementTag
+        // @group text manipulation
+        // @description
+        // Returns the element with rainbow colors applied.
+        // Optionally, specify a color pattern to follow. By default, this is "4c6e2ab319d5".
+        // That is, a repeating color of: Red, Orange, Yellow, Green, Cyan, Blue, Purple.
+        // -->
+        PropertyParser.<BukkitElementProperties>registerTag("rainbow", (attribute, object) -> {
+            String str = object.asString();
+            String pattern = "4c6e2ab319d5";
+            if (attribute.hasContext(1)) {
+                pattern = attribute.getContext(1);
+            }
+            StringBuilder output = new StringBuilder(str.length() * 3);
+            for (int i = 0; i < str.length(); i++) {
+                output.append(ChatColor.COLOR_CHAR).append(pattern.charAt(i % pattern.length())).append(str.charAt(i));
+            }
+            return new ElementTag(output.toString());
         });
     }
 

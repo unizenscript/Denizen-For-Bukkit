@@ -18,10 +18,17 @@ import org.bukkit.entity.Player;
 
 public class AnnounceCommand extends AbstractCommand {
 
+    public AnnounceCommand() {
+        setName("announce");
+        setSyntax("announce [<text>] (to_ops/to_console/to_flagged:<flag_name>) (format:<name>)");
+        setRequiredArguments(1, 3);
+    }
+
     // <--[command]
     // @Name Announce
     // @Syntax announce [<text>] (to_ops/to_console/to_flagged:<flag_name>) (format:<name>)
     // @Required 1
+    // @Maximum 3
     // @Short Announces a message for everyone online to read.
     // @Group server
     //
@@ -85,7 +92,7 @@ public class AnnounceCommand extends AbstractCommand {
             }
             else if (!scriptEntry.hasObject("format")
                     && arg.matchesPrefix("format")) {
-                FormatScriptContainer format = null;
+                FormatScriptContainer format;
                 String formatStr = arg.getValue();
                 format = ScriptRegistry.getScriptContainer(formatStr);
                 if (format == null) {
@@ -110,13 +117,11 @@ public class AnnounceCommand extends AbstractCommand {
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-        // Fetch objects
         ElementTag text = scriptEntry.getElement("text");
         AnnounceType type = (AnnounceType) scriptEntry.getObject("type");
         FormatScriptContainer format = (FormatScriptContainer) scriptEntry.getObject("format");
         ElementTag flag = scriptEntry.getElement("flag");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(),
                     ArgumentHelper.debugObj("Message", text)

@@ -49,6 +49,7 @@ public class DamageTrigger extends AbstractTrigger implements Listener {
     // None
     //
     // -->
+
     // Technically defined in TriggerTrait, but placing here instead.
     // <--[action]
     // @Actions
@@ -63,6 +64,7 @@ public class DamageTrigger extends AbstractTrigger implements Listener {
     // "cancelled" to cancel the damage event.
     //
     // -->
+
     // <--[action]
     // @Actions
     // damaged
@@ -133,7 +135,7 @@ public class DamageTrigger extends AbstractTrigger implements Listener {
                 Map<String, String> idMap = script.getIdMapFor(this.getClass(), dplayer);
                 if (!idMap.isEmpty()) {
                     for (Map.Entry<String, String> entry : idMap.entrySet()) {
-                        String entry_value = TagManager.tag(entry.getValue(), new BukkitTagContext(dplayer, npc, false, null, false, new ScriptTag(script)));
+                        String entry_value = TagManager.tag(entry.getValue(), new BukkitTagContext(dplayer, npc, null, false, new ScriptTag(script)));
                         if (ItemTag.valueOf(entry_value, script).comparesTo(dplayer.getPlayerEntity().getEquipment().getItemInMainHand()) >= 0) {
                             id = entry.getKey();
                         }

@@ -16,10 +16,17 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 
 public class CreateCommand extends AbstractCommand {
 
+    public CreateCommand() {
+        setName("create");
+        setSyntax("create [<entity>] [<name>] (<location>) (traits:<trait>|...)");
+        setRequiredArguments(1, 4);
+    }
+
     // <--[command]
     // @Name Create
     // @Syntax create [<entity>] [<name>] (<location>) (traits:<trait>|...)
     // @Required 1
+    // @Maximum 4
     // @Plugin Citizens
     // @Short Creates a new NPC, and optionally spawns it at a location.
     // @Group npc
@@ -83,10 +90,10 @@ public class CreateCommand extends AbstractCommand {
     @Override
     public void execute(final ScriptEntry scriptEntry) {
 
-        ElementTag name = (ElementTag) scriptEntry.getObject("name");
-        EntityTag type = (EntityTag) scriptEntry.getObject("entity_type");
-        LocationTag loc = (LocationTag) scriptEntry.getObject("spawn_location");
-        ListTag traits = (ListTag) scriptEntry.getObject("traits");
+        ElementTag name = scriptEntry.getElement("name");
+        EntityTag type = scriptEntry.getObjectTag("entity_type");
+        LocationTag loc = scriptEntry.getObjectTag("spawn_location");
+        ListTag traits = scriptEntry.getObjectTag("traits");
 
         if (scriptEntry.dbCallShouldDebug()) {
 

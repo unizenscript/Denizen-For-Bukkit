@@ -18,18 +18,25 @@ import java.util.List;
 
 public class SpawnCommand extends AbstractCommand {
 
+    public SpawnCommand() {
+        setName("spawn");
+        setSyntax("spawn [<entity>|...] (<location>) (target:<entity>) (persistent)");
+        setRequiredArguments(1, 4);
+    }
+
     // <--[command]
     // @Name Spawn
-    // @Syntax spawn [<entity>|...] [<location>] (target:<entity>) (persistent)
-    // @Required 2
+    // @Syntax spawn [<entity>|...] (<location>) (target:<entity>) (persistent)
+    // @Required 1
+    // @Maximum 4
     // @Short Spawns a list of entities at a certain location.
     // @Group entity
     //
     // @Description
     // Spawn an entity or list of entities at the specified location. Accepts the 'target:<entity>' argument which
-    // will cause all spawned entities to follow and attack the targetted entity.
+    // will cause all spawned entities to follow and attack the targeted entity.
     // If the persistent argument is present, the entity will not despawn when no players are within range, causing
-    // the enity to remain until killed.
+    // the entity to remain until killed.
     //
     // @Tags
     // <EntityTag.is_spawned>
@@ -73,7 +80,7 @@ public class SpawnCommand extends AbstractCommand {
                 scriptEntry.addObject("target", arg.asType(EntityTag.class));
             }
             else if (!scriptEntry.hasObject("spread")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+                    && arg.matchesInteger()) {
                 scriptEntry.addObject("spread", arg.asElement());
             }
             else if (!scriptEntry.hasObject("persistent")
@@ -104,15 +111,12 @@ public class SpawnCommand extends AbstractCommand {
     @SuppressWarnings("unchecked")
     @Override
     public void execute(final ScriptEntry scriptEntry) {
-
-        // Get objects
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
-        LocationTag location = (LocationTag) scriptEntry.getObject("location");
-        EntityTag target = (EntityTag) scriptEntry.getObject("target");
+        LocationTag location = scriptEntry.getObjectTag("location");
+        EntityTag target = scriptEntry.getObjectTag("target");
         ElementTag spread = scriptEntry.getElement("spread");
         boolean persistent = scriptEntry.hasObject("persistent");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), ArgumentHelper.debugObj("entities", entities.toString()) +
                     location.debug() +

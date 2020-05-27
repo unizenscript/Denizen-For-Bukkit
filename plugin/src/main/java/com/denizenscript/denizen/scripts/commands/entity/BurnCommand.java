@@ -16,10 +16,17 @@ import java.util.List;
 
 public class BurnCommand extends AbstractCommand {
 
+    public BurnCommand() {
+        setName("burn");
+        setSyntax("burn [<entity>|...] (duration:<value>)");
+        setRequiredArguments(1, 2);
+    }
+
     // <--[command]
     // @Name Burn
     // @Syntax burn [<entity>|...] (duration:<value>)
     // @Required 1
+    // @Maximum 2
     // @Short Sets a list of entities on fire.
     // @Group entity
     //
@@ -74,12 +81,9 @@ public class BurnCommand extends AbstractCommand {
     @SuppressWarnings("unchecked")
     @Override
     public void execute(final ScriptEntry scriptEntry) {
-
-        // Get objects
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
-        DurationTag duration = (DurationTag) scriptEntry.getObject("duration");
+        DurationTag duration = scriptEntry.getObjectTag("duration");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), duration.debug() +
                     ArgumentHelper.debugObj("entities", entities.toString()));

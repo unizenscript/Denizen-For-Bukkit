@@ -1,13 +1,10 @@
 package com.denizenscript.denizen.scripts.commands.world;
 
+import com.denizenscript.denizen.objects.*;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.interfaces.WorldHelper;
-import com.denizenscript.denizen.objects.CuboidTag;
-import com.denizenscript.denizen.objects.EllipsoidTag;
-import com.denizenscript.denizen.objects.LocationTag;
-import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -24,10 +21,16 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.ArrayList;
@@ -35,10 +38,28 @@ import java.util.List;
 
 public class ModifyBlockCommand extends AbstractCommand implements Listener, Holdable {
 
+    public ModifyBlockCommand() {
+        setName("modifyblock");
+        setSyntax("modifyblock [<location>|.../<ellipsoid>/<cuboid>] [<material>|...] (no_physics/naturally) (delayed) (<script>) (<percent chance>|...) (source:<player>)");
+        setRequiredArguments(2, 7);
+        Bukkit.getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
+        // Keep the list empty automatically - we don't want to still block physics so much later that something else edited the block!
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(DenizenAPI.getCurrentInstance(), new Runnable() {
+            @Override
+            public void run() {
+                tick++;
+                if (physitick < tick - 1) {
+                    block_physics.clear();
+                }
+            }
+        }, 2, 2);
+    }
+
     // <--[command]
     // @Name ModifyBlock
-    // @Syntax modifyblock [<location>|.../<ellipsoid>/<cuboid>] [<material>|...] (no_physics/naturally) (delayed) (<script>) (<percent chance>|...)
+    // @Syntax modifyblock [<location>|.../<ellipsoid>/<cuboid>] [<material>|...] (no_physics/naturally) (delayed) (<script>) (<percent chance>|...) (source:<player>)
     // @Required 2
+    // @Maximum 7
     // @Short Modifies blocks.
     // @Group world
     //
@@ -52,6 +73,7 @@ public class ModifyBlockCommand extends AbstractCommand implements Listener, Hol
     // Use 'delayed' to make the modifyblock slowly edit blocks at a time pace roughly equivalent to the server's limits.
     // Note that specify a list of locations will take more time in parsing than in the actual block modification.
     // Optionally, specify a script to be ran after the delayed edits finish. (Doesn't fire if delayed is not set.)
+    // Optionally, specify a source player. When set, Bukkit events will fire that identify that player as the source of a change, and potentially cancel the change.
     //
     // The modifyblock command is ~waitable. Refer to <@link language ~waitable>.
     //
@@ -78,7 +100,6 @@ public class ModifyBlockCommand extends AbstractCommand implements Listener, Hol
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
-        // Parse arguments
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (arg.matchesArgumentType(CuboidTag.class)
@@ -104,18 +125,23 @@ public class ModifyBlockCommand extends AbstractCommand implements Listener, Hol
             }
             else if (!scriptEntry.hasObject("radius")
                     && arg.matchesPrefix("radius", "r")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+                    && arg.matchesInteger()) {
                 scriptEntry.addObject("radius", new ElementTag(arg.getValue()));
             }
             else if (!scriptEntry.hasObject("height")
                     && arg.matchesPrefix("height", "h")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+                    && arg.matchesInteger()) {
                 scriptEntry.addObject("height", new ElementTag(arg.getValue()));
             }
             else if (!scriptEntry.hasObject("depth")
                     && arg.matchesPrefix("depth", "d")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+                    && arg.matchesInteger()) {
                 scriptEntry.addObject("depth", new ElementTag(arg.getValue()));
+            }
+            else if (!scriptEntry.hasObject("source")
+                    && arg.matchesPrefix("source")
+                    && arg.matchesArgumentType(PlayerTag.class)) {
+                scriptEntry.addObject("source", arg.asType(PlayerTag.class));
             }
             else if (arg.matches("no_physics")) {
                 scriptEntry.addObject("physics", new ElementTag(false));
@@ -171,6 +197,7 @@ public class ModifyBlockCommand extends AbstractCommand implements Listener, Hol
         final ElementTag heightElement = scriptEntry.getElement("height");
         final ElementTag depthElement = scriptEntry.getElement("depth");
         final ScriptTag script = scriptEntry.getObjectTag("script");
+        final PlayerTag source = scriptEntry.getObjectTag("source");
         ListTag percents = scriptEntry.getObjectTag("percents");
 
         if (percents != null && percents.size() != materials.size()) {
@@ -181,7 +208,6 @@ public class ModifyBlockCommand extends AbstractCommand implements Listener, Hol
         final List<MaterialTag> materialList = materials.filter(MaterialTag.class, scriptEntry);
 
         if (scriptEntry.dbCallShouldDebug()) {
-
             Debug.report(scriptEntry, getName(), (locations == null ? location_list.debug() : ArgumentHelper.debugList("locations", locations))
                     + materials.debug()
                     + physics.debug()
@@ -191,10 +217,11 @@ public class ModifyBlockCommand extends AbstractCommand implements Listener, Hol
                     + natural.debug()
                     + delayed.debug()
                     + (script != null ? script.debug() : "")
-                    + (percents != null ? percents.debug() : ""));
-
+                    + (percents != null ? percents.debug() : "")
+                    + (source != null ? source.debug() : ""));
         }
 
+        Player sourcePlayer = source == null ? null : source.getPlayerEntity();
         final boolean doPhysics = physics.asBoolean();
         final boolean isNatural = natural.asBoolean();
         final int radius = radiusElement.asInt();
@@ -213,10 +240,10 @@ public class ModifyBlockCommand extends AbstractCommand implements Listener, Hol
             Debug.echoError("Must specify a valid location!");
             return;
         }
-        if ((location_list != null && location_list.size() == 0) || (locations != null && locations.size() == 0)) {
+        if ((location_list != null && location_list.isEmpty()) || (locations != null && locations.isEmpty())) {
             return;
         }
-        if (materialList.size() == 0) {
+        if (materialList.isEmpty()) {
             Debug.echoError("Must specify a valid material!");
             return;
         }
@@ -245,7 +272,7 @@ public class ModifyBlockCommand extends AbstractCommand implements Listener, Hol
                         else {
                             nLoc = LocationTag.valueOf(location_list.get(index));
                         }
-                        handleLocation(nLoc, index, materialList, doPhysics, isNatural, radius, height, depth, percs);
+                        handleLocation(nLoc, index, materialList, doPhysics, isNatural, radius, height, depth, percs, sourcePlayer, scriptEntry);
                         index++;
                         if (System.currentTimeMillis() - start > 50) {
                             break;
@@ -277,13 +304,13 @@ public class ModifyBlockCommand extends AbstractCommand implements Listener, Hol
             int index = 0;
             if (locations != null) {
                 for (ObjectTag obj : locations) {
-                    handleLocation((LocationTag) obj, index, materialList, doPhysics, isNatural, radius, height, depth, percentages);
+                    handleLocation((LocationTag) obj, index, materialList, doPhysics, isNatural, radius, height, depth, percentages, sourcePlayer, scriptEntry);
                     index++;
                 }
             }
             else {
                 for (String str : location_list) {
-                    handleLocation(LocationTag.valueOf(str), index, materialList, doPhysics, isNatural, radius, height, depth, percentages);
+                    handleLocation(LocationTag.valueOf(str), index, materialList, doPhysics, isNatural, radius, height, depth, percentages, sourcePlayer, scriptEntry);
                     index++;
                 }
             }
@@ -312,7 +339,7 @@ public class ModifyBlockCommand extends AbstractCommand implements Listener, Hol
     }
 
     void handleLocation(LocationTag location, int index, List<MaterialTag> materialList, boolean doPhysics,
-                        boolean isNatural, int radius, int height, int depth, List<Float> percents) {
+                        boolean isNatural, int radius, int height, int depth, List<Float> percents, Player source, ScriptEntry entry) {
 
         MaterialTag material;
         if (percents == null) {
@@ -337,6 +364,22 @@ public class ModifyBlockCommand extends AbstractCommand implements Listener, Hol
         location.setX(location.getBlockX());
         location.setY(location.getBlockY());
         location.setZ(location.getBlockZ());
+        if (source != null) {
+            Event event;
+            if (material.getMaterial() == Material.AIR) {
+                event = new BlockBreakEvent(location.getBlock(), source);
+            }
+            else {
+                event = new BlockPlaceEvent(location.getBlock(), material.getModernData().getBlockState(), location.getBlock(), new ItemTag(material, 1).getItemStack(), source, true, EquipmentSlot.HAND);
+            }
+            Bukkit.getPluginManager().callEvent(event);
+            if (((Cancellable) event).isCancelled()) {
+                if (entry.dbCallShouldDebug()) {
+                    Debug.echoDebug(entry, "Source event cancelled, not changing block.");
+                }
+                return;
+            }
+        }
         setBlock(location, material, doPhysics, isNatural);
 
         if (radius != 0) {
@@ -368,7 +411,7 @@ public class ModifyBlockCommand extends AbstractCommand implements Listener, Hol
         }
     }
 
-    void setBlock(Location location, MaterialTag material, boolean physics, boolean natural) {
+    public static void setBlock(Location location, MaterialTag material, boolean physics, boolean natural) {
         if (physics) {
             for (int i = 0; i < block_physics.size(); i++) {
                 if (compareloc(block_physics.get(i), location)) {
@@ -392,29 +435,13 @@ public class ModifyBlockCommand extends AbstractCommand implements Listener, Hol
         }
     }
 
-    boolean no_physics = false;
+    public static boolean no_physics = false;
 
-    public final List<Location> block_physics = new ArrayList<>();
+    public static final List<Location> block_physics = new ArrayList<>();
 
-    long tick = 0;
+    public static long tick = 0;
 
-    long physitick = 0;
-
-    @Override
-    public void onEnable() {
-        DenizenAPI.getCurrentInstance().getServer().getPluginManager()
-                .registerEvents(this, DenizenAPI.getCurrentInstance());
-        // Keep the list empty automatically - we don't want to still block physics so much later that something else edited the block!
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(DenizenAPI.getCurrentInstance(), new Runnable() {
-            @Override
-            public void run() {
-                tick++;
-                if (physitick < tick - 1) {
-                    block_physics.clear();
-                }
-            }
-        }, 2, 2);
-    }
+    public static long physitick = 0;
 
     @EventHandler
     public void blockPhysics(BlockPhysicsEvent event) {
@@ -443,7 +470,7 @@ public class ModifyBlockCommand extends AbstractCommand implements Listener, Hol
         }
     }
 
-    boolean compareloc(Location lone, Location ltwo) {
+    public static boolean compareloc(Location lone, Location ltwo) {
         return lone.getBlockX() == ltwo.getBlockX() && lone.getBlockY() == ltwo.getBlockY() &&
                 lone.getBlockZ() == ltwo.getBlockZ() && lone.getWorld().getName().equalsIgnoreCase(ltwo.getWorld().getName());
     }

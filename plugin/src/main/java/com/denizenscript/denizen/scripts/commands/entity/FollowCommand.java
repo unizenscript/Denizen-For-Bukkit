@@ -15,10 +15,17 @@ import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 
 public class FollowCommand extends AbstractCommand {
 
+    public FollowCommand() {
+        setName("follow");
+        setSyntax("follow (followers:<entity>|...) (stop/target:<entity>) (lead:<#.#>) (max:<#.#>) (speed:<#.#>) (allow_wander)");
+        setRequiredArguments(0, 6);
+    }
+
     // <--[command]
     // @Name Follow
     // @Syntax follow (followers:<entity>|...) (stop/target:<entity>) (lead:<#.#>) (max:<#.#>) (speed:<#.#>) (allow_wander)
     // @Required 0
+    // @Maximum 6
     // @Short Causes a list of entities to follow a target.
     // @Group entity
     //
@@ -44,6 +51,10 @@ public class FollowCommand extends AbstractCommand {
     // - follow
     //
     // @Usage
+    // To make an NPC stop following.
+    // - follow stop
+    //
+    // @Usage
     // To explicitly make an NPC follow the player.
     // - follow followers:<npc> target:<player>
     //
@@ -55,19 +66,18 @@ public class FollowCommand extends AbstractCommand {
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
-        // Parse Arguments
         for (Argument arg : scriptEntry.getProcessedArgs()) {
             if (!scriptEntry.hasObject("stop") &&
-                    arg.matches("STOP")) {
+                    arg.matches("stop")) {
                 scriptEntry.addObject("stop", new ElementTag(true));
             }
             else if (!scriptEntry.hasObject("lead") &&
-                    arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double) &&
+                    arg.matchesFloat() &&
                     arg.matchesPrefix("l", "lead")) {
                 scriptEntry.addObject("lead", arg.asElement());
             }
             else if (!scriptEntry.hasObject("max") &&
-                    arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double) &&
+                    arg.matchesFloat() &&
                     arg.matchesPrefix("max")) {
                 scriptEntry.addObject("max", arg.asElement());
             }
@@ -76,7 +86,7 @@ public class FollowCommand extends AbstractCommand {
                 scriptEntry.addObject("allow_wander", new ElementTag(true));
             }
             else if (!scriptEntry.hasObject("speed") &&
-                    arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Percentage) &&
+                    arg.matchesFloat() &&
                     arg.matchesPrefix("s", "speed")) {
                 scriptEntry.addObject("speed", arg.asElement());
             }
@@ -116,7 +126,6 @@ public class FollowCommand extends AbstractCommand {
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-        // Get objects
         ElementTag stop = scriptEntry.getElement("stop");
         ElementTag lead = scriptEntry.getElement("lead");
         ElementTag maxRange = scriptEntry.getElement("max");
@@ -125,7 +134,6 @@ public class FollowCommand extends AbstractCommand {
         ListTag entities = scriptEntry.getObjectTag("entities");
         EntityTag target = scriptEntry.getObjectTag("target");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(),
                     (Utilities.getEntryPlayer(scriptEntry) != null ? Utilities.getEntryPlayer(scriptEntry).debug() : "")

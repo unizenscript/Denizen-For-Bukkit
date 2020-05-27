@@ -14,10 +14,17 @@ import org.bukkit.World;
 
 public class GroupCommand extends AbstractCommand {
 
+    public GroupCommand() {
+        setName("group");
+        setSyntax("group [add/remove/set] [<group>] (<world>)");
+        setRequiredArguments(2, 3);
+    }
+
     // <--[command]
     // @Name Group
     // @Syntax group [add/remove/set] [<group>] (<world>)
     // @Required 2
+    // @Maximum 3
     // @Short Adds a player to, removes a player from, or sets a player's permissions group.
     // @Group player
     // @Plugin Vault
@@ -92,10 +99,9 @@ public class GroupCommand extends AbstractCommand {
     public void execute(ScriptEntry scriptEntry) {
 
         ElementTag action = scriptEntry.getElement("action");
-        WorldTag world = (WorldTag) scriptEntry.getObject("world");
+        WorldTag world = scriptEntry.getObjectTag("world");
         ElementTag group = scriptEntry.getElement("group");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), action.debug() + (world != null ? world.debug() : "") + group.debug());
         }

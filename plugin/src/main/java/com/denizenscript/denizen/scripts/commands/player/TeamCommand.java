@@ -9,22 +9,40 @@ import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
+import com.denizenscript.denizencore.utilities.CoreUtilities;
+import org.bukkit.ChatColor;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
 public class TeamCommand extends AbstractCommand {
 
+    public TeamCommand() {
+        setName("team");
+        setSyntax("team (id:<scoreboard>/{main}) [name:<team>] (add:<entry>|...) (remove:<entry>|...) (prefix:<prefix>) (suffix:<suffix>) (option:<type> status:<status>) (color:<color>)");
+        setRequiredArguments(2, 9);
+    }
+
     // <--[command]
     // @Name Team
-    // @Syntax team (id:<scoreboard>/{main}) [name:<team>] (add:<entry>|...) (remove:<entry>|...) (prefix:<prefix>) (suffix:<suffix>)
+    // @Syntax team (id:<scoreboard>/{main}) [name:<team>] (add:<entry>|...) (remove:<entry>|...) (prefix:<prefix>) (suffix:<suffix>) (option:<type> status:<status>) (color:<color>)
     // @Required 2
+    // @Maximum 9
     // @Short Controls scoreboard teams.
     // @Group player
     //
     // @Description
-    // The Team command allows you to add modify a team's prefix and suffix, as well as adding to
-    // and removing entries from teams.
+    // The Team command allows you to control a scoreboard team.
+    //
+    // Use the "prefix" or "suffix" arguments to modify a team's playername prefix and suffix.
     // NOTE: Prefixes and suffixes cannot be longer than 16 characters!
+    //
+    // Use the "color" argument to set the team color (for glowing, names, etc). Must be from <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/ChatColor.html>.
+    //
+    // Use the "add" and "remove" arguments to add or remove players by name to/from the team.
+    //
+    // Use the "option" and "status" arguments together to set a team option's status.
+    // Option can be "COLLISION_RULE", "DEATH_MESSAGE_VISIBILITY", or "NAME_TAG_VISIBILITY", with status "ALWAYS", "FOR_OTHER_TEAMS", "FOR_OWN_TEAM", or "NEVER".
+    // Option can instead be "FRIENDLY_FIRE" or "SEE_INVISIBLE", only allowing status "ALWAYS" or "NEVER".
     //
     // @Tags
     // <server.scoreboard[(<board>)].team[<team>].members>
@@ -40,6 +58,10 @@ public class TeamCommand extends AbstractCommand {
     // @Usage
     // Use to change the prefix for a team.
     // - team name:red "prefix:[<red>Red Team<reset>]"
+    //
+    // @Usage
+    // Use to hide nameplates for members of a team.
+    // - team name:red option:name_tag_visibility status:never
     // -->
 
     @Override
@@ -81,7 +103,25 @@ public class TeamCommand extends AbstractCommand {
                 suffix = suffixElement.asString();
                 scriptEntry.addObject("suffix", suffixElement);
             }
-
+            else if (arg.matchesPrefix("color")
+                    && arg.matchesEnum(ChatColor.values())
+                    && !scriptEntry.hasObject("color")) {
+                scriptEntry.addObject("color", arg.asElement());
+            }
+            else if (arg.matchesPrefix("option")
+                    && !scriptEntry.hasObject("option")
+                    && (arg.matchesEnum(Team.Option.values())
+                    || arg.matches("friendly_fire", "see_invisible"))) {
+                scriptEntry.addObject("option", arg.asElement());
+            }
+            else if (arg.matchesPrefix("status")
+                    && !scriptEntry.hasObject("status")
+                    && arg.matchesEnum(Team.OptionStatus.values())) {
+                scriptEntry.addObject("status", arg.asElement());
+            }
+            else {
+                arg.reportUnhandled();
+            }
         }
 
         if (name == null || name.length() == 0 || name.length() > 16) {
@@ -97,6 +137,10 @@ public class TeamCommand extends AbstractCommand {
             throw new InvalidArgumentsException("Prefixes and suffixes must be 16 characters or less!");
         }
 
+        if (scriptEntry.hasObject("option") != scriptEntry.hasObject("status")) {
+            throw new InvalidArgumentsException("Option and Status arguments must go together!");
+        }
+
         scriptEntry.defaultObject("id", new ElementTag("main"));
     }
 
@@ -109,21 +153,22 @@ public class TeamCommand extends AbstractCommand {
         ListTag remove = scriptEntry.getObjectTag("remove");
         ElementTag prefix = scriptEntry.getElement("prefix");
         ElementTag suffix = scriptEntry.getElement("suffix");
+        ElementTag option = scriptEntry.getElement("option");
+        ElementTag status = scriptEntry.getElement("status");
+        ElementTag color = scriptEntry.getElement("color");
 
         if (scriptEntry.dbCallShouldDebug()) {
-
             Debug.report(scriptEntry, getName(),
                     id.debug() +
                             name.debug() +
                             (add != null ? add.debug() : "") +
                             (remove != null ? remove.debug() : "") +
                             (prefix != null ? prefix.debug() : "") +
-                            (suffix != null ? suffix.debug() : ""));
-
+                            (suffix != null ? suffix.debug() : "") +
+                            (color != null ? color.debug() : "") +
+                            (option != null ? option.debug() + status.debug() : ""));
         }
-
         Scoreboard board;
-
         if (id.asString().equalsIgnoreCase("main")) {
             board = ScoreboardHelper.getMain();
         }
@@ -135,12 +180,10 @@ public class TeamCommand extends AbstractCommand {
                 board = ScoreboardHelper.createScoreboard(id.asString());
             }
         }
-
         Team team = board.getTeam(name.asString());
         if (team == null) {
             team = board.registerNewTeam(name.asString());
         }
-
         if (add != null) {
             for (String string : add) {
                 if (string.startsWith("p@")) {
@@ -151,7 +194,6 @@ public class TeamCommand extends AbstractCommand {
                 }
             }
         }
-
         if (remove != null) {
             for (String string : remove) {
                 if (string.startsWith("p@")) {
@@ -162,15 +204,28 @@ public class TeamCommand extends AbstractCommand {
                 }
             }
         }
-
+        if (option != null) {
+            String optName = CoreUtilities.toLowerCase(option.asString());
+            String statusName = CoreUtilities.toLowerCase(status.asString());
+            if (optName.equals("friendly_fire")) {
+                team.setAllowFriendlyFire(statusName.equals("always"));
+            }
+            else if (optName.equals("see_invisible")) {
+                team.setCanSeeFriendlyInvisibles(statusName.equals("always"));
+            }
+            else {
+                team.setOption(Team.Option.valueOf(optName.toUpperCase()), Team.OptionStatus.valueOf(statusName.toUpperCase()));
+            }
+        }
         if (prefix != null) {
             team.setPrefix(prefix.asString());
         }
-
         if (suffix != null) {
             team.setSuffix(suffix.asString());
         }
-
+        if (color != null) {
+            team.setColor(ChatColor.valueOf(color.asString().toUpperCase()));
+        }
         if (team.getEntries().isEmpty()) {
             team.unregister();
         }

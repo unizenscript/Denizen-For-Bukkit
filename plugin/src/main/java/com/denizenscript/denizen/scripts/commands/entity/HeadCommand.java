@@ -22,10 +22,17 @@ import java.util.List;
 
 public class HeadCommand extends AbstractCommand {
 
+    public HeadCommand() {
+        setName("head");
+        setSyntax("head (<entity>|...) [skin:<player_name>]");
+        setRequiredArguments(1, 2);
+    }
+
     // <--[command]
     // @Name Head
     // @Syntax head (<entity>|...) [skin:<player_name>]
     // @Required 1
+    // @Maximum 2
     // @Short Makes players or NPCs wear a specific player's head.
     // @Group entity
     //
@@ -96,7 +103,6 @@ public class HeadCommand extends AbstractCommand {
         ElementTag skin = scriptEntry.getElement("skin");
         MaterialTag material = scriptEntry.getObjectTag("material");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(),
                     ArgumentHelper.debugObj("entities", entities.toString()) +

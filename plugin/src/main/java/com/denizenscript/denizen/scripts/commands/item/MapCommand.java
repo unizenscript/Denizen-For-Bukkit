@@ -11,7 +11,6 @@ import com.denizenscript.denizen.objects.WorldTag;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.objects.core.ElementTag;
-import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.objects.core.ScriptTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
@@ -24,10 +23,17 @@ import java.util.List;
 
 public class MapCommand extends AbstractCommand {
 
+    public MapCommand() {
+        setName("map");
+        setSyntax("map [<#>/new:<world>] [reset:<location>/image:<file> (resize)/script:<script>] (x:<#>) (y:<#>)");
+        setRequiredArguments(2, 5);
+    }
+
     // <--[command]
     // @Name Map
     // @Syntax map [<#>/new:<world>] [reset:<location>/image:<file> (resize)/script:<script>] (x:<#>) (y:<#>)
     // @Required 2
+    // @Maximum 5
     // @Short Modifies a new or existing map by adding images or text.
     // @Group item
     //
@@ -95,12 +101,12 @@ public class MapCommand extends AbstractCommand {
             }
             else if (!scriptEntry.hasObject("width")
                     && arg.matchesPrefix("width")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+                    && arg.matchesInteger()) {
                 scriptEntry.addObject("width", arg.asElement());
             }
             else if (!scriptEntry.hasObject("height")
                     && arg.matchesPrefix("height")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+                    && arg.matchesInteger()) {
                 scriptEntry.addObject("height", arg.asElement());
             }
             else if (!scriptEntry.hasObject("script")
@@ -110,16 +116,16 @@ public class MapCommand extends AbstractCommand {
             }
             else if (!scriptEntry.hasObject("x-value")
                     && arg.matchesPrefix("x")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)) {
+                    && arg.matchesFloat()) {
                 scriptEntry.addObject("x-value", arg.asElement());
             }
             else if (!scriptEntry.hasObject("y-value")
                     && arg.matchesPrefix("y")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)) {
+                    && arg.matchesFloat()) {
                 scriptEntry.addObject("y-value", arg.asElement());
             }
             else if (!scriptEntry.hasObject("map-id")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+                    && arg.matchesInteger()) {
                 scriptEntry.addObject("map-id", arg.asElement());
             }
 
@@ -165,7 +171,7 @@ public class MapCommand extends AbstractCommand {
 
         }
 
-        MapView map = null;
+        MapView map;
         if (create != null) {
             map = Bukkit.getServer().createMap(create.getWorld());
             scriptEntry.addObject("created_map", new ElementTag(map.getId()));

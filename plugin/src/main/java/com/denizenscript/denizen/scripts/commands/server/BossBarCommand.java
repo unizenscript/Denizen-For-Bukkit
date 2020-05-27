@@ -1,12 +1,11 @@
 package com.denizenscript.denizen.scripts.commands.server;
 
+import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.objects.core.ElementTag;
-import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
@@ -17,17 +16,21 @@ import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class BossBarCommand extends AbstractCommand {
+
+    public BossBarCommand() {
+        setName("bossbar");
+        setSyntax("bossbar ({create}/update/remove) [<id>] (players:<player>|...) (title:<title>) (progress:<#.#>) (color:<color>) (style:<style>) (flags:<flag>|...)");
+        setRequiredArguments(1, 8);
+    }
 
     // <--[command]
     // @Name BossBar
     // @Syntax bossbar ({create}/update/remove) [<id>] (players:<player>|...) (title:<title>) (progress:<#.#>) (color:<color>) (style:<style>) (flags:<flag>|...)
     // @Required 1
+    // @Maximum 8
     // @Short Shows players a boss bar.
     // @Group server
     //
@@ -58,7 +61,7 @@ public class BossBarCommand extends AbstractCommand {
     //
     // @Usage
     // Remove a player from the boss bar.
-    // - bossbar remove MyMessageID players:<server.match_player[joe]>
+    // - bossbar remove MyMessageID players:<[player]>
     //
     // @Usage
     // Delete the boss bar.
@@ -80,7 +83,7 @@ public class BossBarCommand extends AbstractCommand {
             }
             else if (!scriptEntry.hasObject("progress")
                     && arg.matchesPrefix("progress", "health", "p", "h")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)) {
+                    && arg.matchesFloat()) {
                 scriptEntry.addObject("progress", arg.asElement());
             }
             else if (!scriptEntry.hasObject("color")
@@ -121,9 +124,8 @@ public class BossBarCommand extends AbstractCommand {
 
         if ((!scriptEntry.hasObject("action") || scriptEntry.getElement("action").asString().equalsIgnoreCase("CREATE"))
                 && !scriptEntry.hasObject("players")) {
-            BukkitScriptEntryData data = (BukkitScriptEntryData) scriptEntry.entryData;
-            if (data.hasPlayer() && data.getPlayer().isOnline()) {
-                scriptEntry.addObject("players", new ListTag(Collections.singleton(data.getPlayer().identify())));
+            if (Utilities.entryHasPlayer(scriptEntry) && Utilities.getEntryPlayer(scriptEntry).isOnline()) {
+                scriptEntry.addObject("players", new ListTag(Collections.singleton(Utilities.getEntryPlayer(scriptEntry).identify())));
             }
             else {
                 throw new InvalidArgumentsException("Must specify valid player(s)!");
@@ -162,7 +164,7 @@ public class BossBarCommand extends AbstractCommand {
         String idString = CoreUtilities.toLowerCase(id.asString());
 
         switch (Action.valueOf(action.asString().toUpperCase())) {
-            case CREATE:
+            case CREATE: {
                 if (bossBarMap.containsKey(idString)) {
                     Debug.echoError("BossBar '" + idString + "' already exists!");
                     return;
@@ -190,8 +192,9 @@ public class BossBarCommand extends AbstractCommand {
                 bossBar.setVisible(true);
                 bossBarMap.put(idString, bossBar);
                 break;
+            }
 
-            case UPDATE:
+            case UPDATE: {
                 if (!bossBarMap.containsKey(idString)) {
                     Debug.echoError("BossBar '" + idString + "' does not exist!");
                     return;
@@ -209,14 +212,30 @@ public class BossBarCommand extends AbstractCommand {
                 if (style != null) {
                     bossBar1.setStyle(BarStyle.valueOf(style.asString().toUpperCase()));
                 }
+                if (flags != null) {
+                    HashSet<BarFlag> oldFlags = new HashSet<>(Arrays.asList(BarFlag.values()));
+                    HashSet<BarFlag> newFlags = new HashSet<>(flags.size());
+                    for (String flagName : flags) {
+                        BarFlag flag = BarFlag.valueOf(flagName.toUpperCase());
+                        newFlags.add(flag);
+                        oldFlags.remove(flag);
+                    }
+                    for (BarFlag flag : oldFlags) {
+                        bossBar1.removeFlag(flag);
+                    }
+                    for (BarFlag flag : newFlags) {
+                        bossBar1.addFlag(flag);
+                    }
+                }
                 if (players != null) {
                     for (PlayerTag player : players.filter(PlayerTag.class, scriptEntry)) {
                         bossBar1.addPlayer(player.getPlayerEntity());
                     }
                 }
                 break;
+            }
 
-            case REMOVE:
+            case REMOVE: {
                 if (!bossBarMap.containsKey(idString)) {
                     Debug.echoError("BossBar '" + idString + "' does not exist!");
                     return;
@@ -231,6 +250,7 @@ public class BossBarCommand extends AbstractCommand {
                 bossBarMap.get(idString).setVisible(false);
                 bossBarMap.remove(idString);
                 break;
+            }
         }
     }
 }

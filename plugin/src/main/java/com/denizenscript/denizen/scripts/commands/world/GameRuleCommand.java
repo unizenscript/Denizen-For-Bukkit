@@ -10,10 +10,17 @@ import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 
 public class GameRuleCommand extends AbstractCommand {
 
+    public GameRuleCommand() {
+        setName("gamerule");
+        setSyntax("gamerule [<world>] [<rule>] [<value>]");
+        setRequiredArguments(3, 3);
+    }
+
     // <--[command]
     // @Name Gamerule
     // @Syntax gamerule [<world>] [<rule>] [<value>]
     // @Required 3
+    // @Maximum 3
     // @Short Sets a gamerule on the world.
     // @Group world
     //
@@ -26,11 +33,11 @@ public class GameRuleCommand extends AbstractCommand {
     //
     // @Usage
     // Use to disable fire spreading in world "Adventure".
-    // - gamerule w@Adventure doFireTick false
+    // - gamerule Adventure doFireTick false
     //
     // @Usage
     // Use to avoid mobs from destroying blocks (creepers, endermen...) and picking items up (zombies, skeletons...) in world "Adventure".
-    // - gamerule w@Adventure mobGriefing false
+    // - gamerule Adventure mobGriefing false
     // -->
 
     @Override
@@ -70,12 +77,10 @@ public class GameRuleCommand extends AbstractCommand {
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-        // Fetch objects
         WorldTag world = scriptEntry.getObjectTag("world");
         ElementTag gamerule = scriptEntry.getElement("gamerule");
         ElementTag value = scriptEntry.getElement("value");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), world.debug() + gamerule.debug() + value.debug());
         }

@@ -30,9 +30,9 @@ public class LingeringPotionSplashScriptEvent extends BukkitScriptEvent implemen
     // @Triggers when a lingering splash potion breaks open
     //
     // @Context
-    // <context.potion> returns a ItemTag of the potion that broke open.
+    // <context.potion> returns an ItemTag of the potion that broke open.
     // <context.location> returns the LocationTag the splash potion broke open at.
-    // <context.entity> returns a EntityTag of the splash potion.
+    // <context.entity> returns an EntityTag of the splash potion.
     // <context.radius> returns the radius of the effect cloud.
     // <context.duration> returns the lingering duration of the effect cloud.
     //
@@ -65,7 +65,7 @@ public class LingeringPotionSplashScriptEvent extends BukkitScriptEvent implemen
         if (!tryItem(item, iTest)) {
             return false;
         }
-        if (runInCheck(path, location)) {
+        if (!runInCheck(path, location)) {
             return false;
         }
         return super.matches(path);

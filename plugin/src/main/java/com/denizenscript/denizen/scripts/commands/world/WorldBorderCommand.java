@@ -18,10 +18,17 @@ import java.util.List;
 
 public class WorldBorderCommand extends AbstractCommand {
 
+    public WorldBorderCommand() {
+        setName("worldborder");
+        setSyntax("worldborder [<world>/<player>|...] (center:<location>) (size:<#.#>) (current_size:<#.#>) (damage:<#.#>) (damagebuffer:<#.#>) (warningdistance:<#>) (warningtime:<duration>) (duration:<duration>) (reset)");
+        setRequiredArguments(2, 10);
+    }
+
     // <--[command]
     // @Name WorldBorder
     // @Syntax worldborder [<world>/<player>|...] (center:<location>) (size:<#.#>) (current_size:<#.#>) (damage:<#.#>) (damagebuffer:<#.#>) (warningdistance:<#>) (warningtime:<duration>) (duration:<duration>) (reset)
     // @Required 2
+    // @Maximum 10
     // @Short Modifies a world border.
     // @Group world
     //
@@ -72,22 +79,22 @@ public class WorldBorderCommand extends AbstractCommand {
                 scriptEntry.addObject("center", arg.asType(LocationTag.class));
             }
             else if (!scriptEntry.hasObject("damage")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)
+                    && arg.matchesFloat()
                     && arg.matchesPrefix("damage")) {
                 scriptEntry.addObject("damage", arg.asElement());
             }
             else if (!scriptEntry.hasObject("damagebuffer")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)
+                    && arg.matchesFloat()
                     && arg.matchesPrefix("damagebuffer")) {
                 scriptEntry.addObject("damagebuffer", arg.asElement());
             }
             else if (!scriptEntry.hasObject("size")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)
+                    && arg.matchesFloat()
                     && arg.matchesPrefix("size")) {
                 scriptEntry.addObject("size", arg.asElement());
             }
             else if (!scriptEntry.hasObject("current_size")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)
+                    && arg.matchesFloat()
                     && arg.matchesPrefix("current_size")) {
                 scriptEntry.addObject("current_size", arg.asElement());
             }
@@ -97,7 +104,7 @@ public class WorldBorderCommand extends AbstractCommand {
                 scriptEntry.addObject("duration", arg.asType(DurationTag.class));
             }
             else if (!scriptEntry.hasObject("warningdistance")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)
+                    && arg.matchesInteger()
                     && arg.matchesPrefix("warningdistance")) {
                 scriptEntry.addObject("warningdistance", arg.asElement());
             }
@@ -145,9 +152,9 @@ public class WorldBorderCommand extends AbstractCommand {
     @Override
     public void execute(ScriptEntry scriptEntry) {
 
-        WorldTag world = (WorldTag) scriptEntry.getObject("world");
+        WorldTag world = scriptEntry.getObjectTag("world");
         List<PlayerTag> players = (List<PlayerTag>) scriptEntry.getObject("players");
-        LocationTag center = (LocationTag) scriptEntry.getObject("center");
+        LocationTag center = scriptEntry.getObjectTag("center");
         ElementTag size = scriptEntry.getElement("size");
         ElementTag currSize = scriptEntry.getElement("current_size");
         ElementTag damage = scriptEntry.getElement("damage");

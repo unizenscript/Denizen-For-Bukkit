@@ -10,11 +10,10 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.QueueTag;
 import com.denizenscript.denizencore.objects.core.ScriptTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
-import com.denizenscript.denizencore.scripts.commands.CommandExecuter;
+import com.denizenscript.denizencore.scripts.commands.CommandExecutor;
 import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.scripts.queues.ScriptQueue;
 import com.denizenscript.denizencore.tags.TagContext;
-import com.denizenscript.denizencore.tags.TagManager;
 import com.denizenscript.denizencore.utilities.debugging.Debuggable;
 import com.denizenscript.denizencore.utilities.debugging.Debug.DebugElement;
 import org.bukkit.Bukkit;
@@ -34,8 +33,6 @@ public class Debug {
     public static boolean debugOverride = false;
     public static boolean showSources = false;
 
-    public static List<String> filter = new ArrayList<>();
-
     public static boolean shouldTrim = true;
     public static boolean record = false;
     public static StringBuilder Recording = new StringBuilder();
@@ -51,7 +48,7 @@ public class Debug {
 
     public static Consumer<String> getDebugSender(Debuggable caller) {
         if (caller == null) {
-            caller = CommandExecuter.currentQueue;
+            caller = CommandExecutor.currentQueue;
         }
         if (caller instanceof TagContext) {
             if (((TagContext) caller).entry != null) {
@@ -169,9 +166,16 @@ public class Debug {
         echoError(sourceQueue, message, true);
     }
 
+    public static boolean errorDuplicatePrevention = false;
+
     public static void echoError(ScriptQueue sourceQueue, String message, boolean reformat) {
+        if (errorDuplicatePrevention) {
+            finalOutputDebugText("Error within error (??!!!! REPORT THIS, SOMETHING WENT SUPER WRONG!): " + message, sourceQueue, reformat);
+            return;
+        }
+        errorDuplicatePrevention = true;
         if (sourceQueue == null) {
-            sourceQueue = CommandExecuter.currentQueue;
+            sourceQueue = CommandExecutor.currentQueue;
         }
         ScriptEntry sourceEntry = null;
         if (sourceQueue != null && sourceQueue.getLastEntryExecuted() != null) {
@@ -208,11 +212,13 @@ public class Debug {
             throwErrorEvent = true;
             for (String Determination : Determinations) {
                 if (Determination.equalsIgnoreCase("CANCELLED")) {
+                    errorDuplicatePrevention = false;
                     return;
                 }
             }
         }
         if (!showDebug) {
+            errorDuplicatePrevention = false;
             return;
         }
         StringBuilder fullMessage = new StringBuilder();
@@ -252,6 +258,7 @@ public class Debug {
             }
             depthCorrectError--;
         }
+        errorDuplicatePrevention = false;
     }
 
     static long depthCorrectError = 0;
@@ -280,7 +287,7 @@ public class Debug {
 
     public static void echoError(ScriptQueue source, Throwable ex) {
         if (source == null) {
-            source = CommandExecuter.currentQueue;
+            source = CommandExecutor.currentQueue;
         }
         String errorMessage = getFullExceptionMessage(ex);
         if (throwErrorEvent) {
@@ -427,85 +434,62 @@ public class Debug {
         if (!showDebug) {
             return false;
         }
-        boolean should_send = true;
-
-        // Attempt to see if the debug should even be sent by checking the
-        // script container's 'debug' node.
         if (caller != null) {
-            try {
-
-                if (filter.isEmpty()) {
-                    should_send = caller.shouldDebug();
-                }
-                else {
-                    should_send = false;
-                    for (String criteria : filter) {
-                        if (caller.shouldFilter(criteria)) {
-                            should_send = true;
-                            break;
-                        }
-                    }
-                }
-
-            }
-            catch (Exception e) {
-                // Had a problem determining whether it should debug, assume true.
-                should_send = true;
-            }
+            return caller.shouldDebug();
         }
-        return should_send;
+        return true;
     }
 
     // Handles checking whether the provided debuggable should submit to the debugger
     private static void echo(String string, Debuggable caller) {
-        if (shouldDebug(caller)) {
-            if (showSources && caller != null) {
-                String callerId;
-                if (caller instanceof ScriptContainer) {
-                    callerId = "Script:" + ((ScriptContainer) caller).getName();
-                }
-                else if (caller instanceof ScriptEntry) {
-                    if (((ScriptEntry) caller).getScript() != null) {
-                        callerId = "Command:" + ((ScriptEntry) caller).getCommandName() + " in Script:" + ((ScriptEntry) caller).getScript().getName();
-                    }
-                    else {
-                        callerId = "Command:" + ((ScriptEntry) caller).getCommandName();
-                    }
-                }
-                else if (caller instanceof ScriptQueue) {
-                    if (((ScriptQueue) caller).script != null) {
-                        callerId = "Queue:" + ((ScriptQueue) caller).id + " running Script:" + ((ScriptQueue) caller).script.getName();
-                    }
-                    else {
-                        callerId = "Queue:" + ((ScriptQueue) caller).id;
-                    }
-                }
-                else if (caller instanceof TagContext) {
-                    if (((TagContext) caller).entry != null) {
-                        ScriptEntry sent = ((TagContext) caller).entry;
-                        if (sent.getScript() != null) {
-                            callerId = "Tag in Command:" + sent.getCommandName() + " in Script:" + sent.getScript().getName();
-                        }
-                        else {
-                            callerId = "Tag in Command:" + sent.getCommandName();
-                        }
-                    }
-                    else if (((TagContext) caller).script != null) {
-                        callerId = "Tag in Script:" + ((TagContext) caller).script.getName();
-                    }
-                    else {
-                        callerId = "Tag:" + caller.toString();
-                    }
-                }
-                else {
-                    callerId = caller.toString();
-                }
-                finalOutputDebugText(ChatColor.DARK_GRAY + "[Src:" + ChatColor.GRAY + callerId + ChatColor.DARK_GRAY + "]" + ChatColor.WHITE + string, caller);
+        if (!shouldDebug(caller)) {
+            return;
+        }
+        if (!showSources || caller == null) {
+            finalOutputDebugText(string, caller);
+            return;
+        }
+        String callerId;
+        if (caller instanceof ScriptContainer) {
+            callerId = "Script:" + ((ScriptContainer) caller).getName();
+        }
+        else if (caller instanceof ScriptEntry) {
+            if (((ScriptEntry) caller).getScript() != null) {
+                callerId = "Command:" + ((ScriptEntry) caller).getCommandName() + " in Script:" + ((ScriptEntry) caller).getScript().getName();
             }
             else {
-                finalOutputDebugText(string, caller);
+                callerId = "Command:" + ((ScriptEntry) caller).getCommandName();
             }
         }
+        else if (caller instanceof ScriptQueue) {
+            if (((ScriptQueue) caller).script != null) {
+                callerId = "Queue:" + ((ScriptQueue) caller).id + " running Script:" + ((ScriptQueue) caller).script.getName();
+            }
+            else {
+                callerId = "Queue:" + ((ScriptQueue) caller).id;
+            }
+        }
+        else if (caller instanceof TagContext) {
+            if (((TagContext) caller).entry != null) {
+                ScriptEntry sent = ((TagContext) caller).entry;
+                if (sent.getScript() != null) {
+                    callerId = "Tag in Command:" + sent.getCommandName() + " in Script:" + sent.getScript().getName();
+                }
+                else {
+                    callerId = "Tag in Command:" + sent.getCommandName();
+                }
+            }
+            else if (((TagContext) caller).script != null) {
+                callerId = "Tag in Script:" + ((TagContext) caller).script.getName();
+            }
+            else {
+                callerId = "Tag:" + caller.toString();
+            }
+        }
+        else {
+            callerId = caller.toString();
+        }
+        finalOutputDebugText(ChatColor.DARK_GRAY + "[Src:" + ChatColor.GRAY + callerId + ChatColor.DARK_GRAY + "]" + ChatColor.WHITE + string, caller);
     }
 
     static void finalOutputDebugText(String message, Debuggable caller) {
@@ -513,14 +497,14 @@ public class Debug {
     }
 
     public static String cleanTextForDebugOutput(String message) {
-        return TagManager.cleanOutputFully(message
+        return message
                 .replace("<Y>", ChatColor.YELLOW.toString())
                 .replace("<O>", ChatColor.GOLD.toString()) // 'orange'
                 .replace("<G>", ChatColor.DARK_GRAY.toString())
                 .replace("<GR>", ChatColor.GREEN.toString())
                 .replace("<A>", ChatColor.AQUA.toString())
                 .replace("<R>", ChatColor.DARK_RED.toString())
-                .replace("<W>", ChatColor.WHITE.toString()));
+                .replace("<W>", ChatColor.WHITE.toString());
     }
 
     public static int outputThisTick = 0;

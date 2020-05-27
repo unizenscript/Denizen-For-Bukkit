@@ -17,10 +17,17 @@ import java.util.List;
 
 public class AttackCommand extends AbstractCommand {
 
+    public AttackCommand() {
+        setName("attack");
+        setSyntax("attack (<entity>|...) (target:<entity>/cancel)");
+        setRequiredArguments(0, 2);
+    }
+
     // <--[command]
     // @Name Attack
     // @Syntax attack (<entity>|...) (target:<entity>/cancel)
     // @Required 0
+    // @Maximum 2
     // @Short Makes an entity, or list of entities, attack a target.
     // @Group entity
     //
@@ -103,13 +110,10 @@ public class AttackCommand extends AbstractCommand {
     @SuppressWarnings("unchecked")
     @Override
     public void execute(final ScriptEntry scriptEntry) {
-
-        // Get objects
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
-        EntityTag target = (EntityTag) scriptEntry.getObject("target");
+        EntityTag target = scriptEntry.getObjectTag("target");
         boolean cancel = scriptEntry.hasObject("cancel");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), (cancel ? ArgumentHelper.debugObj("cancel", "true") : "") +
                     ArgumentHelper.debugObj("entities", entities.toString()) +

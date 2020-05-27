@@ -10,10 +10,8 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
 import com.denizenscript.denizencore.tags.core.EscapeTagBase;
+import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.inventory.meta.ItemMeta;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class ItemLore implements Property {
 
@@ -63,19 +61,11 @@ public class ItemLore implements Property {
         // @mechanism ItemTag.lore
         // @group properties
         // @description
-        // Returns lore as a ListTag. Excludes the custom-script-id lore.
-        // To get that information, use <ItemTag.scriptname>.
+        // Returns lore as a ListTag.
         // -->
         if (attribute.startsWith("lore")) {
             if (hasLore()) {
-                List<String> loreList = new ArrayList<>();
-                for (String itemLore : item.getItemStack().getItemMeta().getLore()) {
-                    if (!itemLore.startsWith(ItemTag.itemscriptIdentifier)
-                            && !itemLore.startsWith(ItemScriptHelper.ItemScriptHashID)) {
-                        loreList.add(itemLore);
-                    }
-                }
-                return new ListTag(loreList).getObjectAttribute(attribute.fulfill(1));
+                return getLoreList().getObjectAttribute(attribute.fulfill(1));
             }
         }
 
@@ -95,17 +85,22 @@ public class ItemLore implements Property {
         return null;
     }
 
+    public ListTag getLoreList() {
+        ListTag output = new ListTag();
+        for (String itemLore : item.getItemStack().getItemMeta().getLore()) {
+            if (!itemLore.startsWith(ItemTag.itemscriptIdentifier)
+                    && !itemLore.startsWith(ItemScriptHelper.ItemScriptHashID)) {
+                output.add(itemLore);
+            }
+        }
+        return output;
+    }
+
     @Override
     public String getPropertyString() {
         if (hasLore()) {
-            StringBuilder output = new StringBuilder();
-            for (String itemLore : item.getItemStack().getItemMeta().getLore()) {
-                if (!itemLore.startsWith(ItemTag.itemscriptIdentifier)
-                        && !itemLore.startsWith(ItemScriptHelper.ItemScriptHashID)) {
-                    output.append(EscapeTagBase.escape(itemLore)).append("|");
-                }
-            }
-            return (output.length() == 0) ? null : output.substring(0, output.length() - 1);
+            ListTag output = getLoreList();
+            return (output.size() == 0) ? null : output.identify();
         }
         else {
             return null;
@@ -126,20 +121,24 @@ public class ItemLore implements Property {
         // @input ListTag
         // @description
         // Sets the item's lore.
-        // See <@link language Property Escaping>
         // @tags
         // <ItemTag.lore>
         // -->
         if (mechanism.matches("lore")) {
             ItemMeta meta = item.getItemStack().getItemMeta();
             ListTag lore = mechanism.valueAsType(ListTag.class);
+            CoreUtilities.fixNewLinesToListSeparation(lore);
             if (item.isItemscript()) {
                 if (!Settings.packetInterception()) {
                     lore.add(0, ItemScriptHelper.createItemScriptID(item.getScriptName()));
                 }
             }
             for (int i = 0; i < lore.size(); i++) {
-                lore.set(i, EscapeTagBase.unEscape(lore.get(i)));
+                String loreLine = lore.get(i);
+                if (lore.wasLegacy) {
+                    loreLine = EscapeTagBase.unEscape(loreLine);
+                }
+                lore.set(i, CoreUtilities.clearNBSPs(loreLine));
             }
             meta.setLore(lore);
             item.getItemStack().setItemMeta(meta);

@@ -21,16 +21,23 @@ import java.util.List;
 
 public class TeleportCommand extends AbstractCommand {
 
+    public TeleportCommand() {
+        setName("teleport");
+        setSyntax("teleport (<entity>|...) [<location>]");
+        setRequiredArguments(1, 2);
+    }
+
     // <--[command]
     // @Name Teleport
     // @Syntax teleport (<entity>|...) [<location>]
     // @Required 1
+    // @Maximum 2
     // @Short Teleports the entity(s) to a new location.
     // @Group entity
     //
     // @Description
-    // Teleports the entity or entities to the new location. Entities can be teleported between worlds using this
-    // command, assuming the location is valid.
+    // Teleports the entity or entities to the new location.
+    // Entities can be teleported between worlds using this command.
     //
     // @Tags
     // <EntityTag.location>
@@ -55,7 +62,6 @@ public class TeleportCommand extends AbstractCommand {
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
-        // Initialize necessary fields
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (!scriptEntry.hasObject("location")
@@ -91,12 +97,10 @@ public class TeleportCommand extends AbstractCommand {
     @SuppressWarnings("unchecked")
     @Override
     public void execute(final ScriptEntry scriptEntry) {
-        // Get objects
 
-        LocationTag location = (LocationTag) scriptEntry.getObject("location");
+        LocationTag location = scriptEntry.getObjectTag("location");
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), ArgumentHelper.debugObj("location", location) +
                     ArgumentHelper.debugObj("entities", entities.toString()));

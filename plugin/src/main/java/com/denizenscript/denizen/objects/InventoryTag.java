@@ -43,7 +43,6 @@ import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.BookMeta;
 
 import java.util.*;
-import java.util.regex.Matcher;
 
 public class InventoryTag implements ObjectTag, Notable, Adjustable {
 
@@ -56,21 +55,11 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
     // Inventories can be generically designed using inventory script containers,
     // and can be modified using the inventory command.
     //
-    // For format info, see <@link language in@>
-    //
-    // -->
-
-    // <--[language]
-    // @name in@
-    // @group Object Fetcher System
-    // @description
-    // in@ refers to the 'object identifier' of an InventoryTag. The 'in@' is notation for Denizen's Object
-    // Fetcher. The constructor for an InventoryTag is a the classification type of inventory to use. All other data is specified through properties.
+    // These use the object notation "in@".
+    // The identity format for inventories is a the classification type of inventory to use. All other data is specified through properties.
     //
     // Valid inventory type classifications:
     // "npc", "player", "crafting", "enderchest", "workbench", "entity", "location", "generic"
-    //
-    // For general info, see <@link language InventoryTag Objects>
     //
     // -->
 
@@ -109,6 +98,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
             }
             InventoryTag tagForm = getTagFormFor(event.getInventory());
             if (isGenericTrackable(tagForm)) {
+                trackTemporaryInventory(event.getInventory(), tagForm);
                 retainedInventoryLinks.put(event.getInventory(), tagForm);
             }
         }
@@ -154,6 +144,15 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
             Bukkit.getScheduler().scheduleSyncRepeatingTask(DenizenAPI.getCurrentInstance(), new Runnable() {
                 @Override
                 public void run() {
+                    if (idTrackedInventories.size() > 300) {
+                        idTrackedInventories.clear();
+                        for (InventoryTag retained : retainedInventoryLinks.values()) {
+                            idTrackedInventories.put(retained.uniquifier, retained);
+                        }
+                        for (InventoryTag temp : temporaryInventoryLinks.values()) {
+                            idTrackedInventories.put(temp.uniquifier, temp);
+                        }
+                    }
                     InventoryTrackerSystem.temporaryInventoryLinks.clear();
                 }
             }, 20, 20);
@@ -284,21 +283,16 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
     //    OBJECT FETCHER
     ////////////////
 
-    @Fetchable("in")
-    public static InventoryTag valueOf(String string, TagContext context) {
-        if (context == null) {
-            return valueOf(string, null, null);
-        }
-        else {
-            return valueOf(string, ((BukkitTagContext) context).player, ((BukkitTagContext) context).npc, !context.debug);
-        }
+    public static InventoryTag valueOf(String string, PlayerTag player, NPCTag npc, boolean silent) {
+        return valueOf(string, new BukkitTagContext(player, npc, null, !silent, null));
     }
 
     public static InventoryTag valueOf(String string, PlayerTag player, NPCTag npc) {
         return valueOf(string, player, npc, false);
     }
 
-    public static InventoryTag valueOf(String string, PlayerTag player, NPCTag npc, boolean silent) {
+    @Fetchable("in")
+    public static InventoryTag valueOf(String string, TagContext context) {
 
         if (string == null) {
             return null;
@@ -306,10 +300,8 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
 
         ///////
         // Handle objects with properties through the object fetcher
-        Matcher describedMatcher = ObjectFetcher.DESCRIBED_PATTERN.matcher(string);
-        if (describedMatcher.matches()) {
-            InventoryTag result = ObjectFetcher.getObjectFrom(InventoryTag.class, string,
-                    new BukkitTagContext(player, npc, false, null, false, null));
+        if (ObjectFetcher.isObjectWithProperties(string)) {
+            InventoryTag result = ObjectFetcher.getObjectFrom(InventoryTag.class, string, context);
             if (result != null && result.uniquifier != null) {
                 InventoryTag fixedResult = InventoryTrackerSystem.idTrackedInventories.get(result.uniquifier);
                 if (fixedResult != null) {
@@ -326,7 +318,8 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         }
 
         if (ScriptRegistry.containsScript(string, InventoryScriptContainer.class)) {
-            return ScriptRegistry.getScriptContainerAs(string, InventoryScriptContainer.class).getInventoryFrom(player, npc);
+            return ScriptRegistry.getScriptContainerAs(string, InventoryScriptContainer.class).getInventoryFrom(
+                    context == null ? null : ((BukkitTagContext) context).player, context == null ? null : ((BukkitTagContext) context).npc);
         }
 
         Notable noted = NotableManager.getSavedObject(string);
@@ -342,7 +335,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
             }
         }
 
-        if (!silent) {
+        if (context == null || context.debug) {
             Debug.echoError("Value of InventoryTag returning null. Invalid InventoryTag specified: " + string);
         }
         return null;
@@ -383,6 +376,18 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         }
 
         return false;
+    }
+
+    @Override
+    public InventoryTag fixAfterProperties() {
+        if (uniquifier != null) {
+            InventoryTag fixedResult = InventoryTrackerSystem.idTrackedInventories.get(uniquifier);
+            if (fixedResult != null) {
+                trackTemporaryInventory(fixedResult);
+                return fixedResult;
+            }
+        }
+        return this;
     }
 
     ///////////////
@@ -1082,7 +1087,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         int qty = 0;
         for (ItemStack invStack : inventory) {
             if (invStack != null) {
-                if (invStack.getType() == material) {
+                if (invStack.getType() == material && !(new ItemTag(invStack).isItemscript())) {
                     qty += invStack.getAmount();
                 }
             }
@@ -1559,13 +1564,10 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         // Returns a copy of the InventoryTag with items added.
         // -->
         registerTag("include", (attribute, object) -> {
-            if (!attribute.hasContext(1) || !ItemTag.matches(attribute.getContext(1))) {
+            if (!attribute.hasContext(1)) {
                 return null;
             }
             List<ItemTag> items = ListTag.getListFor(attribute.getContextObject(1), attribute.context).filter(ItemTag.class, attribute.context);
-            if (items.isEmpty()) {
-                return null;
-            }
             InventoryTag dummyInv = new InventoryTag(Bukkit.createInventory(null, object.inventory.getType(), NMSHandler.getInstance().getTitle(object.inventory)));
             if (object.inventory.getType() == InventoryType.CHEST) {
                 dummyInv.setSize(object.inventory.getSize());
@@ -1588,6 +1590,43 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
             }
             for (ItemTag item: items) {
                 dummyInv.add(0, item.getItemStack());
+            }
+            return dummyInv;
+        });
+
+        // <--[tag]
+        // @attribute <InventoryTag.exclude[<item>|...]>
+        // @returns InventoryTag
+        // @description
+        // Returns a copy of the InventoryTag with items excluded.
+        // -->
+        registerTag("exclude", (attribute, object) -> {
+            if (!attribute.hasContext(1)) {
+                return null;
+            }
+            List<ItemTag> items = ListTag.getListFor(attribute.getContextObject(1), attribute.context).filter(ItemTag.class, attribute.context);
+            InventoryTag dummyInv = new InventoryTag(Bukkit.createInventory(null, object.inventory.getType(), NMSHandler.getInstance().getTitle(object.inventory)));
+            if (object.inventory.getType() == InventoryType.CHEST) {
+                dummyInv.setSize(object.inventory.getSize());
+            }
+            dummyInv.setContents(object.getContents());
+
+            // <--[tag]
+            // @attribute <InventoryTag.exclude[<item>].quantity[<#>]>
+            // @returns InventoryTag
+            // @description
+            // Returns the InventoryTag with a certain quantity of an item excluded.
+            // -->
+            if ((attribute.startsWith("quantity", 2) || attribute.startsWith("qty", 2)) && attribute.hasContext(2)) {
+                if (attribute.startsWith("qty", 2)) {
+                    Deprecations.qtyTags.warn(attribute.context);
+                }
+                int qty = attribute.getIntContext(2);
+                items.get(0).setAmount(qty);
+                attribute.fulfill(1);
+            }
+            for (ItemTag item : items) {
+                dummyInv.inventory.removeItem(item.getItemStack().clone());
             }
             return dummyInv;
         });
@@ -1634,6 +1673,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         // @returns ElementTag(Boolean)
         // @description
         // Returns whether the inventory contains all of the specified items.
+        // Note that this is usually a poor option, and a more specific option like <@link tag inventorytag.contains.material> is usually better.
         // -->
         registerTag("contains", (attribute, object) -> {
             // <--[tag]
@@ -1891,23 +1931,23 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
                 return new ElementTag(found_items >= qty);
             }
             // <--[tag]
-            // @attribute <InventoryTag.contains.material[<material>]>
+            // @attribute <InventoryTag.contains.material[<material>|...]>
             // @returns ElementTag(Boolean)
             // @description
-            // Returns whether the inventory contains an item with the specified material.
+            // Returns whether the inventory contains an item with the specified material (except item script items).
             // -->
             if (attribute.startsWith("material", 2)) {
-                if (!attribute.hasContext(2) || !MaterialTag.matches(attribute.getContext(2))) {
+                if (!attribute.hasContext(2)) {
                     return null;
                 }
-                MaterialTag material = MaterialTag.valueOf(attribute.getContext(2));
+                List<MaterialTag> materials = ListTag.valueOf(attribute.getContext(2), attribute.context).filter(MaterialTag.class, attribute.context);
                 int qty = 1;
 
                 // <--[tag]
-                // @attribute <InventoryTag.contains.material[<material>].quantity[<#>]>
+                // @attribute <InventoryTag.contains.material[<material>|...].quantity[<#>]>
                 // @returns ElementTag(Boolean)
                 // @description
-                // Returns whether the inventory contains a certain quantity of an item with the specified material.
+                // Returns whether the inventory contains a certain quantity of an item with the specified material (except item script items).
                 // -->
                 if ((attribute.startsWith("quantity", 3) || attribute.startsWith("qty", 3)) && attribute.hasContext(3)) {
                     if (attribute.startsWith("qty", 3)) {
@@ -1919,11 +1959,17 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
 
                 int found_items = 0;
 
+                mainLoop:
                 for (ItemStack item : object.getContents()) {
-                    if (item != null && item.getType() == material.getMaterial()) {
-                        found_items += item.getAmount();
-                        if (found_items >= qty) {
-                            break;
+                    if (item == null) {
+                        continue;
+                    }
+                    for (MaterialTag material : materials) {
+                        if (item.getType() == material.getMaterial() && !(new ItemTag(item).isItemscript())) {
+                            found_items += item.getAmount();
+                            if (found_items >= qty) {
+                                break mainLoop;
+                            }
                         }
                     }
                 }
@@ -2150,8 +2196,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         // Returns the location of this inventory's holder.
         // -->
         registerTag("location", (attribute, object) -> {
-            LocationTag location = object.getLocation();
-            return location;
+            return object.getLocation();
         });
 
         // <--[tag]
@@ -2160,6 +2205,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         // @description
         // Returns the combined quantity of itemstacks that match an item if one is specified,
         // or the combined quantity of all itemstacks if one is not.
+        // Note that this is usually a poor option, and a more specific option like <@link tag inventorytag.quantity.material> is usually better.
         // -->
         registerTag("quantity", (attribute, object) -> {
             // <--[tag]
@@ -2181,7 +2227,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
             // @attribute <InventoryTag.quantity.material[<material>]>
             // @returns ElementTag(Number)
             // @description
-            // Returns the combined quantity of itemstacks that have the specified material.
+            // Returns the combined quantity of itemstacks that have the specified material (except for item script items).
             // -->
             if (attribute.startsWith("material", 2)) {
                 if (!attribute.hasContext(2) || !MaterialTag.matches(attribute.getContext(2))) {
@@ -2228,7 +2274,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
                 return null;
             }
             ListTag slots = ListTag.getListFor(attribute.getContextObject(1), attribute.context);
-            if (slots.size() == 0) {
+            if (slots.isEmpty()) {
                 if (!attribute.hasAlternative()) {
                     Debug.echoError("Cannot get a list of zero slots.");
                 }
@@ -2279,8 +2325,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         // For horses, the order is saddle|armor.
         // -->
         registerTag("equipment", (attribute, object) -> {
-            ListTag equipment = object.getEquipment();
-            return equipment;
+            return object.getEquipment();
         });
 
         // <--[tag]
@@ -2444,7 +2489,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         if (idType == null) {
             mechanisms.add(mechanism);
         }
-        else if (idType.equals("generic") || mechanism.matches("holder") || mechanism.getName().equals("uniquifier")) {
+        else if (idType.equals("generic") || mechanism.getName().equals("holder") || mechanism.getName().equals("uniquifier")) {
             adjust(mechanism);
         }
         else if (!(idType.equals("location") && mechanism.matches("title"))) {

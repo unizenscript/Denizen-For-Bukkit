@@ -8,10 +8,17 @@ import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 
 public class DisengageCommand extends AbstractCommand {
 
+    public DisengageCommand() {
+        setName("disengage");
+        setSyntax("disengage");
+        setRequiredArguments(0, 0);
+    }
+
     // <--[command]
     // @Name Disengage
     // @Syntax disengage
     // @Required 0
+    // @Maximum 0
     // @Plugin Citizens
     // @Short Enables an NPCs triggers that have been temporarily disabled by the engage command.
     // @Group npc
@@ -31,7 +38,7 @@ public class DisengageCommand extends AbstractCommand {
     // See <@link command Engage>
     //
     // @Tags
-    // <NPCTag.is_engaged>
+    // <NPCTag.engaged>
     //
     // @Usage
     // Use to reenable an NPC's triggers, disabled via 'engage'.
@@ -56,7 +63,6 @@ public class DisengageCommand extends AbstractCommand {
     @Override
     public void execute(ScriptEntry scriptEntry) {
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(),
                     Utilities.getEntryNPC(scriptEntry).debug());

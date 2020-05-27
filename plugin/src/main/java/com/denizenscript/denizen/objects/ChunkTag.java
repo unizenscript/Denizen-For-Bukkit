@@ -31,16 +31,8 @@ public class ChunkTag implements ObjectTag, Adjustable {
     // @description
     // A ChunkTag represents a chunk in the world.
     //
-    // For format info, see <@link language ch@>
-    //
-    // -->
-
-    // <--[language]
-    // @name ch@
-    // @group Object Fetcher System
-    // @description
-    // ch@ refers to the 'object identifier' of a ChunkTag. The 'ch@' is notation for Denizen's Object
-    // Fetcher. The constructor for a ChunkTag is <x>,<z>,<world>.
+    // These use the object notation "ch@".
+    // The identity format for chunks is <x>,<z>,<world>
     // For example, 'ch@5,3,world'.
     //
     // Note that the X/Z pair are chunk coordinates, not block coordinates.
@@ -54,8 +46,6 @@ public class ChunkTag implements ObjectTag, Adjustable {
     //
     // For example, block at X,Z 32,67 is in the chunk at X,Z 2,4
     // And the block at X,Z -32,-67 is in the chunk at X,Z -2,-5
-    //
-    // For general info, see <@link language ChunkTag Objects>
     //
     // -->
 
@@ -376,10 +366,11 @@ public class ChunkTag implements ObjectTag, Adjustable {
         });
 
         // <--[tag]
-        // @attribute <ChunkTag.entities>
+        // @attribute <ChunkTag.entities[<entity>|...]>
         // @returns ListTag(EntityTag)
         // @description
         // Returns a list of entities in the chunk.
+        // Optionally specify entity types to filter down to.
         // -->
         registerTag("entities", (attribute, object) -> {
             ListTag entities = new ListTag();
@@ -387,10 +378,22 @@ public class ChunkTag implements ObjectTag, Adjustable {
             if (chunk == null) {
                 return null;
             }
+            ListTag typeFilter = attribute.hasContext(1) ? ListTag.valueOf(attribute.getContext(1), attribute.context) : null;
             try {
                 NMSHandler.getChunkHelper().changeChunkServerThread(object.getWorld());
-                for (Entity ent : chunk.getEntities()) {
-                    entities.addObject(new EntityTag(ent).getDenizenObject());
+                for (Entity entity : chunk.getEntities()) {
+                    EntityTag current = new EntityTag(entity);
+                    if (typeFilter != null) {
+                        for (String type : typeFilter) {
+                            if (current.comparedTo(type)) {
+                                entities.addObject(current.getDenizenObject());
+                                break;
+                            }
+                        }
+                    }
+                    else {
+                        entities.addObject(current.getDenizenObject());
+                    }
                 }
             }
             finally {
@@ -403,8 +406,8 @@ public class ChunkTag implements ObjectTag, Adjustable {
         // @attribute <ChunkTag.living_entities>
         // @returns ListTag(EntityTag)
         // @description
-        // Returns a list of living entities in the chunk. This includes Players, mobs, NPCs, etc., but excludes
-        // dropped items, experience orbs, etc.
+        // Returns a list of living entities in the chunk.
+        // This includes Players, mobs, NPCs, etc., but excludes dropped items, experience orbs, etc.
         // -->
         registerTag("living_entities", (attribute, object) -> {
             ListTag entities = new ListTag();
@@ -527,10 +530,9 @@ public class ChunkTag implements ObjectTag, Adjustable {
             ChunkSnapshot snapshot = chunk.getChunkSnapshot();
             for (int x = 0; x < 16; x++) {
                 for (int z = 0; z < 16; z++) {
-                    surface_blocks.addObject(new LocationTag(chunk.getBlock(x, snapshot.getHighestBlockYAt(x, z) - 1, z).getLocation()));
+                    surface_blocks.addObject(new LocationTag(chunk.getWorld(), chunk.getX() << 4 | x, snapshot.getHighestBlockYAt(x, z) - 1, chunk.getZ() << 4 | z));
                 }
             }
-
             return surface_blocks;
         });
 
@@ -653,8 +655,9 @@ public class ChunkTag implements ObjectTag, Adjustable {
         // @input None
         // @description
         // Causes the chunk to be entirely deleted and reformed from the world's seed.
-        // @tags
-        // None
+        // The underlying method for this was disabled in recent Spigot versions with a vile message from user-hating Spigot dev md_5,
+        // "Not supported in this Minecraft version! Unless you can fix it, this is not a bug :)"
+        // Unfortunately due to md_5's attitude on this problem, this mechanism will not work for the time being.
         // -->
         if (mechanism.matches("regenerate")) {
             getWorld().regenerateChunk(getX(), getZ());
@@ -666,8 +669,6 @@ public class ChunkTag implements ObjectTag, Adjustable {
         // @input None
         // @description
         // Refreshes the chunk, sending any changed properties to players.
-        // @tags
-        // None
         // -->
         if (mechanism.matches("refresh_chunk")) {
             final int chunkX = getX();
@@ -681,8 +682,6 @@ public class ChunkTag implements ObjectTag, Adjustable {
         // @input None
         // @description
         // Refreshes all 16x16x16 chunk sections within the chunk.
-        // @tags
-        // None
         // -->
         if (mechanism.matches("refresh_chunk_sections")) {
             NMSHandler.getChunkHelper().refreshChunkSections(getChunk());

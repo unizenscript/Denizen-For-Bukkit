@@ -44,11 +44,27 @@ import java.util.Map;
 
 public class SchematicCommand extends AbstractCommand implements Holdable, Listener {
 
+    public SchematicCommand() {
+        setName("schematic");
+        setSyntax("schematic [create/load/unload/rotate (angle:<#>)/paste (fake_to:<player>|... fake_duration:<duration>)/save/flip_x/flip_y/flip_z) (noair) (mask:<material>|...)] [name:<name>] (filename:<name>) (<location>) (<cuboid>) (delayed)");
+        setRequiredArguments(2, 10);
+        TagManager.registerTagHandler(new TagRunnable.RootForm() {
+            @Override
+            public void run(ReplaceableTagEvent event) {
+                schematicTags(event);
+            }
+        }, "schematic", "schem");
+        schematics = new HashMap<>();
+        noPhys = false;
+        Bukkit.getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
+    }
+
     // <--[command]
     // @Name Schematic
     // @Syntax schematic [create/load/unload/rotate (angle:<#>)/paste (fake_to:<player>|... fake_duration:<duration>)/save/flip_x/flip_y/flip_z) (noair) (mask:<material>|...)] [name:<name>] (filename:<name>) (<location>) (<cuboid>) (delayed)
     // @Group World
     // @Required 2
+    // @Maximum 10
     // @Short Creates, loads, pastes, and saves schematics (Sets of blocks).
     //
     // @Description
@@ -82,7 +98,7 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
     // block set, instead of actually modifying the blocks in the world.
     // This takes an optional duration as "fake_duration" for how long the fake blocks should remain.
     //
-    // The schematic command is ~waitable when 'load' or 'save' are used. Refer to <@link language ~waitable>.
+    // The schematic command is ~waitable as an alternative to 'delayed' argument. Refer to <@link language ~waitable>.
     //
     // @Tags
     // <schematic[<name>].height>
@@ -97,7 +113,7 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
     //
     // @Usage
     // Use to create a new schematic from a cuboid and an origin location.
-    // - schematic create name:MySchematic cu@<player.location.sub[5,5,5]>|<player.location.add[5,5,5]> <player.location>
+    // - schematic create name:MySchematic <[my_cuboid]> <player.location>
     //
     // @Usage
     // Use to load a schematic.
@@ -115,19 +131,6 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
     // Use to save a created schematic.
     // - ~schematic save name:MySchematic
     // -->
-
-    @Override
-    public void onEnable() {
-        TagManager.registerTagHandler(new TagRunnable.RootForm() {
-            @Override
-            public void run(ReplaceableTagEvent event) {
-                schematicTags(event);
-            }
-        }, "schematic", "schem");
-        schematics = new HashMap<>();
-        noPhys = false;
-        Bukkit.getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
-    }
 
     public static boolean noPhys = false;
 
@@ -161,7 +164,7 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
             }
             else if (!scriptEntry.hasObject("angle")
                     && arg.matchesPrefix("angle")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+                    && arg.matchesInteger()) {
                 scriptEntry.addObject("angle", arg.asElement());
             }
             else if (!scriptEntry.hasObject("delayed")
@@ -199,11 +202,12 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
                 arg.reportUnhandled();
             }
         }
-
+        if (scriptEntry.shouldWaitFor()) {
+            scriptEntry.addObject("delayed", new ElementTag("true"));
+        }
         if (!scriptEntry.hasObject("type")) {
             throw new InvalidArgumentsException("Missing type argument!");
         }
-
         if (!scriptEntry.hasObject("name")) {
             throw new InvalidArgumentsException("Missing name argument!");
         }
@@ -326,8 +330,8 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
                     Bukkit.getScheduler().runTaskAsynchronously(DenizenAPI.getCurrentInstance(), loadRunnable);
                 }
                 else {
-                    scriptEntry.setFinished(true);
                     loadRunnable.run();
+                    scriptEntry.setFinished(true);
                 }
                 break;
             }

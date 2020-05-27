@@ -12,15 +12,19 @@ import com.denizenscript.denizencore.objects.core.ScriptTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 
-/**
- * <p>Sets a 'cooldown' period on a script. Can be per-player or globally.</p>
- */
 public class CooldownCommand extends AbstractCommand {
+
+    public CooldownCommand() {
+        setName("cooldown");
+        setSyntax("cooldown [<duration>] (global) (script:<script>)");
+        setRequiredArguments(1, 3);
+    }
 
     // <--[command]
     // @Name Cooldown
     // @Syntax cooldown [<duration>] (global) (script:<script>)
     // @Required 1
+    // @Maximum 3
     // @Short Temporarily disables a script-container from meeting requirements.
     // @Group core
     //
@@ -101,13 +105,11 @@ public class CooldownCommand extends AbstractCommand {
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-        // Fetch objects
-        ScriptTag script = (ScriptTag) scriptEntry.getObject("script");
-        DurationTag duration = (DurationTag) scriptEntry.getObject("duration");
+        ScriptTag script = scriptEntry.getObjectTag("script");
+        DurationTag duration = scriptEntry.getObjectTag("duration");
         Type type = (scriptEntry.hasObject("type") ?
                 (Type) scriptEntry.getObject("type") : Type.PLAYER);
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), ArgumentHelper.debugObj("Type", type.name())
                     + script.debug()

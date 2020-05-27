@@ -15,22 +15,29 @@ import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
+import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.Deprecations;
 import org.bukkit.event.Listener;
 
 public class FlagCommand extends AbstractCommand implements Listener {
 
+    public FlagCommand() {
+        setName("flag");
+        setSyntax("flag [player/npc/server/<entity>] [<name>([<#>])](:<action>)[:<value>] (duration:<value>)");
+        setRequiredArguments(1, 3);
+    }
+
     // <--[command]
     // @Name Flag
-    // @Syntax flag ({player}/npc/server/<entity>) [<name>([<#>])](:<action>)[:<value>] (duration:<value>)
-    // @Required 1
+    // @Syntax flag [player/npc/server/<entity>] [<name>([<#>])](:<action>)[:<value>] (duration:<value>)
+    // @Required 2
+    // @Maximum 3
     // @Short Sets or modifies a flag on the player, NPC, entity, or server.
     // @Group core
     // @Guide https://guide.denizenscript.com/guides/basics/flags.html
     //
     // @Description
-    // The flag command sets or modifies custom value storage database entries connected to
-    // each player, each NPC, each entity, and the server.
+    // The flag command sets or modifies custom value storage database entries connected to each player, each NPC, each entity, and the server.
     // Flags can have operations performed upon them, such as:
     // Increment a flag:
     // - flag player counter:++
@@ -63,7 +70,7 @@ public class FlagCommand extends AbstractCommand implements Listener {
     //
     // @Usage
     // Use to create or set a flag on a player.
-    // - flag player playstyle:agressive
+    // - flag player playstyle:aggressive
     //
     // @Usage
     // Use to flag an npc with a given tag value.
@@ -255,7 +262,6 @@ public class FlagCommand extends AbstractCommand implements Listener {
             scriptEntry.defaultObject("flag_target", Utilities.getEntryPlayer(scriptEntry));
         }
 
-        // Check required arguments
         if (!scriptEntry.hasObject("action")) {
             throw new InvalidArgumentsException("Must specify a flag action or value.");
         }
@@ -269,7 +275,7 @@ public class FlagCommand extends AbstractCommand implements Listener {
     public void execute(ScriptEntry scriptEntry) {
 
         ObjectTag flag_target = scriptEntry.getObjectTag("flag_target");
-        DurationTag duration = (DurationTag) scriptEntry.getObject("duration");
+        DurationTag duration = scriptEntry.getObjectTag("duration");
         FlagManager.Action action = (FlagManager.Action) scriptEntry.getObject("action");
         ElementTag value = scriptEntry.getElement("value");
         ElementTag name = scriptEntry.getElement("flag_name");
@@ -278,7 +284,7 @@ public class FlagCommand extends AbstractCommand implements Listener {
 
         // Set working index, if specified.
         // Usage example: - FLAG FLAGNAME[3]:VALUE specifies an index of 3 should be set with VALUE.
-        if (name.asString().contains("[")) {
+        if (CoreUtilities.contains(name.asString(), '[')) {
             try {
                 index = Integer.valueOf(name.asString().split("\\[")[1].replace("]", ""));
             }
@@ -318,7 +324,7 @@ public class FlagCommand extends AbstractCommand implements Listener {
         }
 
         // Do the action!
-        flag.doAction(action, value, index);
+        flag.doAction(action, value, index, scriptEntry);
 
         // Set flag duration
         if (flag.StillValid() && duration != null && duration.getSeconds() > 0) {

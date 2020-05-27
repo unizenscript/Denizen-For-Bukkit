@@ -15,6 +15,9 @@ import java.util.List;
 
 public interface BlockHelper {
 
+
+    void applyPhysics(Location location);
+
     int idFor(Material mat);
 
     MaterialData getFlowerpotContents(Block block);
@@ -44,6 +47,10 @@ public interface BlockHelper {
     boolean setBlockResistance(Material material, float resistance);
 
     float getBlockResistance(Material material);
+
+    default boolean isSafeBlock(Location loc) {
+        return loc.getBlockY() < 0 || loc.getBlockY() > 255 || isSafeBlock(loc.getBlock().getType());
+    }
 
     boolean isSafeBlock(Material material);
 

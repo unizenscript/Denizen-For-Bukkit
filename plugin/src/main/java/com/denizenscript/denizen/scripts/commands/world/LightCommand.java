@@ -8,16 +8,22 @@ import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
-import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 
 public class LightCommand extends AbstractCommand {
 
+    public LightCommand() {
+        setName("light");
+        setSyntax("light [<location>] [<#>/reset] (duration:<duration>)");
+        setRequiredArguments(2, 3);
+    }
+
     // <--[command]
     // @Name Light
     // @Syntax light [<location>] [<#>/reset] (duration:<duration>)
     // @Required 2
+    // @Maximum 3
     // @Short Creates a light source at the location with a specified brightness.
     // @Group world
     //
@@ -37,11 +43,11 @@ public class LightCommand extends AbstractCommand {
     //
     // @Usage
     // Use to create a bright light at a noted location.
-    // - light l@MyFancyLightOfWool 15
+    // - light MyFancyLightOfWool 15
     //
     // @Usage
     // Use to reset the brightness of the location to its original state.
-    // - light l@MyFancyLightOfWool reset
+    // - light MyFancyLightOfWool reset
     // -->
 
     @Override
@@ -54,7 +60,7 @@ public class LightCommand extends AbstractCommand {
                 scriptEntry.addObject("location", arg.asType(LocationTag.class));
             }
             else if (!scriptEntry.hasObject("light")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+                    && arg.matchesInteger()) {
                 scriptEntry.addObject("light", arg.asElement());
             }
             else if (!scriptEntry.hasObject("reset")

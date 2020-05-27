@@ -74,6 +74,8 @@ public class CommandScriptContainer extends ScriptContainer {
     //   # The permission node to check for permissions plugins. This will automatically
     //   # block players without the permission from accessing the command and help for
     //   # the command.
+    //   # Note that you can include multiple permission nodes (a player only needs to have any one permission from the list)
+    //   # by separating them with a semicolon, like: perm.one;perm.two;third.perm
     //   # | Most command scripts should have this key!
     //   permission: my.permission.node
     //
@@ -89,7 +91,7 @@ public class CommandScriptContainer extends ScriptContainer {
     //   # Available context: <context.server> returns whether the server is viewing the help (a player if false).
     //   # | Most command scripts should NOT have this key, but it's available.
     //   allowed help:
-    //   - determine <player.is_op||<context.server>>
+    //   - determine <player.has_flag[special_allowed_help_flag]||<context.server>>
     //
     //   # The procedure-based script that will run when a player uses tab completion to predict words.
     //   # This should return a ListTag of words that the player can tab through, based on the arguments they have already typed.
@@ -119,7 +121,7 @@ public class CommandScriptContainer extends ScriptContainer {
     //   - if !<player.is_op||<context.server>>:
     //     - narrate "<red>You do not have permission for that command."
     //     - stop
-    //   - narrate "Yay!"
+    //   - narrate Yay!
     //   - narrate "My command worked!"
     //   - narrate "And I typed '/<context.alias> <context.raw_args>'!"
     // </code>

@@ -13,13 +13,21 @@ import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
+import com.denizenscript.denizencore.objects.core.MapTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
+import com.denizenscript.denizencore.utilities.Deprecations;
 
 import java.util.AbstractMap;
 import java.util.List;
 
 public class InventoryCommand extends AbstractCommand {
+
+    public InventoryCommand() {
+        setName("inventory");
+        setSyntax("inventory [open/close/copy/move/swap/set/keep/exclude/fill/clear/update/adjust <mechanism>:<value>] (destination:<inventory>) (origin:<inventory>/<item>|...) (slot:<slot>)");
+        setRequiredArguments(1, 6);
+    }
 
     // <--[language]
     // @name Virtual Inventories
@@ -29,11 +37,11 @@ public class InventoryCommand extends AbstractCommand {
     // be used for a wide range of purposes - from looting fallen enemies to serving as interactive menus with item
     // 'buttons'.
     //
-    // In Denizen, all Notable dInventories (saved by the Note command) are automatically converted into a
+    // In Denizen, all noted inventories (saved by the Note command) are automatically converted into a
     // virtual copy of the saved inventory. This enables you to open and edit the items inside freely, with automatic
     // saving, as if it were a normal inventory.
     //
-    // Notables are not the only way to create virtual inventories, however. Using in@generic along with inventory
+    // Noting is not the only way to create virtual inventories, however. Using 'generic' along with inventory
     // properties will allow you to create temporary custom inventories to do with as you please. The properties that
     // can be used like this are:
     //
@@ -55,8 +63,9 @@ public class InventoryCommand extends AbstractCommand {
 
     // <--[command]
     // @Name Inventory
-    // @Syntax inventory [open/close/copy/move/swap/add/remove/set/keep/exclude/fill/clear/update/adjust <mechanism>:<value>] (destination:<inventory>) (origin:<inventory>/<item>|...) (slot:<slot>)
+    // @Syntax inventory [open/close/copy/move/swap/set/keep/exclude/fill/clear/update/adjust <mechanism>:<value>] (destination:<inventory>) (origin:<inventory>/<item>|...) (slot:<slot>)
     // @Required 1
+    // @Maximum 6
     // @Short Edits the inventory of a player, NPC, or chest.
     // @Group item
     //
@@ -70,8 +79,8 @@ public class InventoryCommand extends AbstractCommand {
     // destination to be a valid player inventory.
     // Using "close" closes any inventory that the currently attached player has opened.
     //
-    // Note that instead of "add", you should usually use <@link command give>,
-    // and instead of "remove", you should usually use <@link command take>.
+    // Note that to add items to an inventory, you should usually use <@link command give>,
+    // and to remove items from an inventory, you should usually use <@link command take>.
     //
     // @Tags
     // <PlayerTag.inventory>
@@ -97,8 +106,8 @@ public class InventoryCommand extends AbstractCommand {
     // - inventory keep d:<context.location.inventory> o:snow_ball|ItemScript
     //
     // @Usage
-    // Use to remove items specified in a chest from the current player's inventory, regardless of the item count.
-    // - inventory exclude origin:<context.location.inventory>
+    // Use to remove all sticks and stones from the player's inventory.
+    // - inventory exclude origin:stick|stone
     //
     // @Usage
     // Use to swap two players' inventories.
@@ -110,7 +119,7 @@ public class InventoryCommand extends AbstractCommand {
     //
     // @Usage
     // Use to set a single stick into slot 10 of the player's inventory.
-    // - inventory set d:<player.inventory> o:stick slot:10
+    // - inventory set o:stick slot:10
     // -->
 
     private enum Action {OPEN, CLOSE, COPY, MOVE, SWAP, ADD, REMOVE, SET, KEEP, EXCLUDE, FILL, CLEAR, UPDATE, ADJUST}
@@ -134,7 +143,7 @@ public class InventoryCommand extends AbstractCommand {
             // or a ListTag of ItemTags
             else if (!scriptEntry.hasObject("origin")
                     && arg.matchesPrefix("origin", "o", "source", "items", "item", "i", "from", "f")
-                    && (arg.matchesArgumentTypes(InventoryTag.class, EntityTag.class, LocationTag.class)
+                    && (arg.matchesArgumentTypes(InventoryTag.class, EntityTag.class, LocationTag.class, MapTag.class)
                     || arg.matchesArgumentList(ItemTag.class))) {
                 scriptEntry.addObject("origin", Conversion.getInventory(arg, scriptEntry));
             }
@@ -149,7 +158,7 @@ public class InventoryCommand extends AbstractCommand {
 
             // Check for specified slot number
             else if (!scriptEntry.hasObject("slot")
-                    && arg.matchesPrefix("slot, s")) {
+                    && arg.matchesPrefix("slot", "s")) {
                 scriptEntry.addObject("slot", arg.asElement());
             }
 
@@ -197,8 +206,6 @@ public class InventoryCommand extends AbstractCommand {
     @SuppressWarnings("unchecked")
     @Override
     public void execute(final ScriptEntry scriptEntry) {
-
-        // Get objects
         List<String> actions = (List<String>) scriptEntry.getObject("actions");
         AbstractMap.SimpleEntry<Integer, InventoryTag> originentry = (AbstractMap.SimpleEntry<Integer, InventoryTag>) scriptEntry.getObject("origin");
         InventoryTag origin = originentry != null ? originentry.getValue() : null;
@@ -283,6 +290,7 @@ public class InventoryCommand extends AbstractCommand {
 
                 // Add origin's contents to destination
                 case ADD:
+                    Deprecations.oldInventoryCommands.warn(scriptEntry);
                     if (origin == null) {
                         Debug.echoError(scriptEntry.getResidingQueue(), "Missing origin argument!");
                         return;
@@ -292,6 +300,7 @@ public class InventoryCommand extends AbstractCommand {
 
                 // Remove origin's contents from destination
                 case REMOVE:
+                    Deprecations.oldInventoryCommands.warn(scriptEntry);
                     if (origin == null) {
                         Debug.echoError(scriptEntry.getResidingQueue(), "Missing origin argument!");
                         return;

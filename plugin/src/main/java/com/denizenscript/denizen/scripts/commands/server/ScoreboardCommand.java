@@ -1,5 +1,6 @@
 package com.denizenscript.denizen.scripts.commands.server;
 
+import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.entity.FakeOfflinePlayer;
 import com.denizenscript.denizen.utilities.ScoreboardHelper;
 import com.denizenscript.denizen.utilities.debugging.Debug;
@@ -21,15 +22,26 @@ import java.util.List;
 
 public class ScoreboardCommand extends AbstractCommand {
 
+    public ScoreboardCommand() {
+        setName("scoreboard");
+        setSyntax("scoreboard ({add}/remove) (viewers:<player>|...) (lines:<player>/<text>|...) (id:<value>/player/{main}) (objective:<value>) (criteria:<criteria>/{dummy}) (score:<#>) (displayslot:<value>/{sidebar}/none) (displayname:<name>)");
+        setRequiredArguments(1, 9);
+    }
+
     // <--[command]
     // @Name Scoreboard
-    // @Syntax scoreboard ({add}/remove) (viewers:<player>|...) (lines:<player>/<text>|...) (id:<value>/{main}) (objective:<value>) (criteria:<criteria>/{dummy}) (score:<#>) (displayslot:<value>/{sidebar}/none) (displayname:<name>)
+    // @Syntax scoreboard ({add}/remove) (viewers:<player>|...) (lines:<player>/<text>|...) (id:<value>/player/{main}) (objective:<value>) (criteria:<criteria>/{dummy}) (score:<#>) (displayslot:<value>/{sidebar}/none) (displayname:<name>)
     // @Required 1
+    // @Maximum 9
     // @Short Add or removes viewers, objectives and scores from scoreboards.
     // @Group server
     //
     // @Description
     // Lets you make players see a certain scoreboard and then a certain objective in that scoreboard.
+    // Please note that a 'scoreboard' is NOT a 'sidebar' - if you want that thing where text is on the right side of the screen, use <@link command sidebar>.
+    // 'Scoreboard' is the underlying internal system that powers sidebars, below_name plates, team prefixing, and a lot of other systems. Generally, you should avoid using this command directly.
+    //
+    // The ID can be 'main' for the global default scoreboard, 'player' for the attached player's current scoreboard, or any other value for a custom named scoreboard.
     //
     // There are currently three slots where objectives can be displayed:
     // in the sidebar on the right of the screen, below player names and in the player list that shows up when you press Tab.
@@ -65,7 +77,7 @@ public class ScoreboardCommand extends AbstractCommand {
     // <server.scoreboard[(<board>)].team[<team>].members>
     //
     // @Usage
-    // Add a score for the player "joe" to the default scoreboard under the objective "cookies" and let him see it
+    // Add a score for the defined player to the default scoreboard under the objective "cookies" and let him see it
     // - scoreboard add obj:cookies lines:joe score:1000 viewers:<[aplayer]>
     //
     // @Usage
@@ -89,7 +101,7 @@ public class ScoreboardCommand extends AbstractCommand {
     // - scoreboard remove viewers:<[aplayer]>
     //
     // @Usage
-    // Make the player "bob" see the health of other players below their names
+    // Make the defined player see the health of other players below their names
     // - scoreboard add viewers:<[player]> id:test obj:anything criteria:health displayslot:below_name
     //
     // @Usage
@@ -102,7 +114,6 @@ public class ScoreboardCommand extends AbstractCommand {
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
-        // Initialize necessary fields
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (!scriptEntry.hasObject("action")
@@ -126,7 +137,7 @@ public class ScoreboardCommand extends AbstractCommand {
                 scriptEntry.addObject("criteria", arg.asElement());
             }
             else if (!scriptEntry.hasObject("score")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+                    && arg.matchesInteger()) {
                 scriptEntry.addObject("score", arg.asElement());
             }
             else if (!scriptEntry.hasObject("displayslot")
@@ -163,7 +174,6 @@ public class ScoreboardCommand extends AbstractCommand {
     @SuppressWarnings("unchecked")
     @Override
     public void execute(final ScriptEntry scriptEntry) {
-        // Get objects
 
         List<PlayerTag> viewers = (List<PlayerTag>) scriptEntry.getObject("viewers");
         ListTag lines = scriptEntry.hasObject("lines") ?
@@ -184,10 +194,8 @@ public class ScoreboardCommand extends AbstractCommand {
             criteria = new ElementTag("dummy");
         }
         if (!hadDisplaySlot) {
-            criteria = new ElementTag("sidebar");
+            displaySlot = new ElementTag("sidebar");
         }
-
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), action.debug() +
                     id.debug() +
@@ -202,12 +210,14 @@ public class ScoreboardCommand extends AbstractCommand {
                                     + (displayName == null ? "" : displayName.debug())
                                     ))));
         }
-
         Scoreboard board = null;
 
         // Get the main scoreboard by default
         if (id.asString().equalsIgnoreCase("main")) {
             board = ScoreboardHelper.getMain();
+        }
+        else if (id.asString().equalsIgnoreCase("player")) {
+            board = Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().getScoreboard();
         }
         else {
             // If this scoreboard already exists, get it

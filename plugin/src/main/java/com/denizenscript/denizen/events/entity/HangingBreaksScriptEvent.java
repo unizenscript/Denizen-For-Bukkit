@@ -6,7 +6,6 @@ import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.Deprecations;
 import org.bukkit.event.EventHandler;
@@ -30,7 +29,7 @@ public class HangingBreaksScriptEvent extends BukkitScriptEvent implements Liste
     // @Triggers when a hanging entity (painting, item_frame, or leash_hitch) is broken.
     //
     // @Context
-    // <context.cause> returns the cause of the entity breaking. Causes: ENTITY, EXPLOSION, OBSTRUCTION, PHYSICS, and DEFAULT.
+    // <context.cause> returns the cause of the entity breaking. Causes: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/event/hanging/HangingBreakEvent.RemoveCause.html>.
     // <context.entity> returns the EntityTag that broke the hanging entity, if any.
     // <context.hanging> returns the EntityTag of the hanging.
     // -->
@@ -46,11 +45,10 @@ public class HangingBreaksScriptEvent extends BukkitScriptEvent implements Liste
     public HangingBreakEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        return CoreUtilities.getXthArg(1, lower).equals("breaks")
-                && !CoreUtilities.getXthArg(2, lower).equals("hanging")
-                && !CoreUtilities.getXthArg(0, lower).equals("player");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventArgLowerAt(1).equals("breaks")
+                && !path.eventArgLowerAt(2).equals("hanging")
+                && !path.eventArgLowerAt(0).equals("player");
     }
 
     @Override

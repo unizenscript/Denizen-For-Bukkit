@@ -7,8 +7,6 @@ import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
@@ -53,13 +51,11 @@ public class VehicleCollidesEntityScriptEvent extends BukkitScriptEvent implemen
 
     public EntityTag vehicle;
     public EntityTag entity;
-    private Boolean pickup_cancel;
     public VehicleEntityCollisionEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        return lower.contains("collides with");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.contains("collides with");
     }
 
     @Override
@@ -89,7 +85,7 @@ public class VehicleCollidesEntityScriptEvent extends BukkitScriptEvent implemen
         if (determinationObj instanceof ElementTag) {
             Argument arg = Argument.valueOf(determinationObj.toString());
             if (arg.matchesPrefix("pickup")) {
-                pickup_cancel = !arg.asElement().asBoolean();
+                event.setPickupCancelled(!arg.asElement().asBoolean());
                 return true;
             }
         }
@@ -110,7 +106,7 @@ public class VehicleCollidesEntityScriptEvent extends BukkitScriptEvent implemen
             return entity;
         }
         else if (name.equals("pickup")) {
-            return new ElementTag(!pickup_cancel);
+            return new ElementTag(!event.isPickupCancelled());
         }
         return super.getContext(name);
     }
@@ -119,9 +115,7 @@ public class VehicleCollidesEntityScriptEvent extends BukkitScriptEvent implemen
     public void onVehicleCollidesEntity(VehicleEntityCollisionEvent event) {
         entity = new EntityTag(event.getEntity());
         vehicle = new EntityTag(event.getVehicle());
-        pickup_cancel = event.isPickupCancelled();
         this.event = event;
         fire(event);
-        event.setPickupCancelled(pickup_cancel);
     }
 }

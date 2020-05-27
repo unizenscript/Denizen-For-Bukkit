@@ -11,10 +11,17 @@ import org.bukkit.entity.Player;
 
 public class ExperienceCommand extends AbstractCommand {
 
+    public ExperienceCommand() {
+        setName("experience");
+        setSyntax("experience [{set}/give/take] (level) [<#>]");
+        setRequiredArguments(2, 3);
+    }
+
     // <--[command]
     // @Name Experience
     // @Syntax experience [{set}/give/take] (level) [<#>]
     // @Required 2
+    // @Maximum 3
     // @Short Gives or takes experience points to the player.
     // @Group player
     //
@@ -54,14 +61,6 @@ public class ExperienceCommand extends AbstractCommand {
         player.setTotalExperience(exp);
     }
 
-    public static void setLevel(Player player, int level) {
-        player.setLevel(level);
-    }
-
-    public static void giveExperience(Player player, int exp) {
-        player.giveExp(exp);
-    }
-
     public static void takeExperience(Player player, int toTake) {
         int pastLevelStart = (int) (player.getExp() * player.getExpToLevel());
         while (toTake >= pastLevelStart) {
@@ -86,16 +85,16 @@ public class ExperienceCommand extends AbstractCommand {
 
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
-            if (arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+            if (arg.matchesInteger()) {
                 amount = arg.asElement().asInt();
             }
-            else if (arg.matches("SET", "GIVE", "TAKE")) {
+            else if (arg.matches("set", "give", "take")) {
                 type = Type.valueOf(arg.asElement().asString().toUpperCase());
             }
-            else if (arg.matches("LEVEL")) {
+            else if (arg.matches("level")) {
                 level = true;
             }
-            else if (arg.matches("SILENT")) {
+            else if (arg.matches("silent")) {
                 silent = true;
             }
             else {

@@ -24,20 +24,29 @@ import java.util.List;
 
 public class FireworkCommand extends AbstractCommand {
 
+    public FireworkCommand() {
+        setName("firework");
+        setSyntax("firework (<location>) (power:<#>) (<type>/random) (primary:<color>|...) (fade:<color>|...) (flicker) (trail)");
+        setRequiredArguments(0, 7);
+    }
+
     // <--[command]
     // @Name Firework
     // @Syntax firework (<location>) (power:<#>) (<type>/random) (primary:<color>|...) (fade:<color>|...) (flicker) (trail)
     // @Required 0
+    // @Maximum 7
     // @Short Launches a firework with specific coloring
     // @Group world
     //
     // @Description
-    // This command launches a firework from the specified location. The power option, which defaults to 1
-    // if left empty, specifies how high the firework will go before exploding. The type option
-    // which specifies the shape the firework will explode with. The primary option specifies what colour the
-    // firework will initially explode as. The fade option specifies what colour the firework will
-    // fade into after exploding. The flicker option means the firework will leave a trail behind it, and the
-    // flicker option means the firework will explode with a flicker effect.
+    // This command launches a firework from the specified location.
+    // If no location is given, the linked NPC or player's location will be used by default.
+    // The power option, which defaults to 1 if left empty, specifies how high the firework will go before exploding.
+    // The type option which specifies the shape the firework will explode with. If unspecified, 'ball' will be used.
+    // The primary option specifies what colour the firework will initially explode as. If unspecified, 'yellow' will be used.
+    // The fade option specifies a colour that the firework will fade into after exploding.
+    // The trail option means the firework will leave a trail behind it.
+    // The flicker option means the firework will explode with a flicker effect.
     //
     // @Tags
     // <EntityTag.firework_item>
@@ -65,7 +74,6 @@ public class FireworkCommand extends AbstractCommand {
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
-        // Initialize necessary fields
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (!scriptEntry.hasObject("location")
@@ -81,7 +89,7 @@ public class FireworkCommand extends AbstractCommand {
                 scriptEntry.addObject("type", arg.asElement());
             }
             else if (!scriptEntry.hasObject("power")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+                    && arg.matchesInteger()) {
                 scriptEntry.addObject("power", arg.asElement());
             }
             else if (!scriptEntry.hasObject("flicker")
@@ -120,20 +128,18 @@ public class FireworkCommand extends AbstractCommand {
     @SuppressWarnings("unchecked")
     @Override
     public void execute(final ScriptEntry scriptEntry) {
-        // Get objects
 
         final LocationTag location = scriptEntry.hasObject("location") ?
                 (LocationTag) scriptEntry.getObject("location") :
                 Utilities.getEntryNPC(scriptEntry).getLocation();
 
-        ElementTag type = (ElementTag) scriptEntry.getObject("type");
-        ElementTag power = (ElementTag) scriptEntry.getObject("power");
+        ElementTag type = scriptEntry.getElement("type");
+        ElementTag power = scriptEntry.getElement("power");
         boolean flicker = scriptEntry.hasObject("flicker");
         boolean trail = scriptEntry.hasObject("trail");
         List<ColorTag> primary = (List<ColorTag>) scriptEntry.getObject("primary");
         List<ColorTag> fade = (List<ColorTag>) scriptEntry.getObject("fade");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), location.debug() +
                     type.debug() +

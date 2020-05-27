@@ -12,12 +12,11 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
 
 import java.util.Arrays;
-import java.util.regex.Matcher;
 
 public class TradeTag implements ObjectTag, Adjustable {
 
     // <--[language]
-    // @name Merchant Trades
+    // @name TradeTag Objects
     // @group Object System
     // @description
     // Merchant trades are the parts of a special merchant inventory that is typically viewed by right clicking
@@ -28,33 +27,21 @@ public class TradeTag implements ObjectTag, Adjustable {
     // The properties that can be used to customize a merchant trade are:
     //
     // result=<item>
-    // input=<item>(|<item>)
+    // inputs=<item>(|<item>)
     // uses=<number of uses>
     // max_uses=<maximum number of uses>
-    // has_xp=<true/false>
+    // has_xp=true/false
     //
-    // For example, the following task script opens a virtual merchant inventory with two merchant trades. The
-    // first trade offers a sponge for two emeralds for a sponge, can be used up to 10 times, and offers XP upon a
-    // successful transaction. The second trade has zero maximum uses and displays a barrier.
-    //
+    // For example, the following command opens a virtual merchant inventory with two merchant trades.
+    // The first trade offers a sponge for two emeralds, can be used up to 10 times,
+    // and offers XP upon a successful transaction.
+    // The second trade has zero maximum uses and displays a barrier.
     // <code>
-    // open two trades:
-    //     type: task
-    //     script:
-    //     - opentrades trade@trade[max_uses=10;inputs=emerald[quantity=2];result=sponge|trade@trade[result=barrier]
+    // - opentrades trade[max_uses=10;inputs=emerald[quantity=2];result=sponge]|trade[result=barrier]
     // </code>
     //
-    // For format info, see <@link language trade@>
-    // -->
-
-    // <--[language]
-    // @name trade@
-    // @group Object Fetcher System
-    // @description
-    // trade@ refers to the 'object identifier' of a TradeTag. The 'trade@' is notation for Denizen's Object
-    // Fetcher. The constructor for a TradeTag is just the text 'trade'. All other data is specified through properties.
-    //
-    // For general info, see <@link language Merchant Trades>
+    // These use the object notation "trade@".
+    // The identity format for trades is just the text 'trade'. All other data is specified through properties.
     //
     // -->
 
@@ -74,10 +61,9 @@ public class TradeTag implements ObjectTag, Adjustable {
 
         ///////
         // Handle objects with properties through the object fetcher
-        Matcher m = ObjectFetcher.DESCRIBED_PATTERN.matcher(string);
-        if (m.matches()) {
+        if (ObjectFetcher.isObjectWithProperties(string)) {
             return ObjectFetcher.getObjectFrom(TradeTag.class, string, new BukkitTagContext(((BukkitTagContext) context).player,
-                    ((BukkitTagContext) context).npc, false, null, !context.debug, null));
+                    ((BukkitTagContext) context).npc, null, !context.debug, null));
         }
 
         string = CoreUtilities.toLowerCase(string).replace("trade@", "");

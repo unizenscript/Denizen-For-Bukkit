@@ -28,6 +28,50 @@ import java.util.regex.Pattern;
 
 public abstract class BukkitScriptEvent extends ScriptEvent {
 
+    public boolean couldMatchInArea(String lower) {
+        int index = CoreUtilities.split(lower, ' ').indexOf("in");
+        if (index == -1) {
+            return true;
+        }
+
+        String in = CoreUtilities.getXthArg(index + 1, lower);
+        if (InventoryTag.matches(in) || in.equalsIgnoreCase("inventory") || isRegexMatchable(in)) {
+            return false;
+        }
+        if (in.equalsIgnoreCase("notable")) {
+            String next = CoreUtilities.getXthArg(index + 2, lower);
+            if (!next.equalsIgnoreCase("cuboid") && !next.equalsIgnoreCase("ellipsoid")) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean couldMatchInventory(String text) {
+        if (text.equals("inventory")) {
+            return true;
+        }
+        if (InventoryTag.matches(text)) {
+            return true;
+        }
+        if (CoreUtilities.contains(text, '*')) {
+            return true;
+        }
+        if (text.startsWith("regex:")) {
+            return true;
+        }
+        // This one must be last.
+        if (CoreUtilities.contains(text, '|')) {
+            for (String subMatch : text.split("\\|")) {
+                if (!couldMatchInventory(subMatch)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
     public boolean couldMatchItem(String text) {
         if (text.equals("item")) {
             return true;
@@ -35,14 +79,14 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
         if (MaterialTag.matches(text) || ItemTag.matches(text)) {
             return true;
         }
-        if (text.contains("*")) {
+        if (CoreUtilities.contains(text, '*')) {
             return true;
         }
         if (text.startsWith("regex:")) {
             return true;
         }
         // This one must be last.
-        if (text.contains("|")) {
+        if (CoreUtilities.contains(text, '|')) {
             for (String subMatch : text.split("\\|")) {
                 if (!couldMatchItem(subMatch)) {
                     return false;
@@ -51,6 +95,25 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
             return true;
         }
         return false;
+    }
+
+    public boolean nonSwitchWithCheck(ScriptPath path, ItemTag held) {
+        int index;
+        for (index = 0; index < path.eventArgsLower.length; index++) {
+            if (path.eventArgsLower[index].equals("with")) {
+                break;
+            }
+        }
+        if (index >= path.eventArgsLower.length) {
+            // No 'with ...' specified
+            return true;
+        }
+
+        String with = path.eventArgLowerAt(index + 1);
+        if (with != null && (held == null || !tryItem(held, with))) {
+            return false;
+        }
+        return true;
     }
 
     public BukkitTagContext getTagContext(ScriptPath path) {
@@ -143,20 +206,25 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
         super.fire();
     }
 
+    @Override
+    public void cancellationChanged() {
+        if (currentEvent instanceof Cancellable) {
+            ((Cancellable) currentEvent).setCancelled(cancelled);
+        }
+        super.cancellationChanged();
+    }
+
+    public Event currentEvent = null;
+
     public void fire(Event event) {
+        currentEvent = event;
         if (event instanceof Cancellable) {
-            Cancellable cancellable = (Cancellable) event;
-            cancelled = cancellable.isCancelled();
-            boolean wasCancelled = cancelled;
-            fire();
-            if (cancelled != wasCancelled) {
-                cancellable.setCancelled(cancelled);
-            }
+            cancelled = ((Cancellable) event).isCancelled();
         }
         else {
             cancelled = false;
-            fire();
         }
+        fire();
     }
 
     @Override
@@ -296,26 +364,9 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
             return ellipsoid.contains(location);
         }
         else {
-            Debug.echoError("Invalid event 'in:<area>' switch [" + getName() + "] ('in:???'): '" + path.event + "' for " + path.container.getName());
+            Debug.echoError("Invalid event 'in:<area>' switch [" + getName() + "] ('in:???') (did you make a typo, or forget to make a notable by that name?): '" + path.event + "' for " + path.container.getName());
             return false;
         }
-    }
-
-    public boolean tryLocation(LocationTag location, String comparedto) {
-        if (comparedto == null || comparedto.length() == 0) {
-            Debug.echoError("Null or empty location string to compare");
-            return false;
-        }
-        if (comparedto.equals("notable")) {
-            return true;
-        }
-        comparedto = "l@" + comparedto;
-        LocationTag loc = LocationTag.valueOf(comparedto);
-        if (loc == null) {
-            Debug.echoError("Invalid location in location comparison string: " + comparedto);
-            return false;
-        }
-        return loc.getBlock().equals(location.getBlock());
     }
 
     public boolean runWithCheck(ScriptPath path, ItemTag held) {
@@ -343,8 +394,10 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
         if (player == null) {
             return false;
         }
-        if (!FlagManager.playerHasFlag(player, flagged)) {
-            return false;
+        for (String flag : CoreUtilities.split(flagged, '|')) {
+            if (!FlagManager.playerHasFlag(player, flag)) {
+                return false;
+            }
         }
         return true;
     }
@@ -361,8 +414,10 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
         if (player == null || !player.isOnline()) {
             return false;
         }
-        if (!player.getPlayerEntity().hasPermission(perm)) {
-            return false;
+        for (String permName : CoreUtilities.split(perm, '|')) {
+            if (!player.getPlayerEntity().hasPermission(permName)) {
+                return false;
+            }
         }
         return true;
     }
@@ -381,6 +436,8 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
     //
     // Note that these switches will be ignored for events that do not have a linked player.
     // Be cautious with events that will only sometimes have a linked player.
+    //
+    // For multiple flag or permission requirements, just list them separated by '|' pipes, like "flagged:a|b|c".
     // -->
 
     public boolean runAutomaticPlayerSwitches(ScriptPath path) {
@@ -434,21 +491,33 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
     // the damaged entity just being gone now (when the event fires, it's *guaranteed* the entity is still present
     // but that remove command breaks the guarantee!).
     //
-    // The solution to this problem is simple: Just wait a tick. Literally.
+    // The solution to this problem is simple: Use "after" instead of "on".
+    // <code>
+    // after player clicks in inventory:
+    // - take iteminhand
+    // after entity damaged:
+    // - if <context.entity.is_spawned||false>:
+    //   - remove <context.entity>
+    // </code>
+    // This will delay the script until *after* the event is complete, and thus outside of the problem area.
+    // And thus should be fine. One limitation you should note is demonstrated in the second example event:
+    // The normal guarantees of the event are no longer present (eg that the entity is still valid) and as such
+    // you should validate these expectations remain true after the event (as seen with the 'if is_spawned' check).
+    //
+    // If you need determine changes to the event, you can instead use 'on' but add a 'wait 1t' after the determine but before other script logic.
+    // This allows the risky parts to be after the event and outside the problem area, but still determine changes to the event.
+    // Be sure to use 'passively' to allow the script to run in full.
     // <code>
     // on player clicks in inventory:
+    // - determine passively cancelled
     // - wait 1t
     // - take iteminhand
     // on entity damaged:
+    // - determine passively cancelled
     // - wait 1t
     // - if <context.entity.is_spawned||false>:
     //   - remove <context.entity>
     // </code>
-    //
-    // By waiting a tick, you cause your script to run *after* the event, and thus outside of the problem area.
-    // And thus should be fine. One limitation you should note is demonstrated in the second example event:
-    // The normal guarantees of the event are no longer present (eg that the entity is still valid) and as such
-    // you should validate these expectations remain true after the event (as seen with the 'if is_spawned' check).
     //
     // -->
 
@@ -491,31 +560,16 @@ public abstract class BukkitScriptEvent extends ScriptEvent {
         if (comparedto.equals("potion") && CoreUtilities.toLowerCase(item.getItemStack().getType().name()).contains("potion")) {
             return true;
         }
-        MaterialTag quickOf = MaterialTag.quickOfNamed(comparedto);
-        if (quickOf != null) {
-            MaterialTag mat = item.getMaterial();
-            if (quickOf.getMaterial() != mat.getMaterial()) {
-                return false;
-            }
-            if (quickOf.equals(mat)) {
+        Pattern regexd = regexHandle(comparedto);
+        if (item.isItemscript()) {
+            if (equalityCheck(item.getScriptName(), comparedto, regexd)) {
                 return true;
             }
         }
-        Pattern regexd = regexHandle(comparedto);
-        item = new ItemTag(item.getItemStack().clone());
-        item.setAmount(1);
-        if (equalityCheck(item.identify().substring("i@".length()), comparedto, regexd)) {
-            return true;
-        }
-        else if (equalityCheck(item.identifyMaterialNoIdentifier(), comparedto, regexd)) {
-            return true;
-        }
-        else if (equalityCheck(item.identifySimple().substring("i@".length()), comparedto, regexd)) {
-            return true;
-        }
-        item.setDurability((short) 0);
-        if (equalityCheck(item.identifyMaterialNoIdentifier(), comparedto, regexd)) {
-            return true;
+        else {
+            if (equalityCheck(item.getMaterialName(), comparedto, regexd)) {
+                return true;
+            }
         }
         return false;
     }

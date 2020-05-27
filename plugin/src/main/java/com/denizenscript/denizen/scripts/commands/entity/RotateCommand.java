@@ -19,10 +19,17 @@ import java.util.*;
 
 public class RotateCommand extends AbstractCommand implements Holdable {
 
+    public RotateCommand() {
+        setName("rotate");
+        setSyntax("rotate (cancel) (<entity>|...) (yaw:<#.#>) (pitch:<#.#>) (infinite/duration:<duration>) (frequency:<duration>)");
+        setRequiredArguments(1, 6);
+    }
+
     // <--[command]
     // @Name Rotate
     // @Syntax rotate (cancel) (<entity>|...) (yaw:<#.#>) (pitch:<#.#>) (infinite/duration:<duration>) (frequency:<duration>)
     // @Required 1
+    // @Maximum 6
     // @Short Rotates a list of entities.
     // @Group entity
     //
@@ -87,13 +94,13 @@ public class RotateCommand extends AbstractCommand implements Holdable {
             }
             else if (!scriptEntry.hasObject("yaw")
                     && arg.matchesPrefix("yaw", "y", "rotation", "r")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Float)) {
+                    && arg.matchesFloat()) {
 
                 scriptEntry.addObject("yaw", arg.asElement());
             }
             else if (!scriptEntry.hasObject("pitch")
                     && arg.matchesPrefix("pitch", "p", "tilt", "t")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Float)) {
+                    && arg.matchesFloat()) {
 
                 scriptEntry.addObject("pitch", arg.asElement());
             }
@@ -128,14 +135,13 @@ public class RotateCommand extends AbstractCommand implements Holdable {
     public void execute(final ScriptEntry scriptEntry) {
 
         final List<EntityTag> entities = new ArrayList<>((List<EntityTag>) scriptEntry.getObject("entities"));
-        final DurationTag duration = (DurationTag) scriptEntry.getObject("duration");
-        final DurationTag frequency = (DurationTag) scriptEntry.getObject("frequency");
-        final ElementTag yaw = (ElementTag) scriptEntry.getObject("yaw");
-        final ElementTag pitch = (ElementTag) scriptEntry.getObject("pitch");
+        final DurationTag duration = scriptEntry.getObjectTag("duration");
+        final DurationTag frequency = scriptEntry.getObjectTag("frequency");
+        final ElementTag yaw = scriptEntry.getElement("yaw");
+        final ElementTag pitch = scriptEntry.getElement("pitch");
         boolean cancel = scriptEntry.hasObject("cancel");
         final boolean infinite = scriptEntry.hasObject("infinite");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), (cancel ? ArgumentHelper.debugObj("cancel", cancel) : "") +
                     ArgumentHelper.debugObj("entities", entities.toString()) +

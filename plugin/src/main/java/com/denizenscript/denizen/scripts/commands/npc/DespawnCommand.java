@@ -17,11 +17,19 @@ import java.util.List;
 
 public class DespawnCommand extends AbstractCommand {
 
+    public DespawnCommand() {
+        setName("despawn");
+        setSyntax("despawn (<npc>|...)");
+        setRequiredArguments(0, 1);
+    }
+
     // <--[command]
     // @Name Despawn
     // @Syntax despawn (<npc>|...)
     // @Plugin Citizens
     // @Required 0
+    // @Maximum 1
+    // @Plugin Citizens
     // @Short Temporarily despawns the linked NPC or a list of NPCs.
     // @Group npc
     //
@@ -70,11 +78,8 @@ public class DespawnCommand extends AbstractCommand {
     @SuppressWarnings("unchecked")
     @Override
     public void execute(final ScriptEntry scriptEntry) {
-
-        // Get objects
         List<NPCTag> npcs = (List<NPCTag>) scriptEntry.getObject("npcs");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(),
                     ArgumentHelper.debugObj("NPCs", npcs.toString()));

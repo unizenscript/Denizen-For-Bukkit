@@ -129,6 +129,7 @@ public class FormattedTextHelper {
     }
 
     public static BaseComponent[] parse(String str) {
+        str = CoreUtilities.clearNBSPs(str);
         char[] chars = str.toCharArray();
         List<BaseComponent> outputList = new ArrayList<>();
         int started = 0;
@@ -205,7 +206,8 @@ public class FormattedTextHelper {
                             HoverEvent.Action action = HoverEvent.Action.valueOf(innardBase.get(1).toUpperCase());
                             BaseComponent[] hoverValue;
                             if (action == HoverEvent.Action.SHOW_ITEM && new Argument(innardParts.get(0)).matchesArgumentType(ItemTag.class)) {
-                                ItemTag item = ItemTag.valueOf(unescape(innardParts.get(0)));
+                                ItemTag item = ItemTag.valueOf(unescape(innardParts.get(0)), CoreUtilities.noDebugContext);
+                                // no ItemComponent?
                                 hoverValue = new BaseComponent[] { new TextComponent(NMSHandler.getItemHelper().getRawHoverText(item.getItemStack())) };
                             }
                             else if (action == HoverEvent.Action.SHOW_ENTITY && new Argument(innardParts.get(0)).matchesArgumentType(EntityTag.class)) {

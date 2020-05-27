@@ -14,10 +14,17 @@ import org.bukkit.World;
 
 public class PermissionCommand extends AbstractCommand {
 
+    public PermissionCommand() {
+        setName("permission");
+        setSyntax("permission [add/remove] [permission] (group:<name>) (<world>)");
+        setRequiredArguments(2, 4);
+    }
+
     // <--[command]
     // @Name Permission
     // @Syntax permission [add/remove] [permission] (group:<name>) (<world>)
     // @Required 2
+    // @Maximum 4
     // @Short Gives or takes a permission node to/from the player or group.
     // @Group player
     // @Plugin Vault
@@ -100,9 +107,8 @@ public class PermissionCommand extends AbstractCommand {
         ElementTag action = scriptEntry.getElement("action");
         ElementTag permission = scriptEntry.getElement("permission");
         ElementTag group = scriptEntry.getElement("group");
-        WorldTag world = (WorldTag) scriptEntry.getObject("world");
+        WorldTag world = scriptEntry.getObjectTag("world");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), action.debug() + permission.debug()
                     + (group != null ? group.debug() : "") + (world != null ? world.debug() : ""));

@@ -23,10 +23,18 @@ import java.util.UUID;
 
 public class DisplayItemCommand extends AbstractCommand implements Listener {
 
+    public DisplayItemCommand() {
+        setName("displayitem");
+        setSyntax("displayitem [<item>] [<location>] (duration:<value>)");
+        setRequiredArguments(2, 3);
+        Bukkit.getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
+    }
+
     // <--[command]
     // @Name DisplayItem
     // @Syntax displayitem [<item>] [<location>] (duration:<value>)
     // @Required 2
+    // @Maximum 3
     // @Short Makes a non-touchable item spawn for players to view.
     // @Group item
     //
@@ -57,11 +65,6 @@ public class DisplayItemCommand extends AbstractCommand implements Listener {
     // -->
 
     @Override
-    public void onEnable() {
-        Bukkit.getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
-    }
-
-    @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
         for (Argument arg : scriptEntry.getProcessedArgs()) {
@@ -83,7 +86,6 @@ public class DisplayItemCommand extends AbstractCommand implements Listener {
             }
         }
 
-        // Check required args
         if (!scriptEntry.hasObject("item")) {
             throw new InvalidArgumentsException("Must specify an item to display.");
         }
@@ -124,9 +126,9 @@ public class DisplayItemCommand extends AbstractCommand implements Listener {
     @Override
     public void execute(ScriptEntry scriptEntry) {
 
-        ItemTag item = (ItemTag) scriptEntry.getObject("item");
-        DurationTag duration = (DurationTag) scriptEntry.getObject("duration");
-        LocationTag location = (LocationTag) scriptEntry.getObject("location");
+        ItemTag item = scriptEntry.getObjectTag("item");
+        DurationTag duration = scriptEntry.getObjectTag("duration");
+        LocationTag location = scriptEntry.getObjectTag("location");
 
         if (scriptEntry.dbCallShouldDebug()) {
 
@@ -139,7 +141,7 @@ public class DisplayItemCommand extends AbstractCommand implements Listener {
 
         // Drop the item
         final Item dropped = location.getWorld()
-                .dropItem(location.getBlock().getLocation().clone().add(0.5, 1.5, 0.5), item.getItemStack());
+                .dropItem(location.getBlockLocation().clone().add(0.5, 1.5, 0.5), item.getItemStack());
         dropped.setVelocity(dropped.getVelocity().multiply(0));
         dropped.setPickupDelay(duration.getTicksAsInt() + 1000);
         dropped.setTicksLived(duration.getTicksAsInt() + 1000);

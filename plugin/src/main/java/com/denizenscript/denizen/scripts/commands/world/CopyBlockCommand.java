@@ -24,6 +24,12 @@ import java.util.Set;
 
 public class CopyBlockCommand extends AbstractCommand {
 
+    public CopyBlockCommand() {
+        setName("copyblock");
+        setSyntax("copyblock [<location>] [to:<location>] (remove_original)");
+        setRequiredArguments(2, 3);
+    }
+
     // <--[command]
     // @Name CopyBlock
     // @Syntax copyblock [<location>/<cuboid>] (origin:<location>) [to:<location>] (remove_original) (delayed)

@@ -7,7 +7,6 @@ import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -61,9 +60,8 @@ public class EntityTeleportScriptEvent extends BukkitScriptEvent implements List
     public PlayerTeleportEvent pEvent;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        return CoreUtilities.xthArgEquals(1, lower, "teleports");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventArgLowerAt(1).equals("teleports");
     }
 
     @Override
@@ -97,6 +95,12 @@ public class EntityTeleportScriptEvent extends BukkitScriptEvent implements List
             LocationTag new_from = LocationTag.valueOf(determination.substring("origin:".length()));
             if (new_from != null) {
                 from = new_from;
+                if (event != null) {
+                    event.setFrom(new_from);
+                }
+                else {
+                    pEvent.setFrom(new_from);
+                }
                 return true;
             }
         }
@@ -104,6 +108,12 @@ public class EntityTeleportScriptEvent extends BukkitScriptEvent implements List
             LocationTag new_to = LocationTag.valueOf(determination.substring("destination:".length()));
             if (new_to != null) {
                 to = new_to;
+                if (event != null) {
+                    event.setTo(new_to);
+                }
+                else {
+                    pEvent.setTo(new_to);
+                }
                 return true;
             }
         }
@@ -111,6 +121,12 @@ public class EntityTeleportScriptEvent extends BukkitScriptEvent implements List
             LocationTag new_to = LocationTag.valueOf(determination);
             if (new_to != null) {
                 to = new_to;
+                if (event != null) {
+                    event.setTo(new_to);
+                }
+                else {
+                    pEvent.setTo(new_to);
+                }
                 return true;
             }
         }
@@ -151,8 +167,6 @@ public class EntityTeleportScriptEvent extends BukkitScriptEvent implements List
         this.event = event;
         pEvent = null;
         fire(event);
-        event.setFrom(from);
-        event.setTo(to);
     }
 
     @EventHandler
@@ -164,7 +178,5 @@ public class EntityTeleportScriptEvent extends BukkitScriptEvent implements List
         this.event = null;
         pEvent = event;
         fire(event);
-        event.setFrom(from);
-        event.setTo(to);
     }
 }

@@ -18,8 +18,8 @@ import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 import com.denizenscript.denizencore.scripts.commands.Holdable;
 import com.denizenscript.denizencore.scripts.queues.ScriptQueue;
-import com.denizenscript.denizencore.scripts.queues.core.InstantQueue;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
+import com.denizenscript.denizencore.utilities.ScriptUtilities;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Projectile;
@@ -33,13 +33,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class ShootCommand extends AbstractCommand implements Listener, Holdable {
+
+    public ShootCommand() {
+        setName("shoot");
+        setSyntax("shoot [<entity>|...] (origin:<entity>/<location>) (destination:<location>) (height:<#.#>) (speed:<#.#>) (script:<name>) (def:<element>|...) (shooter:<entity>) (spread:<#.#>) (lead:<location>) (no_rotate)");
+        setRequiredArguments(1, 11);
+        Bukkit.getServer().getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
+    }
 
     // <--[command]
     // @Name Shoot
     // @Syntax shoot [<entity>|...] (origin:<entity>/<location>) (destination:<location>) (height:<#.#>) (speed:<#.#>) (script:<name>) (def:<element>|...) (shooter:<entity>) (spread:<#.#>) (lead:<location>) (no_rotate)
     // @Required 1
+    // @Maximum 11
     // @Short Shoots an entity through the air, useful for things like firing arrows.
     // @Group entity
     //
@@ -83,11 +92,6 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
     Map<UUID, EntityTag> arrows = new HashMap<>();
 
     @Override
-    public void onEnable() {
-        Bukkit.getServer().getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
-    }
-
-    @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
         for (Argument arg : scriptEntry.getProcessedArgs()) {
@@ -96,10 +100,10 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
                     && arg.matchesPrefix("origin", "o", "source", "s")) {
 
                 if (arg.matchesArgumentType(EntityTag.class)) {
-                    scriptEntry.addObject("originEntity", arg.asType(EntityTag.class));
+                    scriptEntry.addObject("origin_entity", arg.asType(EntityTag.class));
                 }
                 else if (arg.matchesArgumentType(LocationTag.class)) {
-                    scriptEntry.addObject("originLocation", arg.asType(LocationTag.class));
+                    scriptEntry.addObject("origin_location", arg.asType(LocationTag.class));
                 }
                 else {
                     Debug.echoError("Ignoring unrecognized argument: " + arg.raw_value);
@@ -118,13 +122,13 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
                 scriptEntry.addObject("lead", arg.asType(LocationTag.class));
             }
             else if (!scriptEntry.hasObject("height")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)
+                    && arg.matchesFloat()
                     && arg.matchesPrefix("height", "h")) {
 
                 scriptEntry.addObject("height", arg.asElement());
             }
             else if (!scriptEntry.hasObject("speed")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)
+                    && arg.matchesFloat()
                     && arg.matchesPrefix("speed")) {
 
                 scriptEntry.addObject("speed", arg.asElement());
@@ -147,13 +151,13 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
 
             // Don't document this argument; it is for debug purposes only
             else if (!scriptEntry.hasObject("gravity")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)
+                    && arg.matchesFloat()
                     && arg.matchesPrefix("gravity", "g")) {
 
                 scriptEntry.addObject("gravity", arg.asElement());
             }
             else if (!scriptEntry.hasObject("spread")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)
+                    && arg.matchesFloat()
                     && arg.matchesPrefix("spread")) {
                 scriptEntry.addObject("spread", arg.asElement());
             }
@@ -171,9 +175,9 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
 
         // Use the NPC or player's locations as the origin if one is not specified
 
-        if (!scriptEntry.hasObject("originlocation")) {
+        if (!scriptEntry.hasObject("origin_location")) {
 
-            scriptEntry.defaultObject("originentity",
+            scriptEntry.defaultObject("origin_entity",
                     Utilities.entryHasNPC(scriptEntry) ? Utilities.getEntryNPC(scriptEntry).getDenizenEntity() : null,
                     Utilities.entryHasPlayer(scriptEntry) ? Utilities.getEntryPlayer(scriptEntry).getDenizenEntity() : null);
         }
@@ -186,7 +190,7 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
             throw new InvalidArgumentsException("Must specify entity/entities!");
         }
 
-        if (!scriptEntry.hasObject("originentity") && !scriptEntry.hasObject("originlocation")) {
+        if (!scriptEntry.hasObject("origin_entity") && !scriptEntry.hasObject("origin_location")) {
             throw new InvalidArgumentsException("Must specify an origin location!");
         }
     }
@@ -195,9 +199,9 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
     @Override
     public void execute(final ScriptEntry scriptEntry) {
 
-        EntityTag originEntity = (EntityTag) scriptEntry.getObject("originentity");
-        LocationTag originLocation = scriptEntry.hasObject("originlocation") ?
-                (LocationTag) scriptEntry.getObject("originlocation") :
+        EntityTag originEntity = scriptEntry.getObjectTag("origin_entity");
+        LocationTag originLocation = scriptEntry.hasObject("origin_location") ?
+                (LocationTag) scriptEntry.getObject("origin_location") :
                 new LocationTag(originEntity.getEyeLocation()
                         .add(originEntity.getEyeLocation().getDirection()));
         boolean no_rotate = scriptEntry.hasObject("no_rotate") && scriptEntry.getElement("no_rotate").asBoolean();
@@ -220,18 +224,17 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
         }
 
         final List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
-        final ScriptTag script = (ScriptTag) scriptEntry.getObject("script");
-        final ListTag definitions = (ListTag) scriptEntry.getObject("definitions");
-        EntityTag shooter = (EntityTag) scriptEntry.getObject("shooter");
+        final ScriptTag script = scriptEntry.getObjectTag("script");
+        final ListTag definitions = scriptEntry.getObjectTag("definitions");
+        EntityTag shooter = scriptEntry.getObjectTag("shooter");
 
         ElementTag height = scriptEntry.getElement("height");
         ElementTag gravity = scriptEntry.getElement("gravity");
         ElementTag speed = scriptEntry.getElement("speed");
         ElementTag spread = scriptEntry.getElement("spread");
 
-        LocationTag lead = (LocationTag) scriptEntry.getObject("lead");
+        LocationTag lead = scriptEntry.getObjectTag("lead");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), ArgumentHelper.debugObj("origin", originEntity != null ? originEntity : originLocation) +
                     ArgumentHelper.debugObj("entities", entities.toString()) +
@@ -376,18 +379,6 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
                         if (lastVelocity == null) {
                             lastVelocity = start_vel;
                         }
-
-                        // Build a queue out of the targeted script
-                        List<ScriptEntry> entries = script.getContainer().getBaseEntries(scriptEntry.entryData.clone());
-                        ScriptQueue queue = new InstantQueue(script.getContainer().getName())
-                                .addEntries(entries);
-
-                        // Add relevant definitions
-                        queue.addDefinition("location", lastLocation);
-                        queue.addDefinition("shot_entities", entityList);
-                        queue.addDefinition("last_entity", lastEntity);
-
-                        // Handle hit_entities definition
                         ListTag hitEntities = new ListTag();
                         for (EntityTag entity : entities) {
                             if (arrows.containsKey(entity.getUUID())) {
@@ -398,26 +389,13 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
                                 }
                             }
                         }
-                        queue.addDefinition("hit_entities", hitEntities);
-                        if (definitions != null) {
-                            int x = 1;
-                            String[] definition_names = null;
-                            try {
-                                definition_names = script.getContainer().getString("definitions").split("\\|");
-                            }
-                            catch (Exception e) {
-                                // TODO: less lazy handling
-                            }
-                            for (String definition : definitions) {
-                                String name = definition_names != null && definition_names.length >= x ?
-                                        definition_names[x - 1].trim() : String.valueOf(x);
-                                queue.addDefinition(name, definition);
-                                Debug.echoDebug(scriptEntry, "Adding definition '" + name + "' as " + definition);
-                                x++;
-                            }
-                        }
-                        // Start it!
-                        queue.start();
+                        Consumer<ScriptQueue> configure = (queue) -> {
+                            queue.addDefinition("location", lastLocation);
+                            queue.addDefinition("shot_entities", entityList);
+                            queue.addDefinition("last_entity", lastEntity);
+                            queue.addDefinition("hit_entities", hitEntities);
+                        };
+                        ScriptUtilities.createAndStartQueue(script.getContainer(), null, scriptEntry.entryData, null, configure, null, null, definitions, scriptEntry);
                     }
 
                     scriptEntry.setFinished(true);
@@ -430,7 +408,7 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
             }
         };
 
-        task.runTaskTimer(DenizenAPI.getCurrentInstance(), 0, 2);
+        task.runTaskTimer(DenizenAPI.getCurrentInstance(), 1, 2);
     }
 
     @EventHandler

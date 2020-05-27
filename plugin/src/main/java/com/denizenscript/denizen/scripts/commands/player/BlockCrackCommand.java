@@ -24,10 +24,17 @@ import java.util.UUID;
 
 public class BlockCrackCommand extends AbstractCommand {
 
+    public BlockCrackCommand() {
+        setName("blockcrack");
+        setSyntax("blockcrack [<location>] [progress:<#>] (stack) (players:<player>|...)");
+        setRequiredArguments(2, 4);
+    }
+
     // <--[command]
     // @Name BlockCrack
     // @Syntax blockcrack [<location>] [progress:<#>] (stack) (players:<player>|...)
     // @Required 2
+    // @Maximum 4
     // @Short Shows the player(s) a block cracking animation.
     // @Group player
     //
@@ -63,7 +70,7 @@ public class BlockCrackCommand extends AbstractCommand {
                 scriptEntry.addObject("players", arg.asType(ListTag.class).filter(PlayerTag.class, scriptEntry));
             }
             else if (arg.matchesPrefix("progress")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+                    && arg.matchesInteger()) {
                 scriptEntry.addObject("progress", arg.asElement());
             }
             else if (arg.matchesArgumentType(LocationTag.class)) {

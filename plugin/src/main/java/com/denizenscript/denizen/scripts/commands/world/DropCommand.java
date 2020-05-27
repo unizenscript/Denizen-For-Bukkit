@@ -22,20 +22,26 @@ import java.util.List;
 
 public class DropCommand extends AbstractCommand {
 
+    public DropCommand() {
+        setName("drop");
+        setSyntax("drop [<entity_type>/xp/<item>|...] (<location>) (quantity:<#>) (speed:<#.#>) (delay:<duration>)");
+        setRequiredArguments(1, 5);
+    }
+
     // <--[command]
     // @Name Drop
     // @Syntax drop [<entity_type>/xp/<item>|...] (<location>) (quantity:<#>) (speed:<#.#>) (delay:<duration>)
     // @Required 1
+    // @Maximum 5
     // @Short Drops an item, entity, or experience orb on a location.
     // @Group world
     //
     // @Description
-    // To drop an item, just specify a valid item object. To drop
-    // an entity, specify a generic entity object. Drop can also reward players
-    // with experience orbs by using the 'xp' argument.
+    // To drop an item, just specify a valid item object. To drop an entity, specify a generic entity object.
+    // Drop can also reward players with experience orbs by using the 'xp' argument.
     //
-    // For all three usages, you can optionally specify an integer with 'quantity:'
-    // prefix to drop multiple items/entities/xp.
+    // For all three usages, you can optionally specify an integer with 'quantity:' prefix to drop multiple items/entities/xp.
+    //
     // For items, you can add 'speed:' to modify the launch velocity.
     // You can also add 'delay:' to set the pickup delay of the item.
     //
@@ -95,11 +101,11 @@ public class DropCommand extends AbstractCommand {
             }
             else if (!scriptEntry.hasObject("speed")
                     && arg.matchesPrefix("speed")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)) {
+                    && arg.matchesFloat()) {
                 scriptEntry.addObject("speed", arg.asElement());
             }
             else if (!scriptEntry.hasObject("qty")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer))
+                    && arg.matchesInteger())
             // Quantity arg
             {
                 scriptEntry.addObject("qty", arg.asElement().setPrefix("qty"));
@@ -139,17 +145,14 @@ public class DropCommand extends AbstractCommand {
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-
-        // Get objects
-        LocationTag location = (LocationTag) scriptEntry.getObject("location");
+        LocationTag location = scriptEntry.getObjectTag("location");
         ElementTag qty = scriptEntry.getElement("qty");
         ElementTag action = scriptEntry.getElement("action");
         ElementTag speed = scriptEntry.getElement("speed");
         List<ItemTag> items = (List<ItemTag>) scriptEntry.getObject("item");
-        EntityTag entity = (EntityTag) scriptEntry.getObject("entity");
-        DurationTag delay = (DurationTag) scriptEntry.getObject("delay");
+        EntityTag entity = scriptEntry.getObjectTag("entity");
+        DurationTag delay = scriptEntry.getObjectTag("delay");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(),
                     action.debug() + location.debug() + qty.debug()
@@ -166,7 +169,7 @@ public class DropCommand extends AbstractCommand {
             case DROP_EXP:
                 EntityTag orb = new EntityTag(location.getWorld().spawnEntity(location, EntityType.EXPERIENCE_ORB));
                 ((ExperienceOrb) orb.getBukkitEntity()).setExperience(qty.asInt());
-                entityList.add(orb.toString());
+                entityList.addObject(orb);
                 break;
 
             case DROP_ITEM:
@@ -185,7 +188,7 @@ public class DropCommand extends AbstractCommand {
                                 ((Item) e.getBukkitEntity()).setPickupDelay(delay.getTicksAsInt());
                             }
                         }
-                        entityList.add(e.toString());
+                        entityList.addObject(e);
                     }
                 }
                 break;
@@ -194,7 +197,7 @@ public class DropCommand extends AbstractCommand {
                 if (qty.asInt() > 1 && entity.isUnique()) {
                     Debug.echoDebug(scriptEntry, "Cannot drop multiples of this entity because it is Unique!");
                     entity.spawnAt(location);
-                    entityList.add(entity.toString());
+                    entityList.addObject(entity);
                     break;
                 }
                 for (int x = 0; x < qty.asInt(); x++) {
@@ -204,7 +207,7 @@ public class DropCommand extends AbstractCommand {
                     }
                     EntityTag ent = new EntityTag(entity.getEntityType(), mechanisms);
                     ent.spawnAt(location);
-                    entityList.add(ent.toString());
+                    entityList.addObject(ent);
                 }
                 break;
         }
@@ -212,7 +215,7 @@ public class DropCommand extends AbstractCommand {
         // Add entities to context so that the specific entities dropped can be fetched.
         scriptEntry.addObject("dropped_entities", entityList);
         if (entityList.size() == 1) {
-            scriptEntry.addObject("dropped_entity", entityList.get(0));
+            scriptEntry.addObject("dropped_entity", entityList.getObject(0));
         }
 
     }

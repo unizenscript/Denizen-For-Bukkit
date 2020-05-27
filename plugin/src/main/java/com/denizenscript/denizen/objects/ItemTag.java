@@ -58,23 +58,13 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
     // ItemTags do NOT remember where they came from. If you read an item from an inventory, changing it
     // does not change the original item in the original inventory. You must set it back in.
     //
-    // For format info, see <@link language i@>
-    //
-    // -->
-
-    // <--[language]
-    // @name i@
-    // @group Object Fetcher System
-    // @description
-    // i@ refers to the 'object identifier' of an ItemTag. The 'i@' is notation for Denizen's Object
-    // Fetcher. The constructor for an ItemTag is the basic material type name, or an item script name. Other data is specified in properties.
+    // These use the object notation "i@".
+    // The identity format for items is the basic material type name, or an item script name. Other data is specified in properties.
     // For example, 'i@stick'.
     //
     // Find a list of valid materials at:
     // <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Material.html>
     // Note that some materials on that list are exclusively for use with blocks, and cannot be held as items.
-    //
-    // For general info, see <@link language ItemTag Objects>
     //
     // -->
 
@@ -84,6 +74,7 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
     //    OBJECT FETCHER
     ////////////////
 
+    @Deprecated
     public static ItemTag valueOf(String string) {
         return valueOf(string, null);
     }
@@ -93,11 +84,11 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
     }
 
     public static ItemTag valueOf(String string, Debuggable debugMe) {
-        return valueOf(string, new BukkitTagContext(null, null, false, null, debugMe == null || debugMe.shouldDebug(), null));
+        return valueOf(string, new BukkitTagContext(null, null, null, debugMe == null || debugMe.shouldDebug(), null));
     }
 
     public static ItemTag valueOf(String string, boolean debugMe) {
-        return valueOf(string, new BukkitTagContext(null, null, false, null, debugMe, null));
+        return valueOf(string, new BukkitTagContext(null, null, null, debugMe, null));
     }
 
     @Fetchable("i")
@@ -108,12 +99,13 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
 
         ItemTag stack = null;
 
-        if (ObjectFetcher.DESCRIBED_PATTERN.matcher(string).matches()) {
+        if (ObjectFetcher.isObjectWithProperties(string)) {
             return ObjectFetcher.getObjectFrom(ItemTag.class, string, context);
         }
 
         Notable noted = NotableManager.getSavedObject(string);
         if (noted instanceof ItemTag) {
+            Deprecations.notableItems.warn();
             return (ItemTag) noted;
         }
         if (string.startsWith("i@")) {
@@ -135,14 +127,14 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
             if (ScriptRegistry.containsScript(string, ItemScriptContainer.class)) {
                 ItemScriptContainer isc = ScriptRegistry.getScriptContainerAs(string, ItemScriptContainer.class);
                 // TODO: If a script does not contain tags, get the clean reference here.
-                stack = isc.getItemFrom(context == null ? null : (BukkitTagContext) context);
+                stack = isc.getItemFrom(context);
                 if (stack == null && (context == null || context.debug)) {
                     Debug.echoError("Item script '" + isc.getName() + "' returned a null item.");
                 }
             }
             else if (ScriptRegistry.containsScript(string, BookScriptContainer.class)) {
                 BookScriptContainer book = ScriptRegistry.getScriptContainerAs(string, BookScriptContainer.class);
-                stack = book.getBookFrom(context == null ? null : (BukkitTagContext) context);
+                stack = book.getBookFrom(context);
                 if (stack == null && (context == null || context.debug)) {
                     Debug.echoError("Book script '" + book.getName() + "' returned a null item.");
                 }
@@ -220,6 +212,15 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
             return true;
         }
         return false;
+    }
+
+    public static ItemTag getItemFor(ObjectTag object, TagContext context) {
+        return object instanceof ItemTag ? (ItemTag) object : valueOf(object.toString(), context);
+    }
+
+    @Override
+    public ObjectTag duplicate() {
+        return new ItemTag(item.clone());
     }
 
     ///////////////
@@ -559,6 +560,7 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
 
         // If saved item, return that
         if (isUnique()) {
+            Deprecations.notableItems.warn();
             return "i@" + NotableManager.getSavedId(this) + PropertyParser.getPropertiesString(this);
         }
 
@@ -579,6 +581,7 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
 
             // If saved item, return that
             if (isUnique()) {
+                Deprecations.notableItems.warn();
                 return "i@" + NotableManager.getSavedId(this);
             }
 
@@ -614,7 +617,11 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
 
     @Override
     public boolean isUnique() {
-        return NotableManager.isSaved(this);
+        if (NotableManager.isSaved(this)) {
+            Deprecations.notableItems.warn();
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -625,11 +632,13 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
 
     @Override
     public void makeUnique(String id) {
+        Deprecations.notableItems.warn();
         NotableManager.saveAs(this, id);
     }
 
     @Override
     public void forget() {
+        Deprecations.notableItems.warn();
         NotableManager.remove(this);
     }
 
@@ -664,7 +673,7 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
                     Debug.echoError("Invalid property string '" + properties.get(i) + "'!");
                 }
                 else {
-                    item.safeApplyProperty(new Mechanism(new ElementTag(data.get(0)), new ElementTag((data.get(1)).replace((char) 0x2011, ';')), attribute.context));
+                    item.safeApplyProperty(new Mechanism(new ElementTag(data.get(0)), new ElementTag(data.get(1)), attribute.context));
                 }
             }
             return item;
@@ -748,7 +757,7 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // @description
         // Returns whether the item has an inventory.
         // If this returns true, it will enable access to:
-        // <@link mechanism ItemTag.inventory>, and <@link tag ItemTag.inventory>.
+        // <@link mechanism ItemTag.inventory_contents>, and <@link tag ItemTag.inventory_contents>.
         // -->
         registerTag("has_inventory", (attribute, object) -> {
             return new ElementTag(ItemInventory.describes(object));
@@ -782,6 +791,11 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
             }
             if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13) &&
                     object.getItemStack().hasItemMeta() && object.getItemStack().getItemMeta() instanceof BlockStateMeta) {
+                if (object.getItemStack().getType() == Material.SHIELD) {
+                    MaterialTag material = new MaterialTag(Material.SHIELD);
+                    material.setModernData(new ModernBlockData(((BlockStateMeta) object.getItemStack().getItemMeta()).getBlockState()));
+                    return material;
+                }
                 return new MaterialTag(new ModernBlockData(((BlockStateMeta) object.getItemStack().getItemMeta()).getBlockState()));
             }
             return object.getMaterial();
@@ -813,15 +827,8 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
             return new ElementTag(config.saveToString());
         });
 
-        // <--[tag]
-        // @attribute <ItemTag.full>
-        // @returns ElementTag
-        // @group conversion
-        // @description
-        // Returns a full reusable item identification for this item, with extra, generally useless data.
-        // Irrelevant on modern (1.13+) servers.
-        // -->
         registerTag("full", (attribute, object) -> {
+            Deprecations.fullTags.warn(attribute.context);
             return new ElementTag(object.getFullString());
         });
 
@@ -870,14 +877,8 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
             return list;
         });
 
-        // <--[tag]
-        // @attribute <ItemTag.notable_name>
-        // @returns ElementTag
-        // @description
-        // Gets the name of a Notable ItemTag. If the item isn't noted,
-        // this is null.
-        // -->
         registerTag("notable_name", (attribute, object) -> {
+            Deprecations.notableItems.warn();
             String notname = NotableManager.getSavedId(object);
             if (notname == null) {
                 return null;
@@ -983,6 +984,7 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
 
     public void applyProperty(Mechanism mechanism) {
         if (NotableManager.isExactSavedObject(this)) {
+            Deprecations.notableItems.warn();
             Debug.echoError("Cannot apply properties to noted objects.");
             return;
         }

@@ -15,10 +15,17 @@ import org.bukkit.entity.Player;
 
 public class PoseCommand extends AbstractCommand {
 
+    public PoseCommand() {
+        setName("pose");
+        setSyntax("pose (add/remove/{assume}) [id:<name>] (player/{npc}) (<location>)");
+        setRequiredArguments(1, 4);
+    }
+
     // <--[command]
     // @Name Pose
     // @Syntax pose (add/remove/{assume}) [id:<name>] (player/{npc}) (<location>)
     // @Required 1
+    // @Maximum 4
     // @Plugin Citizens
     // @Short Rotates the player or NPC to match a pose, or adds/removes an NPC's poses.
     // @Group npc
@@ -53,7 +60,6 @@ public class PoseCommand extends AbstractCommand {
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
-        // Parse Arguments
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (arg.matches("add", "assume", "remove")) {
@@ -100,15 +106,12 @@ public class PoseCommand extends AbstractCommand {
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-
-        // Get objects
         TargetType target = (TargetType) scriptEntry.getObject("target");
         NPCTag npc = Utilities.getEntryNPC(scriptEntry);
         Action action = (Action) scriptEntry.getObject("action");
         String id = (String) scriptEntry.getObject("pose_id");
-        LocationTag pose_loc = (LocationTag) scriptEntry.getObject("pose_loc");
+        LocationTag pose_loc = scriptEntry.getObjectTag("pose_loc");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(),
                     ArgumentHelper.debugObj("Target", target.toString())

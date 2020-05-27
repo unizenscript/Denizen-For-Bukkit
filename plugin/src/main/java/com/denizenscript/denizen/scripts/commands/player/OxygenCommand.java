@@ -6,16 +6,22 @@ import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.objects.core.ElementTag;
-import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 
 public class OxygenCommand extends AbstractCommand {
 
+    public OxygenCommand() {
+        setName("oxygen");
+        setSyntax("oxygen [<#>] (type:{remaining}/maximum) (mode:{set}/add/remove)");
+        setRequiredArguments(1, 3);
+    }
+
     // <--[command]
     // @Name Oxygen
     // @Syntax oxygen [<#>] (type:{remaining}/maximum) (mode:{set}/add/remove)
     // @Required 1
+    // @Maximum 3
     // @Short Gives or takes breath from the player.
     // @Group player
     //
@@ -60,7 +66,7 @@ public class OxygenCommand extends AbstractCommand {
                 scriptEntry.addObject("mode", arg.asElement());
             }
             else if (!scriptEntry.hasObject("amount")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+                    && arg.matchesInteger()) {
                 scriptEntry.addObject("amount", arg.asElement());
             }
 

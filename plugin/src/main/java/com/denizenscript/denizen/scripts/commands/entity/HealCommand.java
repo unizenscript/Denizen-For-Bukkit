@@ -17,10 +17,17 @@ import java.util.List;
 
 public class HealCommand extends AbstractCommand {
 
+    public HealCommand() {
+        setName("heal");
+        setSyntax("heal (<#.#>) ({player}/<entity>|...)");
+        setRequiredArguments(0, 2);
+    }
+
     // <--[command]
     // @Name Heal
     // @Syntax heal (<#.#>) ({player}/<entity>|...)
     // @Required 0
+    // @Maximum 2
     // @Short Heals the player or list of entities.
     // @Group entity
     //
@@ -52,7 +59,7 @@ public class HealCommand extends AbstractCommand {
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (!scriptEntry.hasObject("amount")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)) {
+                    && arg.matchesFloat()) {
                 scriptEntry.addObject("amount", arg.asElement());
             }
             else if (!scriptEntry.hasObject("entities")

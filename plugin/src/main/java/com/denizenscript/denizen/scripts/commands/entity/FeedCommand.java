@@ -9,16 +9,22 @@ import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.objects.core.ElementTag;
-import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 
 public class FeedCommand extends AbstractCommand {
 
+    public FeedCommand() {
+        setName("feed");
+        setSyntax("feed (<entity>) (amount:<#>) (saturation:<#.#>)");
+        setRequiredArguments(0, 3);
+    }
+
     // <--[command]
     // @Name Feed
     // @Syntax feed (<entity>) (amount:<#>) (saturation:<#.#>)
     // @Required 0
+    // @Maximum 3
     // @Short Feed the player or npc.
     // @Group entity
     //
@@ -57,12 +63,12 @@ public class FeedCommand extends AbstractCommand {
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
         for (Argument arg : scriptEntry.getProcessedArgs()) {
-            if (arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)
+            if (arg.matchesInteger()
                     && arg.matchesPrefix("amount", "amt", "quantity", "qty", "a", "q")
                     && !scriptEntry.hasObject("amount")) {
                 scriptEntry.addObject("amount", arg.asElement());
             }
-            else if (arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)
+            else if (arg.matchesInteger()
                     && arg.matchesPrefix("saturation", "sat", "s")
                     && !scriptEntry.hasObject("saturation")) {
                 scriptEntry.addObject("saturation", arg.asElement());
@@ -79,13 +85,13 @@ public class FeedCommand extends AbstractCommand {
             }
 
             // Backwards compatibility
-            else if (arg.matches("NPC")
+            else if (arg.matches("npc")
                     && !scriptEntry.hasObject("targetplayer")
                     && !scriptEntry.hasObject("targetnpc")
                     && Utilities.entryHasNPC(scriptEntry)) {
                 scriptEntry.addObject("targetnpc", Utilities.getEntryNPC(scriptEntry));
             }
-            else if (arg.matches("PLAYER")
+            else if (arg.matches("player")
                     && !scriptEntry.hasObject("targetplayer")
                     && !scriptEntry.hasObject("targetnpc")
                     && Utilities.entryHasPlayer(scriptEntry)) {
@@ -114,8 +120,8 @@ public class FeedCommand extends AbstractCommand {
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-        PlayerTag player = (PlayerTag) scriptEntry.getObject("targetplayer");
-        NPCTag npc = (NPCTag) scriptEntry.getObject("targetnpc");
+        PlayerTag player = scriptEntry.getObjectTag("targetplayer");
+        NPCTag npc = scriptEntry.getObjectTag("targetnpc");
         ElementTag amount = scriptEntry.getElement("amount");
         ElementTag saturation = scriptEntry.getElement("saturation");
         if (scriptEntry.dbCallShouldDebug()) {

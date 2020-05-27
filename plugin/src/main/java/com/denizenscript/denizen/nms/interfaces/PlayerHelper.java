@@ -1,14 +1,25 @@
 package com.denizenscript.denizen.nms.interfaces;
 
 import com.denizenscript.denizen.nms.abstracts.ImprovedOfflinePlayer;
-import org.bukkit.Chunk;
-import org.bukkit.NamespacedKey;
-import org.bukkit.OfflinePlayer;
+import com.denizenscript.denizencore.objects.Mechanism;
+import org.bukkit.*;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
 import java.util.*;
 
 public abstract class PlayerHelper {
+
+    public abstract void stopSound(Player player, String sound, SoundCategory category);
+
+    public Entity sendEntitySpawn(Player player, EntityType entityType, Location location, ArrayList<Mechanism> mechanisms) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void sendEntityDestroy(Player player, Entity entity) {
+        throw new UnsupportedOperationException();
+    }
 
     public abstract int getFlyKickCooldown(Player player);
 
@@ -39,4 +50,29 @@ public abstract class PlayerHelper {
     public abstract void quietlyAddRecipe(Player player, NamespacedKey key);
 
     public abstract void resendRecipeDetails(Player player);
+
+    public abstract String getPlayerBrand(Player player);
+
+    public enum SkinLayer {
+        CAPE(0),
+        HAT(6),
+        JACKET(1),
+        LEFT_PANTS(4),
+        LEFT_SLEEVE(2),
+        RIGHT_PANTS(5),
+        RIGHT_SLEEVE(3);
+
+        public int flag;
+
+        SkinLayer(int offset) {
+            this.flag = 1 << offset;
+        }
+    }
+    public byte getSkinLayers(Player player) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setSkinLayers(Player player, byte flags) {
+        throw new UnsupportedOperationException();
+    }
 }

@@ -14,15 +14,22 @@ import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ShowFakeCommand extends AbstractCommand {
+
+    public ShowFakeCommand() {
+        setName("showfake");
+        setSyntax("showfake [<material>|.../cancel] [<location>|...] (players:<player>|...) (d:<duration>{10s})");
+        setRequiredArguments(2, 4);
+    }
 
     // <--[command]
     // @Name ShowFake
     // @Syntax showfake [<material>|.../cancel] [<location>|...] (players:<player>|...) (d:<duration>{10s})
     // @Required 2
+    // @Maximum 4
     // @Short Makes the player see a block change that didn't actually happen.
     // @Group player
     //
@@ -68,7 +75,6 @@ public class ShowFakeCommand extends AbstractCommand {
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
-        // Iterate through arguments
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (!scriptEntry.hasObject("players")
@@ -96,9 +102,7 @@ public class ShowFakeCommand extends AbstractCommand {
         }
 
         if (!scriptEntry.hasObject("players") && Utilities.entryHasPlayer(scriptEntry)) {
-            List<PlayerTag> players = new ArrayList<>();
-            players.add(Utilities.getEntryPlayer(scriptEntry));
-            scriptEntry.defaultObject("players", players);
+            scriptEntry.defaultObject("players", Arrays.asList(Utilities.getEntryPlayer(scriptEntry)));
         }
 
         if (!scriptEntry.hasObject("locations")) {

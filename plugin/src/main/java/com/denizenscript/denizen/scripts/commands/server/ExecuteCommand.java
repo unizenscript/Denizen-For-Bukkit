@@ -25,16 +25,31 @@ import java.util.UUID;
 
 public class ExecuteCommand extends AbstractCommand {
 
+    public ExecuteCommand() {
+        setName("execute");
+        setSyntax("execute [as_player/as_op/as_npc/as_server] [<Bukkit-command>] (silent)");
+        setRequiredArguments(2, 3);
+    }
+
     // <--[command]
     // @Name Execute
     // @Syntax execute [as_player/as_op/as_npc/as_server] [<Bukkit-command>] (silent)
     // @Required 2
+    // @Maximum 3
     // @Short Executes an arbitrary server command as if the player, NPC, or server typed it in.
     // @Group server
     //
     // @Description
-    // Allows the execution of server commands through a Denizen Script. Commands can be executed as the server,
-    // as an npc, an op or as a player, as though it was typed by the respective source.
+    // Allows the execution of server commands through a Denizen script.
+    // Commands can be executed as the server, as an npc, as an opped player, or as a player, as though it was typed by the respective source.
+    //
+    // Note: do not include the slash at the start. A slash at the start will be interpreted equivalent to typing two slashes at the front in-game.
+    //
+    // Note that this is a Denizen script command that executes Bukkit commands.
+    // This can be considered the inverse of '/ex' (a Bukkit command that executes Denizen script commands).
+    //
+    // Generally, you should never use this to execute a vanilla command, there is almost always a script command that should be used instead.
+    // Usually the 'execute' command should be reserved for interacting with external plugins.
     //
     // @Tags
     // <entry[saveName].output> returns the output to an as_server sender.
@@ -56,31 +71,30 @@ public class ExecuteCommand extends AbstractCommand {
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
-        // Parse arguments
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
-            if (arg.matches("ASPLAYER", "AS_PLAYER", "PLAYER")
+            if (arg.matches("asplayer", "as_player")
                     && !scriptEntry.hasObject("type")) {
                 if (!Utilities.entryHasPlayer(scriptEntry)) {
                     throw new InvalidArgumentsException("Must have a Player link when using AS_PLAYER.");
                 }
                 scriptEntry.addObject("type", new ElementTag("AS_PLAYER"));
             }
-            else if (arg.matches("ASOPPLAYER", "ASOP", "AS_OP", "AS_OP_PLAYER", "OP")
+            else if (arg.matches("asop", "as_op")
                     && !scriptEntry.hasObject("type")) {
                 if (!Utilities.entryHasPlayer(scriptEntry)) {
                     throw new InvalidArgumentsException("Must have a Player link when using AS_OP.");
                 }
                 scriptEntry.addObject("type", new ElementTag("AS_OP"));
             }
-            else if (arg.matches("ASNPC", "AS_NPC", "NPC")
+            else if (arg.matches("asnpc", "as_npc")
                     && !scriptEntry.hasObject("type")) {
                 if (!Utilities.entryHasNPC(scriptEntry)) {
                     throw new InvalidArgumentsException("Must have a NPC link when using AS_NPC.");
                 }
                 scriptEntry.addObject("type", new ElementTag("AS_NPC"));
             }
-            else if (arg.matches("ASSERVER", "AS_SERVER", "SERVER")
+            else if (arg.matches("asserver", "as_server")
                     && !scriptEntry.hasObject("type")) {
                 scriptEntry.addObject("type", new ElementTag("AS_SERVER"));
             }
@@ -115,7 +129,6 @@ public class ExecuteCommand extends AbstractCommand {
         ElementTag type = scriptEntry.getElement("type");
         ElementTag silent = scriptEntry.getElement("silent");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(),
                     type.debug()

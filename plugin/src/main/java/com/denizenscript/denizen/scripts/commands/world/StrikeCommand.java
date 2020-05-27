@@ -11,10 +11,17 @@ import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 
 public class StrikeCommand extends AbstractCommand {
 
+    public StrikeCommand() {
+        setName("strike");
+        setSyntax("strike (no_damage) [<location>]");
+        setRequiredArguments(1, 2);
+    }
+
     // <--[command]
     // @Name Strike
     // @Syntax strike (no_damage) [<location>]
     // @Required 1
+    // @Maximum 2
     // @Short Strikes lightning down upon the location.
     // @Group world
     //
@@ -39,7 +46,6 @@ public class StrikeCommand extends AbstractCommand {
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
-        // Iterate through arguments
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (!scriptEntry.hasObject("location")
@@ -55,7 +61,6 @@ public class StrikeCommand extends AbstractCommand {
 
         }
 
-        // Check required args
         if (!scriptEntry.hasObject("location")) {
             throw new InvalidArgumentsException("Missing location argument!");
         }
@@ -67,7 +72,7 @@ public class StrikeCommand extends AbstractCommand {
     public void execute(ScriptEntry scriptEntry) {
 
         // Extract objects from ScriptEntry
-        LocationTag location = (LocationTag) scriptEntry.getObject("location");
+        LocationTag location = scriptEntry.getObjectTag("location");
         Boolean damage = scriptEntry.getElement("damage").asBoolean();
 
         // Debugger

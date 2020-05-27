@@ -8,8 +8,6 @@ import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -53,12 +51,11 @@ public class EntityCombustsScriptEvent extends BukkitScriptEvent implements List
 
     public static EntityCombustsScriptEvent instance;
     public EntityTag entity;
-    private int burntime;
     public EntityCombustEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.getXthArg(1, CoreUtilities.toLowerCase(s)).equals("combusts");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventArgLowerAt(1).equals("combusts");
     }
 
     @Override
@@ -83,7 +80,7 @@ public class EntityCombustsScriptEvent extends BukkitScriptEvent implements List
     @Override
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         if (determinationObj instanceof ElementTag && ((ElementTag) determinationObj).isInt()) {
-            burntime = ((ElementTag) determinationObj).asInt();
+            event.setDuration(((ElementTag) determinationObj).asInt());
             return true;
         }
         return super.applyDetermination(path, determinationObj);
@@ -100,7 +97,7 @@ public class EntityCombustsScriptEvent extends BukkitScriptEvent implements List
             return entity;
         }
         else if (name.equals("duration")) {
-            return new DurationTag(burntime);
+            return new DurationTag(event.getDuration());
         }
         else if (name.equals("source")) {
             if (event instanceof EntityCombustByEntityEvent) {
@@ -128,9 +125,7 @@ public class EntityCombustsScriptEvent extends BukkitScriptEvent implements List
     @EventHandler
     public void onEntityCombusts(EntityCombustEvent event) {
         entity = new EntityTag(event.getEntity());
-        burntime = event.getDuration();
         this.event = event;
         fire(event);
-        event.setDuration(burntime);
     }
 }

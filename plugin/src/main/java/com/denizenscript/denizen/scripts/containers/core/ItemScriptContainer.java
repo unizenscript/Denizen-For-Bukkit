@@ -1,6 +1,7 @@
 package com.denizenscript.denizen.scripts.containers.core;
 
 import com.denizenscript.denizen.utilities.Utilities;
+import com.denizenscript.denizencore.tags.TagContext;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.nbt.LeatherColorer;
 import com.denizenscript.denizen.objects.ItemTag;
@@ -75,6 +76,7 @@ public class ItemScriptContainer extends ScriptContainer {
     //   - ...
     //
     //   # You can optionally add crafting recipes for your item script.
+    //   # Note that recipes won't show in the recipe book when you add a new item script, until you either reconnect or use the "resend_recipes" mechanism.
     //   # | Most item scripts should exclude this key, unless you're specifically building craftable items.
     //   recipes:
     //       1:
@@ -84,6 +86,7 @@ public class ItemScriptContainer extends ScriptContainer {
     //           # If not specified, will be of the form "<type>_<script.name>_<id>" where ID is the recipe list index (starting at 1, counting up).
     //           # IDs will always have the namespace "denizen". So, for the below, the full ID is "denizen:my_custom_item_id"
     //           # Note that most users should not set a custom ID. If you choose to set a custom one, be careful to avoid duplicates or invalid text.
+    //           # Note that the internal rules for Recipe IDs are very strict (limited to "a-z", "0-9", "/", ".", "_", or "-").
     //           recipe_id: my_custom_item_id
     //           # You can optional add a group as well. If unspecified, the item will have no group.
     //           # Groups are used to merge together similar recipes (in particular, multiple recipes for one item).
@@ -94,6 +97,7 @@ public class ItemScriptContainer extends ScriptContainer {
     //           # You are allowed to have non-3x3 shapes (can be any value 1-3 x 1-3, so for example 1x3, 2x1, and 2x2 are fine).
     //           # For an empty slot, use "air".
     //           # By default, items require an exact match. For a material-based match, use the format "material:MaterialNameHere" like "material:stick".
+    //           # To make multiple different items match for any slot, just separate them with slashes, like "stick/stone". To match multiple materials, use "material:a/b/c".
     //           input:
     //           - ItemTag|ItemTag|ItemTag
     //           - ItemTag|ItemTag|ItemTag
@@ -145,6 +149,7 @@ public class ItemScriptContainer extends ScriptContainer {
 
     public ItemScriptContainer(YamlConfiguration configurationSection, String scriptContainerName) {
         super(configurationSection, scriptContainerName);
+        canRunScripts = false;
 
         ItemScriptHelper.item_scripts.put(getName(), this);
         ItemScriptHelper.item_scripts_by_hash_id.put(ItemScriptHelper.createItemScriptID(this), this);
@@ -173,7 +178,7 @@ public class ItemScriptContainer extends ScriptContainer {
 
     boolean isProcessing = false;
 
-    public ItemTag getItemFrom(BukkitTagContext context) {
+    public ItemTag getItemFrom(TagContext context) {
         if (isProcessing) {
             Debug.echoError("Item script contains (or chains to) a reference to itself. Cannot process.");
             return null;
@@ -182,11 +187,11 @@ public class ItemScriptContainer extends ScriptContainer {
             context = new BukkitTagContext(null, null, new ScriptTag(this));
         }
         else {
-            context = new BukkitTagContext(context);
+            context = new BukkitTagContext((BukkitTagContext) context);
             context.script = new ScriptTag(this);
         }
         // Try to use this script to make an item.
-        ItemTag stack = null;
+        ItemTag stack;
         isProcessing = true;
         try {
             if (!contains("material")) {
@@ -199,12 +204,10 @@ public class ItemScriptContainer extends ScriptContainer {
                 material = material.substring(2);
             }
             stack = ItemTag.valueOf(material, this);
-
             // Make sure we're working with a valid base ItemStack
             if (stack == null) {
                 return null;
             }
-
             // Handle listed mechanisms
             if (contains("mechanisms")) {
                 YamlConfiguration mechs = getConfigurationSection("mechanisms");
@@ -223,40 +226,34 @@ public class ItemScriptContainer extends ScriptContainer {
                     stack.safeAdjust(new Mechanism(new ElementTag(key.low), new ElementTag(val), context));
                 }
             }
-
-            ItemMeta meta = stack.getItemStack().getItemMeta();
-            List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
-
             // Set Display Name
             if (contains("display name")) {
+                ItemMeta meta = stack.getItemStack().getItemMeta();
                 String displayName = TagManager.tag(getString("display name"), context);
                 meta.setDisplayName(displayName);
+                stack.getItemStack().setItemMeta(meta);
             }
-
             // Set if the object is bound to the player
             if (contains("bound")) {
                 Deprecations.boundWarning.warn(context);
                 bound = Boolean.valueOf(TagManager.tag(getString("bound"), context));
             }
-
             // Set Lore
             if (contains("lore")) {
-
+                ItemMeta meta = stack.getItemStack().getItemMeta();
+                List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
                 for (String line : getStringList("lore")) {
                     line = TagManager.tag(line, context);
                     lore.add(line);
                 }
+                meta.setLore(lore);
+                stack.getItemStack().setItemMeta(meta);
             }
-
-            meta.setLore(lore);
-            stack.getItemStack().setItemMeta(meta);
-
             // Set Durability
             if (contains("durability")) {
                 short durability = Short.valueOf(getString("durability"));
                 stack.setDurability(durability);
             }
-
             // Set Enchantments
             if (contains("enchantments")) {
                 for (String enchantment : getStringList("enchantments")) {
@@ -283,22 +280,16 @@ public class ItemScriptContainer extends ScriptContainer {
                     }
                 }
             }
-
             // Set Color
             if (contains("color")) {
                 String color = TagManager.tag(getString("color"), context);
                 LeatherColorer.colorArmor(stack, color);
             }
-
             // Set Book
             if (contains("book")) {
-                BookScriptContainer book = ScriptRegistry
-                        .getScriptContainer(TagManager.tag(getString("book"),
-                                context).replace("s@", ""));
-
+                BookScriptContainer book = ScriptRegistry.getScriptContainer(TagManager.tag(getString("book"), context).replace("s@", ""));
                 stack = book.writeBookTo(stack, context);
             }
-
             stack.setItemScript(this);
         }
         catch (Exception e) {

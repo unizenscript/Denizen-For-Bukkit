@@ -52,7 +52,7 @@ public class PlayerWalksOverScriptEvent extends BukkitScriptEvent implements Lis
     @Override
     public boolean matches(ScriptPath path) {
         String loc = path.eventArgLowerAt(3);
-        if (!loc.equals(CoreUtilities.toLowerCase(notable)) || tryLocation(new LocationTag(event.getPlayer().getLocation()), loc)) {
+        if (!loc.equals("notable") && !equalityCheck(notable, loc, regexHandle(loc))) {
             return false;
         }
         return super.matches(path);
@@ -78,16 +78,17 @@ public class PlayerWalksOverScriptEvent extends BukkitScriptEvent implements Lis
 
     @EventHandler
     public void onPlayerWalksOver(PlayerMoveEvent event) {
-        if (event.getFrom().getBlock().equals(event.getTo().getBlock())) {
+        if (LocationTag.isSameBlock(event.getFrom(), event.getTo())) {
             return;
         }
         if (EntityTag.isNPC(event.getPlayer())) {
             return;
         }
-        notable = NotableManager.getSavedId(new LocationTag(event.getTo().getBlock().getLocation()));
+        notable = NotableManager.getSavedId(new LocationTag(event.getTo()).getBlockLocation());
         if (notable == null) {
             return;
         }
+        notable = CoreUtilities.toLowerCase(notable);
         this.event = event;
         fire(event);
     }

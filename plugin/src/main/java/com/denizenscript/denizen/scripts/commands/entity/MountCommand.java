@@ -17,10 +17,17 @@ import java.util.List;
 
 public class MountCommand extends AbstractCommand {
 
+    public MountCommand() {
+        setName("mount");
+        setSyntax("mount (cancel) [<entity>|...] (<location>)");
+        setRequiredArguments(0, 3);
+    }
+
     // <--[command]
     // @Name Mount
     // @Syntax mount (cancel) [<entity>|...] (<location>)
     // @Required 0
+    // @Maximum 3
     // @Short Mounts one entity onto another.
     // @Group entity
     //
@@ -53,8 +60,6 @@ public class MountCommand extends AbstractCommand {
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-
-        // Initialize necessary fields
 
         List<EntityTag> entities = null;
 
@@ -107,13 +112,11 @@ public class MountCommand extends AbstractCommand {
     @SuppressWarnings("unchecked")
     @Override
     public void execute(final ScriptEntry scriptEntry) {
-        // Get objects
 
-        LocationTag location = (LocationTag) scriptEntry.getObject("location");
+        LocationTag location = scriptEntry.getObjectTag("location");
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
         boolean cancel = scriptEntry.hasObject("cancel");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), (cancel ? ArgumentHelper.debugObj("cancel", cancel) : "") +
                     ArgumentHelper.debugObj("location", location) +

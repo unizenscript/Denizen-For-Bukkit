@@ -80,6 +80,7 @@ public class Utilities {
                         (type.equals("furnace") && recipe instanceof FurnaceRecipe) ||
                         (type.equals("cooking") && recipe instanceof CookingRecipe) ||
                         (type.equals("blasting") && recipe instanceof BlastingRecipe) ||
+                        (type.equals("campfire") && recipe instanceof CampfireRecipe) ||
                         (type.equals("shaped") && recipe instanceof ShapedRecipe) ||
                         (type.equals("shapeless") && recipe instanceof ShapelessRecipe) ||
                         (type.equals("smoking") && recipe instanceof SmokingRecipe) ||
@@ -197,21 +198,13 @@ public class Utilities {
     }
 
     public static boolean isWalkable(Location location) {
+        if (location.getBlockY() < 1 || location.getBlockY() > 254) {
+            return false;
+        }
         BlockHelper blockHelper = NMSHandler.getBlockHelper();
         return !blockHelper.isSafeBlock(location.clone().subtract(0, 1, 0).getBlock().getType())
                 && blockHelper.isSafeBlock(location.getBlock().getType())
                 && blockHelper.isSafeBlock(location.clone().add(0, 1, 0).getBlock().getType());
-    }
-
-    public static String[] wrapWords(String text, int width) {
-        StringBuilder sb = new StringBuilder(text);
-
-        int i = 0;
-        while (i + width < sb.length() && (i = sb.lastIndexOf(" ", i + width)) != -1) {
-            sb.replace(i, i + 1, "\n");
-        }
-
-        return sb.toString().split("\n");
     }
 
     /**
@@ -228,8 +221,8 @@ public class Utilities {
                 .replaceAll("(?i)<TEXT>", replacer);
 
         // Fill in tags // TODO: Debug option?
-        talkFormat = TagManager.tag(talkFormat, new BukkitTagContext(player, npc, false, null, true, null)).replace(replacer, message);
-        bystanderFormat = TagManager.tag(bystanderFormat, new BukkitTagContext(player, npc, false, null, true, null)).replace(replacer, message);
+        talkFormat = TagManager.tag(talkFormat, new BukkitTagContext(player, npc, null, true, null)).replace(replacer, message);
+        bystanderFormat = TagManager.tag(bystanderFormat, new BukkitTagContext(player, npc, null, true, null)).replace(replacer, message);
 
         // Send message to player
         player.getPlayerEntity().sendMessage(talkFormat);

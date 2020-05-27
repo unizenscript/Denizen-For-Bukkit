@@ -1,12 +1,16 @@
 package com.denizenscript.denizen.npc.traits;
 
+import com.denizenscript.denizen.nms.NMSHandler;
+import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.utilities.Utilities;
 import net.citizensnpcs.api.persistence.Persist;
 import net.citizensnpcs.api.trait.Trait;
 import net.citizensnpcs.util.PlayerAnimation;
 import org.bukkit.Location;
+import org.bukkit.block.data.type.Bed;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Villager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.BlockBreakEvent;
 
@@ -31,6 +35,30 @@ public class SleepingTrait extends Trait {
         }
     }
 
+    @Override
+    public void onSpawn() {
+        if (sleeping) {
+            internalSleepNow();
+        }
+    }
+
+    public void internalSleepNow() {
+        if (npc.getEntity() instanceof Villager) {
+            if (!((Villager) npc.getEntity()).sleep(bedLocation.clone())) {
+                return;
+            }
+        }
+        else { // Player
+            if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13) && bedLocation.getBlock().getBlockData() instanceof Bed) {
+                ((Player) npc.getEntity()).sleep(bedLocation.clone(), true);
+            }
+            else {
+                PlayerAnimation.SLEEP.play((Player) npc.getEntity());
+            }
+        }
+        sleeping = true;
+    }
+
     /**
      * Makes the NPC sleep
      */
@@ -38,11 +66,10 @@ public class SleepingTrait extends Trait {
         if (sleeping) {
             return;
         }
-
-        PlayerAnimation.SLEEP.play((Player) npc.getEntity());
-
-        sleeping = true;
-        bedLocation = npc.getEntity().getLocation();
+        if (bedLocation == null) {
+            bedLocation = npc.getEntity().getLocation().clone();
+        }
+        internalSleepNow();
     }
 
     /**
@@ -60,12 +87,9 @@ public class SleepingTrait extends Trait {
          * playing sleep animation.
          */
         //TODO Adjust the .add()
-        npc.getEntity().teleport(location.add(0.5, 0, 0.5));
-
-        PlayerAnimation.SLEEP.play((Player) npc.getEntity());
-
-        sleeping = true;
-        bedLocation = location;
+        npc.getEntity().teleport(location.clone().add(0.5, 0, 0.5));
+        bedLocation = location.clone();
+        internalSleepNow();
     }
 
     /**
@@ -75,11 +99,17 @@ public class SleepingTrait extends Trait {
         if (!sleeping) {
             return;
         }
-
-        PlayerAnimation.STOP_SLEEPING.play((Player) npc.getEntity());
-
-        bedLocation = null;
         sleeping = false;
+        if (npc.getEntity() instanceof Villager) {
+            ((Villager) npc.getEntity()).wakeup();
+        }
+        else {
+            if (((Player) npc.getEntity()).isSleeping()) {
+                ((Player) npc.getEntity()).wakeup(false);
+            }
+            PlayerAnimation.STOP_SLEEPING.play((Player) npc.getEntity());
+        }
+        bedLocation = null;
     }
 
     /**
