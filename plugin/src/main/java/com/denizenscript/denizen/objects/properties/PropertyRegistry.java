@@ -176,7 +176,6 @@ public class PropertyRegistry {
             PropertyParser.registerProperty(MaterialDelay.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialDirectional.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialDrags.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialFaces.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialHalf.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialInstrument.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialLocked.class, MaterialTag.class);
@@ -190,7 +189,6 @@ public class PropertyRegistry {
             PropertyParser.registerProperty(MaterialOpen.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialOrientation.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialPersistent.class, MaterialTag.class);
-            PropertyParser.registerProperty(MaterialPickle.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialRailShape.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialRedstonePower.class, MaterialTag.class);
             PropertyParser.registerProperty(MaterialRotation.class, MaterialTag.class);

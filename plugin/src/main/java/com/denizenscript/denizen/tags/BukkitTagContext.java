@@ -13,6 +13,12 @@ public class BukkitTagContext extends TagContext {
     public PlayerTag player;
     public NPCTag npc;
 
+    // Unizen-added to stop addons from outright breaking
+    @Deprecated
+    public BukkitTagContext(PlayerTag player, NPCTag npc, boolean instant, ScriptEntry entry, boolean debug, ScriptTag script) {
+        this(player, npc, entry, debug, script);
+    }
+
     public BukkitTagContext(BukkitTagContext copyFrom) {
         this(copyFrom.player, copyFrom.npc, copyFrom.entry, copyFrom.debug, copyFrom.script);
     }
