@@ -101,7 +101,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
             }
             InventoryTag tagForm = getTagFormFor(event.getInventory());
             if (isGenericTrackable(tagForm)) {
-                trackTemporaryInventory(event.getInventory(), tagForm);
+                trackTemporaryInventory(tagForm);
                 retainedInventoryLinks.put(event.getInventory(), tagForm);
             }
         }
