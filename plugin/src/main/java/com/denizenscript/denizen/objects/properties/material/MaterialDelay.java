@@ -7,30 +7,30 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.objects.properties.PropertyParser;
-import org.bukkit.block.data.type.SeaPickle;
+import org.bukkit.block.data.type.Repeater;
 
-public class MaterialPickle implements Property {
+public class MaterialDelay implements Property {
 
     public static boolean describes(ObjectTag material) {
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
-                && ((MaterialTag) material).getModernData().data instanceof SeaPickle;
+                && ((MaterialTag) material).getModernData().data instanceof Repeater;
     }
 
-    public static MaterialPickle getFrom(ObjectTag _material) {
+    public static MaterialDelay getFrom(ObjectTag _material) {
         if (!describes(_material)) {
             return null;
         }
         else {
-            return new MaterialPickle((MaterialTag) _material);
+            return new MaterialDelay((MaterialTag) _material);
         }
     }
 
     public static final String[] handledMechs = new String[] {
-            "pickle_count"
+            "delay"
     };
 
-    private MaterialPickle(MaterialTag _material) {
+    private MaterialDelay(MaterialTag _material) {
         material = _material;
     }
 
@@ -39,55 +39,57 @@ public class MaterialPickle implements Property {
     public static void registerTags() {
 
         // <--[tag]
-        // @attribute <MaterialTag.pickle_count>
+        // @attribute <MaterialTag.delay>
         // @returns ElementTag(Number)
-        // @mechanism MaterialTag.pickle_count
+        // @mechanism MaterialTag.delay
         // @group properties
         // @description
-        // Returns the amount of pickles in a Sea Pickle material.
+        // Returns the current delay of a redstone repeater material.
         // -->
-        PropertyParser.<MaterialPickle>registerTag("pickle_count", (attribute, material) -> {
+        PropertyParser.<MaterialDelay>registerTag("delay", (attribute, material) -> {
             return new ElementTag(material.getCurrent());
         });
 
         // <--[tag]
-        // @attribute <MaterialTag.pickle_max>
+        // @attribute <MaterialTag.max_delay>
         // @returns ElementTag(Number)
+        // @mechanism MaterialTag.delay
         // @group properties
         // @description
-        // Returns the maximum amount of pickles allowed in a Sea Pickle material.
+        // Returns the maximum delay allowed for the redstone repeater material.
         // -->
-        PropertyParser.<MaterialPickle>registerTag("pickle_max", (attribute, material) -> {
+        PropertyParser.<MaterialDelay>registerTag("max_delay", (attribute, material) -> {
             return new ElementTag(material.getMax());
         });
 
         // <--[tag]
-        // @attribute <MaterialTag.pickle_min>
+        // @attribute <MaterialTag.min_delay>
         // @returns ElementTag(Number)
+        // @mechanism MaterialTag.delay
         // @group properties
         // @description
-        // Returns the minimum amount of pickles allowed in a Sea Pickle material.
+        // Returns the minimum delay allowed for the redstone repeater material.
         // -->
-        PropertyParser.<MaterialPickle>registerTag("pickle_min", (attribute, material) -> {
+        PropertyParser.<MaterialDelay>registerTag("min_delay", (attribute, material) -> {
             return new ElementTag(material.getMin());
         });
 
     }
 
-    public SeaPickle getSeaPickle() {
-        return (SeaPickle) material.getModernData().data;
+    public Repeater getRepeater() {
+        return (Repeater) material.getModernData().data;
     }
 
     public int getCurrent() {
-        return getSeaPickle().getPickles();
+        return getRepeater().getDelay();
     }
 
     public int getMax() {
-        return getSeaPickle().getMaximumPickles();
+        return getRepeater().getMaximumDelay();
     }
 
     public int getMin() {
-        return getSeaPickle().getMinimumPickles();
+        return getRepeater().getMinimumDelay();
     }
 
     @Override
@@ -97,7 +99,7 @@ public class MaterialPickle implements Property {
 
     @Override
     public String getPropertyId() {
-        return "pickle_count";
+        return "delay";
     }
 
     @Override
@@ -105,20 +107,22 @@ public class MaterialPickle implements Property {
 
         // <--[mechanism]
         // @object MaterialTag
-        // @name pickle_count
+        // @name delay
         // @input ElementTag(Number)
         // @description
-        // Sets the amount of pickles in a Sea Pickle material.
+        // Sets the delay of a redstone repeater material.
         // @tags
-        // <MaterialTag.pickle_count>
+        // <MaterialTag.delay>
+        // <MaterialTag.max_delay>
+        // <MaterialTag.min_delay>
         // -->
-        if (mechanism.matches("pickle_count") && mechanism.requireInteger()) {
-            int count = mechanism.getValue().asInt();
-            if (count < getMin() || count > getMax()) {
-                Debug.echoError("Pickle count value '" + count + "' is not valid. Must be between " + getMin() + " and " + getMax() + ".");
+        if (mechanism.matches("delay") && mechanism.requireInteger()) {
+            int delay = mechanism.getValue().asInt();
+            if (delay < getMin() || delay > getMax()) {
+                Debug.echoError("Delay value '" + delay + "' is not valid. Must be between " + getMin() + " and " + getMax() + ".");
                 return;
             }
-            getSeaPickle().setPickles(count);
+            getRepeater().setDelay(delay);
         }
     }
 }

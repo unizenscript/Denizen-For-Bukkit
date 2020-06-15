@@ -20,10 +20,16 @@ public class BukkitCommandRegistry extends CommandRegistry {
 
     public static class AutoNoCitizensCommand extends AbstractCommand {
 
+        public static void registerMany(String... names) {
+            for (String name : names) {
+                registerFor(name);
+            }
+        }
+
         public static void registerFor(String name) {
             AutoNoCitizensCommand cmd = new AutoNoCitizensCommand();
             cmd.name = name;
-            cmd.activate().as(name).withOptions("Requires Citizens", 0);
+            cmd.syntax = "(Citizens Required)";
         }
 
         public String name;
@@ -188,7 +194,7 @@ public class BukkitCommandRegistry extends CommandRegistry {
         registerCoreMember(ScribeCommand.class, "SCRIBE", "scribe [<script>] (<item>/give/equip/{drop <location>})", 1);
         registerCoreMember(ShootCommand.class, "SHOOT", "shoot [<entity>|...] (origin:<entity>/<location>) (destination:<location>) (height:<#.#>) (speed:<#.#>) (script:<name>) (def:<element>|...) (shooter:<entity>) (spread:<#.#>) (lead:<location>) (no_rotate)", 1);
         registerCoreMember(ShowFakeCommand.class, "SHOWFAKE", "showfake [<material>|.../cancel] [<location>|...] (players:<player>|...) (d:<duration>{10s})", 2);
-        registerCoreMember(SidebarCommand.class, "SIDEBAR", "sidebar (add/remove/{set}) (title:<title>) (scores:<#>|...) (values:<line>|...) (start:<#>/{num_of_lines}) (increment:<#>/{-1}) (players:<player>|...) (per_player)", 1);
+        registerCoreMember(SidebarCommand.class, "SIDEBAR", "sidebar (add/remove/{set}) (title:<title>) (lines:<#>|...) (values:<line>|...) (start:<#>/{num_of_lines}) (increment:<#>/{-1}) (players:<player>|...) (per_player)", 1);
         registerCoreMember(SignCommand.class, "SIGN", "sign (type:{automatic}/sign_post/wall_sign) (material:<material>) [<line>|...] [<location>] (direction:n/s/e/w)", 1);
         registerCoreMember(SitCommand.class, "SIT", "sit (<location>)", 0);
         registerCoreMember(SpawnCommand.class, "SPAWN", "spawn [<entity>|...] (<location>) (target:<entity>) (persistent)", 1);
@@ -220,10 +226,6 @@ public class BukkitCommandRegistry extends CommandRegistry {
         else {
             AutoNoCitizensCommand.registerFor("VULNERABLE");
         }
-        registerCoreMember(WalkCommand.class, "WALK", "walk (<entity>|...) [<location>/stop] (speed:<#>) (auto_range) (radius:<#.#>) (lookat:<location>)", 1);
-        registerCoreMember(WeatherCommand.class, "WEATHER", "weather [{global}/player] [sunny/storm/thunder/reset] (<world>) (reset:<duration>)", 1);
-        registerCoreMember(WorldBorderCommand.class, "WORLDBORDER", "worldborder [<world>/<player>|...] (center:<location>) (size:<#.#>) (current_size:<#.#>) (damage:<#.#>) (damagebuffer:<#.#>) (warningdistance:<#>) (warningtime:<duration>) (duration:<duration>) (reset)", 2);
-        registerCoreMember(ZapCommand.class, "ZAP", "zap (<script>) [<step>] (<duration>)", 0);
 
         Debug.echoApproval("Loaded core commands: " + instances.keySet().toString());
     }

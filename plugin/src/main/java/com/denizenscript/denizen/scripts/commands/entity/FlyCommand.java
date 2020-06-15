@@ -27,10 +27,17 @@ import java.util.List;
 
 public class FlyCommand extends AbstractCommand {
 
+    public FlyCommand() {
+        setName("fly");
+        setSyntax("fly (cancel) [<entity>|...] (controller:<player>) (origin:<location>) (destinations:<location>|...) (speed:<#.#>) (rotationthreshold:<#.#>)");
+        setRequiredArguments(1, 7);
+    }
+
     // <--[command]
     // @Name Fly
     // @Syntax fly (cancel) [<entity>|...] (controller:<player>) (origin:<location>) (destinations:<location>|...) (speed:<#.#>) (rotationthreshold:<#.#>)
     // @Required 1
+    // @Maximum 7
     // @Short Make an entity fly where its controller is looking or fly to waypoints.
     // @Group entity
     //
@@ -61,8 +68,6 @@ public class FlyCommand extends AbstractCommand {
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
-        // Initialize necessary fields
-
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (!scriptEntry.hasObject("cancel")
@@ -92,14 +97,14 @@ public class FlyCommand extends AbstractCommand {
 
                 scriptEntry.addObject("entities", arg.asType(ListTag.class).filter(EntityTag.class, scriptEntry));
             }
-            else if (!scriptEntry.hasObject("rotationthreshold")
+            else if (!scriptEntry.hasObject("rotation_threshold")
                     && arg.matchesPrefix("rotationthreshold", "rotation", "r")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Float)) {
+                    && arg.matchesFloat()) {
 
-                scriptEntry.addObject("rotationThreshold", arg.asElement());
+                scriptEntry.addObject("rotation_threshold", arg.asElement());
             }
             else if (!scriptEntry.hasObject("speed")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)) {
+                    && arg.matchesFloat()) {
 
                 scriptEntry.addObject("speed", arg.asElement());
             }
@@ -115,7 +120,7 @@ public class FlyCommand extends AbstractCommand {
 
         // Use a default speed and rotation threshold if they are not specified
         scriptEntry.defaultObject("speed", new ElementTag(1.2));
-        scriptEntry.defaultObject("rotationThreshold", new ElementTag(15));
+        scriptEntry.defaultObject("rotation_threshold", new ElementTag(15));
 
         // Check to make sure required arguments have been filled
         if (!scriptEntry.hasObject("entities")) {
@@ -129,9 +134,8 @@ public class FlyCommand extends AbstractCommand {
     @SuppressWarnings("unchecked")
     @Override
     public void execute(final ScriptEntry scriptEntry) {
-        // Get objects
 
-        LocationTag origin = (LocationTag) scriptEntry.getObject("origin");
+        LocationTag origin = scriptEntry.getObjectTag("origin");
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
         final List<LocationTag> destinations = scriptEntry.hasObject("destinations") ?
                 (List<LocationTag>) scriptEntry.getObject("destinations") :
@@ -140,7 +144,7 @@ public class FlyCommand extends AbstractCommand {
         // Set freeflight to true only if there are no destinations
         final boolean freeflight = destinations.size() < 1;
 
-        EntityTag controller = (EntityTag) scriptEntry.getObject("controller");
+        EntityTag controller = scriptEntry.getObjectTag("controller");
 
         // If freeflight is on, we need to do some checks
         if (freeflight) {
@@ -195,10 +199,9 @@ public class FlyCommand extends AbstractCommand {
         }
 
         final double speed = ((ElementTag) scriptEntry.getObject("speed")).asDouble();
-        final float rotationThreshold = ((ElementTag) scriptEntry.getObject("rotationthreshold")).asFloat();
+        final float rotationThreshold = ((ElementTag) scriptEntry.getObject("rotation_threshold")).asFloat();
         boolean cancel = scriptEntry.hasObject("cancel");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), (cancel ? ArgumentHelper.debugObj("cancel", cancel) : "") +
                     ArgumentHelper.debugObj("origin", origin) +

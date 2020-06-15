@@ -32,6 +32,7 @@ import net.citizensnpcs.npc.skin.SkinnableEntity;
 import net.citizensnpcs.trait.Anchors;
 import net.citizensnpcs.trait.LookClose;
 import net.citizensnpcs.trait.Poses;
+import net.citizensnpcs.trait.SkinTrait;
 import net.citizensnpcs.trait.waypoint.*;
 import net.citizensnpcs.util.Anchor;
 import net.citizensnpcs.util.Pose;
@@ -45,6 +46,7 @@ import org.bukkit.inventory.InventoryHolder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFormObject {
@@ -55,19 +57,9 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
     // @description
     // An NPCTag represents an NPC configured through Citizens.
     //
-    // For format info, see <@link language n@>
-    //
-    // -->
-
-    // <--[language]
-    // @name n@
-    // @group Object Fetcher System
-    // @description
-    // n@ refers to the 'object identifier' of an NPCTag. The 'n@' is notation for Denizen's Object
-    // Fetcher. The constructor for an NPCTag is the NPC's id number.
+    // These use the object notation "n@".
+    // The identity format for NPCs is the NPC's id number.
     // For example, 'n@5'.
-    //
-    // For general info, see <@link language NPCTag Objects>
     //
     // -->
 
@@ -602,19 +594,28 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // Returns the location associated with the specified anchor, or null if it doesn't exist.
         // -->
         registerTag("anchor", (attribute, object) -> {
-            if (attribute.hasContext(1)
-                    && object.getCitizen().getTrait(Anchors.class).getAnchor(attribute.getContext(1)) != null) {
-                return new LocationTag(object.getCitizen().getTrait(Anchors.class)
-                        .getAnchor(attribute.getContext(1)).getLocation());
+            Anchors trait = object.getCitizen().getTrait(Anchors.class);
+            if (attribute.hasContext(1)) {
+                Anchor anchor = trait.getAnchor(attribute.getContext(1));
+                    if (anchor != null) {
+                        return new LocationTag(anchor.getLocation());
+                    }
+                    else {
+                        attribute.echoError("NPC Anchor '" + attribute.getContext(1) + "' is not defined.");
+                        return null;
+                    }
             }
             else if (attribute.startsWith("list", 2)) {
                 attribute.fulfill(1);
                 Deprecations.npcAnchorListTag.warn(attribute.context);
                 ListTag list = new ListTag();
-                for (Anchor anchor : object.getCitizen().getTrait(Anchors.class).getAnchors()) {
+                for (Anchor anchor : trait.getAnchors()) {
                     list.add(anchor.getName());
                 }
                 return list;
+            }
+            else {
+                attribute.echoError("npc.anchor[...] tag must have an input.");
             }
             return null;
         }, "anchors");
@@ -688,10 +689,11 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // @attribute <NPCTag.list_flags[(regex:)<search>]>
         // @returns ListTag
         // @description
-        // Returns a list of an NPC's flag names, with an optional search for
-        // names containing a certain pattern.
+        // Returns a list of an NPC's flag names, with an optional search for names containing a certain pattern.
+        // Note that this is exclusively for debug/testing reasons, and should never be used in a real script.
         // -->
         registerTag("list_flags", (attribute, object) -> {
+            FlagManager.listFlagsTagWarning.warn(attribute.context);
             ListTag allFlags = new ListTag(DenizenAPI.getCurrentInstance().flagManager().listNPCFlags(object.getId()));
             ListTag searchFlags = null;
             if (!allFlags.isEmpty() && attribute.hasContext(1)) {
@@ -789,7 +791,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         });
 
         // <--[tag]
-        // @attribute <NPCTag.is_engaged>
+        // @attribute <NPCTag.engaged>
         // @returns ElementTag(Boolean)
         // @description
         // Returns whether the NPC is currently engaged.
@@ -849,7 +851,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // Returns whether the NPC has a custom skin.
         // -->
         registerTag("has_skin", (attribute, object) -> {
-            return new ElementTag(object.getCitizen().data().has(NPC.PLAYER_SKIN_UUID_METADATA));
+            return new ElementTag(object.getCitizen().hasTrait(SkinTrait.class) && object.getCitizen().getTrait(SkinTrait.class).getSkinName() != null);
         });
 
         // <--[tag]
@@ -858,17 +860,35 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // @mechanism NPCTag.skin_blob
         // @description
         // Returns the NPC's custom skin blob, if any.
+        // In the format: "texture;signature" (two values separated by a semicolon).
         // -->
         registerTag("skin_blob", (attribute, object) -> {
-            if (object.getCitizen().data().has(NPC.PLAYER_SKIN_TEXTURE_PROPERTIES_METADATA)) {
-                String tex = object.getCitizen().data().get(NPC.PLAYER_SKIN_TEXTURE_PROPERTIES_METADATA).toString();
+            if (object.getCitizen().hasTrait(SkinTrait.class)) {
+                SkinTrait skin = object.getCitizen().getTrait(SkinTrait.class);
+                String tex = skin.getTexture();
                 String sign = "";
-                if (object.getCitizen().data().has(NPC.PLAYER_SKIN_TEXTURE_PROPERTIES_SIGN_METADATA)) {
-                    sign = ";" + object.getCitizen().data().get(NPC.PLAYER_SKIN_TEXTURE_PROPERTIES_SIGN_METADATA).toString();
+                if (skin.getSignature() != null) {
+                    sign = ";" + skin.getSignature();
                 }
                 return new ElementTag(tex + sign);
             }
             return null;
+        });
+
+        // <--[tag]
+        // @attribute <NPCTag.skull_skin>
+        // @returns ElementTag
+        // @description
+        // Returns the NPC's current skin blob, formatted for input to a Player Skull item.
+        // In the format: "UUID|Texture" (two values separated by pipes).
+        // See also <@link tag NPCTag.skin_blob>.
+        // -->
+        registerTag("skull_skin", (attribute, object) -> {
+            if (!object.getCitizen().hasTrait(SkinTrait.class)) {
+                return null;
+            }
+            SkinTrait skin = object.getCitizen().getTrait(SkinTrait.class);
+            return new ElementTag(skin.getSkinName() + "|" + skin.getTexture());
         });
 
         // <--[tag]
@@ -879,8 +899,8 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // Returns the NPC's custom skin, if any.
         // -->
         registerTag("skin", (attribute, object) -> {
-            if (object.getCitizen().data().has(NPC.PLAYER_SKIN_UUID_METADATA)) {
-                return new ElementTag(object.getCitizen().data().get(NPC.PLAYER_SKIN_UUID_METADATA).toString());
+            if (object.getCitizen().hasTrait(SkinTrait.class)) {
+                return new ElementTag(object.getCitizen().getTrait(SkinTrait.class).getSkinName());
             }
             return null;
         });
@@ -1279,24 +1299,23 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // -->
         if (mechanism.matches("skin_blob")) {
             if (!mechanism.hasValue()) {
-                getCitizen().data().remove("cached-skin-uuid");
-                getCitizen().data().remove(NPC.PLAYER_SKIN_TEXTURE_PROPERTIES_METADATA);
-                getCitizen().data().remove(NPC.PLAYER_SKIN_TEXTURE_PROPERTIES_SIGN_METADATA);
-                if (getCitizen().isSpawned()) {
-                    getCitizen().despawn(DespawnReason.PENDING_RESPAWN);
-                    getCitizen().spawn(getCitizen().getStoredLocation());
+                if (getCitizen().hasTrait(SkinTrait.class)) {
+                    getCitizen().getTrait(SkinTrait.class).clearTexture();
+                    if (getCitizen().isSpawned()) {
+                        getCitizen().despawn(DespawnReason.PENDING_RESPAWN);
+                        getCitizen().spawn(getCitizen().getStoredLocation());
+                    }
                 }
             }
             else {
+                SkinTrait skinTrait = getCitizen().getTrait(SkinTrait.class);
                 String[] dat = mechanism.getValue().asString().split(";");
-                getCitizen().data().remove("cached-skin-uuid");
-                getCitizen().data().setPersistent(NPC.PLAYER_SKIN_TEXTURE_PROPERTIES_METADATA, dat[0]);
-                getCitizen().data().setPersistent(NPC.PLAYER_SKIN_TEXTURE_PROPERTIES_SIGN_METADATA, dat.length > 1 ? dat[1] : null);
-                if (dat.length > 2) {
-                    getCitizen().data().setPersistent(NPC.PLAYER_SKIN_UUID_METADATA, dat[2]);
+                if (dat.length < 2) {
+                    Debug.echoError("Invalid skin_blob input. Must specify texture;signature;name in full.");
+                    return;
                 }
+                skinTrait.setSkinPersistent(dat.length > 2 ? dat[2] : UUID.randomUUID().toString(), dat[1], dat[0]);
                 if (getCitizen().isSpawned() && getCitizen().getEntity() instanceof SkinnableEntity) {
-                    ((SkinnableEntity) getCitizen().getEntity()).setSkinPersistent(dat.length > 2 ? dat[2] : "unspecified", dat.length > 1 ? dat[1] : null, dat[0]);
                     ((SkinnableEntity) getCitizen().getEntity()).getSkinTracker().notifySkinChange(true);
                 }
             }
@@ -1314,10 +1333,13 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // -->
         if (mechanism.matches("skin")) {
             if (!mechanism.hasValue()) {
-                getCitizen().data().remove(NPC.PLAYER_SKIN_UUID_METADATA);
+                if (getCitizen().hasTrait(SkinTrait.class)) {
+                    getCitizen().getTrait(SkinTrait.class).clearTexture();
+                }
             }
             else {
-                getCitizen().data().setPersistent(NPC.PLAYER_SKIN_UUID_METADATA, mechanism.getValue().asString());
+                SkinTrait skinTrait = getCitizen().getTrait(SkinTrait.class);
+                skinTrait.setSkinName(mechanism.getValue().asString());
             }
             if (getCitizen().isSpawned()) {
                 getCitizen().despawn(DespawnReason.PENDING_RESPAWN);
@@ -1331,24 +1353,20 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // @input ItemTag
         // @description
         // Sets the item type of the item.
-        // @tags
-        // None
         // -->
         if (mechanism.matches("item_type") && mechanism.requireObject(ItemTag.class)) {
             ItemTag item = mechanism.valueAsType(ItemTag.class);
             Material mat = item.getMaterial().getMaterial();
-            int data = item.getMaterial().getData((byte) 0);
             switch (getEntity().getType()) {
                 case DROPPED_ITEM:
                     ((org.bukkit.entity.Item) getEntity()).getItemStack().setType(mat);
-                    //((ItemController.ItemNPC) getEntity()).setType(mat, data);
                     break;
                 case ITEM_FRAME:
                     ((ItemFrame) getEntity()).getItem().setType(mat);
-                    //((ItemFrameController.ItemFrameNPC) getEntity()).setType(mat, data);
                     break;
                 case FALLING_BLOCK:
-                    //((FallingBlockController.FallingBlockNPC) getEntity()).setType(mat, data);
+                    getCitizen().data().setPersistent(NPC.ITEM_ID_METADATA, mat.name());
+                    getCitizen().data().setPersistent(NPC.ITEM_DATA_METADATA, 0);
                     break;
                 default:
                     Debug.echoError("NPC is the not an item type!");

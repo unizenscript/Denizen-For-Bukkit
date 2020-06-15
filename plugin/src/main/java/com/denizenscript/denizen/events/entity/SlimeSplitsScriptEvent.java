@@ -4,8 +4,6 @@ import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.SlimeSplitEvent;
@@ -39,13 +37,11 @@ public class SlimeSplitsScriptEvent extends BukkitScriptEvent implements Listene
 
     public static SlimeSplitsScriptEvent instance;
     public EntityTag entity;
-    public int count;
     public SlimeSplitEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        return lower.startsWith("slime splits");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.startsWith("slime splits");
     }
 
     @Override
@@ -54,7 +50,7 @@ public class SlimeSplitsScriptEvent extends BukkitScriptEvent implements Listene
 
         if (path.eventArgLowerAt(2).equals("into") && !counts.isEmpty()) {
             try {
-                if (Integer.parseInt(counts) != count) {
+                if (Integer.parseInt(counts) != event.getCount()) {
                     return false;
                 }
             }
@@ -78,7 +74,7 @@ public class SlimeSplitsScriptEvent extends BukkitScriptEvent implements Listene
     @Override
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         if (determinationObj instanceof ElementTag && ((ElementTag) determinationObj).isInt()) {
-            count = ((ElementTag) determinationObj).asInt();
+            event.setCount(((ElementTag) determinationObj).asInt());
             return true;
         }
         return super.applyDetermination(path, determinationObj);
@@ -90,7 +86,7 @@ public class SlimeSplitsScriptEvent extends BukkitScriptEvent implements Listene
             return entity;
         }
         else if (name.equals("count")) {
-            return new ElementTag(count);
+            return new ElementTag(event.getCount());
         }
         return super.getContext(name);
     }
@@ -98,10 +94,8 @@ public class SlimeSplitsScriptEvent extends BukkitScriptEvent implements Listene
     @EventHandler
     public void onSlimeSplits(SlimeSplitEvent event) {
         entity = new EntityTag(event.getEntity());
-        count = event.getCount();
         this.event = event;
         fire(event);
-        event.setCount(count);
     }
 
 }

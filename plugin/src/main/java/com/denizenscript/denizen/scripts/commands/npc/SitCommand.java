@@ -1,5 +1,6 @@
 package com.denizenscript.denizen.scripts.commands.npc;
 
+import com.denizenscript.denizen.objects.NPCTag;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.npc.traits.SittingTrait;
@@ -13,10 +14,18 @@ import org.bukkit.entity.*;
 
 public class SitCommand extends AbstractCommand {
 
+    public SitCommand() {
+        setName("sit");
+        setSyntax("sit (<location>)");
+        setRequiredArguments(0, 1);
+    }
+
     // <--[command]
     // @Name Sit
     // @Syntax sit (<location>)
     // @Required 0
+    // @Maximum 1
+    // @Plugin Citizens
     // @Short Causes the NPC to sit. To make them stand, see <@link command Stand>.
     // @Group npc
     //
@@ -53,32 +62,24 @@ public class SitCommand extends AbstractCommand {
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-        LocationTag location = (LocationTag) scriptEntry.getObject("location");
-        if (Utilities.getEntryNPC(scriptEntry).getEntityType() != EntityType.PLAYER
-                && Utilities.getEntryNPC(scriptEntry).getEntityType() != EntityType.OCELOT
-                && Utilities.getEntryNPC(scriptEntry).getEntityType() != EntityType.WOLF) {
-            Debug.echoError(scriptEntry.getResidingQueue(), "...only Player, ocelot, or wolf type NPCs can sit!");
+        LocationTag location = scriptEntry.getObjectTag("location");
+        NPCTag npc = Utilities.getEntryNPC(scriptEntry);
+        if (!(npc.getEntity() instanceof Player || npc.getEntity() instanceof Sittable)) {
+            Debug.echoError("Entities of type " + npc.getEntityType().getName() + " cannot sit.");
             return;
         }
 
         if (scriptEntry.dbCallShouldDebug()) {
-
-            Debug.report(scriptEntry, getName(), ArgumentHelper.debugObj("npc", Utilities.getEntryNPC(scriptEntry))
+            Debug.report(scriptEntry, getName(), ArgumentHelper.debugObj("npc", npc)
                     + (location != null ? location.debug() : ""));
-
         }
 
-        Entity entity = Utilities.getEntryNPC(scriptEntry).getEntity();
+        Entity entity = npc.getEntity();
         if (entity instanceof Sittable) {
             ((Sittable) entity).setSitting(true);
         }
         else {
-            SittingTrait trait = Utilities.getEntryNPC(scriptEntry).getCitizen().getTrait(SittingTrait.class);
-            if (!Utilities.getEntryNPC(scriptEntry).getCitizen().hasTrait(SittingTrait.class)) {
-                Utilities.getEntryNPC(scriptEntry).getCitizen().addTrait(SittingTrait.class);
-                Debug.echoDebug(scriptEntry, "...added sitting trait");
-            }
-
+            SittingTrait trait = npc.getCitizen().getTrait(SittingTrait.class);
             if (location != null) {
                 trait.sit(location);
             }

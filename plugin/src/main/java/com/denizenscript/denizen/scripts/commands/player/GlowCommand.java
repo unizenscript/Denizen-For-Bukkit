@@ -22,10 +22,17 @@ import java.util.UUID;
 
 public class GlowCommand extends AbstractCommand {
 
+    public GlowCommand() {
+        setName("glow");
+        setSyntax("glow [<entity>|...] (<should glow>)");
+        setRequiredArguments(1, 2);
+    }
+
     // <--[command]
     // @Name Glow
     // @Syntax glow [<entity>|...] (<should glow>)
     // @Required 1
+    // @Maximum 2
     // @Short Makes the linked player see the chosen entities as glowing.
     // @Group player
     //
@@ -69,7 +76,7 @@ public class GlowCommand extends AbstractCommand {
                 scriptEntry.addObject("entities", arg.asType(ListTag.class).filter(EntityTag.class, scriptEntry));
             }
             else if (!scriptEntry.hasObject("glowing")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Boolean)) {
+                    && arg.matchesBoolean()) {
                 scriptEntry.addObject("glowing", arg.asElement());
             }
             else {

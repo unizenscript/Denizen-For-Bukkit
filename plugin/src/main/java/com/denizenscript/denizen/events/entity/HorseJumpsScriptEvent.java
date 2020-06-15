@@ -4,7 +4,6 @@ import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.entity.Horse;
 import org.bukkit.event.EventHandler;
@@ -43,13 +42,11 @@ public class HorseJumpsScriptEvent extends BukkitScriptEvent implements Listener
     public static HorseJumpsScriptEvent instance;
     public EntityTag entity;
     public ElementTag color;
-    public Float power;
     public HorseJumpEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        return lower.equals("horse jumps") || lower.endsWith("jumps");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.equals("horse jumps") || path.eventLower.endsWith("jumps");
     }
 
     @Override
@@ -81,7 +78,7 @@ public class HorseJumpsScriptEvent extends BukkitScriptEvent implements Listener
     @Override
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         if (determinationObj instanceof ElementTag && ((ElementTag) determinationObj).isFloat()) {
-            power = ((ElementTag) determinationObj).asFloat();
+            event.setPower(((ElementTag) determinationObj).asFloat());
             return true;
         }
         return super.applyDetermination(path, determinationObj);
@@ -96,7 +93,7 @@ public class HorseJumpsScriptEvent extends BukkitScriptEvent implements Listener
             return color;
         }
         else if (name.equals("power")) {
-            return new ElementTag(power);
+            return new ElementTag(event.getPower());
         }
         return super.getContext(name);
     }
@@ -106,10 +103,8 @@ public class HorseJumpsScriptEvent extends BukkitScriptEvent implements Listener
         if (event.getEntity() instanceof Horse) {
             entity = new EntityTag(event.getEntity());
             color = new ElementTag(((Horse) event.getEntity()).getColor().name());
-            power = event.getPower();
             this.event = event;
             fire(event);
-            event.setPower(power);
         }
     }
 

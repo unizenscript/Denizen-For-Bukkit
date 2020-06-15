@@ -9,20 +9,25 @@ import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.objects.core.ElementTag;
-import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
-import com.denizenscript.denizencore.tags.TagManager;
 import org.bukkit.entity.Entity;
 
 public class ChatCommand extends AbstractCommand {
+
+    public ChatCommand() {
+        setName("chat");
+        setSyntax("chat [<text>] (no_target/targets:<entity>|...) (talkers:<entity>|...) (range:<#.#>)");
+        setRequiredArguments(1, 4);
+    }
 
     // TODO: Should the chat command be in the NPC group instead?
     // <--[command]
     // @Name Chat
     // @Syntax chat [<text>] (no_target/targets:<entity>|...) (talkers:<entity>|...) (range:<#.#>)
     // @Required 1
+    // @Maximum 4
     // @Plugin Citizens
     // @Short Causes an NPC/NPCs to send a chat message to nearby players.
     // @Group player
@@ -87,7 +92,7 @@ public class ChatCommand extends AbstractCommand {
 
             }
             else if (arg.matchesPrefix("range", "r")) {
-                if (arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)) {
+                if (arg.matchesFloat()) {
                     scriptEntry.addObject("range", arg.asElement());
                 }
             }
@@ -141,7 +146,7 @@ public class ChatCommand extends AbstractCommand {
         }
 
         // Create new speech context
-        DenizenSpeechContext context = new DenizenSpeechContext(TagManager.cleanOutputFully(message.asString()),
+        DenizenSpeechContext context = new DenizenSpeechContext(message.asString(),
                 scriptEntry, chatRange.asDouble());
 
         if (!targets.isEmpty()) {

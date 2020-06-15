@@ -30,10 +30,19 @@ import java.util.UUID;
 
 public class SidebarCommand extends AbstractCommand {
 
+    public SidebarCommand() {
+        setName("sidebar");
+        setSyntax("sidebar (add/remove/{set}) (title:<title>) (lines:<#>|...) (values:<line>|...) (start:<#>/{num_of_lines}) (increment:<#>/{-1}) (players:<player>|...) (per_player)");
+        setRequiredArguments(1, 8);
+        setParseArgs(false);
+        DenizenAPI.getCurrentInstance().getServer().getPluginManager().registerEvents(new SidebarEvents(), DenizenAPI.getCurrentInstance());
+    }
+
     // <--[command]
     // @Name Sidebar
     // @Syntax sidebar (add/remove/{set}) (title:<title>) (lines:<#>|...) (values:<line>|...) (start:<#>/{num_of_lines}) (increment:<#>/{-1}) (players:<player>|...) (per_player)
     // @Required 1
+    // @Maximum 8
     // @Short Controls clientside-only sidebars.
     // @Group player
     //
@@ -110,7 +119,7 @@ public class SidebarCommand extends AbstractCommand {
 
         Action action = Action.SET;
 
-        for (Argument arg : ArgumentHelper.interpret(scriptEntry.getOriginalArguments())) {
+        for (Argument arg : ArgumentHelper.interpret(scriptEntry, scriptEntry.getOriginalArguments())) {
 
             if (!scriptEntry.hasObject("action")
                     && arg.matchesEnum(Action.values())) {
@@ -267,7 +276,7 @@ public class SidebarCommand extends AbstractCommand {
                     List<String> current = sidebar.getLines();
                     if (per_player) {
                         TagContext context = new BukkitTagContext(player, Utilities.getEntryNPC(scriptEntry),
-                                false, scriptEntry, scriptEntry.shouldDebug(), scriptEntry.getScript());
+                                scriptEntry, scriptEntry.shouldDebug(), scriptEntry.getScript());
                         value = ListTag.valueOf(TagManager.tag(perValue, context), context);
                         if (perLines != null) {
                             lines = ListTag.valueOf(TagManager.tag(perLines, context), context);
@@ -307,7 +316,7 @@ public class SidebarCommand extends AbstractCommand {
                     List<String> current = sidebar.getLines();
                     if (per_player) {
                         TagContext context = new BukkitTagContext(player, Utilities.getEntryNPC(scriptEntry),
-                                false, scriptEntry, scriptEntry.shouldDebug(), scriptEntry.getScript());
+                                scriptEntry, scriptEntry.shouldDebug(), scriptEntry.getScript());
                         if (perValue != null) {
                             value = ListTag.getListFor(TagManager.tagObject(perValue, context), context);
                         }
@@ -378,7 +387,7 @@ public class SidebarCommand extends AbstractCommand {
                     boolean currEdited = false;
                     if (per_player) {
                         TagContext context = new BukkitTagContext(player, Utilities.getEntryNPC(scriptEntry),
-                                false, scriptEntry, scriptEntry.shouldDebug(), scriptEntry.getScript());
+                                scriptEntry, scriptEntry.shouldDebug(), scriptEntry.getScript());
                         if (perValue != null) {
                             value = ListTag.getListFor(TagManager.tagObject(perValue, context), context);
                         }

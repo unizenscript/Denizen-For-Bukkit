@@ -14,7 +14,7 @@ public abstract class MapObject {
 
     protected String xTag;
     protected String yTag;
-    protected String visibilityTag = "true";
+    protected String visibilityTag;
     protected Map<UUID, Integer> currentX = new HashMap<>();
     protected Map<UUID, Integer> currentY = new HashMap<>();
     protected Map<UUID, Boolean> currentVisibility = new HashMap<>();
@@ -72,7 +72,7 @@ public abstract class MapObject {
 
     protected String tag(String arg, PlayerTag player) {
         // Short, reusable TagManager call
-        return TagManager.tag(arg, new BukkitTagContext(player, player.getSelectedNPC(), false, null, debug, null));
+        return TagManager.tag(arg, new BukkitTagContext(player, player.getSelectedNPC(), null, debug, null));
     }
 
     public Map<String, Object> getSaveData() {

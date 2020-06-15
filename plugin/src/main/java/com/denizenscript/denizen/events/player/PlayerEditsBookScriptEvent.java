@@ -12,9 +12,11 @@ import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ScriptTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
+import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerEditBookEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 
 public class PlayerEditsBookScriptEvent extends BukkitScriptEvent implements Listener {
@@ -30,7 +32,7 @@ public class PlayerEditsBookScriptEvent extends BukkitScriptEvent implements Lis
     // @Context
     // <context.title> returns the name of the book, if any.
     // <context.pages> returns the number of pages in the book.
-    // <context.book> returns the book item being edited.
+    // <context.book> returns the book item being edited, containing the new page contents.
     // <context.signing> returns whether the book is about to be signed.
     //
     // @Determine
@@ -69,6 +71,7 @@ public class PlayerEditsBookScriptEvent extends BukkitScriptEvent implements Lis
         String determination = determinationObj.toString();
         if (determination.toUpperCase().equals("NOT_SIGNING")) {
             event.setSigning(false);
+            return true;
         }
         else if (ScriptTag.matches(determination)) {
             ScriptTag script = ScriptTag.valueOf(determination);
@@ -79,9 +82,11 @@ public class PlayerEditsBookScriptEvent extends BukkitScriptEvent implements Lis
                     event.setSigning(false);
                 }
                 event.setNewBookMeta(bookMeta);
+                return true;
             }
             else {
                 Debug.echoError("Script '" + determination + "' is valid, but not of type 'book'!");
+                return true;
             }
         }
         return super.applyDetermination(path, determinationObj);
@@ -101,7 +106,9 @@ public class PlayerEditsBookScriptEvent extends BukkitScriptEvent implements Lis
             return event.isSigning() ? new ElementTag(event.getNewBookMeta().getTitle()) : null;
         }
         else if (name.equals("book")) {
-            return new ItemTag(event.getPlayer().getInventory().getItem(event.getSlot()));
+            ItemStack book = new ItemStack(Material.WRITABLE_BOOK);
+            book.setItemMeta(event.getNewBookMeta());
+            return new ItemTag(book);
         }
         return super.getContext(name);
     }

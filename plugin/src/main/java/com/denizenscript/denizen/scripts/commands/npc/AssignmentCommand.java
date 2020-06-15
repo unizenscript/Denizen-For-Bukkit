@@ -12,10 +12,17 @@ import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 
 public class AssignmentCommand extends AbstractCommand {
 
+    public AssignmentCommand() {
+        setName("assignment");
+        setSyntax("assignment [set/remove] (script:<name>)");
+        setRequiredArguments(1, 2);
+    }
+
     // <--[command]
     // @Name Assignment
     // @Syntax assignment [set/remove] (script:<name>)
     // @Required 1
+    // @Maximum 2
     // @Plugin Citizens
     // @Short Changes an NPC's assignment.
     // @Group npc
@@ -51,7 +58,6 @@ public class AssignmentCommand extends AbstractCommand {
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
-        // Parse Arguments
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (arg.matchesEnum(Action.values())
@@ -74,7 +80,6 @@ public class AssignmentCommand extends AbstractCommand {
             }
         }
 
-        // Check required arguments
         if (!Utilities.entryHasNPC(scriptEntry)) {
             throw new InvalidArgumentsException("NPC linked was missing or invalid.");
         }
@@ -94,7 +99,6 @@ public class AssignmentCommand extends AbstractCommand {
 
         ScriptTag script = scriptEntry.getObjectTag("script");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), ArgumentHelper.debugObj("action", scriptEntry.getObject("action")) + (script != null ? script.debug() : ""));
         }

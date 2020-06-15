@@ -8,7 +8,6 @@ import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.objects.core.ElementTag;
-import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
@@ -18,10 +17,17 @@ import org.bukkit.entity.EntityType;
 
 public class StatisticCommand extends AbstractCommand {
 
+    public StatisticCommand() {
+        setName("statistic");
+        setSyntax("statistic [<statistic>] [add/take/set] (<#>) (qualifier:<material>/<entity>)");
+        setRequiredArguments(2, 4);
+    }
+
     // <--[command]
     // @Name Statistic
     // @Syntax statistic [<statistic>] [add/take/set] (<#>) (qualifier:<material>/<entity>)
     // @Required 2
+    // @Maximum 4
     // @Short Changes the specified statistic value for a player.
     // @Group player
     //
@@ -31,6 +37,7 @@ public class StatisticCommand extends AbstractCommand {
     // For statistic names, see <@link url https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Statistic.html>
     //
     // You can add, take, or set a numeric value to the statistic for the linked player.
+    // Works with offline players.
     //
     // Some statistics are unique per a material or entity - for those, use the "qualifier" argument.
     //
@@ -76,7 +83,7 @@ public class StatisticCommand extends AbstractCommand {
                 scriptEntry.addObject("statistic", arg.asElement());
             }
             else if (!scriptEntry.hasObject("amount")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+                    && arg.matchesInteger()) {
                 scriptEntry.addObject("amount", arg.asElement());
             }
             else if (arg.matchesPrefix("qualifier", "q")

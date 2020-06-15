@@ -6,13 +6,9 @@ import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
-
-import java.util.List;
 
 public class VehicleDamagedScriptEvent extends BukkitScriptEvent implements Listener {
 
@@ -36,6 +32,7 @@ public class VehicleDamagedScriptEvent extends BukkitScriptEvent implements List
     // @Context
     // <context.vehicle> returns the EntityTag of the vehicle.
     // <context.entity> returns the EntityTag of the attacking entity.
+    // <context.damage> returns the amount of damage to be received.
     //
     // @Determine
     // ElementTag(Decimal) to set the value of the damage received by the vehicle.
@@ -53,23 +50,17 @@ public class VehicleDamagedScriptEvent extends BukkitScriptEvent implements List
     public static VehicleDamagedScriptEvent instance;
     public EntityTag vehicle;
     public EntityTag entity;
-    private double damage;
     public VehicleDamageEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        List<String> split = CoreUtilities.split(lower, ' ');
-        if (split.size() > 5) {
+    public boolean couldMatch(ScriptPath path) {
+        if (path.eventArgLowerAt(3).equals("by")) {
             return false;
         }
-        if (split.size() > 3 && split.get(3).equals("by")) {
-            return false;
-        }
-        String tid = CoreUtilities.getXthArg(0, lower);
-        String cmd = CoreUtilities.getXthArg(1, lower);
+        String tid = path.eventArgLowerAt(0);
+        String cmd = path.eventArgAt(1);
         return !tid.equals("entity") && (cmd.equals("damaged")
-                || (cmd.equals("damages") && !CoreUtilities.getXthArg(2, lower).equals("entity")));
+                || (cmd.equals("damages") && !path.eventArgLowerAt(2).equals("entity")));
     }
 
     @Override
@@ -100,7 +91,7 @@ public class VehicleDamagedScriptEvent extends BukkitScriptEvent implements List
     @Override
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         if (determinationObj instanceof ElementTag && ((ElementTag) determinationObj).isDouble()) {
-            damage = ((ElementTag) determinationObj).asDouble();
+            event.setDamage(((ElementTag) determinationObj).asDouble());
             return true;
         }
         return super.applyDetermination(path, determinationObj);
@@ -122,6 +113,9 @@ public class VehicleDamagedScriptEvent extends BukkitScriptEvent implements List
         else if (name.equals("entity") && entity != null) {
             return entity.getDenizenObject();
         }
+        else if (name.equals("damage")) {
+            return new ElementTag(event.getDamage());
+        }
         return super.getContext(name);
     }
 
@@ -129,9 +123,7 @@ public class VehicleDamagedScriptEvent extends BukkitScriptEvent implements List
     public void onVehicleDestroyed(VehicleDamageEvent event) {
         vehicle = new EntityTag(event.getVehicle());
         entity = event.getAttacker() != null ? new EntityTag(event.getAttacker()) : null;
-        damage = event.getDamage();
         this.event = event;
         fire(event);
-        event.setDamage(damage);
     }
 }

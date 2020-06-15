@@ -100,9 +100,23 @@ public class PlayerItemTakesDamageScriptEvent extends BukkitScriptEvent implemen
             return new ElementTag(event.getDamage());
         }
         else if (name.equals("slot")) {
-            return new ElementTag(SlotHelper.slotForItem(event.getPlayer().getInventory(), item.getItemStack()));
+            return new ElementTag(SlotHelper.slotForItem(event.getPlayer().getInventory(), item.getItemStack()) + 1);
         }
         return super.getContext(name);
+    }
+
+    @Override
+    public void cancellationChanged() {
+        if (cancelled) {
+            final Player p = event.getPlayer();
+            Bukkit.getScheduler().scheduleSyncDelayedTask(DenizenAPI.getCurrentInstance(), new Runnable() {
+                @Override
+                public void run() {
+                    p.updateInventory();
+                }
+            }, 1);
+        }
+        super.cancellationChanged();
     }
 
     @EventHandler
@@ -112,17 +126,7 @@ public class PlayerItemTakesDamageScriptEvent extends BukkitScriptEvent implemen
         }
         item = new ItemTag(event.getItem());
         location = new LocationTag(event.getPlayer().getLocation());
-        boolean wasCancelled = event.isCancelled();
         this.event = event;
         fire(event);
-        final Player p = event.getPlayer();
-        if (cancelled && !wasCancelled) {
-            Bukkit.getScheduler().scheduleSyncDelayedTask(DenizenAPI.getCurrentInstance(), new Runnable() {
-                @Override
-                public void run() {
-                    p.updateInventory();
-                }
-            }, 1);
-        }
     }
 }

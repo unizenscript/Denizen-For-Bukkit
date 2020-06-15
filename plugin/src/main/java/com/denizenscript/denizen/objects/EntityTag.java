@@ -1,5 +1,6 @@
 package com.denizenscript.denizen.objects;
 
+import com.denizenscript.denizen.nms.interfaces.PlayerHelper;
 import com.denizenscript.denizen.objects.properties.entity.EntityAge;
 import com.denizenscript.denizen.objects.properties.entity.EntityColor;
 import com.denizenscript.denizen.objects.properties.entity.EntityTame;
@@ -24,6 +25,7 @@ import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.core.ScriptTag;
 import com.denizenscript.denizencore.tags.ObjectTagProcessor;
 import com.denizenscript.denizencore.tags.TagRunnable;
+import com.denizenscript.denizencore.tags.core.EscapeTagBase;
 import com.denizenscript.denizencore.utilities.Deprecations;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import com.denizenscript.denizencore.objects.properties.PropertyParser;
@@ -44,7 +46,6 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import java.util.*;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
@@ -58,19 +59,11 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
     // Note that players and NPCs are valid EntityTags, but are generally represented by the more specific
     // PlayerTag and NPCTag objects.
     //
-    // For format info, see <@link language e@>
+    // Note that a spawned entity can be a living entity (a player, NPC, or mob) or a nonliving entity (a painting, item frame, etc).
     //
-    // -->
-
-    // <--[language]
-    // @name e@
-    // @group Object Fetcher System
-    // @description
-    // e@ refers to the 'object identifier' of an EntityTag. The 'e@' is notation for Denizen's Object
-    // Fetcher. The constructor for an EntityTag is a spawned entity's UUID, or an entity type.
-    // For example, 'e@zombie'.
-    //
-    // For general info, see <@link language EntityTag Objects>
+    // These use the object notation "e@".
+    // The identity format for entities is a spawned entity's UUID, or an entity type.
+    // For example, 'e@abc123' or 'e@zombie'.
     //
     // -->
 
@@ -80,7 +73,9 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
 
     // List a mechanism here if it can be safely run before spawn.
     public static HashSet<String> earlyValidMechanisms = new HashSet<>(Arrays.asList(
-            "max_health", "health_data", "health"
+            "max_health", "health_data", "health", "visible",
+            "armor_pose", "arms", "base_plate", "is_small",
+            "velocity", "age", "is_using_riptide"
     ));
 
     private static final Map<UUID, Entity> rememberedEntities = new HashMap<>();
@@ -184,16 +179,9 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         if (string == null) {
             return null;
         }
-
-        Matcher m;
-
-        ///////
-        // Handle objects with properties through the object fetcher
-        m = ObjectFetcher.DESCRIBED_PATTERN.matcher(string);
-        if (m.matches()) {
+        if (ObjectFetcher.isObjectWithProperties(string)) {
             return ObjectFetcher.getObjectFrom(EntityTag.class, string, context);
         }
-
         // Choose a random entity type if "RANDOM" is used
         if (string.equalsIgnoreCase("RANDOM")) {
 
@@ -210,23 +198,10 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
 
             return new EntityTag(randomType, "RANDOM");
         }
-
-        ///////
-        // Match @object format
-
-        // Make sure string matches what this interpreter can accept.
-
-        m = entity_by_id.matcher(string);
-
-        if (m.matches()) {
-
-            String entityGroup = m.group(1).toUpperCase();
-
+        if (string.startsWith("n@") || string.startsWith("e@") || string.startsWith("p@")) {
             // NPC entity
-            if (entityGroup.equals("N@")) {
-
+            if (string.startsWith("n@")) {
                 NPCTag npc = NPCTag.valueOf(string);
-
                 if (npc != null) {
                     if (npc.isSpawned()) {
                         return new EntityTag(npc);
@@ -243,24 +218,23 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
                             + "' does not exist!");
                 }
             }
-
             // Player entity
-            else if (entityGroup.matches("P@")) {
-                LivingEntity returnable = PlayerTag.valueOf(m.group(2)).getPlayerEntity();
-
+            else if (string.startsWith("p@")) {
+                LivingEntity returnable = PlayerTag.valueOf(string).getPlayerEntity();
                 if (returnable != null) {
                     return new EntityTag(returnable);
                 }
                 else if (context == null || context.debug) {
-                    Debug.echoError("Invalid Player! '" + m.group(2)
-                            + "' could not be found. Has the player logged off?");
+                    Debug.echoError("Invalid Player! '" + string + "' could not be found. Has the player logged off?");
                 }
             }
-
             // Assume entity
             else {
+                if (string.startsWith("e@")) {
+                    string = string.substring("e@".length());
+                }
                 try {
-                    UUID entityID = UUID.fromString(m.group(2));
+                    UUID entityID = UUID.fromString(string);
                     Entity entity = getEntityForID(entityID);
                     if (entity != null) {
                         return new EntityTag(entity);
@@ -275,43 +249,15 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
                 //     return getSaved(m.group(2));
             }
         }
-
-        string = string.replace("e@", "");
-
-        ////////
-        // Match Custom Entity
-
         if (ScriptRegistry.containsScript(string, EntityScriptContainer.class)) {
             // Construct a new custom unspawned entity from script
             return ScriptRegistry.getScriptContainerAs(string, EntityScriptContainer.class).getEntityFrom();
         }
-
-        ////////
-        // Match Entity_Type
-
-        m = entity_with_data.matcher(string);
-
-        if (m.matches()) {
-
-            String data1 = null;
-            String data2 = null;
-
-            if (m.group(2) != null) {
-
-                data1 = m.group(2);
-            }
-
-            if (m.group(3) != null) {
-
-                data2 = m.group(3);
-            }
-
-            // Handle custom DenizenEntityTypes
-            if (DenizenEntityType.isRegistered(m.group(1))) {
-                return new EntityTag(DenizenEntityType.getByName(m.group(1)), data1, data2);
-            }
+        List<String> data = CoreUtilities.split(string, ',');
+        // Handle custom DenizenEntityTypes
+        if (DenizenEntityType.isRegistered(data.get(0))) {
+            return new EntityTag(DenizenEntityType.getByName(data.get(0)), data.size() > 1 ? data.get(1) : null, data.size() > 2 ? data.get(2) : null);
         }
-
         try {
             UUID entityID = UUID.fromString(string);
             Entity entity = getEntityForID(entityID);
@@ -323,11 +269,9 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         catch (Exception ex) {
             // DO NOTHING
         }
-
         if (context == null || context.debug) {
             Debug.log("valueOf EntityTag returning null: " + string);
         }
-
         return null;
     }
 
@@ -344,18 +288,10 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         return null;
     }
 
-    final static Pattern entity_by_id = Pattern.compile("(n@|e@|p@)(.+)",
-            Pattern.CASE_INSENSITIVE);
-
-    final static Pattern entity_with_data = Pattern.compile("(\\w+),?(\\w+)?,?(\\w+)?",
-            Pattern.CASE_INSENSITIVE);
-
     public static boolean matches(String arg) {
 
         // Accept anything that starts with a valid entity object identifier.
-        Matcher m;
-        m = entity_by_id.matcher(arg);
-        if (m.matches()) {
+        if (arg.startsWith("n@") || arg.startsWith("e@") || arg.startsWith("p@")) {
             return true;
         }
 
@@ -372,13 +308,9 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
             return true;
         }
 
-        // Use regex to make some matcher groups
-        m = entity_with_data.matcher(arg);
-        if (m.matches()) {
-            // Check first word with a valid entity_type (other groups are datas used in constructors)
-            if (DenizenEntityType.isRegistered(m.group(1))) {
-                return true;
-            }
+        // Check first word with a valid entity_type (other groups are datas used in constructors)
+        if (DenizenEntityType.isRegistered(CoreUtilities.split(arg, ',').get(0))) {
+            return true;
         }
 
         // No luck otherwise!
@@ -826,6 +758,24 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
                                 material = MaterialTag.valueOf(data1).getMaterial();
                             }
                         }
+                        else {
+                            // <--[mechanism]
+                            // @object EntityTag
+                            // @name fallingblock_type
+                            // @input MaterialTag
+                            // @description
+                            // Sets the block type of a falling_block entity (only valid while spawning).
+                            // @tags
+                            // <EntityTag.fallingblock_material>
+                            // -->
+                            for (Mechanism mech : mechanisms) {
+                                if (mech.getName().equalsIgnoreCase("fallingblock_type")) {
+                                    material = mech.valueAsType(MaterialTag.class).getMaterial();
+                                    mechanisms.remove(mech);
+                                    break;
+                                }
+                            }
+                        }
 
                         // If material is null or not a block, default to SAND
                         if (material == null || (!material.isBlock())) {
@@ -1097,7 +1047,7 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
             // Build the pseudo-property-string, if any
             StringBuilder properties = new StringBuilder();
             for (Mechanism mechanism : mechanisms) {
-                properties.append(mechanism.getName()).append("=").append(mechanism.getValue().asString().replace(';', (char) 0x2011)).append(";");
+                properties.append(mechanism.getName()).append("=").append(EscapeTagBase.escape(mechanism.getValue().asString())).append(";");
             }
             String propertyOutput = "";
             if (properties.length() > 0) {
@@ -1376,10 +1326,11 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         // @attribute <EntityTag.list_flags[(regex:)<search>]>
         // @returns ListTag
         // @description
-        // Returns a list of an entity's flag names, with an optional search for
-        // names containing a certain pattern.
+        // Returns a list of an entity's flag names, with an optional search for names containing a certain pattern.
+        // Note that this is exclusively for debug/testing reasons, and should never be used in a real script.
         // -->
         registerSpawnedOnlyTag("list_flags", (attribute, object) -> {
+            FlagManager.listFlagsTagWarning.warn(attribute.context);
             ListTag allFlags = new ListTag(DenizenAPI.getCurrentInstance().flagManager().listEntityFlags(object));
             ListTag searchFlags = null;
             if (!allFlags.isEmpty() && attribute.hasContext(1)) {
@@ -1419,15 +1370,8 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         //   IDENTIFICATION ATTRIBUTES
         /////////////////
 
-        // <--[tag]
-        // @attribute <EntityTag.custom_id>
-        // @returns ScriptTag/Element
-        // @group data
-        // @description
-        // If the entity has a script ID, returns the ScriptTag of that ID.
-        // Otherwise, returns the name of the entity type.
-        // -->
         registerSpawnedOnlyTag("custom_id", (attribute, object) -> {
+            Deprecations.entityCustomIdTag.warn(attribute.context);
             if (CustomNBT.hasCustomNBT(object.getLivingEntity(), "denizen-script-id")) {
                 return new ScriptTag(CustomNBT.getCustomNBT(object.getLivingEntity(), "denizen-script-id"));
             }
@@ -1568,7 +1512,7 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
             EntityHelper.MapTraceResult mtr = NMSHandler.getEntityHelper().mapTrace(object.getLivingEntity(), 200);
             if (mtr != null) {
                 double x = 0;
-                double y = 0;
+                double y;
                 double basex = mtr.hitLocation.getX() - Math.floor(mtr.hitLocation.getX());
                 double basey = mtr.hitLocation.getY() - Math.floor(mtr.hitLocation.getY());
                 double basez = mtr.hitLocation.getZ() - Math.floor(mtr.hitLocation.getZ());
@@ -1634,7 +1578,7 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
 
         // <--[tag]
         // @attribute <EntityTag.cursor_on[(<range>)]>
-        // @returns ElementTag(Boolean)
+        // @returns LocationTag
         // @group location
         // @description
         // Returns the location of the block the entity is looking at.
@@ -1758,6 +1702,7 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         // <--[tag]
         // @attribute <EntityTag.fallingblock_material>
         // @returns MaterialTag
+        // @mechanism EntityTag.fallingblock_type
         // @group attributes
         // @description
         // Returns the material of a fallingblock-type entity.
@@ -1859,7 +1804,7 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         // Returns the entity's shooter, if any.
         // -->
         registerSpawnedOnlyTag("shooter", (attribute, object) -> {
-            return object.getShooter();
+            return object.getShooter().getDenizenObject();
         }, "get_shooter");
 
         // <--[tag]
@@ -2485,6 +2430,26 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         });
 
         // <--[tag]
+        // @attribute <EntityTag.skin_layers>
+        // @returns ListTag
+        // @mechanism EntityTag.skin_layers
+        // @description
+        // Returns the skin layers currently visible on a player-type entity.
+        // Output is a list of values from the set of:
+        // CAPE, HAT, JACKET, LEFT_PANTS, LEFT_SLEEVE, RIGHT_PANTS, or RIGHT_SLEEVE.
+        // -->
+        registerSpawnedOnlyTag("skin_layers", (attribute, object) -> {
+            byte flags = NMSHandler.getPlayerHelper().getSkinLayers((Player) object.getBukkitEntity());
+            ListTag result = new ListTag();
+            for (PlayerHelper.SkinLayer layer : PlayerHelper.SkinLayer.values()) {
+                if ((flags & layer.flag) != 0) {
+                    result.add(layer.name());
+                }
+            }
+            return result;
+        });
+
+        // <--[tag]
         // @attribute <EntityTag.describe>
         // @returns ElementTag
         // @group properties
@@ -2588,12 +2553,13 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         // <--[mechanism]
         // @object EntityTag
         // @name attach_to
-        // @input EntityTag(|dLocation(|ElementTag(Boolean)))
+        // @input EntityTag(|LocationTag(|ElementTag(Boolean)))
         // @description
         // Attaches this entity's client-visible motion to another entity.
         // Optionally, specify an offset vector as well.
         // Optionally specify a boolean indicating whether offset should match the target entity's rotation (defaults to true).
         // Note that because this is client-visible motion, it does not take effect server-side. You may wish to occasionally teleport the entity to its attachment.
+        // Note that if a player is involved as either input entity, that player will not see the attachment - only other players will.
         // Tracking may be a bit off with a large (8 blocks is large in this context) offset on a rotating entity.
         // Run with no value to disable attachment.
         // -->
@@ -2683,7 +2649,7 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         // <--[mechanism]
         // @object EntityTag
         // @name fire_time
-        // @input Duration
+        // @input DurationTag
         // @description
         // Sets the entity's current fire time (time before the entity stops being on fire).
         // @tags
@@ -2785,7 +2751,7 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         // <--[mechanism]
         // @object EntityTag
         // @name time_lived
-        // @input Duration
+        // @input DurationTag
         // @description
         // Sets the amount of time this entity has lived for.
         // @tags
@@ -2982,7 +2948,7 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         // <--[mechanism]
         // @object EntityTag
         // @name no_damage_duration
-        // @input Duration
+        // @input DurationTag
         // @description
         // Sets the duration in which the entity will take no damage.
         // @tags
@@ -2996,7 +2962,7 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         // <--[mechanism]
         // @object EntityTag
         // @name max_no_damage_duration
-        // @input Duration
+        // @input DurationTag
         // @description
         // Sets the maximum duration in which the entity will take no damage.
         // @tags
@@ -3037,8 +3003,6 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         // @input LocationTag
         // @description
         // Makes a player-type entity interact with a block.
-        // @tags
-        // None
         // -->
         if (mechanism.matches("interact_with") && mechanism.requireObject(LocationTag.class)) {
             LocationTag interactLocation = mechanism.valueAsType(LocationTag.class);
@@ -3051,8 +3015,6 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         // @input None
         // @description
         // Animates the entity dying.
-        // @tags
-        // None
         // -->
         if (mechanism.matches("play_death")) {
             getLivingEntity().playEffect(EntityEffect.DEATH);
@@ -3061,7 +3023,7 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         // <--[mechanism]
         // @object EntityTag
         // @name pickup_delay
-        // @input Duration
+        // @input DurationTag
         // @description
         // Sets the pickup delay of this Item Entity.
         // @tags
@@ -3147,6 +3109,7 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         // @input None
         // @description
         // Marks the entity as visible to players by default (if it was hidden).
+        // Works with offline players.
         // -->
         if (mechanism.matches("show_to_players")) {
             NMSHandler.getEntityHelper().unhideEntity(null, getBukkitEntity());
@@ -3158,9 +3121,36 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject {
         // @input None
         // @description
         // Hides the entity from players by default.
+        // Works with offline players.
         // -->
         if (mechanism.matches("hide_from_players")) {
             NMSHandler.getEntityHelper().hideEntity(null, getBukkitEntity(), false);
+        }
+
+        // <--[mechanism]
+        // @object EntityTag
+        // @name skin_layers
+        // @input ListTag
+        // @description
+        // Sets the visible skin layers on a player-type entity (PlayerTag or player-type NPCTag).
+        // Input is a list of values from the set of:
+        // CAPE, HAT, JACKET, LEFT_PANTS, LEFT_SLEEVE, RIGHT_PANTS, RIGHT_SLEEVE, or "ALL"
+        // @tags
+        // <EntityTag.skin_layers>
+        // -->
+        if (mechanism.matches("skin_layers")) {
+            int flags = 0;
+            for (String str : mechanism.valueAsType(ListTag.class)) {
+                String upper = str.toUpperCase();
+                if (upper.equals("ALL")) {
+                    flags = 0xFF;
+                }
+                else {
+                    PlayerHelper.SkinLayer layer = PlayerHelper.SkinLayer.valueOf(upper);
+                    flags |= layer.flag;
+                }
+            }
+            NMSHandler.getPlayerHelper().setSkinLayers((Player) getBukkitEntity(), (byte) flags);
         }
 
         // <--[mechanism]

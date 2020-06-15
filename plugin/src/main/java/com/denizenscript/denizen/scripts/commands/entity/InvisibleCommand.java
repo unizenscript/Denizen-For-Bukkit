@@ -16,10 +16,17 @@ import org.bukkit.potion.PotionEffectType;
 
 public class InvisibleCommand extends AbstractCommand {
 
+    public InvisibleCommand() {
+        setName("invisible");
+        setSyntax("invisible [<entity>] (state:true/false/toggle)");
+        setRequiredArguments(1, 2);
+    }
+
     // <--[command]
     // @Name Invisible
     // @Syntax invisible [<entity>] (state:true/false/toggle)
     // @Required 1
+    // @Maximum 2
     // @Short Makes an NPC or entity go invisible
     // @Group entity
     //
@@ -55,12 +62,12 @@ public class InvisibleCommand extends AbstractCommand {
                 scriptEntry.addObject("state", arg.asElement());
             }
             else if (!scriptEntry.hasObject("target")
-                    && arg.matches("PLAYER")
+                    && arg.matches("player")
                     && Utilities.entryHasPlayer(scriptEntry)) {
                 scriptEntry.addObject("target", Utilities.getEntryPlayer(scriptEntry).getDenizenEntity());
             }
             else if (!scriptEntry.hasObject("target")
-                    && arg.matches("NPC")
+                    && arg.matches("npc")
                     && Utilities.entryHasNPC(scriptEntry)) {
                 scriptEntry.addObject("target", Utilities.getEntryNPC(scriptEntry).getDenizenEntity());
             }
@@ -84,11 +91,9 @@ public class InvisibleCommand extends AbstractCommand {
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-        // Get objects
         ElementTag state = scriptEntry.getElement("state");
-        EntityTag target = (EntityTag) scriptEntry.getObject("target");
+        EntityTag target = scriptEntry.getObjectTag("target");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), state.debug() + target.debug());
         }

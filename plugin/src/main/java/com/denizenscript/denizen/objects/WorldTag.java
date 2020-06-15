@@ -12,6 +12,7 @@ import com.denizenscript.denizencore.tags.ObjectTagProcessor;
 import com.denizenscript.denizencore.tags.TagContext;
 import com.denizenscript.denizencore.tags.TagRunnable;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
+import com.denizenscript.denizencore.utilities.Deprecations;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.*;
@@ -55,20 +56,11 @@ public class WorldTag implements ObjectTag, Adjustable {
     // @description
     // A WorldTag represents a world on the server.
     //
-    // For format info, see <@link language w@>
-    //
-    // -->
-
-    // <--[language]
-    // @name w@
-    // @group Object Fetcher System
-    // @description
-    // w@ refers to the 'object identifier' of a WorldTag. The 'w@' is notation for Denizen's Object
-    // Fetcher. The only valid constructor for a WorldTag is the name of the world it should be
-    // associated with. For example, to reference the world named 'world1', use WorldTag1.
+    // These use the object notation "w@".
+    // The identity format for worlds is the name of the world it should be
+    // associated with. For example, to reference the world named 'world1', use simply 'world1'.
     // World names are case insensitive.
     //
-    // For general info, see <@link language WorldTag Objects>
     // -->
 
     public static WorldTag valueOf(String string) {
@@ -225,19 +217,30 @@ public class WorldTag implements ObjectTag, Adjustable {
         /////////////////
 
         // <--[tag]
-        // @attribute <WorldTag.entities>
+        // @attribute <WorldTag.entities[<entity>|...]>
         // @returns ListTag(EntityTag)
         // @description
         // Returns a list of entities in this world.
+        // Optionally specify entity types to filter down to.
         // -->
         registerTag("entities", (attribute, object) -> {
-            ArrayList<EntityTag> entities = new ArrayList<>();
-
+            ListTag entities = new ListTag();
+            ListTag typeFilter = attribute.hasContext(1) ? ListTag.valueOf(attribute.getContext(1), attribute.context) : null;
             for (Entity entity : object.getEntitiesForTag()) {
-                entities.add(new EntityTag(entity));
+                EntityTag current = new EntityTag(entity);
+                if (typeFilter != null) {
+                    for (String type : typeFilter) {
+                        if (current.comparedTo(type)) {
+                            entities.addObject(current.getDenizenObject());
+                            break;
+                        }
+                    }
+                }
+                else {
+                    entities.addObject(current.getDenizenObject());
+                }
             }
-
-            return new ListTag(entities);
+            return entities;
         });
 
         // <--[tag]
@@ -245,6 +248,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @returns ListTag(EntityTag)
         // @description
         // Returns a list of living entities in this world.
+        // This includes Players, mobs, NPCs, etc., but excludes dropped items, experience orbs, etc.
         // -->
         registerTag("living_entities", (attribute, object) -> {
             ArrayList<EntityTag> entities = new ArrayList<>();
@@ -346,13 +350,9 @@ public class WorldTag implements ObjectTag, Adjustable {
 
             return chunks;
         });
-        // <--[tag]
-        // @attribute <WorldTag.random_loaded_chunk>
-        // @returns ChunkTag
-        // @description
-        // Returns a random loaded chunk.
-        // -->
+
         registerTag("random_loaded_chunk", (attribute, object) -> {
+            Deprecations.worldRandomLoadedChunkTag.warn(attribute.context);
             int random = CoreUtilities.getRandom().nextInt(object.getWorld().getLoadedChunks().length);
             return new ChunkTag(object.getWorld().getLoadedChunks()[random]);
         });
@@ -869,8 +869,6 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @input None
         // @description
         // Saves the world to file.
-        // @tags
-        // None
         // -->
         if (mechanism.matches("save")) {
             getWorld().save();
@@ -883,8 +881,6 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Unloads the world from the server without saving chunks, then destroys all data that is part of the world.
         // Require config setting 'Commands.Delete.Allow file deletion'.
-        // @tags
-        // None
         // -->
         if (mechanism.matches("destroy")) {
             if (!Settings.allowDelete()) {
@@ -908,8 +904,6 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @input None
         // @description
         // Unloads the world from the server without saving chunks.
-        // @tags
-        // None
         // -->
         if (mechanism.matches("force_unload")) {
             Bukkit.getServer().unloadWorld(getWorld(), false);
@@ -998,7 +992,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object WorldTag
         // @name thunder_duration
-        // @input Duration
+        // @input DurationTag
         // @description
         // Sets the duration of thunder.
         // @tags
@@ -1024,7 +1018,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object WorldTag
         // @name ticks_per_animal_spawns
-        // @input Duration
+        // @input DurationTag
         // @description
         // Sets the time between animal spawns.
         // @tags
@@ -1037,7 +1031,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object WorldTag
         // @name ticks_per_monster_spawns
-        // @input Duration
+        // @input DurationTag
         // @description
         // Sets the time between monster spawns.
         // @tags
@@ -1066,8 +1060,6 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @input None
         // @description
         // Unloads the world from the server and saves chunks.
-        // @tags
-        // None
         // -->
         if (mechanism.matches("unload")) {
             Bukkit.getServer().unloadWorld(getWorld(), true);
@@ -1090,7 +1082,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object WorldTag
         // @name weather_duration
-        // @input Duration
+        // @input DurationTag
         // @description
         // Set the remaining time in ticks of the current conditions.
         // @tags

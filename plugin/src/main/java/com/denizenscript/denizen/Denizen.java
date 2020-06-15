@@ -143,7 +143,8 @@ public class Denizen extends JavaPlugin {
         try {
             versionTag = this.getDescription().getVersion();
 
-            CoreUtilities.noDebugContext = new BukkitTagContext(null, null, false, null, false, null);
+            CoreUtilities.noDebugContext = new BukkitTagContext(null, null, null, false, null);
+            CoreUtilities.basicContext = new BukkitTagContext(null, null, null, true, null);
 
             // Load Denizen's core
             DenizenCore.init(coreImplementation);
@@ -153,6 +154,18 @@ public class Denizen extends JavaPlugin {
             getServer().getPluginManager().disablePlugin(this);
             startedSuccessful = false;
             return;
+        }
+
+        String javaVersion = System.getProperty("java.version");
+        if (!javaVersion.startsWith("8") && !javaVersion.startsWith("1.8")) {
+            if (javaVersion.startsWith("9") || javaVersion.startsWith("1.9") || javaVersion.startsWith("10") || javaVersion.startsWith("1.10") || javaVersion.startsWith("11")) {
+                getLogger().warning("Running unreliable Java version. Minecraft is built for Java 8. Newer Java versions are not guaranteed to function properly (due to changes Oracle made to how reflection works).");
+            }
+            else {
+                getLogger().warning("-------------------------------------");
+                getLogger().warning("Running incompatible Java version! Minecraft is built for Java 8. Older versions will not work, and newer versions will cause errors (due to Oracle removing reflection support)!");
+                getLogger().warning("-------------------------------------");
+            }
         }
 
         if (!NMSHandler.initialize(this)) {
@@ -359,15 +372,13 @@ public class Denizen extends JavaPlugin {
             OldEventManager.registerSmartEvent(new CuboidEnterExitSmartEvent());
             OldEventManager.registerSmartEvent(new FlagSmartEvent());
             OldEventManager.registerSmartEvent(new NPCNavigationSmartEvent());
-            eventManager().registerCoreMembers();
 
             // Register all the modern script events
             ScriptEventRegistry.registerMainEvents();
 
-            CommonRegistries.registerMainObjects();
-
             // Register Core ObjectTags with the ObjectFetcher
             ObjectFetcher.registerCoreObjects();
+            CommonRegistries.registerMainObjects();
         }
         catch (Exception e) {
             Debug.echoError(e);
@@ -481,7 +492,7 @@ public class Denizen extends JavaPlugin {
             public void run() {
                 if (!StrongWarning.recentWarnings.isEmpty()) {
                     StringBuilder warnText = new StringBuilder();
-                    warnText.append(ChatColor.YELLOW).append("[Denizen]").append(ChatColor.RED).append("Recent strong system warnings, scripters need to address ASAP (check earlier console logs for details):");
+                    warnText.append(ChatColor.YELLOW).append("[Denizen] ").append(ChatColor.RED).append("Recent strong system warnings, scripters need to address ASAP (check earlier console logs for details):");
                     for (StrongWarning warning : StrongWarning.recentWarnings) {
                         warnText.append("\n- ").append(warning.message);
                     }
@@ -520,6 +531,7 @@ public class Denizen extends JavaPlugin {
         // @Regex ^on shutdown$
         //
         // @Warning not all plugins will be loaded and delayed scripts will be dropped.
+        // Also note that this event is not guaranteed to always run (eg if the server crashes).
         //
         // @Triggers when the server is shutting down.
         //

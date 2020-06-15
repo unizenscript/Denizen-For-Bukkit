@@ -6,7 +6,6 @@ import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -47,13 +46,12 @@ public class EntityHealsScriptEvent extends BukkitScriptEvent implements Listene
 
     public static EntityHealsScriptEvent instance;
     public EntityTag entity;
-    public ElementTag amount;
     public ElementTag reason;
     public EntityRegainHealthEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return CoreUtilities.getXthArg(1, CoreUtilities.toLowerCase(s)).equals("heals");
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventArgLowerAt(1).equals("heals");
     }
 
     @Override
@@ -82,8 +80,8 @@ public class EntityHealsScriptEvent extends BukkitScriptEvent implements Listene
 
     @Override
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
-        if (determinationObj instanceof ElementTag && ((ElementTag) determinationObj).isInt()) {
-            amount = (ElementTag) determinationObj;
+        if (determinationObj instanceof ElementTag && ((ElementTag) determinationObj).isDouble()) {
+            event.setAmount(((ElementTag) determinationObj).asDouble());
             return true;
         }
         return super.applyDetermination(path, determinationObj);
@@ -103,7 +101,7 @@ public class EntityHealsScriptEvent extends BukkitScriptEvent implements Listene
             return reason;
         }
         else if (name.equals("amount")) {
-            return amount;
+            return new ElementTag(event.getAmount());
         }
         return super.getContext(name);
     }
@@ -111,10 +109,8 @@ public class EntityHealsScriptEvent extends BukkitScriptEvent implements Listene
     @EventHandler
     public void onEntityHeals(EntityRegainHealthEvent event) {
         entity = new EntityTag(event.getEntity());
-        amount = new ElementTag(event.getAmount());
         reason = new ElementTag(event.getRegainReason().toString());
         this.event = event;
         fire(event);
-        event.setAmount(amount.asDouble());
     }
 }

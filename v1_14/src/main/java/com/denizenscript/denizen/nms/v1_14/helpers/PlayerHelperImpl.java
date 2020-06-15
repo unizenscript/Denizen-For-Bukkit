@@ -2,6 +2,7 @@ package com.denizenscript.denizen.nms.v1_14.helpers;
 
 import com.denizenscript.denizen.nms.v1_14.impl.ImprovedOfflinePlayerImpl;
 import com.denizenscript.denizen.nms.v1_14.impl.network.handlers.AbstractListenerPlayInImpl;
+import com.denizenscript.denizen.nms.v1_14.impl.network.handlers.DenizenNetworkManagerImpl;
 import com.mojang.authlib.GameProfile;
 import com.denizenscript.denizen.nms.abstracts.ImprovedOfflinePlayer;
 import com.denizenscript.denizen.nms.interfaces.PlayerHelper;
@@ -12,6 +13,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.SoundCategory;
 import org.bukkit.craftbukkit.v1_14_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_14_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer;
@@ -29,6 +31,25 @@ public class PlayerHelperImpl extends PlayerHelper {
     public static final Map<String, Field> PLAYER_CONNECTION_FIELDS = ReflectionHelper.getFields(PlayerConnection.class);
     public static final Field FLY_TICKS = PLAYER_CONNECTION_FIELDS.get("C");
     public static final Field VEHICLE_FLY_TICKS = PLAYER_CONNECTION_FIELDS.get("E");
+
+    public static final DataWatcherObject<Byte> ENTITY_HUMAN_SKINLAYERS_DATAWATCHER;
+
+    static {
+        DataWatcherObject<Byte> skinlayers = null;
+        try {
+            skinlayers = (DataWatcherObject<Byte>) ReflectionHelper.getFields(EntityHuman.class).get("bt").get(null);
+        }
+        catch (Throwable ex) {
+            ex.printStackTrace();
+        }
+        ENTITY_HUMAN_SKINLAYERS_DATAWATCHER = skinlayers;
+    }
+
+    @Override
+    public void stopSound(Player player, String sound, SoundCategory category) {
+        MinecraftKey soundKey = sound == null ? null : new MinecraftKey(sound);
+        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(new PacketPlayOutStopSound(soundKey, net.minecraft.server.v1_14_R1.SoundCategory.valueOf(category.name())));
+    }
 
     @Override
     public int getFlyKickCooldown(Player player) {
@@ -165,5 +186,20 @@ public class PlayerHelperImpl extends PlayerHelper {
         }
         recipeBook.a(recipe);
         recipeBook.f(recipe);
+    }
+
+    @Override
+    public String getPlayerBrand(Player player) {
+        return ((DenizenNetworkManagerImpl) ((CraftPlayer) player).getHandle().playerConnection.networkManager).packetListener.brand;
+    }
+
+    @Override
+    public byte getSkinLayers(Player player) {
+        return ((CraftPlayer) player).getHandle().getDataWatcher().get(ENTITY_HUMAN_SKINLAYERS_DATAWATCHER);
+    }
+
+    @Override
+    public void setSkinLayers(Player player, byte flags) {
+        ((CraftPlayer) player).getHandle().getDataWatcher().set(ENTITY_HUMAN_SKINLAYERS_DATAWATCHER, flags);
     }
 }

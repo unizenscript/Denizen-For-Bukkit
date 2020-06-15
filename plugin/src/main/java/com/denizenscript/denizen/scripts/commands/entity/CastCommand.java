@@ -18,18 +18,32 @@ import java.util.List;
 
 public class CastCommand extends AbstractCommand {
 
+    public CastCommand() {
+        setName("cast");
+        setSyntax("cast [<effect>] (remove) (duration:<value>) (amplifier:<#>) (<entity>|...) (no_ambient) (hide_particles)");
+        setRequiredArguments(1, 7);
+    }
+
     // <--[command]
     // @Name Cast
-    // @Syntax cast [<effect>] (remove) (duration:<value>) (power:<#>) (<entity>|...) (no_ambient) (hide_particles)
+    // @Syntax cast [<effect>] (remove) (duration:<value>) (amplifier:<#>) (<entity>|...) (no_ambient) (hide_particles)
     // @Required 1
+    // @Maximum 7
     // @Short Casts a potion effect to a list of entities.
     // @Group entity
     //
     // @Description
-    // Casts or removes a potion effect to or from a list of entities. If you don't specify a duration,
-    // it defaults to 60 seconds. If you don't specify a power level, it defaults to 1.
-    // To cast an effect with a duration which displays as '**:**' or 'infinite' use a duration
-    // of '1639s' (1639 seconds) or greater. While it may display as infinite, it will still wear off.
+    // Casts or removes a potion effect to or from a list of entities.
+    //
+    // The effect type must be from <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/potion/PotionEffectType.html>.
+    //
+    // If you don't specify a duration, it defaults to 60 seconds.
+    // To cast an effect with a duration which displays as '**:**' or 'infinite' use a duration of '1639s' (1639 seconds) or greater.
+    // While it may display as infinite, it will still wear off.
+    //
+    // The amplifier is how many levels to *add* over the normal level 1.
+    // If you don't specify an amplifier level, it defaults to 1, meaning an effect of level 2 (this is for historical compatibility reasons).
+    // Specify "amplifier:0" to have no amplifier applied (ie effect level 1).
     //
     // If no player is specified, the command will target the player. If no player is present, the
     // command will target the NPC. If an NPC is not present, there will be an error!
@@ -43,8 +57,12 @@ public class CastCommand extends AbstractCommand {
     // <server.list_potion_effects>
     //
     // @Usage
-    // Use to cast an effect onto the player for 120 seconds with a power of 3.
-    // - cast jump d:120 p:3
+    // Use to cast a level 1 effect onto the player.
+    // - cast speed amplifier:0
+    //
+    // @Usage
+    // Use to cast an effect onto the player for 120 seconds with an amplifier of 3 (effect level 4).
+    // - cast jump d:120 amplifier:3
     //
     // @Usage
     // Use to remove an effect from the player.
@@ -55,7 +73,6 @@ public class CastCommand extends AbstractCommand {
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
-        // Iterate through arguments
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (!scriptEntry.hasObject("remove")
@@ -77,7 +94,7 @@ public class CastCommand extends AbstractCommand {
             }
             else if (!scriptEntry.hasObject("amplifier")
                     && arg.matchesPrefix("power", "p", "amplifier", "a")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)) {
+                    && arg.matchesFloat()) {
                 scriptEntry.addObject("amplifier", arg.asElement());
             }
             else if (!scriptEntry.hasObject("effect")
@@ -116,16 +133,14 @@ public class CastCommand extends AbstractCommand {
     @SuppressWarnings("unchecked")
     @Override
     public void execute(ScriptEntry scriptEntry) {
-        // Fetch objects
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
         PotionEffectType effect = (PotionEffectType) scriptEntry.getObject("effect");
         int amplifier = scriptEntry.getElement("amplifier").asInt();
-        DurationTag duration = (DurationTag) scriptEntry.getObject("duration");
+        DurationTag duration = scriptEntry.getObjectTag("duration");
         boolean remove = scriptEntry.getElement("remove").asBoolean();
         ElementTag showParticles = scriptEntry.getElement("show_particles");
         ElementTag ambient = scriptEntry.getElement("ambient");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(),
                     ArgumentHelper.debugObj("Target(s)", entities.toString())

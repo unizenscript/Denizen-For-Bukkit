@@ -6,8 +6,6 @@ import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
@@ -46,12 +44,11 @@ public class EntityFoodLevelChangeScriptEvent extends BukkitScriptEvent implemen
 
     public static EntityFoodLevelChangeScriptEvent instance;
     public EntityTag entity;
-    public Integer food;
     public FoodLevelChangeEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return (CoreUtilities.toLowerCase(s).contains("changes food level"));
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.contains("changes food level");
     }
 
     @Override
@@ -77,7 +74,7 @@ public class EntityFoodLevelChangeScriptEvent extends BukkitScriptEvent implemen
     @Override
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         if (determinationObj instanceof ElementTag && ((ElementTag) determinationObj).isInt()) {
-            food = ((ElementTag) determinationObj).asInt();
+            event.setFoodLevel(((ElementTag) determinationObj).asInt());
             return true;
         }
         return super.applyDetermination(path, determinationObj);
@@ -94,7 +91,7 @@ public class EntityFoodLevelChangeScriptEvent extends BukkitScriptEvent implemen
             return entity.getDenizenObject();
         }
         else if (name.equals("food")) {
-            return new ElementTag(food);
+            return new ElementTag(event.getFoodLevel());
         }
         return super.getContext(name);
     }
@@ -102,9 +99,7 @@ public class EntityFoodLevelChangeScriptEvent extends BukkitScriptEvent implemen
     @EventHandler
     public void onEntityFoodLevelChanged(FoodLevelChangeEvent event) {
         entity = new EntityTag(event.getEntity());
-        food = event.getFoodLevel();
         this.event = event;
         fire(event);
-        event.setFoodLevel(food);
     }
 }

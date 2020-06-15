@@ -18,10 +18,17 @@ import java.util.List;
 
 public class RemoveCommand extends AbstractCommand {
 
+    public RemoveCommand() {
+        setName("remove");
+        setSyntax("remove [<entity>|...] (world:<world>)");
+        setRequiredArguments(1, 2);
+    }
+
     // <--[command]
     // @Name Remove
     // @Syntax remove [<entity>|...] (world:<world>)
     // @Required 1
+    // @Maximum 2
     // @Short Despawns an entity or list of entities, permanently removing any NPCs.
     // @Group entity
     // @Description
@@ -86,12 +93,9 @@ public class RemoveCommand extends AbstractCommand {
     @SuppressWarnings("unchecked")
     @Override
     public void execute(final ScriptEntry scriptEntry) {
-
-        // Get objects
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
-        WorldTag world = (WorldTag) scriptEntry.getObject("world");
+        WorldTag world = scriptEntry.getObjectTag("world");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), ArgumentHelper.debugList("entities", entities));
         }

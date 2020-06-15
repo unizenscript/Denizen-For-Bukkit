@@ -8,7 +8,6 @@ import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -69,16 +68,14 @@ public class EntityKilledScriptEvent extends BukkitScriptEvent implements Listen
 
     public EntityTag entity;
     public ElementTag cause;
-    public ElementTag damage;
     public ElementTag final_damage;
     public EntityTag damager;
     public EntityTag projectile;
     public EntityDamageEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        String lower = CoreUtilities.toLowerCase(s);
-        String cmd = CoreUtilities.getXthArg(1, lower);
+    public boolean couldMatch(ScriptPath path) {
+        String cmd = path.eventArgLowerAt(1);
         return cmd.equals("killed") || cmd.equals("kills");
     }
 
@@ -122,7 +119,7 @@ public class EntityKilledScriptEvent extends BukkitScriptEvent implements Listen
     @Override
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         if (determinationObj instanceof ElementTag && ((ElementTag) determinationObj).isDouble()) {
-            damage = (ElementTag) determinationObj;
+            event.setDamage(((ElementTag) determinationObj).asDouble());
             return true;
         }
         return super.applyDetermination(path, determinationObj);
@@ -147,7 +144,7 @@ public class EntityKilledScriptEvent extends BukkitScriptEvent implements Listen
             return entity.getDenizenObject();
         }
         else if (name.equals("damage")) {
-            return damage;
+            return new ElementTag(event.getDamage());
         }
         else if (name.equals("final_damage")) {
             return final_damage;
@@ -183,7 +180,6 @@ public class EntityKilledScriptEvent extends BukkitScriptEvent implements Listen
         else {
             return;
         }
-        damage = new ElementTag(event.getDamage());
         final_damage = new ElementTag(event.getFinalDamage());
         cause = new ElementTag(CoreUtilities.toLowerCase(event.getCause().name()));
         damager = null;
@@ -199,6 +195,5 @@ public class EntityKilledScriptEvent extends BukkitScriptEvent implements Listen
         }
         this.event = event;
         fire(event);
-        event.setDamage(damage.asDouble());
     }
 }

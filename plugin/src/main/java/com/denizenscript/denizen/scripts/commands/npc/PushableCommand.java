@@ -8,16 +8,23 @@ import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
-import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 
 public class PushableCommand extends AbstractCommand {
 
+    public PushableCommand() {
+        setName("pushable");
+        setSyntax("pushable (state:true/false/{toggle}) (delay:<duration>) (returnable:true/false)");
+        setRequiredArguments(0, 3);
+    }
+
     // <--[command]
     // @Name Pushable
     // @Syntax pushable (state:true/false/{toggle}) (delay:<duration>) (returnable:true/false)
     // @Required 0
+    // @Maximum 3
+    // @Plugin Citizens
     // @Short Edits the pushable trait for NPCs.
     // @Group npc
     //
@@ -55,7 +62,7 @@ public class PushableCommand extends AbstractCommand {
             }
             else if (!scriptEntry.hasObject("return")
                     && arg.matchesPrefix("return", "r")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Boolean)) {
+                    && arg.matchesBoolean()) {
                 scriptEntry.addObject("return", arg.asElement());
             }
 

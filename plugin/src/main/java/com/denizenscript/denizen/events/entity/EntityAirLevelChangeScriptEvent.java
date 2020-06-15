@@ -6,8 +6,6 @@ import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityAirChangeEvent;
@@ -46,12 +44,11 @@ public class EntityAirLevelChangeScriptEvent extends BukkitScriptEvent implement
 
     public static EntityAirLevelChangeScriptEvent instance;
     public EntityTag entity;
-    public Integer air;
     public EntityAirChangeEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return (CoreUtilities.toLowerCase(s).contains("changes air level"));
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.contains("changes air level");
     }
 
     @Override
@@ -77,7 +74,7 @@ public class EntityAirLevelChangeScriptEvent extends BukkitScriptEvent implement
     @Override
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         if (determinationObj instanceof ElementTag && ((ElementTag) determinationObj).isInt()) {
-            air = ((ElementTag) determinationObj).asInt();
+            event.setAmount(((ElementTag) determinationObj).asInt());
             return true;
         }
         return super.applyDetermination(path, determinationObj);
@@ -94,7 +91,7 @@ public class EntityAirLevelChangeScriptEvent extends BukkitScriptEvent implement
             return entity.getDenizenObject();
         }
         else if (name.equals("air")) {
-            return new ElementTag(air);
+            return new ElementTag(event.getAmount());
         }
         return super.getContext(name);
     }
@@ -102,9 +99,7 @@ public class EntityAirLevelChangeScriptEvent extends BukkitScriptEvent implement
     @EventHandler
     public void onEntityAirLevelChanged(EntityAirChangeEvent event) {
         entity = new EntityTag(event.getEntity());
-        air = event.getAmount();
         this.event = event;
         fire(event);
-        event.setAmount(air);
     }
 }

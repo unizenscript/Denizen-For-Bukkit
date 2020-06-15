@@ -22,10 +22,17 @@ import java.util.List;
 
 public class OpenTradesCommand extends AbstractCommand {
 
+    public OpenTradesCommand() {
+        setName("opentrades");
+        setSyntax("opentrades [<entity>/<trade>|...] (title:<title>) (players:<player>|...)");
+        setRequiredArguments(1, 3);
+    }
+
     // <--[command]
     // @Name OpenTrades
     // @Syntax opentrades [<entity>/<trade>|...] (title:<title>) (players:<player>|...)
     // @Required 1
+    // @Maximum 3
     // @Short Opens the specified villager entity's trading inventory or a list of trades.
     // @Group player
     //

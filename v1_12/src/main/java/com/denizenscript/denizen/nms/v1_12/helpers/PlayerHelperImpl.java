@@ -12,6 +12,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.SoundCategory;
 import org.bukkit.craftbukkit.v1_12_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
@@ -43,6 +44,11 @@ public class PlayerHelperImpl extends PlayerHelper {
             Debug.echoError(e);
         }
         return 80;
+    }
+
+    @Override
+    public void stopSound(Player player, String sound, SoundCategory category) {
+        player.stopSound(sound == null ? "" : sound, category);
     }
 
     @Override
@@ -152,5 +158,10 @@ public class PlayerHelperImpl extends PlayerHelper {
     @Override
     public void quietlyAddRecipe(Player player, NamespacedKey key) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getPlayerBrand(Player player) {
+        return "UPDATE YOUR SERVER!";
     }
 }

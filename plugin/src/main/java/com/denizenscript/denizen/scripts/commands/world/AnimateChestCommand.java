@@ -21,10 +21,17 @@ import java.util.List;
 
 public class AnimateChestCommand extends AbstractCommand {
 
+    public AnimateChestCommand() {
+        setName("animatechest");
+        setSyntax("animatechest [<location>] ({open}/close) (sound:{true}/false) (<player>|...)");
+        setRequiredArguments(1, 4);
+    }
+
     // <--[command]
     // @Name AnimateChest
     // @Syntax animatechest [<location>] ({open}/close) (sound:{true}/false) (<player>|...)
     // @Required 1
+    // @Maximum 4
     // @Short Makes a chest appear to open or close.
     // @Group world
     //
@@ -78,7 +85,7 @@ public class AnimateChestCommand extends AbstractCommand {
             }
             else if (!scriptEntry.hasObject("sound")
                     && arg.matchesPrefix("sound")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Boolean)) {
+                    && arg.matchesBoolean()) {
                 scriptEntry.addObject("sound", arg.asElement());
             }
             else if (!scriptEntry.hasObject("players")
@@ -117,7 +124,7 @@ public class AnimateChestCommand extends AbstractCommand {
     @Override
     public void execute(ScriptEntry scriptEntry) {
 
-        LocationTag location = (LocationTag) scriptEntry.getObject("location");
+        LocationTag location = scriptEntry.getObjectTag("location");
         ElementTag action = scriptEntry.getElement("action");
         ElementTag sound = scriptEntry.getElement("sound");
         List<PlayerTag> players = (List<PlayerTag>) scriptEntry.getObject("players");

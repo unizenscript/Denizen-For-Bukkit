@@ -23,10 +23,18 @@ import java.util.List;
 
 public class NarrateCommand extends AbstractCommand {
 
+    public NarrateCommand() {
+        setName("narrate");
+        setSyntax("narrate [<text>] (targets:<player>|...) (format:<script>) (per_player)");
+        setRequiredArguments(1, 4);
+        setParseArgs(false);
+    }
+
     // <--[command]
     // @Name Narrate
     // @Syntax narrate [<text>] (targets:<player>|...) (format:<script>) (per_player)
     // @Required 1
+    // @Maximum 4
     // @Short Shows some text to the player.
     // @Group player
     //
@@ -57,16 +65,8 @@ public class NarrateCommand extends AbstractCommand {
     // -->
 
     @Override
-    public void onEnable() {
-        setParseArgs(false);
-    }
-
-    @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-        if (scriptEntry.getArguments().size() > 4) { // TODO: Use this more often!
-            throw new InvalidArgumentsException("Too many arguments! Did you forget a 'quote'?");
-        }
-        for (Argument arg : ArgumentHelper.interpret(scriptEntry.getOriginalArguments())) {
+        for (Argument arg : ArgumentHelper.interpret(scriptEntry, scriptEntry.getOriginalArguments())) {
             if (!scriptEntry.hasObject("format")
                     && arg.matchesPrefix("format", "f")) {
                 String formatStr = TagManager.tag(arg.getValue(), scriptEntry.getContext());
@@ -129,7 +129,11 @@ public class NarrateCommand extends AbstractCommand {
         }
 
         for (PlayerTag player : targets) {
-            if (player != null && player.isOnline()) {
+            if (player != null) {
+                if (!player.isOnline()) {
+                    Debug.echoDebug(scriptEntry, "Player is offline, can't narrate to them. Skipping.");
+                    continue;
+                }
                 String personalText = text;
                 if (perPlayer) {
                     context.player = player;
@@ -138,7 +142,7 @@ public class NarrateCommand extends AbstractCommand {
                 player.getPlayerEntity().spigot().sendMessage(FormattedTextHelper.parse(format != null ? format.getFormattedText(personalText, scriptEntry) : personalText));
             }
             else {
-                Debug.echoError("Narrated to non-existent or offline player!");
+                Debug.echoError("Narrated to non-existent player!?");
             }
         }
     }

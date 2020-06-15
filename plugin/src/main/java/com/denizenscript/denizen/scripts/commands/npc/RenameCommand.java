@@ -13,10 +13,17 @@ import org.bukkit.Location;
 
 public class RenameCommand extends AbstractCommand {
 
+    public RenameCommand() {
+        setName("rename");
+        setSyntax("rename [<name>]");
+        setRequiredArguments(1, 1);
+    }
+
     // <--[command]
     // @Name Rename
     // @Syntax rename [<name>]
     // @Required 1
+    // @Maximum 1
     // @Plugin Citizens
     // @Short Renames the linked NPC.
     // @Group npc
@@ -62,7 +69,7 @@ public class RenameCommand extends AbstractCommand {
     @Override
     public void execute(final ScriptEntry scriptEntry) {
 
-        ElementTag name = (ElementTag) scriptEntry.getObject("name");
+        ElementTag name = scriptEntry.getElement("name");
 
         if (scriptEntry.dbCallShouldDebug()) {
 

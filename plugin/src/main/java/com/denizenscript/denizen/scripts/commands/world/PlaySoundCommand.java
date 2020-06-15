@@ -17,32 +17,39 @@ import java.util.List;
 
 public class PlaySoundCommand extends AbstractCommand {
 
+    public PlaySoundCommand() {
+        setName("playsound");
+        setSyntax("playsound [<location>|.../<player>|...] [sound:<name>] (volume:<#.#>) (pitch:<#.#>) (custom) (sound_category:<category name>)");
+        setRequiredArguments(2, 6);
+    }
+
     // <--[command]
     // @Name PlaySound
     // @Syntax playsound [<location>|.../<player>|...] [sound:<name>] (volume:<#.#>) (pitch:<#.#>) (custom) (sound_category:<category name>)
     // @Required 2
+    // @Maximum 6
     // @Short Plays a sound at the location or to a list of players.
     // @Group world
     //
     // @Description
     // Plays a sound to a player or nearby players at a location.
-    // The sound is played through the player's client just like
-    // any other sounds in Minecraft. Sounds are respecfully played
-    // with their sound types.
-    // For example; zombie sounds are under the type: Mobs/Animals
-    //
-    // Specifying a player or list of players will only play
-    // the sound for them for each of their current location.
-    // Sounds are played at fixed locations and will not
-    // follow a player while playing.
-    // If a location is specified, it will play the sound for
-    // all players if they are nearby that location specified.
-    //
-    // Optionally, specify 'custom' to play a custom sound added by a resource pack, changing the sound name to something like 'random.click'
+    // The sound is played through the player's client just like any other sounds in Minecraft.
     //
     // For a list of all sounds, check <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Sound.html>
     //
+    // Sounds are by default played under their normal sound type (eg zombie sounds are under the type Mobs/Animals).
+    // You can optionally instead specify an alternate sound category to use.
     // For a list of all valid sound categories, check <@link url https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/SoundCategory.html>
+    //
+    // Specifying a player or list of players will only play the sound for each player, from their own location (but will not follow them if they move).
+    // If a location is specified, it will play the sound for any players that are near the location specified.
+    //
+    // Optionally, specify 'custom' to play a custom sound added by a resource pack, changing the sound name to something like 'random.click'
+    //
+    // Optionally specify a pitch value (defaults to 1.0). A pitch from 0.0 to 1.0 will be deeper (sounds like a demon), and above 1.0 will be higher pitched (sounds like a fairy).
+    //
+    // Optionally specify a volume value (defaults to 1.0). A volume from 0.0 to 1.0 will be quieter than normal.
+    // A volume above 1.0 however will not be louder - instead it will be audible from farther (approximately 1 extra chunk of distance per value, eg 2.0 is 2 more chunks, 5.0 is 5 more chunks, etc.).
     //
     // @Tags
     // <server.list_sounds>
@@ -61,7 +68,6 @@ public class PlaySoundCommand extends AbstractCommand {
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
-        // Iterate through arguments
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (!scriptEntry.hasObject("locations")
@@ -75,17 +81,16 @@ public class PlaySoundCommand extends AbstractCommand {
                 scriptEntry.addObject("entities", arg.asType(ListTag.class).filter(PlayerTag.class, scriptEntry));
             }
             else if (!scriptEntry.hasObject("volume")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)
-                    && arg.matchesPrefix("volume, v")) {
+                    && arg.matchesFloat()
+                    && arg.matchesPrefix("volume", "v")) {
                 scriptEntry.addObject("volume", arg.asElement());
             }
             else if (!scriptEntry.hasObject("pitch")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)
-                    && arg.matchesPrefix("pitch, p")) {
+                    && arg.matchesFloat()
+                    && arg.matchesPrefix("pitch", "p")) {
                 scriptEntry.addObject("pitch", arg.asElement());
             }
-            else if (!scriptEntry.hasObject("sound")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.String)) {
+            else if (!scriptEntry.hasObject("sound")) {
                 scriptEntry.addObject("sound", arg.asElement());
             }
             else if (!scriptEntry.hasObject("custom")
@@ -93,7 +98,7 @@ public class PlaySoundCommand extends AbstractCommand {
                 scriptEntry.addObject("custom", new ElementTag(true));
             }
             else if (!scriptEntry.hasObject("sound_category")
-                    && arg.matchesOnePrefix("sound_category")) {
+                    && arg.matchesPrefix("sound_category")) {
                 scriptEntry.addObject("sound_category", arg.asElement());
             }
             else {

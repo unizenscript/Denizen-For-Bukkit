@@ -22,10 +22,17 @@ import java.util.List;
 
 public class MidiCommand extends AbstractCommand implements Holdable {
 
+    public MidiCommand() {
+        setName("midi");
+        setSyntax("midi [cancel/<file> (tempo:<#.#>) (volume:<#.#>)] (<location>/<entity>|...)");
+        setRequiredArguments(1, 4);
+    }
+
     // <--[command]
     // @Name Midi
-    // @Syntax midi (cancel) [<file>] (<location>/<entity>|...) (tempo:<#.#>) (volume:<#.#>)
+    // @Syntax midi [cancel/<file> (tempo:<#.#>) (volume:<#.#>)] (<location>/<entity>|...)
     // @Required 1
+    // @Maximum 4
     // @Short Plays a midi file at a given location or to a list of players using note block sounds.
     // @Group world
     //
@@ -74,12 +81,12 @@ public class MidiCommand extends AbstractCommand implements Holdable {
                 scriptEntry.addObject("entities", arg.asType(ListTag.class).filter(EntityTag.class, scriptEntry));
             }
             else if (!scriptEntry.hasObject("volume") &&
-                    arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double) &&
+                    arg.matchesFloat() &&
                     arg.matchesPrefix("volume", "vol", "v")) {
                 scriptEntry.addObject("volume", arg.asElement());
             }
             else if (!scriptEntry.hasObject("tempo") &&
-                    arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)) {
+                    arg.matchesFloat()) {
                 scriptEntry.addObject("tempo", arg.asElement());
             }
             else if (!scriptEntry.hasObject("file")) {
@@ -131,11 +138,10 @@ public class MidiCommand extends AbstractCommand implements Holdable {
         }
 
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
-        LocationTag location = (LocationTag) scriptEntry.getObject("location");
+        LocationTag location = scriptEntry.getObjectTag("location");
         float tempo = scriptEntry.getElement("tempo").asFloat();
         float volume = scriptEntry.getElement("volume").asFloat();
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), (cancel ? ArgumentHelper.debugObj("cancel", cancel) : "") +
                     (file != null ? ArgumentHelper.debugObj("file", file.getPath()) : "") +

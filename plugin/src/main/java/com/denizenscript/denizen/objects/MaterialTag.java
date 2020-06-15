@@ -9,6 +9,7 @@ import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.utilities.blocks.ModernBlockData;
 import com.denizenscript.denizen.nms.interfaces.BlockData;
 import com.denizenscript.denizen.tags.BukkitTagContext;
+import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.PropertyParser;
 import com.denizenscript.denizencore.tags.Attribute;
@@ -19,6 +20,7 @@ import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.Deprecations;
 import dev.unizen.denizen.objects.properties.material.*;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -35,19 +37,12 @@ public class MaterialTag implements ObjectTag, Adjustable {
     // @description
     // A MaterialTag represents a material (a type of block or item).
     //
-    // For format info, see <@link language m@>
-    //
-    // -->
-
-    // <--[language]
-    // @name m@
-    // @group Object Fetcher System
-    // @description
-    // m@ refers to the 'object identifier' of a MaterialTag. The 'm@' is notation for Denizen's Object
-    // Fetcher. The constructor for a MaterialTag is the material type name.
+    // These use the object notation "m@".
+    // The identity format for materials is the material type name.
     // For example, 'm@stick'.
     //
-    // For general info, see <@link language MaterialTag Objects>
+    // Block materials may sometimes also contain property data,
+    // for specific values on the block material such as the growth stage of a plant or the orientation of a stair block.
     //
     // -->
 
@@ -85,7 +80,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
 
         ///////
         // Handle objects with properties through the object fetcher
-        if (ObjectFetcher.DESCRIBED_PATTERN.matcher(string).matches()) {
+        if (ObjectFetcher.isObjectWithProperties(string)) {
             return ObjectFetcher.getObjectFrom(MaterialTag.class, string, context);
         }
 
@@ -188,7 +183,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         return null;
     }
 
-    public static TagContext noDebugContext = new BukkitTagContext(null, null, false, null, false, null);
+    public static TagContext noDebugContext = new BukkitTagContext(null, null, null, false, null);
 
     /**
      * Determine whether a string is a valid material.
@@ -201,6 +196,16 @@ public class MaterialTag implements ObjectTag, Adjustable {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public ObjectTag duplicate() {
+        if (hasModernData()) {
+            return new MaterialTag(getModernData());
+        }
+        else {
+            return new MaterialTag(getMaterial());
+        }
     }
 
     /**
@@ -537,6 +542,19 @@ public class MaterialTag implements ObjectTag, Adjustable {
         registerTag("has_multiple_faces", (attribute, object) -> new ElementTag(MaterialMultipleFacing.describes(object)));
 
         // <--[tag]
+        // @attribute <MaterialTag.can_drag>
+        // @returns ElementTag(Boolean)
+        // @group properties
+        // @description
+        // Returns whether the material is a material that can cause dragging (like bubble columns).
+        // When this returns true, <@link tag MaterialTag.drags>
+        // and <@link mechanism MaterialTag.drags> are accessible.
+        // -->
+        registerTag("can_drag", (attribute, object) -> {
+            return new ElementTag(MaterialDrags.describes(object));
+        });
+
+        // <--[tag]
         // @attribute <MaterialTag.is_bisected>
         // @returns ElementTag(Boolean)
         // @group properties
@@ -593,16 +611,17 @@ public class MaterialTag implements ObjectTag, Adjustable {
         registerTag("is_leaves", (attribute, object) -> new ElementTag(MaterialPersistent.describes(object)));
 
         // <--[tag]
-        // @attribute <MaterialTag.is_pickle>
+        // @attribute <MaterialTag.has_count>
         // @returns ElementTag(Boolean)
         // @group properties
         // @description
-        // Returns whether the material is a slab.
-        // When this returns true, <@link tag MaterialTag.pickle_count>,
-        // <@link tag MaterialTag.pickle_max>, <@link tag MaterialTag.pickle_min>,
-        // and <@link mechanism MaterialTag.pickle_count> are accessible.
+        // Returns whether the material has a 'count' value, which applies to SeaPickles and TurtleEggs.
+        // When this returns true, <@link tag MaterialTag.count>,
+        // <@link tag MaterialTag.count_max>, <@link tag MaterialTag.count_min>,
+        // and <@link mechanism MaterialTag.count> are accessible.
         // -->
-        registerTag("is_pickle", (attribute, object) -> new ElementTag(MaterialPickle.describes(object)));
+        registerTag("is_pickle", (attribute, object) -> new ElementTag(MaterialCount.describes(object)));
+        registerTag("has_count", (attribute, object) -> new ElementTag(MaterialCount.describes(object)));
 
         // <--[tag]
         // @attribute <MaterialTag.is_slab>
@@ -738,17 +757,6 @@ public class MaterialTag implements ObjectTag, Adjustable {
         registerTag("is_switch", (attribute, object) -> new ElementTag(MaterialSwitchFace.describes(object)));
 
         // <--[tag]
-        // @attribute <MaterialTag.is_waterloggable>
-        // @returns ElementTag(Boolean)
-        // @group properties
-        // @description
-        // Returns whether the material is waterloggable.
-        // When this returns true, <@link tag MaterialTag.waterlogged>
-        // and <@link mechanism MaterialTag.waterlogged> are accessible.
-        // -->
-        registerTag("is_waterloggable", (attribute, object) -> new ElementTag(MaterialWaterlogged.describes(object)));
-
-        // <--[tag]
         // @attribute <MaterialTag.has_gravity>
         // @returns ElementTag(Boolean)
         // @description
@@ -797,6 +805,30 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // Returns whether the material is a block that can catch fire.
         // -->
         registerTag("is_flammable", (attribute, object) -> new ElementTag(object.material.isFlammable()));
+
+        // <--[tag]
+        // @attribute <MaterialTag.is_fuel>
+        // @returns ElementTag(Boolean)
+        // @description
+        // Returns whether the material is a block that can be burned in a furnace as fuel.
+        // -->
+        registerTag("is_fuel", (attribute, object) -> {
+            return new ElementTag(object.material.isFuel());
+        });
+
+        // <--[tag]
+        // @attribute <MaterialTag.fuel_burn_time>
+        // @returns DurationTag
+        // @description
+        // Returns the duration that a burnable fuel block will burn in a furnace for.
+        // -->
+        registerTag("fuel_burn_time", (attribute, object) -> {
+            Integer ticks = NMSHandler.getItemHelper().burnTime(object.getMaterial());
+            if (ticks != null) {
+                return new DurationTag(ticks.longValue());
+            }
+            return null;
+        });
 
         // <--[tag]
         // @attribute <MaterialTag.is_occluding>
@@ -907,6 +939,23 @@ public class MaterialTag implements ObjectTag, Adjustable {
         registerTag("bukkit_enum", (attribute, object) -> new ElementTag(object.material.name()));
 
         // <--[tag]
+        // @attribute <MaterialTag.translated_name>
+        // @returns ElementTag
+        // @description
+        // Returns the localized name of the material.
+        // Note that this is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
+        // This instead generates the special modern Minecraft JSON codes for translatable text through the Denizen message processor.
+        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
+        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
+        // -->
+        registerTag("translated_name", (attribute, object) -> {
+            String key = object.material.getKey().getKey();
+            key = key.replace("wall_banner", "banner");
+            String type = object.material.isBlock() ? "block" : "item";
+            return new ElementTag(ChatColor.COLOR_CHAR + "[translate=" + type + ".minecraft." + key + "]");
+        });
+
+        // <--[tag]
         // @attribute <MaterialTag.name>
         // @returns ElementTag
         // @description
@@ -1004,7 +1053,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
                     Debug.echoError("Invalid property string '" + properties.get(i) + "'!");
                 }
                 else {
-                    mat.safeApplyProperty(new Mechanism(new ElementTag(data.get(0)), new ElementTag((data.get(1)).replace((char) 0x2011, ';')), attribute.context));
+                    mat.safeApplyProperty(new Mechanism(new ElementTag(data.get(0)), new ElementTag(data.get(1)), attribute.context));
                 }
             }
             return mat;

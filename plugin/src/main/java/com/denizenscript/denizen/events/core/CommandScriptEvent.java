@@ -68,7 +68,7 @@ public class CommandScriptEvent extends BukkitScriptEvent implements Listener {
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("command") || path.eventArgLowerAt(0).equals("command");
+        return path.eventArgLowerAt(1).equals("command") || (path.eventArgLowerAt(0).equals("command") && !path.eventArgLowerAt(1).equals("unknown"));
     }
 
     @Override
@@ -98,6 +98,7 @@ public class CommandScriptEvent extends BukkitScriptEvent implements Listener {
             String lower = CoreUtilities.toLowerCase(determination);
             if (lower.equals("fulfilled")) {
                 cancelled = true;
+                cancellationChanged();
                 return true;
             }
         }
@@ -141,6 +142,14 @@ public class CommandScriptEvent extends BukkitScriptEvent implements Listener {
         fire(event);
     }
 
+    @Override
+    public void cancellationChanged() {
+        if (cancelled && serverEvent != null) {
+            serverEvent.setCommand("denizen do_nothing");
+        }
+        super.cancellationChanged();
+    }
+
     @EventHandler
     public void onServerEvent(ServerCommandEvent event) {
         this.playerEvent = null;
@@ -160,8 +169,5 @@ public class CommandScriptEvent extends BukkitScriptEvent implements Listener {
             this.sourceType = "server";
         }
         fire(event);
-        if (cancelled) {
-            event.setCommand("denizen do_nothing");
-        }
     }
 }

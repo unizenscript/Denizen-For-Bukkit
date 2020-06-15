@@ -16,10 +16,17 @@ import java.util.ArrayList;
 
 public class ItemCooldownCommand extends AbstractCommand {
 
+    public ItemCooldownCommand() {
+        setName("itemcooldown");
+        setSyntax("itemcooldown [<material>|...] (duration:<duration>)");
+        setRequiredArguments(1, 2);
+    }
+
     // <--[command]
     // @Name ItemCooldown
     // @Syntax itemcooldown [<material>|...] (duration:<duration>)
     // @Required 1
+    // @Maximum 2
     // @Short Places a cooldown on a material in a player's inventory.
     // @Group player
     //

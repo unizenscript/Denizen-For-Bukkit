@@ -16,10 +16,17 @@ import java.util.Map;
 
 public class EngageCommand extends AbstractCommand {
 
+    public EngageCommand() {
+        setName("engage");
+        setSyntax("engage (<duration>)");
+        setRequiredArguments(0, 1);
+    }
+
     // <--[command]
     // @Name Engage
     // @Syntax engage (<duration>)
     // @Required 0
+    // @Maximum 1
     // @Plugin Citizens
     // @Short Temporarily disables an NPCs toggled interact script-container triggers.
     // @Group npc
@@ -41,7 +48,7 @@ public class EngageCommand extends AbstractCommand {
     // See <@link command Disengage>
     //
     // @Tags
-    // <NPCTag.is_engaged>
+    // <NPCTag.engaged>
     //
     // @Usage
     // Use to make an NPC appear 'busy'.
@@ -69,7 +76,6 @@ public class EngageCommand extends AbstractCommand {
             throw new InvalidArgumentsException("This command requires a linked NPC!");
         }
 
-        // Parse arguments
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (!scriptEntry.hasObject("duration")
@@ -92,7 +98,6 @@ public class EngageCommand extends AbstractCommand {
         DurationTag duration = scriptEntry.getObjectTag("duration");
         NPCTag npc = Utilities.getEntryNPC(scriptEntry);
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), npc.debug() + duration.debug());
         }

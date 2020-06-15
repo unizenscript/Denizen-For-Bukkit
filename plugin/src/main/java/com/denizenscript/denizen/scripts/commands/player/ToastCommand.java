@@ -1,8 +1,8 @@
 package com.denizenscript.denizen.scripts.commands.player;
 
 import com.denizenscript.denizen.utilities.DenizenAPI;
+import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.interfaces.AdvancementHelper;
 import com.denizenscript.denizen.nms.util.Advancement;
@@ -25,10 +25,17 @@ import java.util.UUID;
 
 public class ToastCommand extends AbstractCommand {
 
+    public ToastCommand() {
+        setName("toast");
+        setSyntax("toast [<text>] (targets:<player>|...) (icon:<item>) (frame:{task}/challenge/goal) (background:<texture>)");
+        setRequiredArguments(1, 5);
+    }
+
     // <--[command]
     // @Name Toast
     // @Syntax toast [<text>] (targets:<player>|...) (icon:<item>) (frame:{task}/challenge/goal) (background:<texture>)
     // @Required 1
+    // @Maximum 5
     // @Short Shows the player a custom advancement toast.
     // @Group player
     //
@@ -78,7 +85,7 @@ public class ToastCommand extends AbstractCommand {
                 scriptEntry.addObject("frame", arg.asElement());
             }
             else if (!scriptEntry.hasObject("background")
-                    && arg.matchesOnePrefix("background")) {
+                    && arg.matchesPrefix("background")) {
                 scriptEntry.addObject("background", arg.asElement());
             }
             else if (!scriptEntry.hasObject("text")) {
@@ -94,12 +101,11 @@ public class ToastCommand extends AbstractCommand {
         }
 
         if (!scriptEntry.hasObject("targets")) {
-            BukkitScriptEntryData data = (BukkitScriptEntryData) scriptEntry.entryData;
-            if (!data.hasPlayer()) {
+            if (!Utilities.entryHasPlayer(scriptEntry)) {
                 throw new InvalidArgumentsException("Must specify valid player targets!");
             }
             else {
-                scriptEntry.addObject("targets", Collections.singletonList(data.getPlayer()));
+                scriptEntry.addObject("targets", Collections.singletonList(Utilities.getEntryPlayer(scriptEntry)));
             }
         }
 

@@ -15,10 +15,17 @@ import java.util.List;
 
 public class AgeCommand extends AbstractCommand {
 
+    public AgeCommand() {
+        setName("age");
+        setSyntax("age [<entity>|...] (adult/baby/<age>) (lock)");
+        setRequiredArguments(1, 3);
+    }
+
     // <--[command]
     // @Name Age
     // @Syntax age [<entity>|...] (adult/baby/<age>) (lock)
     // @Required 1
+    // @Maximum 3
     // @Short Sets the ages of a list of entities, optionally locking them in those ages.
     // @Group entity
     //
@@ -63,7 +70,7 @@ public class AgeCommand extends AbstractCommand {
                 scriptEntry.addObject("agetype", AgeType.valueOf(arg.getValue().toUpperCase()));
             }
             else if (!scriptEntry.hasObject("age")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+                    && arg.matchesInteger()) {
                 scriptEntry.addObject("age", arg.asElement());
             }
             else if (!scriptEntry.hasObject("lock")
@@ -88,16 +95,13 @@ public class AgeCommand extends AbstractCommand {
     @SuppressWarnings("unchecked")
     @Override
     public void execute(final ScriptEntry scriptEntry) {
-
-        // Get objects
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
         AgeType ageType = (AgeType) scriptEntry.getObject("agetype");
         int age = scriptEntry.getElement("age").asInt();
         boolean lock = scriptEntry.hasObject("lock");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
-            Debug.report(scriptEntry, getName(), (lock ? ArgumentHelper.debugObj("lock", lock) : "") +
+            Debug.report(scriptEntry, getName(), (lock ? ArgumentHelper.debugObj("lock", true) : "") +
                     (ageType != null ? ArgumentHelper.debugObj("agetype", ageType)
                             : ArgumentHelper.debugObj("age", age)) +
                     ArgumentHelper.debugObj("entities", entities.toString()));

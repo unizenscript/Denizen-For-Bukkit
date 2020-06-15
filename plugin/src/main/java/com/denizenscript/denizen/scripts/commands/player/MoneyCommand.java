@@ -18,10 +18,17 @@ import java.util.List;
 
 public class MoneyCommand extends AbstractCommand {
 
+    public MoneyCommand() {
+        setName("money");
+        setSyntax("money [give/take/set] (quantity:<#.#>) (players:<player>|...)");
+        setRequiredArguments(1, 3);
+    }
+
     // <--[command]
     // @Name Money
     // @Syntax money [give/take/set] (quantity:<#.#>) (players:<player>|...)
     // @Required 1
+    // @Maximum 3
     // @Short Manage a player's money.
     // @Group player
     // @Plugin Vault
@@ -70,7 +77,7 @@ public class MoneyCommand extends AbstractCommand {
                 scriptEntry.addObject("action", arg.asElement());
             }
             else if (!scriptEntry.hasObject("quantity") && arg.matchesPrefix("quantity", "qty", "q")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)) {
+                    && arg.matchesFloat()) {
                 scriptEntry.addObject("quantity", arg.asElement());
             }
             else if (!scriptEntry.hasObject("players") && arg.matchesPrefix("to", "from", "players", "player") &&

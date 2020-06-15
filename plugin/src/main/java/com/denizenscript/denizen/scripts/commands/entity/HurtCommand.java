@@ -19,10 +19,17 @@ import java.util.List;
 
 public class HurtCommand extends AbstractCommand {
 
+    public HurtCommand() {
+        setName("hurt");
+        setSyntax("hurt (<#.#>) ({player}/<entity>|...) (cause:<cause>)");
+        setRequiredArguments(0, 3);
+    }
+
     // <--[command]
     // @Name Hurt
     // @Syntax hurt (<#.#>) ({player}/<entity>|...) (cause:<cause>)
     // @Required 0
+    // @Maximum 3
     // @Short Hurts the player or a list of entities.
     // @Group entity
     //
@@ -67,8 +74,8 @@ public class HurtCommand extends AbstractCommand {
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (!scriptEntry.hasObject("amount")
-                    && (arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)
-                    || arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer))) {
+                    && (arg.matchesFloat()
+                    || arg.matchesInteger())) {
                 scriptEntry.addObject("amount", arg.asElement());
             }
             else if (!scriptEntry.hasObject("source")
@@ -85,7 +92,7 @@ public class HurtCommand extends AbstractCommand {
                 scriptEntry.addObject("cause", arg.asElement());
             }
             else if (!scriptEntry.hasObject("source_once")
-                    && arg.matchesOne("source_once")) {
+                    && arg.matches("source_once")) {
                 scriptEntry.addObject("source_once", new ElementTag(true));
             }
             else {
@@ -118,7 +125,7 @@ public class HurtCommand extends AbstractCommand {
     public void execute(ScriptEntry scriptEntry) {
 
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
-        EntityTag source = (EntityTag) scriptEntry.getObject("source");
+        EntityTag source = scriptEntry.getObjectTag("source");
         ElementTag amountElement = scriptEntry.getElement("amount");
         ElementTag cause = scriptEntry.getElement("cause");
         ElementTag source_once = scriptEntry.getElement("source_once");

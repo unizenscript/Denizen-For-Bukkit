@@ -21,10 +21,17 @@ import java.util.List;
 
 public class GiveCommand extends AbstractCommand {
 
+    public GiveCommand() {
+        setName("give");
+        setSyntax("give [money/xp/<item>|...] (quantity:<#>) (unlimit_stack_size) (to:<inventory>) (slot:<slot>)");
+        setRequiredArguments(1, 5);
+    }
+
     // <--[command]
     // @Name Give
     // @Syntax give [money/xp/<item>|...] (quantity:<#>) (unlimit_stack_size) (to:<inventory>) (slot:<slot>)
     // @Required 1
+    // @Maximum 5
     // @Short Gives the player an item, xp, or money.
     // @Group item
     //
@@ -66,7 +73,7 @@ public class GiveCommand extends AbstractCommand {
 
             if (!scriptEntry.hasObject("qty")
                     && arg.matchesPrefix("q", "qty", "quantity")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)) {
+                    && arg.matchesFloat()) {
                 scriptEntry.addObject("qty", arg.asElement());
                 scriptEntry.addObject("set_quantity", new ElementTag(true));
             }
@@ -134,7 +141,7 @@ public class GiveCommand extends AbstractCommand {
 
         ElementTag engrave = scriptEntry.getElement("engrave");
         ElementTag unlimit_stack_size = scriptEntry.getElement("unlimit_stack_size");
-        InventoryTag inventory = (InventoryTag) scriptEntry.getObject("inventory");
+        InventoryTag inventory = scriptEntry.getObjectTag("inventory");
         ElementTag qty = scriptEntry.getElement("qty");
         Type type = (Type) scriptEntry.getObject("type");
         ElementTag slot = scriptEntry.getElement("slot");

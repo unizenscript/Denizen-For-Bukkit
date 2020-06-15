@@ -2,22 +2,27 @@ package com.denizenscript.denizen.nms.v1_15.helpers;
 
 import com.denizenscript.denizen.nms.v1_15.impl.ImprovedOfflinePlayerImpl;
 import com.denizenscript.denizen.nms.v1_15.impl.network.handlers.AbstractListenerPlayInImpl;
+import com.denizenscript.denizen.nms.v1_15.impl.network.handlers.DenizenNetworkManagerImpl;
+import com.denizenscript.denizen.objects.EntityTag;
+import com.denizenscript.denizencore.objects.Mechanism;
 import com.mojang.authlib.GameProfile;
 import com.denizenscript.denizen.nms.abstracts.ImprovedOfflinePlayer;
 import com.denizenscript.denizen.nms.interfaces.PlayerHelper;
 import com.denizenscript.denizen.nms.util.ReflectionHelper;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import net.minecraft.server.v1_15_R1.*;
-import org.bukkit.Bukkit;
+import org.bukkit.*;
 import org.bukkit.Chunk;
-import org.bukkit.NamespacedKey;
-import org.bukkit.OfflinePlayer;
+import org.bukkit.SoundCategory;
 import org.bukkit.craftbukkit.v1_15_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_15_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_15_R1.entity.CraftPlayer;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -29,6 +34,68 @@ public class PlayerHelperImpl extends PlayerHelper {
     public static final Map<String, Field> PLAYER_CONNECTION_FIELDS = ReflectionHelper.getFields(PlayerConnection.class);
     public static final Field FLY_TICKS = PLAYER_CONNECTION_FIELDS.get("C");
     public static final Field VEHICLE_FLY_TICKS = PLAYER_CONNECTION_FIELDS.get("E");
+
+    public static final DataWatcherObject<Byte> ENTITY_HUMAN_SKINLAYERS_DATAWATCHER;
+
+    static {
+        DataWatcherObject<Byte> skinlayers = null;
+        try {
+            skinlayers = (DataWatcherObject<Byte>) ReflectionHelper.getFields(EntityHuman.class).get("bq").get(null);
+        }
+        catch (Throwable ex) {
+            ex.printStackTrace();
+        }
+        ENTITY_HUMAN_SKINLAYERS_DATAWATCHER = skinlayers;
+    }
+
+    @Override
+    public void stopSound(Player player, String sound, SoundCategory category) {
+        MinecraftKey soundKey = sound == null ? null : new MinecraftKey(sound);
+        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(new PacketPlayOutStopSound(soundKey, net.minecraft.server.v1_15_R1.SoundCategory.valueOf(category.name())));
+    }
+
+    @Override
+    public Entity sendEntitySpawn(Player player, EntityType entityType, Location location, ArrayList<Mechanism> mechanisms) {
+        PlayerConnection conn = ((CraftPlayer) player).getHandle().playerConnection;
+        net.minecraft.server.v1_15_R1.Entity nmsEntity = ((CraftWorld) location.getWorld()).createEntity(location,  entityType.getEntityClass());
+
+        EntityTag entity = new EntityTag(nmsEntity.getBukkitEntity());
+        for (Mechanism mechanism : mechanisms) {
+            entity.safeAdjust(mechanism);
+        }
+
+        if (nmsEntity instanceof EntityLiving) {
+            EntityLiving nmsLivingEntity = (EntityLiving) nmsEntity;
+            conn.sendPacket(new PacketPlayOutSpawnEntityLiving(nmsLivingEntity));
+            for (EnumItemSlot itemSlot : EnumItemSlot.values()) {
+                ItemStack nmsItemStack = nmsLivingEntity.getEquipment(itemSlot);
+                if (nmsItemStack != null && nmsItemStack.getItem() != Items.AIR) {
+                    conn.sendPacket(new PacketPlayOutEntityEquipment(nmsLivingEntity.getId(), itemSlot, nmsItemStack));
+                }
+            }
+        }
+        else if (nmsEntity instanceof EntityExperienceOrb) {
+            conn.sendPacket(new PacketPlayOutSpawnEntityExperienceOrb((EntityExperienceOrb) nmsEntity));
+        }
+        else if (nmsEntity instanceof EntityPainting) {
+            conn.sendPacket(new PacketPlayOutSpawnEntityPainting((EntityPainting) nmsEntity));
+        }
+        else if (nmsEntity instanceof EntityLightning) {
+            conn.sendPacket(new PacketPlayOutSpawnEntityWeather(nmsEntity));
+        }
+        else {
+            conn.sendPacket(new PacketPlayOutSpawnEntity(nmsEntity));
+        }
+
+        conn.sendPacket(new PacketPlayOutEntityMetadata(nmsEntity.getId(), nmsEntity.getDataWatcher(), true));
+
+        return entity.getBukkitEntity();
+    }
+
+    @Override
+    public void sendEntityDestroy(Player player, Entity entity) {
+        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(new PacketPlayOutEntityDestroy(entity.getEntityId()));
+    }
 
     @Override
     public int getFlyKickCooldown(Player player) {
@@ -162,5 +229,20 @@ public class PlayerHelperImpl extends PlayerHelper {
         }
         recipeBook.a(recipe);
         recipeBook.f(recipe);
+    }
+
+    @Override
+    public String getPlayerBrand(Player player) {
+        return ((DenizenNetworkManagerImpl) ((CraftPlayer) player).getHandle().playerConnection.networkManager).packetListener.brand;
+    }
+
+    @Override
+    public byte getSkinLayers(Player player) {
+        return ((CraftPlayer) player).getHandle().getDataWatcher().get(ENTITY_HUMAN_SKINLAYERS_DATAWATCHER);
+    }
+
+    @Override
+    public void setSkinLayers(Player player, byte flags) {
+        ((CraftPlayer) player).getHandle().getDataWatcher().set(ENTITY_HUMAN_SKINLAYERS_DATAWATCHER, flags);
     }
 }

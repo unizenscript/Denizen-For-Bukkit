@@ -14,6 +14,7 @@ import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.depends.Depends;
 import com.denizenscript.denizen.utilities.inventory.SlotHelper;
+import com.denizenscript.denizencore.events.core.TickScriptEvent;
 import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.utilities.Settings;
@@ -83,6 +84,8 @@ public class ServerTagBase {
             }
         }, "server", "svr", "global");
     }
+
+    public static final long serverStartTimeMillis = System.currentTimeMillis();
 
     public void serverTag(ReplaceableTagEvent event) {
         if (!event.matches("server", "svr", "global") || event.replaced()) {
@@ -200,17 +203,20 @@ public class ServerTagBase {
         // @description
         // Returns a list of all recipe IDs on the server.
         // Returns a list in the Namespace:Key format, for example "minecraft:gold_nugget".
-        // Optionally, specify a recipe type (CRAFTING, FURNACE, COOKING, BLASTING, SHAPED, SHAPELESS, SMOKING, STONECUTTING)
+        // Optionally, specify a recipe type (CRAFTING, FURNACE, COOKING, BLASTING, SHAPED, SHAPELESS, SMOKING, CAMPFIRE, STONECUTTING)
         // to limit to just recipes of that type.
+        // Note: this will produce an error if all recipes of any one type have been removed from the server, due to an error in Spigot.
         // -->
         if (attribute.startsWith("list_recipe_ids")) {
             String type = attribute.hasContext(1) ? CoreUtilities.toLowerCase(attribute.getContext(1)) : null;
             ListTag list = new ListTag();
-            Bukkit.recipeIterator().forEachRemaining((recipe) -> {
+            Iterator<Recipe> recipeIterator = Bukkit.recipeIterator();
+            while (recipeIterator.hasNext()) {
+                Recipe recipe = recipeIterator.next();
                 if (Utilities.isRecipeOfType(recipe, type) && recipe instanceof Keyed) {
                     list.add(((Keyed) recipe).getKey().toString());
                 }
-            });
+            }
             event.setReplacedObject(list.getObjectAttribute(attribute.fulfill(1)));
             return;
         }
@@ -255,6 +261,22 @@ public class ServerTagBase {
                 addChoice.accept(((CookingRecipe) recipe).getInputChoice());
             }
             event.setReplacedObject(result.getObjectAttribute(attribute.fulfill(1)));
+            return;
+        }
+
+        // <--[tag]
+        // @attribute <server.recipe_result[<id>]>
+        // @returns ItemTag
+        // @description
+        // Returns the item that a recipe will create when crafted.
+        // -->
+        if (attribute.startsWith("recipe_result") && attribute.hasContext(1)) {
+            NamespacedKey key = Utilities.parseNamespacedKey(attribute.getContext(1));
+            Recipe recipe = NMSHandler.getItemHelper().getRecipeById(key);
+            if (recipe == null) {
+                return;
+            }
+            event.setReplacedObject(new ItemTag(recipe.getResult()));
             return;
         }
 
@@ -376,7 +398,7 @@ public class ServerTagBase {
         // Returns whether the object is a valid object (non-null), as well as not an Element.
         // -->
         if (attribute.startsWith("object_is_valid")) {
-            ObjectTag o = ObjectFetcher.pickObjectFor(attribute.getContext(1), new BukkitTagContext(null, null, false, null, false, null));
+            ObjectTag o = ObjectFetcher.pickObjectFor(attribute.getContext(1), new BukkitTagContext(null, null, null, false, null));
             event.setReplacedObject(new ElementTag(!(o == null || o instanceof ElementTag)).getObjectAttribute(attribute.fulfill(1)));
             return;
         }
@@ -830,10 +852,11 @@ public class ServerTagBase {
         // @attribute <server.list_flags[(regex:)<search>]>
         // @returns ListTag
         // @description
-        // Returns a list of the server's flag names, with an optional search for
-        // names containing a certain pattern.
+        // Returns a list of the server's flag names, with an optional search for names containing a certain pattern.
+        // Note that this is exclusively for debug/testing reasons, and should never be used in a real script.
         // -->
         if (attribute.startsWith("list_flags")) {
+            FlagManager.listFlagsTagWarning.warn(attribute.context);
             ListTag allFlags = new ListTag(DenizenAPI.getCurrentInstance().flagManager().listGlobalFlags());
             ListTag searchFlags = null;
             if (!allFlags.isEmpty() && attribute.hasContext(1)) {
@@ -875,7 +898,7 @@ public class ServerTagBase {
         // @description
         // Lists all saved Notables currently on the server.
         // Optionally, specify a type to search for.
-        // Valid types: locations, cuboids, ellipsoids, items, inventories
+        // Valid types: locations, cuboids, ellipsoids, inventories
         // -->
         if (attribute.startsWith("list_notables")) {
             ListTag allNotables = new ListTag();
@@ -1060,6 +1083,46 @@ public class ServerTagBase {
         // -->
         if (attribute.startsWith("available_processors")) {
             event.setReplacedObject(new ElementTag(Runtime.getRuntime().availableProcessors())
+                    .getObjectAttribute(attribute.fulfill(1)));
+        }
+
+        // <--[tag]
+        // @attribute <server.current_tick>
+        // @returns ElementTag(Number)
+        // @description
+        // Returns the number of ticks since the server was started.
+        // Note that this is NOT an accurate indicator for real server uptime, as ticks fluctuate based on server lag.
+        // -->
+        if (attribute.startsWith("current_tick")) {
+            event.setReplacedObject(new ElementTag(TickScriptEvent.instance.ticks)
+                    .getObjectAttribute(attribute.fulfill(1)));
+        }
+
+        // <--[tag]
+        // @attribute <server.delta_time_since_start>
+        // @returns DurationTag
+        // @description
+        // Returns the duration of delta time since the server started.
+        // Note that this is delta time, not real time, meaning it is calculated based on the server tick,
+        // which may change longer or shorter than expected due to lag or other influences.
+        // If you want real time instead of delta time, use <@link tag server.real_time_since_start>.
+        // -->
+        if (attribute.startsWith("delta_time_since_start")) {
+            event.setReplacedObject(new DurationTag(TickScriptEvent.instance.ticks)
+                    .getObjectAttribute(attribute.fulfill(1)));
+        }
+
+        // <--[tag]
+        // @attribute <server.real_time_since_start>
+        // @returns DurationTag
+        // @description
+        // Returns the duration of real time since the server started.
+        // Note that this is real time, not delta time, meaning that the it is accurate to the system clock, not the server's tick.
+        // System clock changes may cause this value to become inaccurate.
+        // In many cases <@link tag server.delta_time_since_start> is preferable.
+        // -->
+        if (attribute.startsWith("real_time_since_start")) {
+            event.setReplacedObject(new DurationTag((System.currentTimeMillis() - serverStartTimeMillis) / 1000.0)
                     .getObjectAttribute(attribute.fulfill(1)));
         }
 
@@ -1686,6 +1749,7 @@ public class ServerTagBase {
         // @returns ListTag(PlayerTag)
         // @description
         // Returns a list of all offline players.
+        // This specifically excludes currently online players.
         // -->
         if (attribute.startsWith("list_offline_players")) {
             ListTag players = new ListTag();
@@ -1883,7 +1947,7 @@ public class ServerTagBase {
         // -->
         else if (attribute.startsWith("entity_is_spawned")
                 && attribute.hasContext(1)) {
-            EntityTag ent = EntityTag.valueOf(attribute.getContext(1), new BukkitTagContext(null, null, false, null, false, null));
+            EntityTag ent = EntityTag.valueOf(attribute.getContext(1), new BukkitTagContext(null, null, null, false, null));
             event.setReplacedObject(new ElementTag((ent != null && ent.isUnique() && ent.isSpawnedOrValidForTag()) ? "true" : "false")
                     .getObjectAttribute(attribute.fulfill(1)));
         }
@@ -1908,7 +1972,7 @@ public class ServerTagBase {
         // -->
         else if (attribute.startsWith("npc_is_valid")
                 && attribute.hasContext(1)) {
-            NPCTag npc = NPCTag.valueOf(attribute.getContext(1), new BukkitTagContext(null, null, false, null, false, null));
+            NPCTag npc = NPCTag.valueOf(attribute.getContext(1), new BukkitTagContext(null, null, null, false, null));
             event.setReplacedObject(new ElementTag((npc != null && npc.isValid()))
                     .getObjectAttribute(attribute.fulfill(1)));
         }
@@ -1969,7 +2033,7 @@ public class ServerTagBase {
         else if (attribute.matches("list_plugins_handling_event")
                 && attribute.hasContext(1)) {
             String eventName = attribute.getContext(1);
-            if (eventName.contains(".")) {
+            if (CoreUtilities.contains(eventName, '.')) {
                 try {
                     Class clazz = Class.forName(eventName, false, ServerTagBase.class.getClassLoader());
                     ListTag result = getHandlerPluginList(clazz);
@@ -2190,8 +2254,6 @@ public class ServerTagBase {
         // Immediately stops the server entirely (Plugins will still finalize, and the shutdown event will fire), then starts it again.
         // Requires setting "Commands.Restart.Allow server restart"!
         // Note that if your server is not configured to restart, this mechanism will simply stop the server without starting it again!
-        // @tags
-        // None
         // -->
         if (mechanism.matches("restart")) {
             if (!Settings.allowServerRestart()) {
@@ -2208,8 +2270,6 @@ public class ServerTagBase {
         // @input None
         // @description
         // Immediately saves the Denizen saves files.
-        // @tags
-        // None
         // -->
         if (mechanism.matches("save")) {
             DenizenAPI.getCurrentInstance().saveSaves();
@@ -2221,8 +2281,6 @@ public class ServerTagBase {
         // @input None
         // @description
         // Immediately saves the Citizens saves files.
-        // @tags
-        // None
         // -->
         if (Depends.citizens != null && mechanism.matches("save_citizens")) {
             Depends.citizens.storeNPCs(new CommandContext(new String[0]));
@@ -2236,8 +2294,6 @@ public class ServerTagBase {
         // Immediately stops the server entirely (Plugins will still finalize, and the shutdown event will fire).
         // The server will remain shutdown until externally started again.
         // Requires setting "Commands.Restart.Allow server stop"!
-        // @tags
-        // None
         // -->
         if (mechanism.matches("shutdown")) {
             if (!Settings.allowServerStop()) {

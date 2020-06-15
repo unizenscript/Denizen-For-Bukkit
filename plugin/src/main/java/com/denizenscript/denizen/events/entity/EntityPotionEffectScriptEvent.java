@@ -7,7 +7,6 @@ import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -34,7 +33,7 @@ public class EntityPotionEffectScriptEvent extends BukkitScriptEvent implements 
     //
     // @Context
     // <context.entity> returns the EntityTag.
-    // <context.cause> returns the cause of the effect change, based on <@see link https://hub.spigotmc.org/javadocs/spigot/org/bukkit/event/entity/EntityPotionEffectEvent.Cause.html>
+    // <context.cause> returns the cause of the effect change, based on <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/event/entity/EntityPotionEffectEvent.Cause.html>
     // <context.action> returns the action of the effect changed, which can be 'added', 'changed', 'cleared', or 'removed'
     // <context.override> returns whether the new potion effect will override the old.
     // <context.new_effect> returns the new potion effect (in the same format as <@link tag EntityTag.list_effects>).
@@ -59,8 +58,8 @@ public class EntityPotionEffectScriptEvent extends BukkitScriptEvent implements 
     public EntityPotionEffectEvent event;
 
     @Override
-    public boolean couldMatch(ScriptContainer scriptContainer, String s) {
-        return (CoreUtilities.toLowerCase(s).contains(" potion effects "));
+    public boolean couldMatch(ScriptPath path) {
+        return path.eventLower.contains(" potion effects ");
     }
 
     @Override

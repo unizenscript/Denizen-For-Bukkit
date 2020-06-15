@@ -14,10 +14,17 @@ import net.citizensnpcs.trait.LookClose;
 
 public class LookcloseCommand extends AbstractCommand {
 
+    public LookcloseCommand() {
+        setName("lookclose");
+        setSyntax("lookclose (<npc>) (state:<true/false>) (range:<#>) (realistic)");
+        setRequiredArguments(0, 4);
+    }
+
     // <--[command]
     // @Name LookClose
     // @Syntax lookclose (<npc>) (state:<true/false>) (range:<#>) (realistic)
     // @Required 0
+    // @Maximum 4
     // @Plugin Citizens
     // @Short Interacts with an NPCs 'lookclose' trait as provided by Citizens2.
     // @Group npc
@@ -49,16 +56,15 @@ public class LookcloseCommand extends AbstractCommand {
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
-        // Parse Arguments
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (arg.matches("realistic", "realistically")) {
                 scriptEntry.addObject("realistic", new ElementTag(true));
             }
-            else if (arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+            else if (arg.matchesInteger()) {
                 scriptEntry.addObject("range", arg.asElement());
             }
-            else if (arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Boolean)) {
+            else if (arg.matchesBoolean()) {
                 scriptEntry.addObject("toggle", arg.asElement());
             }
             else if (arg.matchesArgumentType(NPCTag.class)) // TODO: better way of handling this?

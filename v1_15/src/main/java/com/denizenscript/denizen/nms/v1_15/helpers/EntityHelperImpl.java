@@ -64,7 +64,6 @@ public class EntityHelperImpl extends EntityHelper {
         catch (Throwable ex) {
             Debug.echoError(ex);
         }
-
     }
 
     @Override
@@ -147,7 +146,7 @@ public class EntityHelperImpl extends EntityHelper {
 
     @Override
     public void setRiptide(Entity entity, boolean state) {
-        ((CraftLivingEntity) entity).getHandle().q(state ? 0 : 1);
+        ((CraftLivingEntity) entity).getHandle().r(state ? 0 : 1);
     }
 
     @Override

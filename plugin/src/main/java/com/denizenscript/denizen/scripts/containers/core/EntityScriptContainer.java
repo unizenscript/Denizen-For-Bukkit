@@ -60,6 +60,7 @@ public class EntityScriptContainer extends ScriptContainer {
 
     public EntityScriptContainer(YamlConfiguration configurationSection, String scriptContainerName) {
         super(configurationSection, scriptContainerName);
+        canRunScripts = false;
     }
 
     public EntityTag getEntityFrom() {
@@ -67,7 +68,7 @@ public class EntityScriptContainer extends ScriptContainer {
     }
 
     public EntityTag getEntityFrom(PlayerTag player, NPCTag npc) {
-        EntityTag entity = null;
+        EntityTag entity;
         try {
             if (contains("entity_type")) {
                 String entityType = TagManager.tag((getString("entity_type", "")), new BukkitTagContext(player, npc, new ScriptTag(this)));

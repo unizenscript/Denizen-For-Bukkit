@@ -1,5 +1,6 @@
 package com.denizenscript.denizen.scripts.commands.world;
 
+import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.objects.*;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
@@ -14,7 +15,9 @@ import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
+import com.denizenscript.denizencore.utilities.Deprecations;
 import org.bukkit.Effect;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
@@ -23,6 +26,12 @@ import java.util.*;
 
 public class PlayEffectCommand extends AbstractCommand {
 
+    public PlayEffectCommand() {
+        setName("playeffect");
+        setSyntax("playeffect [effect:<name>] [at:<location>|...] (data:<#.#>) (special_data:<data>) (visibility:<#.#>) (quantity:<#>) (offset:<#.#>,<#.#>,<#.#>) (targets:<player>|...)");
+        setRequiredArguments(2, 8);
+    }
+
     // <--[language]
     // @name Particle Effects
     // @group Useful Lists
@@ -30,9 +39,6 @@ public class PlayEffectCommand extends AbstractCommand {
     // All of the effects listed here can be used by <@link command PlayEffect> to display visual effects or play sounds
     //
     // Effects:
-    // - iconcrack_[item] (item break effect - examples: iconcrack_stone, iconcrack_grass)
-    // - blockcrack_[material] (block break effect - examples: blockcrack_stone, blockcrack_grass)
-    // - blockdust_[material] (block break effect - examples: blockdust_stone, blockdust_grass)
     // - Everything on <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Particle.html>
     // - Everything on <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Effect.html>
     // - RANDOM (chooses a random visual effect from the list starting with 'huge_explosion')
@@ -42,6 +48,7 @@ public class PlayEffectCommand extends AbstractCommand {
     // @Name PlayEffect
     // @Syntax playeffect [effect:<name>] [at:<location>|...] (data:<#.#>) (special_data:<data>) (visibility:<#.#>) (quantity:<#>) (offset:<#.#>,<#.#>,<#.#>) (targets:<player>|...)
     // @Required 2
+    // @Maximum 8
     // @Short Plays a visible or audible effect at the location.
     // @Group world
     //
@@ -61,6 +68,8 @@ public class PlayEffectCommand extends AbstractCommand {
     //
     // Some particles will require input to the "special_data" argument. The data input is unique per particle.
     // - For REDSTONE particles, the input is of format: <size>|<color>, for example: "1.2|red". Color input is any valid ColorTag object.
+    // - For FALLING_DUST, BLOCK_CRACK, or BLOCK_DUST particles, the input is any valid MaterialTag, eg "stone".
+    // - For ITEM_CRACK particles, the input is any valid ItemTag, eg "stick".
     //
     // @Tags
     // None
@@ -80,18 +89,14 @@ public class PlayEffectCommand extends AbstractCommand {
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-
         ParticleHelper particleHelper = NMSHandler.getParticleHelper();
-
-        // Iterate through arguments
         for (Argument arg : scriptEntry.getProcessedArgs()) {
-
             if (!scriptEntry.hasObject("location")
-                    && arg.matchesArgumentList(LocationTag.class)) {
-                if (arg.matchesOnePrefix("at")) {
+                    && arg.matchesArgumentList(LocationTag.class)
+                    && (arg.matchesPrefix("at") || !arg.hasPrefix())) {
+                if (arg.matchesPrefix("at")) {
                     scriptEntry.addObject("no_offset", new ElementTag(true));
                 }
-
                 scriptEntry.addObject("location", arg.asType(ListTag.class).filter(LocationTag.class, scriptEntry));
                 continue;
             }
@@ -100,7 +105,6 @@ public class PlayEffectCommand extends AbstractCommand {
                     !scriptEntry.hasObject("iconcrack") &&
                     !scriptEntry.hasObject("blockcrack") &&
                     !scriptEntry.hasObject("blockdust")) {
-
                 if (particleHelper.hasParticle(arg.getValue())) {
                     scriptEntry.addObject("particleeffect", particleHelper.getParticle(arg.getValue()));
                     continue;
@@ -112,6 +116,7 @@ public class PlayEffectCommand extends AbstractCommand {
                     continue;
                 }
                 else if (arg.startsWith("iconcrack_")) {
+                    Deprecations.oldPlayEffectSpecials.warn(scriptEntry);
                     // Allow iconcrack_[item] for item break effects (ex: iconcrack_stone)
                     String shrunk = arg.getValue().substring("iconcrack_".length());
                     ItemTag item = ItemTag.valueOf(shrunk, scriptEntry.entryData.getTagContext());
@@ -124,6 +129,7 @@ public class PlayEffectCommand extends AbstractCommand {
                     continue;
                 }
                 else if (arg.startsWith("blockcrack_")) {
+                    Deprecations.oldPlayEffectSpecials.warn(scriptEntry);
                     String shrunk = arg.getValue().substring("blockcrack_".length());
                     MaterialTag material = MaterialTag.valueOf(shrunk);
                     if (material != null) {
@@ -135,6 +141,7 @@ public class PlayEffectCommand extends AbstractCommand {
                     continue;
                 }
                 else if (arg.startsWith("blockdust_")) {
+                    Deprecations.oldPlayEffectSpecials.warn(scriptEntry);
                     String shrunk = arg.getValue().substring("blockdust_".length());
                     MaterialTag material = MaterialTag.valueOf(shrunk);
                     if (material != null) {
@@ -154,52 +161,44 @@ public class PlayEffectCommand extends AbstractCommand {
                 }
             }
             if (!scriptEntry.hasObject("radius")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)
+                    && arg.matchesFloat()
                     && arg.matchesPrefix("visibility", "v", "radius", "r")) {
-
                 scriptEntry.addObject("radius", arg.asElement());
             }
             else if (!scriptEntry.hasObject("data")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)
+                    && arg.matchesFloat()
                     && arg.matchesPrefix("data", "d")) {
-
                 scriptEntry.addObject("data", arg.asElement());
             }
             else if (!scriptEntry.hasObject("special_data")
-                    && arg.matchesOnePrefix("special_data")) {
+                    && arg.matchesPrefix("special_data")) {
                 scriptEntry.addObject("special_data", arg.asElement());
             }
             else if (!scriptEntry.hasObject("qty")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)
+                    && arg.matchesInteger()
                     && arg.matchesPrefix("qty", "q", "quantity")) {
-
                 scriptEntry.addObject("qty", arg.asElement());
             }
             else if (!scriptEntry.hasObject("offset")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)
+                    && arg.matchesFloat()
                     && arg.matchesPrefix("offset", "o")) {
-
                 double offset = arg.asElement().asDouble();
                 scriptEntry.addObject("offset", new LocationTag(null, offset, offset, offset));
             }
             else if (!scriptEntry.hasObject("offset")
                     && arg.matchesArgumentType(LocationTag.class)
                     && arg.matchesPrefix("offset", "o")) {
-
                 scriptEntry.addObject("offset", arg.asType(LocationTag.class));
             }
             else if (!scriptEntry.hasObject("targets")
                     && arg.matchesArgumentList(PlayerTag.class)
                     && arg.matchesPrefix("targets", "target", "t")) {
-
                 scriptEntry.addObject("targets", arg.asType(ListTag.class).filter(PlayerTag.class, scriptEntry));
             }
             else {
                 arg.reportUnhandled();
             }
         }
-
-        // Use default values if necessary
         scriptEntry.defaultObject("location",
                 Utilities.entryHasNPC(scriptEntry) && Utilities.getEntryNPC(scriptEntry).isSpawned() ? Arrays.asList(Utilities.getEntryNPC(scriptEntry).getLocation()) : null,
                 Utilities.entryHasPlayer(scriptEntry) && Utilities.getEntryPlayer(scriptEntry).isOnline() ? Arrays.asList(Utilities.getEntryPlayer(scriptEntry).getLocation()) : null);
@@ -207,9 +206,6 @@ public class PlayEffectCommand extends AbstractCommand {
         scriptEntry.defaultObject("radius", new ElementTag(15));
         scriptEntry.defaultObject("qty", new ElementTag(1));
         scriptEntry.defaultObject("offset", new LocationTag(null, 0.5, 0.5, 0.5));
-
-        // Check to make sure required arguments have been filled
-
         if (!scriptEntry.hasObject("effect") &&
                 !scriptEntry.hasObject("particleeffect") &&
                 !scriptEntry.hasObject("iconcrack") &&
@@ -217,7 +213,6 @@ public class PlayEffectCommand extends AbstractCommand {
                 !scriptEntry.hasObject("blockdust")) {
             throw new InvalidArgumentsException("Missing effect argument!");
         }
-
         if (!scriptEntry.hasObject("location")) {
             throw new InvalidArgumentsException("Missing location argument!");
         }
@@ -242,7 +237,6 @@ public class PlayEffectCommand extends AbstractCommand {
         LocationTag offset = scriptEntry.getObjectTag("offset");
         ElementTag special_data = scriptEntry.getElement("special_data");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), (effect != null ? ArgumentHelper.debugObj("effect", effect.name()) :
                     particleEffect != null ? ArgumentHelper.debugObj("special effect", particleEffect.getName()) :
@@ -322,6 +316,14 @@ public class PlayEffectCommand extends AbstractCommand {
                                 ColorTag color = ColorTag.valueOf(dataList.get(1));
                                 dataObject = new org.bukkit.Particle.DustOptions(color.getColor(), size);
                             }
+                        }
+                        else if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13) && clazz == BlockData.class) {
+                            MaterialTag blockMaterial = MaterialTag.valueOf(special_data.asString(), scriptEntry.getContext());
+                            dataObject = blockMaterial.getModernData().data;
+                        }
+                        else if (clazz == ItemStack.class) {
+                            ItemTag itemType = ItemTag.valueOf(special_data.asString(), scriptEntry.getContext());
+                            dataObject = itemType.getItemStack();
                         }
                         else {
                             Debug.echoError(scriptEntry.getResidingQueue(), "Unknown particle data type: " + clazz.getCanonicalName() + " for particle: " + particleEffect.getName());

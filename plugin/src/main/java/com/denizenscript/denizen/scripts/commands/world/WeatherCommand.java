@@ -20,10 +20,17 @@ import java.util.UUID;
 
 public class WeatherCommand extends AbstractCommand {
 
+    public WeatherCommand() {
+        setName("weather");
+        setSyntax("weather ({global}/player) [sunny/storm/thunder/reset] (<world>) (reset:<duration>)");
+        setRequiredArguments(1, 4);
+    }
+
     // <--[command]
     // @Name Weather
-    // @Syntax weather [{global}/player] [sunny/storm/thunder/reset] (<world>) (reset:<duration>)
+    // @Syntax weather ({global}/player) [sunny/storm/thunder/reset] (<world>) (reset:<duration>)
     // @Required 1
+    // @Maximum 4
     // @Short Changes the current weather in the minecraft world.
     // @Group world
     //
@@ -117,7 +124,7 @@ public class WeatherCommand extends AbstractCommand {
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-        Value value = Value.valueOf(((ElementTag) scriptEntry.getObject("value")).asString().toUpperCase());
+        Value value = Value.valueOf((scriptEntry.getElement("value")).asString().toUpperCase());
         WorldTag world = scriptEntry.getObjectTag("world");
         Type type = (Type) scriptEntry.getObject("type");
         DurationTag resetAfter = scriptEntry.getObjectTag("reset_after");
@@ -140,7 +147,7 @@ public class WeatherCommand extends AbstractCommand {
                     world.getWorld().setStorm(true);
                     break;
                 case THUNDER:
-                    // Note: setThundering always creates a storm
+                    world.getWorld().setStorm(true);
                     world.getWorld().setThundering(true);
                     break;
                 case RESET:

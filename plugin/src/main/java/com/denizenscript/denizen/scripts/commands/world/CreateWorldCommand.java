@@ -4,7 +4,6 @@ import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.objects.core.ElementTag;
-import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
@@ -17,10 +16,17 @@ import java.io.File;
 
 public class CreateWorldCommand extends AbstractCommand {
 
+    public CreateWorldCommand() {
+        setName("createworld");
+        setSyntax("createworld [<name>] (generator:<id>) (worldtype:<type>) (environment:<environment>) (copy_from:<world>) (seed:<seed>) (settings:<json>)");
+        setRequiredArguments(1, 7);
+    }
+
     // <--[command]
     // @Name CreateWorld
-    // @Syntax createworld [<name>] (g:<generator>) (worldtype:<type>) (environment:<environment>) (copy_from:<world>) (seed:<seed>) (settings:<json>)
+    // @Syntax createworld [<name>] (generator:<id>) (worldtype:<type>) (environment:<environment>) (copy_from:<world>) (seed:<seed>) (settings:<json>)
     // @Required 1
+    // @Maximum 7
     // @Short Creates a new world, or loads an existing world.
     // @Group world
     //
@@ -53,8 +59,6 @@ public class CreateWorldCommand extends AbstractCommand {
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
 
-        // Interpret arguments
-
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (!scriptEntry.hasObject("generator")
@@ -81,7 +85,7 @@ public class CreateWorldCommand extends AbstractCommand {
             }
             else if (!scriptEntry.hasObject("seed")
                     && arg.matchesPrefix("seed", "s")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+                    && arg.matchesInteger()) {
                 scriptEntry.addObject("seed", arg.asElement());
             }
             else if (!scriptEntry.hasObject("world_name")) {
@@ -92,7 +96,6 @@ public class CreateWorldCommand extends AbstractCommand {
             }
         }
 
-        // Check for required information
         if (!scriptEntry.hasObject("world_name")) {
             throw new InvalidArgumentsException("Must specify a world name.");
         }

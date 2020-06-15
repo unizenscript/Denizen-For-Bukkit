@@ -25,24 +25,14 @@ public class ColorTag implements ObjectTag {
     //
     // Note that a ColorTag is NOT a base dye color (used by wool, etc). That is handled by a separate naming system.
     //
-    // For format info, see <@link language co@>
-    //
-    // -->
-
-    // <--[language]
-    // @name co@
-    // @group Object Fetcher System
-    // @description
-    // co@ refers to the 'object identifier' of a ColorTag. The 'co@' is notation for Denizen's Object
-    // Fetcher. The constructor for a ColorTag is <red>,<green>,<blue>, or the name of a color.
+    // These use the object notation "co@".
+    // The identity format for colors is <red>,<green>,<blue> or the name of a color.
     // For example, 'co@50,64,128' or 'co@red'.
     //
     // A list of accepted color names can be found at
     // <@link url https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Color.html>
     //
     // Red/green/blue values are each from 0 to 256.
-    //
-    // For general info, see <@link language ColorTag Objects>
     //
     // -->
 
@@ -67,7 +57,7 @@ public class ColorTag implements ObjectTag {
 
         string = string.toUpperCase().replace("CO@", "");
 
-        if (string.matches("RANDOM")) {
+        if (string.equals("RANDOM")) {
 
             // Get a color using random RGB values
             return new ColorTag(CoreUtilities.getRandom().nextInt(256),
@@ -114,7 +104,7 @@ public class ColorTag implements ObjectTag {
 
         arg = arg.toUpperCase().replace("CO@", "");
 
-        if (arg.toUpperCase().matches("RANDOM")) {
+        if (arg.toUpperCase().equals("RANDOM")) {
             return true;
         }
 

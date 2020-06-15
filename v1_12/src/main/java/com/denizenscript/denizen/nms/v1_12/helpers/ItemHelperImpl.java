@@ -21,8 +21,14 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.HashMap;
+import java.util.List;
 
 public class ItemHelperImpl extends ItemHelper {
+
+    @Override
+    public Integer burnTime(Material material) {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public Recipe getRecipeById(NamespacedKey key) {
@@ -40,17 +46,17 @@ public class ItemHelperImpl extends ItemHelper {
     }
 
     @Override
-    public void setShapedRecipeIngredient(ShapedRecipe recipe, char c, ItemStack item, boolean exact) {
+    public void setShapedRecipeIngredient(ShapedRecipe recipe, char c, ItemStack[] item, boolean exact) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void registerFurnaceRecipe(String keyName, String group, ItemStack result, ItemStack ingredient, float exp, int time, String type, boolean exact) {
+    public void registerFurnaceRecipe(String keyName, String group, ItemStack result, ItemStack[] ingredient, float exp, int time, String type, boolean exact) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void registerShapelessRecipe(String keyName, String group, ItemStack result, ItemStack[] ingredients, boolean[] exact) {
+    public void registerShapelessRecipe(String keyName, String group, ItemStack result, List<ItemStack[]> ingredients, boolean[] exact) {
         throw new UnsupportedOperationException();
     }
 

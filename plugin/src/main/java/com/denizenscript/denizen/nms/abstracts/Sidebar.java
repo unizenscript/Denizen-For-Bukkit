@@ -1,5 +1,6 @@
 package com.denizenscript.denizen.nms.abstracts;
 
+import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;

@@ -19,10 +19,17 @@ import java.util.List;
 
 public class LeashCommand extends AbstractCommand {
 
+    public LeashCommand() {
+        setName("leash");
+        setSyntax("leash (cancel) [<entity>|...] (holder:<entity>/<location>)");
+        setRequiredArguments(1, 3);
+    }
+
     // <--[command]
     // @Name Leash
     // @Syntax leash (cancel) [<entity>|...] (holder:<entity>/<location>)
     // @Required 1
+    // @Maximum 3
     // @Short Sticks a leash on target entity, held by a fence or another entity.
     // @Group entity
     //
@@ -95,19 +102,17 @@ public class LeashCommand extends AbstractCommand {
     @SuppressWarnings("unchecked")
     @Override
     public void execute(final ScriptEntry scriptEntry) {
-
-        // Get objects
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
         EntityTag holder = null;
         LocationTag holderLoc = null;
         Entity Holder = null;
         Object holderObject = scriptEntry.getObject("holder");
         if (holderObject instanceof EntityTag) {
-            holder = (EntityTag) scriptEntry.getObject("holder");
+            holder = scriptEntry.getObjectTag("holder");
             Holder = holder.getBukkitEntity();
         }
         else if (holderObject instanceof LocationTag) {
-            holderLoc = ((LocationTag) scriptEntry.getObject("holder"));
+            holderLoc = scriptEntry.getObjectTag("holder");
             Material material = holderLoc.getBlock().getType();
             if (material == MaterialCompat.OAK_FENCE || material == MaterialCompat.NETHER_FENCE
                     || material == Material.ACACIA_FENCE || material == Material.BIRCH_FENCE
@@ -122,7 +127,6 @@ public class LeashCommand extends AbstractCommand {
         }
         Boolean cancel = scriptEntry.hasObject("cancel");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), (cancel ? ArgumentHelper.debugObj("cancel", cancel) : "") +
                     ArgumentHelper.debugObj("entities", entities.toString()) +

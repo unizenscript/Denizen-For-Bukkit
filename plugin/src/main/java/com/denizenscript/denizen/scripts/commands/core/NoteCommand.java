@@ -12,10 +12,17 @@ import com.denizenscript.denizencore.utilities.CoreUtilities;
 
 public class NoteCommand extends AbstractCommand {
 
+    public NoteCommand() {
+        setName("note");
+        setSyntax("note [<Notable ObjectTag>/remove] [as:<name>]");
+        setRequiredArguments(2, 2);
+    }
+
     // <--[command]
     // @Name Note
     // @Syntax note [<Notable ObjectTag>/remove] [as:<name>]
     // @Required 2
+    // @Maximum 2
     // @Short Adds or removes a notable object.
     // @Group core
     // @Guide https://guide.denizenscript.com/guides/advanced/notables.html
@@ -29,7 +36,6 @@ public class NoteCommand extends AbstractCommand {
     // <server.list_notables[<type>]>
     // <CuboidTag.notable_name>
     // <InventoryTag.notable_name>
-    // <ItemTag.notable_name>
     // <LocationTag.notable_name>
     //
     // @Usage

@@ -17,10 +17,17 @@ import java.util.List;
 
 public class BanCommand extends AbstractCommand {
 
+    public BanCommand() {
+        setName("ban");
+        setSyntax("ban ({add}/remove) [<player>|.../addresses:<address>|...] (reason:<text>) (duration:<duration>) (source:<text>)");
+        setRequiredArguments(1, 5);
+    }
+
     // <--[command]
     // @Name Ban
     // @Syntax ban ({add}/remove) [<player>|.../addresses:<address>|...] (reason:<text>) (duration:<duration>) (source:<text>)
     // @Required 1
+    // @Maximum 5
     // @Short Ban or un-ban players or ip addresses.
     // @Group server
     //
@@ -133,7 +140,7 @@ public class BanCommand extends AbstractCommand {
     public void execute(ScriptEntry scriptEntry) {
         ElementTag action = scriptEntry.getElement("action");
         List<PlayerTag> targets = (List<PlayerTag>) scriptEntry.getObject("targets");
-        ListTag addresses = (ListTag) scriptEntry.getObject("addresses");
+        ListTag addresses = scriptEntry.getObjectTag("addresses");
         ElementTag reason = scriptEntry.getElement("reason");
         DurationTag duration = scriptEntry.getObjectTag("duration");
         ElementTag source = scriptEntry.getElement("source");

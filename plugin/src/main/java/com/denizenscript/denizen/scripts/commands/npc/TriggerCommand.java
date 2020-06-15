@@ -8,16 +8,23 @@ import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
-import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 
 public class TriggerCommand extends AbstractCommand {
 
+    public TriggerCommand() {
+        setName("trigger");
+        setSyntax("trigger [name:<trigger>] (state:{toggle}/true/false) (cooldown:<duration>) (radius:<#>)");
+        setRequiredArguments(1, 4);
+    }
+
     // <--[command]
     // @Name Trigger
     // @Syntax trigger [name:<trigger>] (state:{toggle}/true/false) (cooldown:<duration>) (radius:<#>)
     // @Required 1
+    // @Maximum 4
+    // @Plugin Citizens
     // @Short Enables or disables a trigger.
     // @Group npc
     // @Guide https://guide.denizenscript.com/guides/npcs/interact-scripts.html
@@ -74,7 +81,7 @@ public class TriggerCommand extends AbstractCommand {
             }
             else if (!scriptEntry.hasObject("radius")
                     && arg.matchesPrefix("radius", "r")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Integer)) {
+                    && arg.matchesInteger()) {
                 scriptEntry.addObject("radius", arg.asElement());
             }
             else if (!scriptEntry.hasObject("toggle")
@@ -113,7 +120,7 @@ public class TriggerCommand extends AbstractCommand {
         ElementTag toggle = scriptEntry.getElement("toggle");
         ElementTag trigger = scriptEntry.getElement("trigger");
         ElementTag radius = scriptEntry.getElement("radius");
-        DurationTag cooldown = (DurationTag) scriptEntry.getObject("cooldown");
+        DurationTag cooldown = scriptEntry.getObjectTag("cooldown");
         NPCTag npc = scriptEntry.hasObject("npc") ? (NPCTag) scriptEntry.getObject("npc") : Utilities.getEntryNPC(scriptEntry);
 
         if (scriptEntry.dbCallShouldDebug()) {

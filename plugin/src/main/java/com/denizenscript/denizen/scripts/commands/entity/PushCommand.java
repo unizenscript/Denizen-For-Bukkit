@@ -19,19 +19,27 @@ import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 import com.denizenscript.denizencore.scripts.commands.Holdable;
 import com.denizenscript.denizencore.scripts.queues.ScriptQueue;
-import com.denizenscript.denizencore.scripts.queues.core.InstantQueue;
+import com.denizenscript.denizencore.utilities.ScriptUtilities;
 import org.bukkit.Location;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class PushCommand extends AbstractCommand implements Holdable {
+
+    public PushCommand() {
+        setName("push");
+        setSyntax("push [<entity>|...] (origin:<entity>/<location>) (destination:<location>) (speed:<#.#>) (duration:<duration>) (script:<name>) (def:<element>|...) (force_along) (precision:<#>) (no_rotate) (no_damage) (ignore_collision)");
+        setRequiredArguments(1, 12);
+    }
 
     // <--[command]
     // @Name Push
     // @Syntax push [<entity>|...] (origin:<entity>/<location>) (destination:<location>) (speed:<#.#>) (duration:<duration>) (script:<name>) (def:<element>|...) (force_along) (precision:<#>) (no_rotate) (no_damage) (ignore_collision)
     // @Required 1
+    // @Maximum 12
     // @Short Pushes entities through the air in a straight line.
     // @Group entity
     //
@@ -81,10 +89,10 @@ public class PushCommand extends AbstractCommand implements Holdable {
                     && arg.matchesPrefix("origin", "o", "source", "shooter", "s")) {
 
                 if (arg.matchesArgumentType(EntityTag.class)) {
-                    scriptEntry.addObject("originEntity", arg.asType(EntityTag.class));
+                    scriptEntry.addObject("origin_entity", arg.asType(EntityTag.class));
                 }
                 else if (arg.matchesArgumentType(LocationTag.class)) {
-                    scriptEntry.addObject("originLocation", arg.asType(LocationTag.class));
+                    scriptEntry.addObject("origin_location", arg.asType(LocationTag.class));
                 }
                 else {
                     Debug.echoError("Ignoring unrecognized argument: " + arg.raw_value);
@@ -103,7 +111,7 @@ public class PushCommand extends AbstractCommand implements Holdable {
                 scriptEntry.addObject("duration", arg.asType(DurationTag.class));
             }
             else if (!scriptEntry.hasObject("speed")
-                    && arg.matchesPrimitive(ArgumentHelper.PrimitiveType.Double)
+                    && arg.matchesFloat()
                     && arg.matchesPrefix("speed", "s")) {
 
                 scriptEntry.addObject("speed", arg.asElement());
@@ -148,9 +156,9 @@ public class PushCommand extends AbstractCommand implements Holdable {
 
         // Use the NPC or player's locations as the origin if one is not specified
 
-        if (!scriptEntry.hasObject("originlocation")) {
+        if (!scriptEntry.hasObject("origin_location")) {
 
-            scriptEntry.defaultObject("originentity",
+            scriptEntry.defaultObject("origin_entity",
                     Utilities.entryHasNPC(scriptEntry) ? Utilities.getEntryNPC(scriptEntry).getDenizenEntity() : null,
                     Utilities.entryHasPlayer(scriptEntry) ? Utilities.getEntryPlayer(scriptEntry).getDenizenEntity() : null);
         }
@@ -166,7 +174,7 @@ public class PushCommand extends AbstractCommand implements Holdable {
             throw new InvalidArgumentsException("Must specify entity/entities!");
         }
 
-        if (!scriptEntry.hasObject("originentity") && !scriptEntry.hasObject("originlocation")) {
+        if (!scriptEntry.hasObject("origin_entity") && !scriptEntry.hasObject("origin_location")) {
             throw new InvalidArgumentsException("Must specify an origin location!");
         }
     }
@@ -175,9 +183,9 @@ public class PushCommand extends AbstractCommand implements Holdable {
     @Override
     public void execute(final ScriptEntry scriptEntry) {
 
-        EntityTag originEntity = (EntityTag) scriptEntry.getObject("originentity");
-        LocationTag originLocation = scriptEntry.hasObject("originlocation") ?
-                (LocationTag) scriptEntry.getObject("originlocation") :
+        EntityTag originEntity = scriptEntry.getObjectTag("origin_entity");
+        LocationTag originLocation = scriptEntry.hasObject("origin_location") ?
+                (LocationTag) scriptEntry.getObject("origin_location") :
                 new LocationTag(originEntity.getEyeLocation()
                         .add(originEntity.getEyeLocation().getDirection())
                         .subtract(0, 0.4, 0));
@@ -203,8 +211,8 @@ public class PushCommand extends AbstractCommand implements Holdable {
         }
 
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
-        final ScriptTag script = (ScriptTag) scriptEntry.getObject("script");
-        final ListTag definitions = (ListTag) scriptEntry.getObject("definitions");
+        final ScriptTag script = scriptEntry.getObjectTag("script");
+        final ListTag definitions = scriptEntry.getObjectTag("definitions");
 
         final double speed = scriptEntry.getElement("speed").asDouble();
         final int maxTicks = ((DurationTag) scriptEntry.getObject("duration")).getTicksAsInt();
@@ -214,7 +222,6 @@ public class PushCommand extends AbstractCommand implements Holdable {
         ElementTag ignore_collision = scriptEntry.getElement("ignore_collision");
         final boolean ignoreCollision = ignore_collision != null && ignore_collision.asBoolean();
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), ArgumentHelper.debugObj("origin", originEntity != null ? originEntity : originLocation) +
                     ArgumentHelper.debugObj("entities", entities.toString()) +
@@ -278,79 +285,51 @@ public class PushCommand extends AbstractCommand implements Holdable {
 
             @Override
             public void run() {
-
                 if (runs < maxTicks && lastEntity.isValid()) {
-
                     Vector v1 = lastEntity.getLocation().toVector();
                     Vector v3 = v2.clone().subtract(v1).normalize();
-                    Vector newVel = v3.multiply(speed);
-
-                    lastEntity.setVelocity(newVel);
-
                     if (forceAlong) {
                         Vector newDest = v2.clone().subtract(Origin).normalize().multiply(runs / 20).add(Origin);
                         lastEntity.teleport(new Location(lastEntity.getLocation().getWorld(),
                                 newDest.getX(), newDest.getY(), newDest.getZ(),
                                 lastEntity.getLocation().getYaw(), lastEntity.getLocation().getPitch()));
                     }
-
                     runs += prec;
-
                     // Check if the entity is close to its destination
                     if (Math.abs(v2.getX() - v1.getX()) < 1.5f && Math.abs(v2.getY() - v1.getY()) < 1.5f
                             && Math.abs(v2.getZ() - v1.getZ()) < 1.5f) {
                         runs = maxTicks;
+                        return;
                     }
-
+                    Vector newVel = v3.multiply(speed);
+                    lastEntity.setVelocity(newVel);
                     // Check if the entity has collided with something
                     // using the most basic possible calculation
                     BlockHelper blockHelper = NMSHandler.getBlockHelper();
-                    if (!ignoreCollision && (!blockHelper.isSafeBlock(lastEntity.getLocation().add(v3).getBlock().getType())
-                            || !blockHelper.isSafeBlock(lastEntity.getLocation().add(newVel).getBlock().getType()))) {
+                    if (!ignoreCollision && (!blockHelper.isSafeBlock(lastEntity.getLocation().add(v3))
+                            || !blockHelper.isSafeBlock(lastEntity.getLocation().add(newVel)))) {
                         runs = maxTicks;
                     }
-
                     if (no_damage && lastEntity.isLivingEntity()) {
                         lastEntity.getLivingEntity().setFallDistance(0);
                     }
-
                     // Record the location in case the entity gets lost (EG, if a pushed arrow hits a mob)
                     lastLocation = lastEntity.getLocation();
                 }
                 else {
                     this.cancel();
-
                     if (script != null) {
-
-                        List<ScriptEntry> entries = script.getContainer().getBaseEntries(scriptEntry.entryData.clone());
-                        ScriptQueue queue = new InstantQueue(script.getContainer().getName())
-                                .addEntries(entries);
-                        if (lastEntity.getLocation() != null) {
-                            queue.addDefinition("location", lastEntity.getLocation());
-                        }
-                        else {
-                            queue.addDefinition("location", lastLocation);
-                        }
-                        queue.addDefinition("pushed_entities", entityList);
-                        queue.addDefinition("last_entity", lastEntity);
-                        if (definitions != null) {
-                            int x = 1;
-                            String[] definition_names = null;
-                            try {
-                                definition_names = script.getContainer().getString("definitions").split("\\|");
+                        Consumer<ScriptQueue> configure = (queue) -> {
+                            if (lastEntity.getLocation() != null) {
+                                queue.addDefinition("location", lastEntity.getLocation());
                             }
-                            catch (Exception e) {
-                                // TODO: less lazy handling
+                            else {
+                                queue.addDefinition("location", lastLocation);
                             }
-                            for (String definition : definitions) {
-                                String name = definition_names != null && definition_names.length >= x ?
-                                        definition_names[x - 1].trim() : String.valueOf(x);
-                                queue.addDefinition(name, definition);
-                                Debug.echoDebug(scriptEntry, "Adding definition %" + name + "% as " + definition);
-                                x++;
-                            }
-                        }
-                        queue.start();
+                            queue.addDefinition("pushed_entities", entityList);
+                            queue.addDefinition("last_entity", lastEntity);
+                        };
+                        ScriptUtilities.createAndStartQueue(script.getContainer(), null, scriptEntry.entryData, null, configure, null, null, definitions, scriptEntry);
                     }
                     scriptEntry.setFinished(true);
                 }

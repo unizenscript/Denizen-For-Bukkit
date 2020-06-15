@@ -25,10 +25,17 @@ import java.util.Map;
 
 public class EquipCommand extends AbstractCommand {
 
+    public EquipCommand() {
+        setName("equip");
+        setSyntax("equip (<entity>|...) (hand:<item>) (offhand:<item>) (head:<item>) (chest:<item>) (legs:<item>) (boots:<item>) (saddle:<item>) (horse_armor:<item>)");
+        setRequiredArguments(1, 9);
+    }
+
     // <--[command]
     // @Name Equip
     // @Syntax equip (<entity>|...) (hand:<item>) (offhand:<item>) (head:<item>) (chest:<item>) (legs:<item>) (boots:<item>) (saddle:<item>) (horse_armor:<item>)
     // @Required 1
+    // @Maximum 9
     // @Short Equips items and armor on a list of entities.
     // @Group entity
     //
@@ -49,7 +56,7 @@ public class EquipCommand extends AbstractCommand {
     // - equip <player> head:stone
     //
     // @Usage
-    // Use to equip a iron helmet on two players named Bob and Steve.
+    // Use to equip an iron helmet on two defined players.
     // - equip <[player]>|<[someplayer]> head:iron_helmet
     //
     // @Usage
@@ -57,12 +64,12 @@ public class EquipCommand extends AbstractCommand {
     // - equip <player> head:air chest:air legs:air boots:air
     //
     // @Usage
-    // Use to equip a saddle on a horse.
-    // - equip e@horse saddle:saddle
+    // Use to equip a saddle on the horse the player is riding.
+    // - equip <player.vehicle> saddle:saddle
     //
     // @Usage
-    // Use to equip a saddle on a pig.
-    // - equip e@pig saddle:saddle
+    // Use to equip a saddle on all nearby pigs.
+    // - equip <player.location.find.entities[pig].within[10]> saddle:saddle
     // -->
 
     @Override
@@ -70,7 +77,6 @@ public class EquipCommand extends AbstractCommand {
 
         Map<String, ItemTag> equipment = new HashMap<>();
 
-        // Initialize necessary fields
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (!scriptEntry.hasObject("entities")
@@ -140,7 +146,6 @@ public class EquipCommand extends AbstractCommand {
         Map<String, ItemTag> equipment = (Map<String, ItemTag>) scriptEntry.getObject("equipment");
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
 
-        // Report to dB
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), ArgumentHelper.debugObj("entities", entities.toString()) +
                     ArgumentHelper.debugObj("equipment", equipment.toString()));

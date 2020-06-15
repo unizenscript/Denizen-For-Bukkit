@@ -16,10 +16,18 @@ import java.util.Map;
 
 public class ActionCommand extends AbstractCommand {
 
+    public ActionCommand() {
+        setName("action");
+        setSyntax("action [<action name>|...] (<npc>|...) (context:<name>|<object>|...)");
+        setRequiredArguments(1, 3);
+    }
+
     // <--[command]
     // @Name Action
     // @Syntax action [<action name>|...] (<npc>|...) (context:<name>|<object>|...)
     // @Required 1
+    // @Maximum 3
+    // @Plugin Citizens
     // @Short Manually fires an NPC action.
     // @Group npc
     //
@@ -87,8 +95,8 @@ public class ActionCommand extends AbstractCommand {
     @Override
     public void execute(ScriptEntry scriptEntry) {
 
-        ListTag actions = (ListTag) scriptEntry.getObject("actions");
-        ListTag context = (ListTag) scriptEntry.getObject("context");
+        ListTag actions = scriptEntry.getObjectTag("actions");
+        ListTag context = scriptEntry.getObjectTag("context");
         List<NPCTag> npcs = (List<NPCTag>) scriptEntry.getObject("npcs");
 
         if (scriptEntry.dbCallShouldDebug()) {
