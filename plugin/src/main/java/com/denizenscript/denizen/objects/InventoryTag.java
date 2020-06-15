@@ -67,6 +67,9 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
 
         public static HashMap<Long, InventoryTag> idTrackedInventories = new HashMap<>(512);
 
+        // Unizen-added
+        public static HashMap<Inventory, Long> matchInventoryWithId = new HashMap<>(512);
+
         public static long temporaryInventoryIdCounter = 0;
 
         public static HashMap<Inventory, InventoryTag> temporaryInventoryLinks = new HashMap<>(512);
@@ -113,6 +116,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
                         InventoryTag removed = retainedInventoryLinks.remove(inv);
                         if (removed != null && removed.uniquifier != null) {
                             idTrackedInventories.remove(removed.uniquifier);
+                            matchInventoryWithId.remove(inv);
                             temporaryInventoryLinks.put(inv, removed);
                         }
                     }
@@ -120,21 +124,31 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
             }, 1);
         }
 
-        public static void trackTemporaryInventory(Inventory inventory, InventoryTag tagForm) {
-            if (inventory == null || tagForm == null) {
+        public static void trackTemporaryInventory(InventoryTag tagForm) {
+            if (tagForm == null) {
+                return;
+            }
+            Inventory inventory = tagForm.inventory;
+            if (inventory == null) {
                 return;
             }
             if (!isGenericTrackable(tagForm)) {
                 return;
             }
+
             String title = NMSHandler.getInstance().getTitle(inventory);
             if (InventoryScriptHelper.notableInventories.containsKey(title)) {
                 return;
             }
-            if (tagForm.uniquifier == null) {
+            Long id = matchInventoryWithId.get(inventory);
+            if (id != null) {
+                tagForm.uniquifier = id;
+            }
+            else if (tagForm.uniquifier == null) {
                 tagForm.uniquifier = temporaryInventoryIdCounter++;
             }
             if (!idTrackedInventories.containsKey(tagForm.uniquifier)) {
+                matchInventoryWithId.put(inventory, tagForm.uniquifier);
                 idTrackedInventories.put(tagForm.uniquifier, tagForm);
             }
             temporaryInventoryLinks.put(inventory, tagForm);
@@ -164,7 +178,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         if (tagForm == null) {
             return;
         }
-        InventoryTrackerSystem.trackTemporaryInventory(tagForm.inventory, tagForm);
+        InventoryTrackerSystem.trackTemporaryInventory(tagForm);
     }
 
     public static void setupInventoryTracker() {
@@ -1419,7 +1433,6 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
             return "in@" + NotableManager.getSavedId(this);
         }
         else {
-            trackTemporaryInventory(this);
             if (getIdType().equals("script")) {
                 if (uniquifier != null) {
                     return "in@" + idHolder + "[uniquifier=" + uniquifier + "]";

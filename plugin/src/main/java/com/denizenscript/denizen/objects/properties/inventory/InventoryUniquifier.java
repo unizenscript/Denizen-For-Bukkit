@@ -3,7 +3,9 @@ package com.denizenscript.denizen.objects.properties.inventory;
 import com.denizenscript.denizen.objects.InventoryTag;
 import com.denizenscript.denizencore.objects.Mechanism;
 import com.denizenscript.denizencore.objects.ObjectTag;
+import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.properties.Property;
+import com.denizenscript.denizencore.objects.properties.PropertyParser;
 
 public class InventoryUniquifier implements Property {
 
@@ -45,7 +47,13 @@ public class InventoryUniquifier implements Property {
     }
 
     public static void registerTags() {
-        // Intentionally no tags.
+        // Unizen-added property
+        PropertyParser.<InventoryUniquifier>registerTag("uniquifier", (attribute, property) -> {
+            if (property.inventory.uniquifier == null) {
+                return null;
+            }
+            return new ElementTag(property.inventory.uniquifier);
+        });
     }
 
     @Override

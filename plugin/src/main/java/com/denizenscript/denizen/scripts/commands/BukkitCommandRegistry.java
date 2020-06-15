@@ -100,6 +100,20 @@ public class BukkitCommandRegistry extends CommandRegistry {
         }
         registerCoreMember(CreateWorldCommand.class, "CREATEWORLD", "createworld [<name>] (g:<generator>) (worldtype:<type>) (environment:<environment>) (copy_from:<world>) (seed:<seed>) (settings:<json>)", 1);
         if (Depends.citizens != null) {
+            registerCoreMember(DespawnCommand.class, "DESPAWN", "despawn (<npc>)", 0);
+        }
+        else {
+            AutoNoCitizensCommand.registerFor("DESPAWN");
+        }
+        if (Depends.citizens != null) {
+            registerCoreMember(DisengageCommand.class, "DISENGAGE", "disengage", 0);
+        }
+        else {
+            AutoNoCitizensCommand.registerFor("DISENGAGE");
+        }
+        registerCoreMember(DisplayItemCommand.class, "DISPLAYITEM", "displayitem [<item>] [<location>] (no_gravity) (permanent) (duration:<value>)", 2);
+        registerCoreMember(DropCommand.class, "DROP", "drop [<entity_type>/xp/<item>|...] (<location>) (quantity:<#>) (speed:<#.#>) (delay:<duration>)", 1);
+        if (Depends.citizens != null) {
             registerCoreMember(EngageCommand.class, "ENGAGE", "engage (<duration>)", 0);
         }
         else {
