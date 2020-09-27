@@ -1,7 +1,9 @@
 package com.denizenscript.denizen.scripts.commands.world;
 
+import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.objects.CuboidTag;
 import com.denizenscript.denizen.utilities.DenizenAPI;
+import com.denizenscript.denizen.utilities.blocks.FullBlockData;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
@@ -12,6 +14,7 @@ import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 import org.bukkit.Material;
 import org.bukkit.block.*;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -237,8 +240,8 @@ public class CopyBlockCommand extends AbstractCommand {
 
     private void replaceBlock(Block origin, Block destination, boolean removeOrigin) {
         BlockState originState = origin.getState();
-        BlockData originData = NMSHandler.getBlockHelper().getBlockData(origin);
-        originData.setBlock(destination, false);
+        FullBlockData originData = new FullBlockData(origin);
+        originData.set(destination, false);
         BlockState destState = destination.getState();
 
         if (originState instanceof InventoryHolder) {

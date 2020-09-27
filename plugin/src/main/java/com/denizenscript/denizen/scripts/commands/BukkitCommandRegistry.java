@@ -186,8 +186,6 @@ public class BukkitCommandRegistry extends CommandRegistry {
                     "DISENGAGE", "ENGAGE", "FISH", "LOOKCLOSE", "PAUSE", "RESUME", "POSE", "PUSHABLE", "RENAME", "SIT", "STAND", "TRAIT", "TRIGGER", "VULNERABLE");
         }
 
-        }
-
         Debug.echoApproval("Loaded core commands: " + instances.keySet().toString());
     }
 }

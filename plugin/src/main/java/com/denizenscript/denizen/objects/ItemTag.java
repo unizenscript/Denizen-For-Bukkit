@@ -132,16 +132,8 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
             }
         }
         try {
-            if (ArgumentHelper.matchesInteger(string)) {
-                if (context == null || context.debug) {
-                    Deprecations.materialIds.warn();
-                }
-                stack = new ItemTag(Integer.valueOf(string));
-            }
-            else {
-                MaterialTag mat = MaterialTag.valueOf(string.toUpperCase(), context);
-                stack = new ItemTag(mat.getMaterial());
-            }
+            MaterialTag mat = MaterialTag.valueOf(string.toUpperCase(), context);
+            stack = new ItemTag(mat.getMaterial());
             if (stack != null) {
                 return stack;
             }

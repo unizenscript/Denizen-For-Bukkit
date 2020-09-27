@@ -64,7 +64,7 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         if (tagForm == null) {
             return;
         }
-        InventoryTrackerSystem.trackTemporaryInventory(tagForm);
+        InventoryTrackerSystem.trackTemporaryInventory(tagForm.inventory, tagForm);
     }
 
     public static void setupInventoryTracker() {

@@ -26,12 +26,12 @@
             <scope>compile</scope>
             <optional>true</optional>
         </dependency>
-        <dependency>
+        <!-- dependency>
             <groupId>dev.unizen</groupId>
             <artifactId>denizen-v1_12</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
-        </dependency>
+        </dependency -->
         <dependency>
             <groupId>dev.unizen</groupId>
             <artifactId>denizen-v1_13</artifactId>
