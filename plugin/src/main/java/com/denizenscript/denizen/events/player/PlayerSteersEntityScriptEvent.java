@@ -19,6 +19,8 @@ public class PlayerSteersEntityScriptEvent extends BukkitScriptEvent {
     //
     // @Regex ^on player steers [^\s]+$
     //
+    // @Group Player
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -58,7 +60,13 @@ public class PlayerSteersEntityScriptEvent extends BukkitScriptEvent {
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).startsWith("steers");
+        if (!path.eventLower.startsWith("player steers")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(2))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

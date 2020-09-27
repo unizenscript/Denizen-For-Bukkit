@@ -1,11 +1,9 @@
 package com.denizenscript.denizen.events.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
-import com.denizenscript.denizencore.scripts.ScriptEntryData;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.DyeColor;
 import org.bukkit.event.EventHandler;
@@ -17,9 +15,10 @@ public class SheepDyedScriptEvent extends BukkitScriptEvent implements Listener 
     // <--[event]
     // @Events
     // sheep dyed (<color>)
-    // player dyes sheep (<color>)
     //
-    // @Regex ^on (sheep dyed|player dyes sheep) [^\s]+$
+    // @Regex ^on sheep dyed [^\s]+$
+    //
+    // @Group Entity
     //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
@@ -27,7 +26,7 @@ public class SheepDyedScriptEvent extends BukkitScriptEvent implements Listener 
     //
     // @Warning Determine color will not update the clientside, use - wait 1t and adjust <context.entity> color:YOUR_COLOR to force-update.
     //
-    // @Triggers when a sheep is dyed by a player.
+    // @Triggers when a sheep is dyed.
     //
     // @Context
     // <context.entity> returns the EntityTag of the sheep.
@@ -35,8 +34,6 @@ public class SheepDyedScriptEvent extends BukkitScriptEvent implements Listener 
     //
     // @Determine
     // ElementTag that matches DyeColor to dye it a different color.
-    //
-    // @Player when a player dyes a sheep, and using the 'player dyes sheep' event.
     //
     // -->
 
@@ -51,7 +48,10 @@ public class SheepDyedScriptEvent extends BukkitScriptEvent implements Listener 
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("sheep dyed") || path.eventLower.startsWith("player dyes sheep");
+        if (!path.eventLower.startsWith("sheep dyed") && !path.eventLower.startsWith("player dyes sheep")) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -87,11 +87,6 @@ public class SheepDyedScriptEvent extends BukkitScriptEvent implements Listener 
             }
         }
         return super.applyDetermination(path, determinationObj);
-    }
-
-    @Override
-    public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(null, null);
     }
 
     @Override

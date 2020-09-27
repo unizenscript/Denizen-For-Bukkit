@@ -18,6 +18,7 @@ public class FeedCommand extends AbstractCommand {
         setName("feed");
         setSyntax("feed (<entity>) (amount:<#>) (saturation:<#.#>)");
         setRequiredArguments(0, 3);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -45,6 +46,7 @@ public class FeedCommand extends AbstractCommand {
     // @Tags
     // <PlayerTag.food_level>
     // <PlayerTag.formatted_food_level>
+    // <PlayerTag.saturation>
     //
     // @Usage
     // Use to feed the player for 5 foodpoints (or 2.5 bars).
@@ -61,7 +63,6 @@ public class FeedCommand extends AbstractCommand {
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-
         for (Argument arg : scriptEntry.getProcessedArgs()) {
             if (arg.matchesInteger()
                     && arg.matchesPrefix("amount", "amt", "quantity", "qty", "a", "q")

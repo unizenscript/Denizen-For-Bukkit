@@ -3,9 +3,9 @@ package com.denizenscript.denizen.events.entity;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.objects.LocationTag;
-import com.denizenscript.denizen.utilities.blocks.MaterialCompat;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
+import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.FireworkExplodeEvent;
@@ -18,6 +18,8 @@ public class FireworkBurstsScriptEvent extends BukkitScriptEvent implements List
     // firework bursts
     //
     // @Regex ^on firework bursts$
+    //
+    // @Group Entity
     //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
@@ -43,7 +45,10 @@ public class FireworkBurstsScriptEvent extends BukkitScriptEvent implements List
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("firework bursts");
+        if (!path.eventLower.startsWith("firework bursts")) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -68,7 +73,7 @@ public class FireworkBurstsScriptEvent extends BukkitScriptEvent implements List
             return location;
         }
         else if (name.equals("item")) {
-            ItemStack itemStack = new ItemStack(MaterialCompat.FIREWORK_ROCKET);
+            ItemStack itemStack = new ItemStack(Material.FIREWORK_ROCKET);
             itemStack.setItemMeta(event.getEntity().getFireworkMeta());
             return new ItemTag(itemStack);
         }

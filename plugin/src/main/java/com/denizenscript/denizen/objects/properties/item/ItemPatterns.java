@@ -14,7 +14,6 @@ import org.bukkit.Material;
 import org.bukkit.block.Banner;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.banner.PatternType;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -64,7 +63,7 @@ public class ItemPatterns implements Property {
     }
 
     private List<Pattern> getPatterns() {
-        ItemMeta itemMeta = item.getItemStack().getItemMeta();
+        ItemMeta itemMeta = item.getItemMeta();
         if (itemMeta instanceof BannerMeta) {
             return ((BannerMeta) itemMeta).getPatterns();
         }
@@ -78,8 +77,7 @@ public class ItemPatterns implements Property {
     }
 
     private void setPatterns(List<Pattern> patterns) {
-        ItemStack itemStack = item.getItemStack();
-        ItemMeta itemMeta = itemStack.getItemMeta();
+        ItemMeta itemMeta = item.getItemMeta();
         if (itemMeta instanceof BannerMeta) {
             ((BannerMeta) itemMeta).setPatterns(patterns);
         }
@@ -98,7 +96,7 @@ public class ItemPatterns implements Property {
         else {
             // ...???
         }
-        itemStack.setItemMeta(itemMeta);
+        item.setItemMeta(itemMeta);
     }
 
     @Override
@@ -115,8 +113,8 @@ public class ItemPatterns implements Property {
         // @mechanism ItemTag.patterns
         // @description
         // Lists a banner's patterns in the form "COLOR/PATTERN|COLOR/PATTERN" etc.
-        // For the list of possible colors, see <@link url http://bit.ly/1dydq12>.
-        // For the list of possible patterns, see <@link url http://bit.ly/1MqRn7T>.
+        // For the list of possible colors, see <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/DyeColor.html>.
+        // For the list of possible patterns, see <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/block/banner/PatternType.html>.
         // -->
         if (attribute.startsWith("patterns")) {
             return listPatterns().getObjectAttribute(attribute.fulfill(1));
@@ -149,11 +147,11 @@ public class ItemPatterns implements Property {
         // @description
         // Changes the patterns of a banner. Input must be in the form
         // "COLOR/PATTERN|COLOR/PATTERN" etc.
-        // For the list of possible colors, see <@link url http://bit.ly/1dydq12>.
-        // For the list of possible patterns, see <@link url http://bit.ly/1MqRn7T>.
+        // For the list of possible colors, see <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/DyeColor.html>.
+        // For the list of possible patterns, see <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/block/banner/PatternType.html>.
         // @tags
         // <ItemTag.patterns>
-        // <server.list_patterns>
+        // <server.pattern_types>
         // -->
         if (mechanism.matches("patterns")) {
             List<Pattern> patterns = new ArrayList<>();

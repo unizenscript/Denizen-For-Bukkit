@@ -1,16 +1,14 @@
 package com.denizenscript.denizen.nms.v1_14.helpers;
 
-import com.denizenscript.denizen.nms.v1_14.impl.blocks.BlockDataImpl;
+import com.denizenscript.denizen.nms.util.jnbt.CompoundTagBuilder;
 import com.denizenscript.denizen.nms.v1_14.impl.jnbt.CompoundTagImpl;
 import com.google.common.collect.Iterables;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
-import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.utilities.blocks.ModernBlockData;
-import com.denizenscript.denizen.nms.interfaces.BlockData;
 import com.denizenscript.denizen.nms.interfaces.BlockHelper;
 import com.denizenscript.denizen.nms.util.PlayerProfile;
-import com.denizenscript.denizen.nms.util.ReflectionHelper;
+import com.denizenscript.denizencore.utilities.ReflectionHelper;
 import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import net.minecraft.server.v1_14_R1.*;
@@ -24,10 +22,8 @@ import org.bukkit.craftbukkit.v1_14_R1.block.CraftBlockState;
 import org.bukkit.craftbukkit.v1_14_R1.block.CraftSkull;
 import org.bukkit.craftbukkit.v1_14_R1.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.v1_14_R1.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.v1_14_R1.util.CraftLegacy;
 import org.bukkit.craftbukkit.v1_14_R1.util.CraftMagicNumbers;
 import org.bukkit.event.world.PortalCreateEvent;
-import org.bukkit.material.MaterialData;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
@@ -83,24 +79,6 @@ public class BlockHelperImpl implements BlockHelper {
     }
 
     @Override
-    public int idFor(Material mat) {
-        if (mat.isLegacy()) {
-            return mat.getId();
-        }
-        return CraftLegacy.toLegacy(mat).getId();
-    }
-
-    @Override
-    public MaterialData getFlowerpotContents(Block block) {
-        throw new UnsupportedOperationException("As of Minecraft version 1.13 potted flowers each have their own material, such as POTTED_CACTUS.");
-    }
-
-    @Override
-    public void setFlowerpotContents(Block block, MaterialData data) {
-        throw new UnsupportedOperationException("As of Minecraft version 1.13 potted flowers each have their own material, such as POTTED_CACTUS.");
-    }
-
-    @Override
     public PlayerProfile getPlayerProfile(Skull skull) {
         GameProfile profile = getTE(((CraftSkull) skull)).gameProfile;
         if (profile == null) {
@@ -126,47 +104,25 @@ public class BlockHelperImpl implements BlockHelper {
 
     @Override
     public CompoundTag getNbtData(Block block) {
-        NMSHandler.getChunkHelper().changeChunkServerThread(block.getWorld());
-        org.bukkit.block.BlockState state = block.getState();
-        NMSHandler.getChunkHelper().restoreServerThread(block.getWorld());
-        TileEntity tileEntity = getTE((CraftBlockEntityState) state);
-        if (tileEntity == null) {
-            return null;
+        TileEntity te = ((CraftWorld) block.getWorld()).getHandle().getTileEntity(new BlockPosition(block.getX(), block.getY(), block.getZ()));
+        if (te != null) {
+            NBTTagCompound compound = new NBTTagCompound();
+            te.save(compound);
+            return CompoundTagImpl.fromNMSTag(compound);
         }
-        return CompoundTagImpl.fromNMSTag(tileEntity.b());
+        return null;
     }
 
     @Override
-    public void setNbtData(Block block, CompoundTag compoundTag) {
-        NMSHandler.getChunkHelper().changeChunkServerThread(block.getWorld());
-        org.bukkit.block.BlockState state = block.getState();
-        NMSHandler.getChunkHelper().restoreServerThread(block.getWorld());
-        TileEntity tileEntity = getTE((CraftBlockEntityState) state);
-        if (tileEntity == null) {
-            return;
-        }
-        tileEntity.load(((CompoundTagImpl) compoundTag).toNMSTag());
-        tileEntity.update();
-    }
-
-    @Override
-    public BlockData getBlockData(Material material, byte data) {
-        return new BlockDataImpl(material, data);
-    }
-
-    @Override
-    public BlockData getBlockData(ModernBlockData data) {
-        return new BlockDataImpl(data.data);
-    }
-
-    @Override
-    public BlockData getBlockData(Block block) {
-        return new BlockDataImpl(block);
-    }
-
-    @Override
-    public BlockData getBlockData(String compressedString) {
-        return BlockDataImpl.fromCompressedString(compressedString);
+    public void setNbtData(Block block, CompoundTag ctag) {
+        CompoundTagBuilder builder = ctag.createBuilder();
+        builder.putInt("x", block.getX());
+        builder.putInt("y", block.getY());
+        builder.putInt("z", block.getZ());
+        ctag = builder.build();
+        BlockPosition blockPos = new BlockPosition(block.getX(), block.getY(), block.getZ());
+        TileEntity te = ((CraftWorld) block.getWorld()).getHandle().getTileEntity(blockPos);
+        te.load(((CompoundTagImpl) ctag).toNMSTag());
     }
 
     private static net.minecraft.server.v1_14_R1.Block getBlockFrom(Material material) {
@@ -207,12 +163,6 @@ public class BlockHelperImpl implements BlockHelper {
             return 0;
         }
         return ReflectionHelper.getFieldValue(net.minecraft.server.v1_14_R1.Block.class, "durability", block);
-    }
-
-    @Override
-    public boolean isSafeBlock(Material material) {
-        // this is presumably more accurate these days
-        return !material.isSolid();
     }
 
     @Override

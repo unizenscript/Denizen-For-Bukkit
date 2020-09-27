@@ -16,6 +16,7 @@ public class NoteCommand extends AbstractCommand {
         setName("note");
         setSyntax("note [<Notable ObjectTag>/remove] [as:<name>]");
         setRequiredArguments(2, 2);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -29,21 +30,23 @@ public class NoteCommand extends AbstractCommand {
     //
     // @Description
     // Add or remove a notable object that can be referenced in events or scripts.
-    // Notable objects are "permanent" versions of other ObjectTags. (See: <@link language ObjectTags>)
-    // Notable objects keep their properties when added.
+    // Noted objects are "permanent" versions of other ObjectTags. (See: <@link language ObjectTags>)
+    // Noted objects keep their properties when added.
+    //
+    // Notable object types: CuboidTag, EllipsoidTag, LocationTag, InventoryTag
     //
     // @Tags
-    // <server.list_notables[<type>]>
-    // <CuboidTag.notable_name>
-    // <InventoryTag.notable_name>
-    // <LocationTag.notable_name>
+    // <server.notables[<type>]>
+    // <CuboidTag.note_name>
+    // <InventoryTag.note_name>
+    // <LocationTag.note_name>
     //
     // @Usage
-    // Use to add a notable cuboid.
+    // Use to note a cuboid.
     // - note <[some_cuboid]> as:mycuboid
     //
     // @Usage
-    // Use to remove a notable cuboid.
+    // Use to remove a noted cuboid.
     // - note remove as:mycuboid
     //
     // @Usage

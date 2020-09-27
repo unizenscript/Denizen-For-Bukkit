@@ -22,6 +22,7 @@ import org.bukkit.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.*;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -41,9 +42,7 @@ public class ItemScriptHelper implements Listener {
 
     public static void removeDenizenRecipes() {
         recipeIdToItemScript.clear();
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            NMSHandler.getItemHelper().clearDenizenRecipes();
-        }
+        NMSHandler.getItemHelper().clearDenizenRecipes();
     }
 
     public String getIdFor(ItemScriptContainer container, String type, int id) {
@@ -83,6 +82,9 @@ public class ItemScriptHelper implements Listener {
     }
 
     public ItemStack[] textToItemArray(ItemScriptContainer container, String text) {
+        if (CoreUtilities.toLowerCase(text).equals("air")) {
+            return new ItemStack[0];
+        }
         List<String> ingredientText = splitByNonBracketedSlashes(text);
         ItemStack[] outputItems = new ItemStack[ingredientText.size()];
         for (int i = 0; i < outputItems.length; i++) {
@@ -128,28 +130,28 @@ public class ItemScriptHelper implements Listener {
                 ingredients.add(items);
             }
         }
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            NamespacedKey key = new NamespacedKey("denizen", internalId);
-            ShapedRecipe recipe = new ShapedRecipe(key, item);
-            recipe.setGroup(group);
-            String shape1 = "ABC".substring(0, width);
-            String shape2 = "DEF".substring(0, width);
-            String shape3 = "GHI".substring(0, width);
-            String itemChars = shape1 + shape2 + shape3;
-            if (recipeList.size() == 3) {
-                recipe = recipe.shape(shape1, shape2, shape3);
-            }
-            else if (recipeList.size() == 2) {
-                recipe = recipe.shape(shape1, shape2);
-            }
-            else {
-                recipe = recipe.shape(shape1);
-            }
-            for (int i = 0; i < ingredients.size(); i++) {
+        NamespacedKey key = new NamespacedKey("denizen", internalId);
+        ShapedRecipe recipe = new ShapedRecipe(key, item);
+        recipe.setGroup(group);
+        String shape1 = "ABC".substring(0, width);
+        String shape2 = "DEF".substring(0, width);
+        String shape3 = "GHI".substring(0, width);
+        String itemChars = shape1 + shape2 + shape3;
+        if (recipeList.size() == 3) {
+            recipe = recipe.shape(shape1, shape2, shape3);
+        }
+        else if (recipeList.size() == 2) {
+            recipe = recipe.shape(shape1, shape2);
+        }
+        else {
+            recipe = recipe.shape(shape1);
+        }
+        for (int i = 0; i < ingredients.size(); i++) {
+            if (ingredients.get(i).length != 0) {
                 NMSHandler.getItemHelper().setShapedRecipeIngredient(recipe, itemChars.charAt(i), ingredients.get(i), exacts.get(i));
             }
-            Bukkit.addRecipe(recipe);
         }
+        Bukkit.addRecipe(recipe);
     }
 
     public void registerShapelessRecipe(ItemScriptContainer container, ItemStack item, String shapelessString, String internalId, String group) {
@@ -172,13 +174,11 @@ public class ItemScriptHelper implements Listener {
             }
             ingredients.add(items);
         }
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            boolean[] bools = new boolean[exacts.size()];
-            for (int i = 0; i < exacts.size(); i++) {
-                bools[i] = exacts.get(i);
-            }
-            NMSHandler.getItemHelper().registerShapelessRecipe(internalId, group, item, ingredients, bools);
+        boolean[] bools = new boolean[exacts.size()];
+        for (int i = 0; i < exacts.size(); i++) {
+            bools[i] = exacts.get(i);
         }
+        NMSHandler.getItemHelper().registerShapelessRecipe(internalId, group, item, ingredients, bools);
     }
 
     public void registerFurnaceRecipe(ItemScriptContainer container, ItemStack item, String furnaceItemString, float exp, int time, String type, String internalId, String group) {
@@ -191,9 +191,7 @@ public class ItemScriptHelper implements Listener {
         if (items == null) {
             return;
         }
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            NMSHandler.getItemHelper().registerFurnaceRecipe(internalId, group, item, items, exp, time, type, exact);
-        }
+        NMSHandler.getItemHelper().registerFurnaceRecipe(internalId, group, item, items, exp, time, type, exact);
     }
 
     public void registerStonecuttingRecipe(ItemScriptContainer container, ItemStack item, String inputItemString, String internalId, String group) {
@@ -244,7 +242,7 @@ public class ItemScriptHelper implements Listener {
                                 exp = Float.parseFloat(subSection.getString("experience"));
                             }
                             if (subSection.contains("cook_time")) {
-                                cookTime = DurationTag.valueOf(subSection.getString("cook_time")).getTicksAsInt();
+                                cookTime = DurationTag.valueOf(subSection.getString("cook_time"), new BukkitTagContext(container)).getTicksAsInt();
                             }
                             registerFurnaceRecipe(container, item, subSection.getString("input"), exp, cookTime, type, internalId, group);
                         }
@@ -276,22 +274,24 @@ public class ItemScriptHelper implements Listener {
         rebuildRecipes();
     }
 
-    public static boolean isItemscript(ItemStack item) {
+    public static boolean isItemscript(ItemTag item) {
         return getItemScriptContainer(item) != null;
     }
 
-    public static ItemScriptContainer getItemScriptContainer(ItemStack item) {
+    public static ItemScriptContainer getItemScriptContainer(ItemTag item) {
         if (item == null) {
             return null;
         }
-        String nbt = NMSHandler.getItemHelper().getNbtData(item).getString("Denizen Item Script");
+        String nbt = NMSHandler.getItemHelper().getNbtData(item.getItemStack()).getString("Denizen Item Script");
         if (nbt != null && !nbt.equals("")) {
             return item_scripts_by_hash_id.get(nbt);
         }
-        if (!item.hasItemMeta() || !item.getItemMeta().hasLore()) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null || !meta.hasLore()) {
             return null;
         }
-        for (String itemLore : item.getItemMeta().getLore()) {
+        // TODO: Remove legacy lore script support?
+        for (String itemLore : meta.getLore()) {
             if (itemLore.startsWith(ItemTag.itemscriptIdentifier)) {
                 return item_scripts.get(itemLore.replace(ItemTag.itemscriptIdentifier, ""));
             }

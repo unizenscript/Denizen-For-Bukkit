@@ -22,6 +22,8 @@ public class EntityInteractScriptEvent extends BukkitScriptEvent implements List
     //
     // @Regex ^on [^\s]+ interacts with [^\s]+$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -46,24 +48,29 @@ public class EntityInteractScriptEvent extends BukkitScriptEvent implements List
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.contains("interacts with");
+        if (!path.eventLower.contains("interacts with")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        if (!couldMatchBlock(path.eventArgLowerAt(3))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean matches(ScriptPath path) {
-
         if (!tryEntity(entity, path.eventArgLowerAt(0))) {
             return false;
         }
-
         if (!tryMaterial(material, path.eventArgLowerAt(3))) {
             return false;
         }
-
         if (!runInCheck(path, location)) {
             return false;
         }
-
         return super.matches(path);
     }
 

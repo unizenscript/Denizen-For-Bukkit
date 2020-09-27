@@ -22,6 +22,8 @@ public class HangingBreaksScriptEvent extends BukkitScriptEvent implements Liste
     //
     // @Regex ^on [^\s]+ breaks( because [^\s]+)$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -46,9 +48,19 @@ public class HangingBreaksScriptEvent extends BukkitScriptEvent implements Liste
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("breaks")
-                && !path.eventArgLowerAt(2).equals("hanging")
-                && !path.eventArgLowerAt(0).equals("player");
+        if (!path.eventArgLowerAt(1).equals("breaks")) {
+            return false;
+        }
+        if (couldMatchEntity(path.eventArgLowerAt(2))) { // Deconflict with '<entity> breaks <hanging>'
+            return false;
+        }
+        if (path.eventArgLowerAt(0).equals("player")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

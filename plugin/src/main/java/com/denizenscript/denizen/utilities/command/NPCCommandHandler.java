@@ -6,6 +6,7 @@ import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.command.manager.messaging.Messaging;
 import com.denizenscript.denizencore.scripts.ScriptRegistry;
+import com.denizenscript.denizencore.utilities.CoreUtilities;
 import net.citizensnpcs.Citizens;
 import net.citizensnpcs.api.command.Command;
 import net.citizensnpcs.api.command.CommandContext;
@@ -333,7 +334,6 @@ public class NPCCommandHandler {
             Messaging.sendInfo(sender, "Nickname removed.");
             return;
         }
-
         if (trait.hasNickname()) {
             Messaging.sendInfo(sender, npc.getName() + "'s nickname is '" + trait.getNickname() + "'.");
         }
@@ -355,12 +355,10 @@ public class NPCCommandHandler {
             Messaging.sendError(sender, npc.getName() + " needs to be a Player type NPC to sit!");
             return;
         }
-
         if (!npc.hasTrait(SittingTrait.class)) {
             npc.addTrait(SittingTrait.class);
         }
         SittingTrait trait = npc.getTrait(SittingTrait.class);
-
         if (args.hasFlag('c')) {
             trait.sit(args.getSenderTargetBlockLocation());
         }
@@ -370,7 +368,7 @@ public class NPCCommandHandler {
                 Messaging.sendError(sender, "Usage: /npc sit --location x,y,z,world");
                 return;
             }
-            trait.sit(LocationTag.valueOf(argsArray[0] + "," + argsArray[1] + "," + argsArray[2] + "," + argsArray[3]));
+            trait.sit(LocationTag.valueOf(argsArray[0] + "," + argsArray[1] + "," + argsArray[2] + "," + argsArray[3], CoreUtilities.basicContext));
         }
         else if (args.hasValueFlag("anchor")) {
             if (npc.hasTrait(Anchors.class)) {
@@ -385,6 +383,10 @@ public class NPCCommandHandler {
             return;
         }
         else {
+            if (trait.isSitting()) {
+                Messaging.send(sender, npc.getName() + " is already sitting, use '/npc stand' to stand the NPC back up.");
+                return;
+            }
             trait.sit();
         }
         Messaging.send(sender, npc.getName() + " is now sitting.");
@@ -454,7 +456,7 @@ public class NPCCommandHandler {
         }
 
         if (args.hasValueFlag("location")) {
-            LocationTag location = LocationTag.valueOf(args.getFlag("location"));
+            LocationTag location = LocationTag.valueOf(args.getFlag("location"), CoreUtilities.basicContext);
             if (location == null) {
                 Messaging.sendError(sender, "Usage: /npc sleep --location x,y,z,world");
                 return;
@@ -542,7 +544,7 @@ public class NPCCommandHandler {
                 Messaging.sendError(sender, "Usage: /npc fish --location x,y,z,world");
                 return;
             }
-            trait.startFishing(LocationTag.valueOf(argsArray[0] + "," + argsArray[1] + "," + argsArray[2] + "," + argsArray[3]));
+            trait.startFishing(LocationTag.valueOf(argsArray[0] + "," + argsArray[1] + "," + argsArray[2] + "," + argsArray[3], CoreUtilities.basicContext));
         }
         else if (args.hasValueFlag("anchor")) {
             if (npc.hasTrait(Anchors.class)) {

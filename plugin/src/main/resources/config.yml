@@ -10,7 +10,7 @@ Debug:
   # Whether the '/ex' command should show debug by default. (if set to false, this inverts the '-q' option)
   Ex command debug: true
   # The max length of a line of debug output. Shorten this if your console is hard to read.
-  Line length: 128
+  Line length: 150
   # The max length of debug output. After this length, all further output will be cut off.
   Trim length limit: 1024
   # Whether to permit the "server.redirect_logging" mechanism
@@ -34,6 +34,8 @@ Debug:
   Prefix: ""
   # Whether to show full information about scripts being loaded (at startup and "/ex reload" usage).
   Show loading info: false
+  # Whether to show deprecation warnings that are scheduled as future warnings.
+  Show future warnings: false
 
 Scripts:
   World:
@@ -52,7 +54,7 @@ Scripts:
     Use default script folder: true
     Alternative folder path: 'plugins/Denizen'
   # What character encoding to use. 'default' indicates system default, 'utf8' is suggested as a preferred encoding in most cases.
-  Encoding: default
+  Encoding: utf8
 
 # The default options for new Denizen NPCs
 

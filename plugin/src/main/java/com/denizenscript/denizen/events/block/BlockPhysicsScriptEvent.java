@@ -2,7 +2,6 @@ package com.denizenscript.denizen.events.block;
 
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.MaterialTag;
-import com.denizenscript.denizen.utilities.blocks.MaterialCompat;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import org.bukkit.Material;
@@ -47,7 +46,13 @@ public class BlockPhysicsScriptEvent extends BukkitScriptEvent implements Listen
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("physics");
+        if (!path.eventArgLowerAt(1).equals("physics")) {
+            return false;
+        }
+        if (!couldMatchBlock(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -83,8 +88,7 @@ public class BlockPhysicsScriptEvent extends BukkitScriptEvent implements Listen
     @EventHandler
     public void onBlockPhysics(BlockPhysicsEvent event) {
         Material changedType = event.getChangedType();
-        if (changedType == Material.REDSTONE_WIRE || MaterialCompat.isComparator(changedType)
-                || MaterialCompat.isRepeater(changedType)) {
+        if (changedType == Material.REDSTONE_WIRE || changedType == Material.COMPARATOR || changedType == Material.REPEATER) {
             return;
         }
         location = new LocationTag(event.getBlock().getLocation());

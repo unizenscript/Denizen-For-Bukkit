@@ -22,6 +22,8 @@ public class PlayerDropsItemScriptEvent extends BukkitScriptEvent implements Lis
     //
     // @Regex ^on player drops [^\s]+$
     //
+    // @Group Player
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -48,12 +50,17 @@ public class PlayerDropsItemScriptEvent extends BukkitScriptEvent implements Lis
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("player drops");
+        if (!path.eventLower.startsWith("player drops")) {
+            return false;
+        }
+        if (!couldMatchItem(path.eventArgLowerAt(2))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean matches(ScriptPath path) {
-
         String iCheck = path.eventArgLowerAt(2);
         if (!iCheck.equals("item") && !tryItem(item, iCheck)) {
             return false;

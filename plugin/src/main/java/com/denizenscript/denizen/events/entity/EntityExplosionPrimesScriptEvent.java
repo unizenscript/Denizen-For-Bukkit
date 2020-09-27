@@ -19,6 +19,8 @@ public class EntityExplosionPrimesScriptEvent extends BukkitScriptEvent implemen
     //
     // @Regex ^on [^\s]+ explosion primes$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -41,7 +43,13 @@ public class EntityExplosionPrimesScriptEvent extends BukkitScriptEvent implemen
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.contains("explosion primes");
+        if (!path.eventLower.contains("explosion primes")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

@@ -19,24 +19,24 @@ public class AttackCommand extends AbstractCommand {
 
     public AttackCommand() {
         setName("attack");
-        setSyntax("attack (<entity>|...) (target:<entity>/cancel)");
+        setSyntax("attack [<entity>|...] (target:<entity>/cancel)");
         setRequiredArguments(0, 2);
+        isProcedural = false;
     }
 
     // <--[command]
     // @Name Attack
-    // @Syntax attack (<entity>|...) (target:<entity>/cancel)
+    // @Syntax attack [<entity>|...] (target:<entity>/cancel)
     // @Required 0
     // @Maximum 2
     // @Short Makes an entity, or list of entities, attack a target.
     // @Group entity
     //
     // @Description
-    // By itself, the 'attack' command will act as an NPC command in the sense that an attached
-    // NPC will attack the attached player, or specified target. It can also accept a specified entity,
-    // or list of entities, to fulfill the command, just specify a 'fetchable' entity object. This includes
-    // player objects (dPlayers) and NPC objects (dNPCs). To specify the target, prefix the entity
-    // object with 'target:' or 't:'.
+    // The attack command causes a mob entity to attack a target mob entity or player.
+    //
+    // This technically can be used on an NPC, but it will trigger the Citizens internal punching-pathfinder.
+    // This attack mode doesn't work well. If you want NPC combat, consider using Sentinel instead: <@link url https://github.com/mcmonkeyprojects/Sentinel/blob/master/README.md>.
     //
     // To cancel an attack, use the 'cancel' argument instead of specifying a target.
     //
@@ -46,36 +46,28 @@ public class AttackCommand extends AbstractCommand {
     // <NPCTag.target_entity>
     //
     // @Usage
-    // Use to make an NPC attack a player in an interact script.
-    // - attack
+    // Use to make the player's target entity attack a nearby entity.
+    // - attack <player.target> target:<npc.location.find.living_entities.within[10].random>
     //
     // @Usage
-    // Use to make an NPC attack a nearby entity.
-    // - attack target:<npc.location.find.living_entities.within[10].random>
-    //
-    // @Usage
-    // Use to make a specific entity attack an entity, including players or npcs.
+    // Use to make a random nearby entity attack a player.
     // - attack <player.location.find.living_entities.within[10].random> target:<player>
     //
     // @Usage
-    // Use to stop an attack
-    // - attack <npc> stop
+    // Use to stop an entity from attacking.
+    // - attack <[entity]> stop
     // -->
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-
         for (Argument arg : scriptEntry.getProcessedArgs()) {
-
             if (!scriptEntry.hasObject("cancel")
                     && arg.matches("cancel", "stop")) {
-
                 scriptEntry.addObject("cancel", "true");
             }
             else if (!scriptEntry.hasObject("target")
                     && arg.matchesArgumentType(EntityTag.class)
                     && arg.matchesPrefix("target", "t")) {
-                // Single entity arg
                 scriptEntry.addObject("target", arg.asType(EntityTag.class));
             }
             else if (!scriptEntry.hasObject("entities")
@@ -87,21 +79,13 @@ public class AttackCommand extends AbstractCommand {
                 arg.reportUnhandled();
             }
         }
-
-        // Use the player as the target if one is not specified
         if (!scriptEntry.hasObject("target")) {
             scriptEntry.addObject("target", Utilities.entryHasPlayer(scriptEntry) ? Utilities.getEntryPlayer(scriptEntry).getDenizenEntity() : null);
         }
-
-        // Use the NPC as the attacking entity if one is not specified
-        scriptEntry.defaultObject("entities",
-                Utilities.entryHasNPC(scriptEntry) ? Arrays.asList(Utilities.getEntryNPC(scriptEntry).getDenizenEntity()) : null);
-
-        // Check to make sure required arguments have been filled
+        scriptEntry.defaultObject("entities", Utilities.entryHasNPC(scriptEntry) ? Arrays.asList(Utilities.getEntryNPC(scriptEntry).getDenizenEntity()) : null);
         if (!scriptEntry.hasObject("entities")) {
             throw new InvalidArgumentsException("Must specify entity/entities!");
         }
-
         if (!scriptEntry.hasObject("target") && !scriptEntry.hasObject("cancel")) {
             throw new InvalidArgumentsException("Must specify a target!");
         }
@@ -113,20 +97,14 @@ public class AttackCommand extends AbstractCommand {
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
         EntityTag target = scriptEntry.getObjectTag("target");
         boolean cancel = scriptEntry.hasObject("cancel");
-
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), (cancel ? ArgumentHelper.debugObj("cancel", "true") : "") +
                     ArgumentHelper.debugObj("entities", entities.toString()) +
                     (target != null ? ArgumentHelper.debugObj("target", target) : ""));
         }
-
-        // Go through all the entities and make them either attack
-        // the target or stop attacking
-
         for (EntityTag entity : entities) {
             if (entity.isCitizensNPC()) {
                 Navigator nav = entity.getDenizenNPC().getCitizen().getNavigator();
-
                 if (!cancel) {
                     nav.setTarget(target.getBukkitEntity(), true);
                 }
@@ -135,7 +113,6 @@ public class AttackCommand extends AbstractCommand {
                     if (nav.isNavigating()
                             && nav.getTargetType().equals(TargetType.ENTITY)
                             && nav.getEntityTarget().isAggressive()) {
-
                         nav.cancelNavigation();
                     }
                 }

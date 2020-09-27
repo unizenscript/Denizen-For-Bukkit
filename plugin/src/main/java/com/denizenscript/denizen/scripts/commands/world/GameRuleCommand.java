@@ -14,6 +14,7 @@ public class GameRuleCommand extends AbstractCommand {
         setName("gamerule");
         setSyntax("gamerule [<world>] [<rule>] [<value>]");
         setRequiredArguments(3, 3);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -25,7 +26,7 @@ public class GameRuleCommand extends AbstractCommand {
     // @Group world
     //
     // @Description
-    // Sets a gamerule on the world. A list of valid gamerules can be found here: http://minecraft.gamepedia.com/Commands#gamerule
+    // Sets a gamerule on the world. A list of valid gamerules can be found here: <@link url https://minecraft.gamepedia.com/Commands#gamerule>
     // Note: Be careful, gamerules are CASE SENSITIVE.
     //
     // @Tags

@@ -8,8 +8,6 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.MapTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.objects.properties.PropertyParser;
-import com.denizenscript.denizencore.utilities.Deprecations;
-import com.denizenscript.denizencore.utilities.text.StringHolder;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -38,20 +36,17 @@ public class InventoryContents implements Property {
         this.inventory = inventory;
     }
 
-    public ListTag getContents(int simpleOrFull) {
+    public ListTag getContents(boolean simple) {
         if (inventory.getInventory() == null) {
             return null;
         }
+        int lastNonAir = -1;
         ListTag contents = new ListTag();
-        boolean containsNonAir = false;
         for (ItemStack item : inventory.getInventory().getContents()) {
             if (item != null && item.getType() != Material.AIR) {
-                containsNonAir = true;
-                if (simpleOrFull == 1) {
+                lastNonAir = contents.size();
+                if (simple) {
                     contents.add(new ItemTag(item).identifySimple());
-                }
-                else if (simpleOrFull == 2) {
-                    contents.add(new ItemTag(item).getFullString());
                 }
                 else {
                     contents.addObject(new ItemTag(item));
@@ -61,16 +56,9 @@ public class InventoryContents implements Property {
                 contents.addObject(new ItemTag(Material.AIR));
             }
         }
-        if (!containsNonAir) {
-            contents.clear();
-        }
-        else {
-            for (int x = contents.size() - 1; x >= 0; x--) {
-                if (!contents.get(x).equals("i@air")) {
-                    break;
-                }
-                contents.remove(x);
-            }
+        lastNonAir++;
+        while (contents.size() > lastNonAir) {
+            contents.remove(lastNonAir);
         }
         return contents;
     }
@@ -105,10 +93,10 @@ public class InventoryContents implements Property {
 
     @Override
     public String getPropertyString() {
-        if (!inventory.getIdType().equals("generic") && !inventory.isUnique()) {
+        if (!inventory.isGeneric() && !inventory.isSaving) {
             return null;
         }
-        ListTag contents = getContents(0);
+        ListTag contents = getContents(false);
         if (contents == null || contents.isEmpty()) {
             return null;
         }
@@ -140,12 +128,12 @@ public class InventoryContents implements Property {
                 if (items[i] == null || items[i].getType() == Material.AIR) {
                     continue;
                 }
-                map.map.put(new StringHolder(String.valueOf(i + 1)), new ItemTag(items[i]));
+                map.putObject(String.valueOf(i + 1), new ItemTag(items[i]));
             }
             return map;
         });
 
-            // <--[tag]
+        // <--[tag]
         // @attribute <InventoryTag.list_contents>
         // @returns ListTag(ItemTag)
         // @group properties
@@ -165,13 +153,7 @@ public class InventoryContents implements Property {
             // -->
             if (attribute.startsWith("simple", 2)) {
                 attribute.fulfill(1);
-                return contents.getContents(1);
-            }
-
-            if (attribute.startsWith("full", 2)) {
-                attribute.fulfill(1);
-                Deprecations.fullTags.warn(attribute.context);
-                return contents.getContents(2);
+                return contents.getContents(true);
             }
 
             // <--[tag]
@@ -209,7 +191,7 @@ public class InventoryContents implements Property {
                 return contents.getContentsWithLore(lore, false);
             }
 
-            return contents.getContents(0);
+            return contents.getContents(false);
         });
     }
 

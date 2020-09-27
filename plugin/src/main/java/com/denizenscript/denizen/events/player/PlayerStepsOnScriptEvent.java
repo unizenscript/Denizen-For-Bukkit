@@ -19,6 +19,8 @@ public class PlayerStepsOnScriptEvent extends BukkitScriptEvent implements Liste
     //
     // @Regex ^on player steps on [^\s]+$
     //
+    // @Group Player
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Warning This event may fire very rapidly.
@@ -48,7 +50,13 @@ public class PlayerStepsOnScriptEvent extends BukkitScriptEvent implements Liste
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("player steps on");
+        if (!path.eventLower.startsWith("player steps on")) {
+            return false;
+        }
+        if (!couldMatchBlock(path.eventArgLowerAt(3))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

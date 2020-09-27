@@ -21,6 +21,10 @@ public class PlayerJoinsScriptEvent extends BukkitScriptEvent implements Listene
     //
     // @Regex ^on player (joins|join)$
     //
+    // @Switch in:<area> to only process the event if the player will be within a specified area.
+    //
+    // @Group Player
+    //
     // @Triggers when a player joins the server.
     //
     // @Context
@@ -47,6 +51,14 @@ public class PlayerJoinsScriptEvent extends BukkitScriptEvent implements Listene
     }
 
     @Override
+    public boolean matches(ScriptPath path) {
+        if (!runInCheck(path, event.getPlayer().getLocation())) {
+            return false;
+        }
+        return super.matches(path);
+    }
+
+    @Override
     public String getName() {
         return "PlayerJoins";
     }
@@ -55,7 +67,7 @@ public class PlayerJoinsScriptEvent extends BukkitScriptEvent implements Listene
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         if (determinationObj instanceof ElementTag) {
             String determination = determinationObj.toString();
-            if (CoreUtilities.toLowerCase(determination).equals("none")) {
+            if (CoreUtilities.equalsIgnoreCase(determination, "none")) {
                 event.setJoinMessage(null);
                 return true;
             }

@@ -23,6 +23,8 @@ public class ProjectileHitsScriptEvent extends BukkitScriptEvent implements List
     //
     // @Regex ^on [^\s]+ hits [^\s]+$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Triggers when a projectile hits a block.
@@ -30,7 +32,8 @@ public class ProjectileHitsScriptEvent extends BukkitScriptEvent implements List
     // @Context
     // <context.projectile> returns the EntityTag of the projectile.
     // <context.shooter> returns the EntityTag of the shooter, if there is one.
-    // <context.location> returns the LocationTag of the block that was hit.
+    // <context.location> returns a LocationTag of the block that was hit.
+    // <context.hit_face> returns a LocationTag vector of the hit normal (like '0,1,0' if the projectile hit the top of the block).
     //
     // -->
 
@@ -67,7 +70,16 @@ public class ProjectileHitsScriptEvent extends BukkitScriptEvent implements List
     @Override
     public boolean couldMatch(ScriptPath path) {
         String cmd = path.eventArgLowerAt(1);
-        return cmd.equals("hits") || cmd.equals("shoots");
+        if (!cmd.equals("hits") && !cmd.equals("shoots")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        if (!couldMatchBlock(path.eventArgLowerAt(2))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -118,6 +130,9 @@ public class ProjectileHitsScriptEvent extends BukkitScriptEvent implements List
         }
         else if (name.equals("location")) {
             return location;
+        }
+        else if (name.equals("hit_face") && event.getHitBlockFace() != null) {
+            return new LocationTag(event.getHitBlockFace().getDirection());
         }
         else if (name.equals("shooter") && shooter != null) {
             return shooter.getDenizenObject();

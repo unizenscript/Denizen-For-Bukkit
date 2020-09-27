@@ -18,6 +18,7 @@ public class GroupCommand extends AbstractCommand {
         setName("group");
         setSyntax("group [add/remove/set] [<group>] (<world>)");
         setRequiredArguments(2, 3);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -40,8 +41,8 @@ public class GroupCommand extends AbstractCommand {
     // <PlayerTag.in_group[<group>]>
     // <PlayerTag.in_group[<group>].global>
     // <PlayerTag.in_group[<group>].world>
-    // <PlayerTag.groups>
-    // <server.list_permission_groups>
+    // <PlayerTag.groups[(<world>)]>
+    // <server.permission_groups>
     //
     // @Usage
     // Use to add a player to the Admin group.
@@ -53,20 +54,17 @@ public class GroupCommand extends AbstractCommand {
     //
     // @Usage
     // Use to set a player to the Member group in the Creative world.
-    // - group set Member w@Creative
+    // - group set Member Creative
     // -->
 
     private enum Action {ADD, REMOVE, SET}
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-
         if (Depends.permissions == null) {
             throw new InvalidArgumentsException("Permissions not linked - is Vault improperly installed, or is there no permissions plugin?");
         }
-
         for (Argument arg : scriptEntry.getProcessedArgs()) {
-
             if (!scriptEntry.hasObject("action")
                     && arg.matchesEnum(Action.values())) {
                 scriptEntry.addObject("action", arg.asElement());
@@ -78,42 +76,32 @@ public class GroupCommand extends AbstractCommand {
             else if (!scriptEntry.hasObject("group")) {
                 scriptEntry.addObject("group", arg.asElement());
             }
-
         }
-
         if (!Utilities.entryHasPlayer(scriptEntry) || !Utilities.getEntryPlayer(scriptEntry).isValid()) {
             throw new InvalidArgumentsException("Must have player context!");
         }
-
         if (!scriptEntry.hasObject("action")) {
             throw new InvalidArgumentsException("Must specify valid action!");
         }
-
         if (!scriptEntry.hasObject("group")) {
             throw new InvalidArgumentsException("Must specify a group name!");
         }
-
     }
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-
         ElementTag action = scriptEntry.getElement("action");
         WorldTag world = scriptEntry.getObjectTag("world");
         ElementTag group = scriptEntry.getElement("group");
-
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), action.debug() + (world != null ? world.debug() : "") + group.debug());
         }
-
         World bukkitWorld = null;
         if (world != null) {
             bukkitWorld = world.getWorld();
         }
-
         OfflinePlayer player = Utilities.getEntryPlayer(scriptEntry).getOfflinePlayer();
         boolean inGroup = Depends.permissions.playerInGroup((bukkitWorld == null ? null : bukkitWorld.getName()), player, group.asString());
-
         switch (Action.valueOf(action.asString().toUpperCase())) {
             case ADD:
                 if (inGroup) {
@@ -122,7 +110,7 @@ public class GroupCommand extends AbstractCommand {
                 else {
                     Depends.permissions.playerAddGroup((bukkitWorld == null ? null : bukkitWorld.getName()), player, group.asString());
                 }
-                return;
+                break;
             case REMOVE:
                 if (!inGroup) {
                     Debug.echoDebug(scriptEntry, "Player " + player.getName() + " is not in group " + group);
@@ -130,12 +118,13 @@ public class GroupCommand extends AbstractCommand {
                 else {
                     Depends.permissions.playerRemoveGroup((bukkitWorld == null ? null : bukkitWorld.getName()), player, group.asString());
                 }
-                return;
+                break;
             case SET:
                 for (String grp : Depends.permissions.getPlayerGroups((bukkitWorld == null ? null : bukkitWorld.getName()), player)) {
                     Depends.permissions.playerRemoveGroup((bukkitWorld == null ? null : bukkitWorld.getName()), player, grp);
                 }
                 Depends.permissions.playerAddGroup((bukkitWorld == null ? null : bukkitWorld.getName()), player, group.asString());
+                break;
         }
     }
 }

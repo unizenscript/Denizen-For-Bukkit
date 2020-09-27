@@ -18,6 +18,8 @@ public class PlayerUsesPortalScriptEvent extends BukkitScriptEvent implements Li
     //
     // @Regex ^on player uses portal$
     //
+    // @Group Player
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Triggers when a player enters a portal.
@@ -65,7 +67,7 @@ public class PlayerUsesPortalScriptEvent extends BukkitScriptEvent implements Li
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         String determination = determinationObj.toString();
         if (LocationTag.matches(determination)) {
-            to = LocationTag.valueOf(determination);
+            to = LocationTag.valueOf(determination, getTagContext(path));
             event.setTo(to);
             return true;
         }
@@ -74,7 +76,7 @@ public class PlayerUsesPortalScriptEvent extends BukkitScriptEvent implements Li
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(entity.isPlayer() ? entity.getDenizenPlayer() : null, null);
+        return new BukkitScriptEntryData(entity);
     }
 
     @Override

@@ -81,23 +81,28 @@ public class ItemScriptContainer extends ScriptContainer {
     //   recipes:
     //       1:
     //           # The type can be: shaped, shapeless, stonecutting, furnace, blast, smoker, or campfire.
+    //           # | All recipes must include this key!
     //           type: shaped
     //           # The recipe can optionally have a custom internal recipe ID (for recipe books).
     //           # If not specified, will be of the form "<type>_<script.name>_<id>" where ID is the recipe list index (starting at 1, counting up).
     //           # IDs will always have the namespace "denizen". So, for the below, the full ID is "denizen:my_custom_item_id"
     //           # Note that most users should not set a custom ID. If you choose to set a custom one, be careful to avoid duplicates or invalid text.
     //           # Note that the internal rules for Recipe IDs are very strict (limited to "a-z", "0-9", "/", ".", "_", or "-").
+    //           # | Most recipes should exclude this key.
     //           recipe_id: my_custom_item_id
     //           # You can optional add a group as well. If unspecified, the item will have no group.
-    //           # Groups are used to merge together similar recipes (in particular, multiple recipes for one item).
+    //           # Groups are used to merge together similar recipes in the recipe book (in particular, multiple recipes for one item).
+    //           # | Most recipes should exclude this key.
     //           group: my_custom_group
     //           # You can optionally specify the quantity to output. The default is 1 (or whatever the item script's quantity is).
+    //           # | Only some recipes should have this key.
     //           output_quantity: 4
     //           # You must specify the input for the recipe. The below is a sample of a 3x3 shaped recipe. Other recipe types have a different format.
     //           # You are allowed to have non-3x3 shapes (can be any value 1-3 x 1-3, so for example 1x3, 2x1, and 2x2 are fine).
     //           # For an empty slot, use "air".
     //           # By default, items require an exact match. For a material-based match, use the format "material:MaterialNameHere" like "material:stick".
     //           # To make multiple different items match for any slot, just separate them with slashes, like "stick/stone". To match multiple materials, use "material:a/b/c".
+    //           # | All recipes must include this key!
     //           input:
     //           - ItemTag|ItemTag|ItemTag
     //           - ItemTag|ItemTag|ItemTag
@@ -121,8 +126,10 @@ public class ItemScriptContainer extends ScriptContainer {
     //          # Furnace, blast, smoker, and campfire recipes take one input and have additional options.
     //          type: furnace
     //          # Optionally specify the cook time as a duration (default 2s).
+    //           # | Only some recipes should have this key.
     //          cook_time: 1s
     //          # Optionally specify experience reward amount (default 0).
+    //           # | Only some recipes should have this key.
     //          experience: 5
     //          input: ItemTag
     //
@@ -228,10 +235,10 @@ public class ItemScriptContainer extends ScriptContainer {
             }
             // Set Display Name
             if (contains("display name")) {
-                ItemMeta meta = stack.getItemStack().getItemMeta();
+                ItemMeta meta = stack.getItemMeta();
                 String displayName = TagManager.tag(getString("display name"), context);
                 meta.setDisplayName(displayName);
-                stack.getItemStack().setItemMeta(meta);
+                stack.setItemMeta(meta);
             }
             // Set if the object is bound to the player
             if (contains("bound")) {
@@ -240,14 +247,14 @@ public class ItemScriptContainer extends ScriptContainer {
             }
             // Set Lore
             if (contains("lore")) {
-                ItemMeta meta = stack.getItemStack().getItemMeta();
+                ItemMeta meta = stack.getItemMeta();
                 List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
                 for (String line : getStringList("lore")) {
                     line = TagManager.tag(line, context);
                     lore.add(line);
                 }
                 meta.setLore(lore);
-                stack.getItemStack().setItemMeta(meta);
+                stack.setItemMeta(meta);
             }
             // Set Durability
             if (contains("durability")) {
@@ -267,13 +274,15 @@ public class ItemScriptContainer extends ScriptContainer {
                             level = Integer.valueOf(split[1].replace(" ", ""));
                             enchantment = split[0].replace(" ", "");
                         }
+                        else {
+                            Debug.echoError("Item script '" + getName() + "' has enchantment '" + enchantment + "' without a level.");
+                        }
                         // Add enchantment
                         Enchantment ench = Utilities.getEnchantmentByName(enchantment);
                         stack.getItemStack().addUnsafeEnchantment(ench, level);
                     }
                     catch (Exception ex) {
-                        Debug.echoError("While constructing '" + getName() + "', encountered error: '"
-                                + enchantment + "' is an invalid enchantment: " + ex.getClass().getName() + ": " + ex.getMessage());
+                        Debug.echoError("While constructing '" + getName() + "', encountered error: '" + enchantment + "' is an invalid enchantment: " + ex.getClass().getName() + ": " + ex.getMessage());
                         if (Debug.verbose) {
                             Debug.echoError(ex);
                         }

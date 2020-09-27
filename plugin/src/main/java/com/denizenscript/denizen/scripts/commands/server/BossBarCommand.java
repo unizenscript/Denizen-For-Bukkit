@@ -22,13 +22,14 @@ public class BossBarCommand extends AbstractCommand {
 
     public BossBarCommand() {
         setName("bossbar");
-        setSyntax("bossbar ({create}/update/remove) [<id>] (players:<player>|...) (title:<title>) (progress:<#.#>) (color:<color>) (style:<style>) (flags:<flag>|...)");
+        setSyntax("bossbar ({create}/update/remove) [<id>] (players:<player>|...) (title:<title>) (progress:<#.#>) (color:<color>) (style:<style>) (options:<option>|...)");
         setRequiredArguments(1, 8);
+        isProcedural = false;
     }
 
     // <--[command]
     // @Name BossBar
-    // @Syntax bossbar ({create}/update/remove) [<id>] (players:<player>|...) (title:<title>) (progress:<#.#>) (color:<color>) (style:<style>) (flags:<flag>|...)
+    // @Syntax bossbar ({create}/update/remove) [<id>] (players:<player>|...) (title:<title>) (progress:<#.#>) (color:<color>) (style:<style>) (options:<option>|...)
     // @Required 1
     // @Maximum 8
     // @Short Shows players a boss bar.
@@ -38,18 +39,20 @@ public class BossBarCommand extends AbstractCommand {
     // Displays a boss bar at the top of the screen of the specified player(s). You can also update the
     // values and remove the bar.
     //
-    // Requires an ID. Progress must be between 0 and 1.
+    // Requires an ID.
+    //
+    // Progress must be between 0 and 1.
     //
     // Valid colors: BLUE, GREEN, PINK, PURPLE, RED, WHITE, YELLOW.
     // Valid styles: SEGMENTED_10, SEGMENTED_12, SEGMENTED_20, SEGMENTED_6, SOLID.
-    // Valid flags: CREATE_FOG, DARKEN_SKY, PLAY_BOSS_MUSIC.
+    // Valid options: CREATE_FOG, DARKEN_SKY, PLAY_BOSS_MUSIC.
     //
     // @Tags
     // <server.current_bossbars>
     //
     // @Usage
     // Shows a message to all online players.
-    // - bossbar MyMessageID players:<server.list_online_players> "title:HI GUYS" color:red
+    // - bossbar MyMessageID players:<server.online_players> "title:HI GUYS" color:red
     //
     // @Usage
     // Update the boss bar's color and progress.
@@ -74,9 +77,7 @@ public class BossBarCommand extends AbstractCommand {
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-
         for (Argument arg : scriptEntry.getProcessedArgs()) {
-
             if (!scriptEntry.hasObject("title")
                     && arg.matchesPrefix("title", "t")) {
                 scriptEntry.addObject("title", arg.asElement());
@@ -96,10 +97,10 @@ public class BossBarCommand extends AbstractCommand {
                     && arg.matchesEnum(BarStyle.values())) {
                 scriptEntry.addObject("style", arg.asElement());
             }
-            else if (!scriptEntry.hasObject("flags")
-                    && arg.matchesPrefix("flags", "flag", "f")
+            else if (!scriptEntry.hasObject("options")
+                    && arg.matchesPrefix("options", "option", "opt", "o", "flags", "flag", "f")
                     && arg.matchesEnumList(BarFlag.values())) {
-                scriptEntry.addObject("flags", arg.asType(ListTag.class));
+                scriptEntry.addObject("options", arg.asType(ListTag.class));
             }
             else if (!scriptEntry.hasObject("action")
                     && arg.matchesEnum(Action.values())) {
@@ -117,11 +118,9 @@ public class BossBarCommand extends AbstractCommand {
                 arg.reportUnhandled();
             }
         }
-
         if (!scriptEntry.hasObject("id")) {
             throw new InvalidArgumentsException("Must specify an ID!");
         }
-
         if ((!scriptEntry.hasObject("action") || scriptEntry.getElement("action").asString().equalsIgnoreCase("CREATE"))
                 && !scriptEntry.hasObject("players")) {
             if (Utilities.entryHasPlayer(scriptEntry) && Utilities.getEntryPlayer(scriptEntry).isOnline()) {
@@ -131,7 +130,6 @@ public class BossBarCommand extends AbstractCommand {
                 throw new InvalidArgumentsException("Must specify valid player(s)!");
             }
         }
-
         scriptEntry.defaultObject("action", new ElementTag("CREATE"));
     }
 
@@ -139,7 +137,6 @@ public class BossBarCommand extends AbstractCommand {
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-
         ElementTag id = scriptEntry.getElement("id");
         ElementTag action = scriptEntry.getElement("action");
         ListTag players = scriptEntry.getObjectTag("players");
@@ -147,22 +144,17 @@ public class BossBarCommand extends AbstractCommand {
         ElementTag progress = scriptEntry.getElement("progress");
         ElementTag color = scriptEntry.getElement("color");
         ElementTag style = scriptEntry.getElement("style");
-        ListTag flags = scriptEntry.getObjectTag("flags");
-
+        ListTag options = scriptEntry.getObjectTag("options");
         if (scriptEntry.dbCallShouldDebug()) {
-
             Debug.report(scriptEntry, getName(), id.debug() + action.debug()
                     + (players != null ? players.debug() : "")
                     + (title != null ? title.debug() : "")
                     + (progress != null ? progress.debug() : "")
                     + (color != null ? color.debug() : "")
                     + (style != null ? style.debug() : "")
-                    + (flags != null ? flags.debug() : ""));
-
+                    + (options != null ? options.debug() : ""));
         }
-
         String idString = CoreUtilities.toLowerCase(id.asString());
-
         switch (Action.valueOf(action.asString().toUpperCase())) {
             case CREATE: {
                 if (bossBarMap.containsKey(idString)) {
@@ -174,10 +166,10 @@ public class BossBarCommand extends AbstractCommand {
                 double barProgress = progress != null ? progress.asDouble() : 1D;
                 BarColor barColor = color != null ? BarColor.valueOf(color.asString().toUpperCase()) : BarColor.WHITE;
                 BarStyle barStyle = style != null ? BarStyle.valueOf(style.asString().toUpperCase()) : BarStyle.SOLID;
-                BarFlag[] barFlags = new BarFlag[flags != null ? flags.size() : 0];
-                if (flags != null) {
-                    for (int i = 0; i < flags.size(); i++) {
-                        barFlags[i] = (BarFlag.valueOf(flags.get(i).toUpperCase()));
+                BarFlag[] barFlags = new BarFlag[options != null ? options.size() : 0];
+                if (options != null) {
+                    for (int i = 0; i < options.size(); i++) {
+                        barFlags[i] = (BarFlag.valueOf(options.get(i).toUpperCase()));
                     }
                 }
                 BossBar bossBar = Bukkit.createBossBar(barTitle, barColor, barStyle, barFlags);
@@ -193,7 +185,6 @@ public class BossBarCommand extends AbstractCommand {
                 bossBarMap.put(idString, bossBar);
                 break;
             }
-
             case UPDATE: {
                 if (!bossBarMap.containsKey(idString)) {
                     Debug.echoError("BossBar '" + idString + "' does not exist!");
@@ -212,10 +203,10 @@ public class BossBarCommand extends AbstractCommand {
                 if (style != null) {
                     bossBar1.setStyle(BarStyle.valueOf(style.asString().toUpperCase()));
                 }
-                if (flags != null) {
+                if (options != null) {
                     HashSet<BarFlag> oldFlags = new HashSet<>(Arrays.asList(BarFlag.values()));
-                    HashSet<BarFlag> newFlags = new HashSet<>(flags.size());
-                    for (String flagName : flags) {
+                    HashSet<BarFlag> newFlags = new HashSet<>(options.size());
+                    for (String flagName : options) {
                         BarFlag flag = BarFlag.valueOf(flagName.toUpperCase());
                         newFlags.add(flag);
                         oldFlags.remove(flag);
@@ -234,7 +225,6 @@ public class BossBarCommand extends AbstractCommand {
                 }
                 break;
             }
-
             case REMOVE: {
                 if (!bossBarMap.containsKey(idString)) {
                     Debug.echoError("BossBar '" + idString + "' does not exist!");

@@ -2,12 +2,9 @@ package com.denizenscript.denizen.events.entity;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.ItemTag;
-import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
-import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
-import com.denizenscript.denizencore.scripts.ScriptEntryData;
 import org.bukkit.entity.Animals;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.EventHandler;
@@ -22,6 +19,8 @@ public class EntityBreedScriptEvent extends BukkitScriptEvent implements Listene
     // <entity> breeds
     //
     // @Regex ^on [^\s]+ breeds$
+    //
+    // @Group Entity
     //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
@@ -57,7 +56,13 @@ public class EntityBreedScriptEvent extends BukkitScriptEvent implements Listene
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("breeds");
+        if (!path.eventArgLowerAt(1).equals("breeds")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -89,11 +94,6 @@ public class EntityBreedScriptEvent extends BukkitScriptEvent implements Listene
     }
 
     @Override
-    public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(null, null);
-    }
-
-    @Override
     public ObjectTag getContext(String name) {
         if (name.equals("child")) {
             return entity.getDenizenObject();
@@ -120,8 +120,8 @@ public class EntityBreedScriptEvent extends BukkitScriptEvent implements Listene
     public void cancellationChanged() {
         // Prevent entities from continuing to breed with each other
         if (cancelled) {
-            NMSHandler.getEntityHelper().setBreeding((Animals) father.getLivingEntity(), false);
-            NMSHandler.getEntityHelper().setBreeding((Animals) mother.getLivingEntity(), false);
+            ((Animals) father.getLivingEntity()).setLoveModeTicks(0);
+            ((Animals) mother.getLivingEntity()).setLoveModeTicks(0);
         }
         super.cancellationChanged();
     }

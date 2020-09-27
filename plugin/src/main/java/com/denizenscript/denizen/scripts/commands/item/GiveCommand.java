@@ -25,6 +25,7 @@ public class GiveCommand extends AbstractCommand {
         setName("give");
         setSyntax("give [money/xp/<item>|...] (quantity:<#>) (unlimit_stack_size) (to:<inventory>) (slot:<slot>)");
         setRequiredArguments(1, 5);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -67,14 +68,11 @@ public class GiveCommand extends AbstractCommand {
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-
-        /* Match arguments to expected variables */
         for (Argument arg : scriptEntry.getProcessedArgs()) {
-
-            if (!scriptEntry.hasObject("qty")
+            if (!scriptEntry.hasObject("quantity")
                     && arg.matchesPrefix("q", "qty", "quantity")
                     && arg.matchesFloat()) {
-                scriptEntry.addObject("qty", arg.asElement());
+                scriptEntry.addObject("quantity", arg.asElement());
                 scriptEntry.addObject("set_quantity", new ElementTag(true));
             }
             else if (!scriptEntry.hasObject("type")
@@ -111,76 +109,59 @@ public class GiveCommand extends AbstractCommand {
             else {
                 arg.reportUnhandled();
             }
-
         }
-
         scriptEntry.defaultObject("type", Type.ITEM)
                 .defaultObject("engrave", new ElementTag(false))
                 .defaultObject("unlimit_stack_size", new ElementTag(false))
-                .defaultObject("qty", new ElementTag(1))
+                .defaultObject("quantity", new ElementTag(1))
                 .defaultObject("slot", new ElementTag(1));
-
         Type type = (Type) scriptEntry.getObject("type");
-
         if (type != Type.MONEY && scriptEntry.getObject("inventory") == null) {
             scriptEntry.addObject("inventory", Utilities.entryHasPlayer(scriptEntry) ? Utilities.getEntryPlayer(scriptEntry).getInventory() : null);
         }
-
         if (!scriptEntry.hasObject("inventory") && type != Type.MONEY) {
             throw new InvalidArgumentsException("Must specify an inventory to give to!");
         }
-
         if (type == Type.ITEM && scriptEntry.getObject("items") == null) {
             throw new InvalidArgumentsException("Must specify item/items!");
         }
-
     }
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-
         ElementTag engrave = scriptEntry.getElement("engrave");
         ElementTag unlimit_stack_size = scriptEntry.getElement("unlimit_stack_size");
         InventoryTag inventory = scriptEntry.getObjectTag("inventory");
-        ElementTag qty = scriptEntry.getElement("qty");
+        ElementTag quantity = scriptEntry.getElement("quantity");
         Type type = (Type) scriptEntry.getObject("type");
         ElementTag slot = scriptEntry.getElement("slot");
-
         Object items_object = scriptEntry.getObject("items");
         List<ItemTag> items = null;
-
         if (items_object != null) {
             items = (List<ItemTag>) items_object;
         }
-
         if (scriptEntry.dbCallShouldDebug()) {
-
             Debug.report(scriptEntry, getName(),
                     ArgumentHelper.debugObj("Type", type.name())
                             + (inventory != null ? inventory.debug() : "")
-                            + ArgumentHelper.debugObj("Quantity", qty.asDouble())
+                            + quantity.debug()
                             + engrave.debug()
                             + unlimit_stack_size.debug()
                             + (items != null ? ArgumentHelper.debugObj("Items", items) : "")
                             + slot.debug());
-
         }
-
         switch (type) {
-
             case MONEY:
                 if (Depends.economy != null) {
-                    Depends.economy.depositPlayer(Utilities.getEntryPlayer(scriptEntry).getOfflinePlayer(), qty.asDouble());
+                    Depends.economy.depositPlayer(Utilities.getEntryPlayer(scriptEntry).getOfflinePlayer(), quantity.asDouble());
                 }
                 else {
                     Debug.echoError("No economy loaded! Have you installed Vault and a compatible economy plugin?");
                 }
                 break;
-
             case EXP:
-                Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().giveExp(qty.asInt());
+                Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().giveExp(quantity.asInt());
                 break;
-
             case ITEM:
                 boolean set_quantity = scriptEntry.hasObject("set_quantity");
                 boolean limited = !unlimit_stack_size.asBoolean();
@@ -191,7 +172,7 @@ public class GiveCommand extends AbstractCommand {
                         continue;
                     }
                     if (set_quantity) {
-                        is.setAmount(qty.asInt());
+                        is.setAmount(quantity.asInt());
                     }
                     // TODO: Should engrave be kept?
                     if (engrave.asBoolean()) {
@@ -202,9 +183,7 @@ public class GiveCommand extends AbstractCommand {
                         Debug.echoError(scriptEntry.getResidingQueue(), "The input '" + slot.asString() + "' is not a valid slot!");
                         return;
                     }
-
                     List<ItemStack> leftovers = inventory.addWithLeftovers(slotId, limited, is);
-
                     if (!leftovers.isEmpty()) {
                         Debug.echoDebug(scriptEntry, "The inventory didn't have enough space, the rest of the items have been placed on the floor.");
                         for (ItemStack leftoverItem : leftovers) {

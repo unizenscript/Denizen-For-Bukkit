@@ -19,6 +19,8 @@ public class HorseJumpsScriptEvent extends BukkitScriptEvent implements Listener
     //
     // @Regex ^on [^\s]+( [^\s]+)? jumps$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -46,7 +48,10 @@ public class HorseJumpsScriptEvent extends BukkitScriptEvent implements Listener
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.equals("horse jumps") || path.eventLower.endsWith("jumps");
+        if (!path.eventLower.equals("horse jumps") && !path.eventLower.endsWith("jumps")) {
+            return false;
+        }
+        return true;
     }
 
     @Override

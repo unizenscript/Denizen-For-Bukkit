@@ -21,6 +21,8 @@ public class PlayerSneakScriptEvent extends BukkitScriptEvent implements Listene
     //
     // @Regex ^on player (toggles|starts|stops) sneaking$
     //
+    // @Group Player
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -44,11 +46,14 @@ public class PlayerSneakScriptEvent extends BukkitScriptEvent implements Listene
 
     @Override
     public boolean couldMatch(ScriptPath path) {
+        if (!path.eventArgLowerAt(0).equals("player") || !path.eventArgLowerAt(2).equals("sneaking")) {
+            return false;
+        }
         String middleWord = path.eventArgAt(1);
         if (!(middleWord.equals("starts") || middleWord.equals("stops") || middleWord.equals("toggles"))) {
             return false;
         }
-        return path.eventArgLowerAt(0).equals("player") && path.eventArgLowerAt(2).equals("sneaking");
+        return true;
     }
 
     @Override

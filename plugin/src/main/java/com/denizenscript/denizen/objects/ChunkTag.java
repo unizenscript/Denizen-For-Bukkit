@@ -53,6 +53,7 @@ public class ChunkTag implements ObjectTag, Adjustable {
     //    OBJECT FETCHER
     ////////////////
 
+    @Deprecated
     public static ChunkTag valueOf(String string) {
         return valueOf(string, null);
     }
@@ -83,7 +84,7 @@ public class ChunkTag implements ObjectTag, Adjustable {
                 return new ChunkTag(WorldTag.valueOf(parts[2], context), Integer.valueOf(parts[0]), Integer.valueOf(parts[1]));
             }
             catch (Exception e) {
-                if (context == null || context.debug) {
+                if (context == null || context.showErrors()) {
                     Debug.log("Minor: valueOf ChunkTag returning null: " + "ch@" + string);
                 }
                 return null;
@@ -91,7 +92,7 @@ public class ChunkTag implements ObjectTag, Adjustable {
 
         }
         else {
-            if (context == null || context.debug) {
+            if (context == null || context.showErrors()) {
                 Debug.log("Minor: valueOf ChunkTag unable to handle malformed format: " + "ch@" + string);
             }
         }
@@ -301,6 +302,18 @@ public class ChunkTag implements ObjectTag, Adjustable {
         });
 
         // <--[tag]
+        // @attribute <ChunkTag.force_loaded>
+        // @returns ElementTag(Boolean)
+        // @description
+        // Returns whether the chunk is forced to stay loaded at all times.
+        // This is related to the <@link command chunkload> command.
+        // -->
+        registerTag("force_loaded", (attribute, object) -> {
+            Chunk chunk = object.getChunkForTag(attribute);
+            return new ElementTag(chunk != null && chunk.isForceLoaded());
+        });
+
+        // <--[tag]
         // @attribute <ChunkTag.x>
         // @returns ElementTag(Number)
         // @description
@@ -366,7 +379,7 @@ public class ChunkTag implements ObjectTag, Adjustable {
         });
 
         // <--[tag]
-        // @attribute <ChunkTag.entities[<entity>|...]>
+        // @attribute <ChunkTag.entities[(<entity>|...)]>
         // @returns ListTag(EntityTag)
         // @description
         // Returns a list of entities in the chunk.
@@ -378,7 +391,7 @@ public class ChunkTag implements ObjectTag, Adjustable {
             if (chunk == null) {
                 return null;
             }
-            ListTag typeFilter = attribute.hasContext(1) ? ListTag.valueOf(attribute.getContext(1), attribute.context) : null;
+            ListTag typeFilter = attribute.hasContext(1) ? attribute.contextAsType(1, ListTag.class) : null;
             try {
                 NMSHandler.getChunkHelper().changeChunkServerThread(object.getWorld());
                 for (Entity entity : chunk.getEntities()) {
@@ -491,9 +504,9 @@ public class ChunkTag implements ObjectTag, Adjustable {
         // @attribute <ChunkTag.is_flat[(<#>)]>
         // @returns ElementTag(Boolean)
         // @description
-        // scans the heights of the blocks to check variance between them. If no number is supplied, is_flat will return
-        // true if all the blocks are less than 2 blocks apart in height. Specifying a number will modify the number
-        // criteria for determining if it is flat.
+        // Scans the heights of the blocks to check variance between them.
+        // If no number is supplied, is_flat will return true if all the blocks are less than 2 blocks apart in height.
+        // Specifying a number will modify the number criteria for determining if it is flat.
         // -->
         registerTag("is_flat", (attribute, object) -> {
             Chunk chunk = object.getChunkForTag(attribute);
@@ -538,7 +551,7 @@ public class ChunkTag implements ObjectTag, Adjustable {
 
         // <--[tag]
         // @attribute <ChunkTag.spawn_slimes>
-        // @returns ListTag(LocationTag)
+        // @returns ElementTag(Boolean)
         // @description
         // Returns whether the chunk is a specially located 'slime spawner' chunk.
         // -->
@@ -552,8 +565,8 @@ public class ChunkTag implements ObjectTag, Adjustable {
 
         // <--[tag]
         // @attribute <ChunkTag.inhabited_time>
-        // @returns Duration
-        // @Mechanism ChunkTag.inhabited_time
+        // @returns DurationTag
+        // @mechanism ChunkTag.inhabited_time
         // @description
         // Returns the total time the chunk has been inhabited for.
         // This is a primary deciding factor in the "local difficulty" setting.
@@ -564,17 +577,6 @@ public class ChunkTag implements ObjectTag, Adjustable {
                 return null;
             }
             return new DurationTag(chunk.getInhabitedTime());
-        });
-
-        // <--[tag]
-        // @attribute <ChunkTag.type>
-        // @returns ElementTag
-        // @description
-        // Always returns 'Chunk' for ChunkTag objects. All objects fetchable by the Object Fetcher will return the
-        // type of object that is fulfilling this attribute.
-        // -->
-        registerTag("type", (attribute, object) -> {
-            return new ElementTag("Chunk");
         });
     }
 
@@ -620,7 +622,7 @@ public class ChunkTag implements ObjectTag, Adjustable {
         // <ChunkTag.is_loaded>
         // -->
         if (mechanism.matches("unload")) {
-            getChunk().unload(true);
+            getWorld().unloadChunk(getX(), getZ(), true);
         }
 
         // <--[mechanism]
@@ -633,7 +635,7 @@ public class ChunkTag implements ObjectTag, Adjustable {
         // <chunk.is_loaded>
         // -->
         if (mechanism.matches("unload_without_saving")) {
-            getChunk().unload(false);
+            getWorld().unloadChunk(getX(), getZ(), false);
         }
 
         // <--[mechanism]

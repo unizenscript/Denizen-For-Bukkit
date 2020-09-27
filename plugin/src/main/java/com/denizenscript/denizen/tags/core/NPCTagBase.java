@@ -5,19 +5,14 @@ import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.NPCTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.utilities.DenizenAPI;
-import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.depends.Depends;
 import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.npc.traits.AssignmentTrait;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizencore.events.OldEventManager;
 import com.denizenscript.denizencore.objects.core.ElementTag;
-import com.denizenscript.denizencore.tags.TagRunnable;
 import com.denizenscript.denizencore.objects.ObjectTag;
-import com.denizenscript.denizencore.tags.Attribute;
-import com.denizenscript.denizencore.tags.ReplaceableTagEvent;
 import com.denizenscript.denizencore.tags.TagManager;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import net.citizensnpcs.api.ai.TargetType;
 import net.citizensnpcs.api.ai.TeleportStuckAction;
 import net.citizensnpcs.api.ai.event.NavigationBeginEvent;
@@ -44,44 +39,25 @@ public class NPCTagBase implements Listener {
         // @returns NPCTag
         // @description
         // Returns an npc object constructed from the input value.
+        // Refer to <@link language NPCTag objects>.
         // If no input value is specified, returns the linked NPC.
         // -->
         if (Depends.citizens != null) {
             Bukkit.getServer().getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
-            TagManager.registerTagHandler(new TagRunnable.RootForm() {
-                @Override
-                public void run(ReplaceableTagEvent event) {
-                    npcTags(event);
+            TagManager.registerTagHandler("npc", (attribute) -> {
+                if (!attribute.hasContext(1)) {
+                    NPCTag npc = ((BukkitTagContext) attribute.context).npc;
+                    if (npc != null) {
+                        return npc;
+                    }
+                    else {
+                        attribute.echoError("Missing NPC for npc tag.");
+                        return null;
+                    }
                 }
-            }, "npc");
+                return NPCTag.valueOf(attribute.getContext(1), attribute.context);
+            });
         }
-    }
-
-    public void npcTags(ReplaceableTagEvent event) {
-        if (!event.matches("npc") || event.replaced()) {
-            return;
-        }
-        Attribute attribute = event.getAttributes();
-        NPCTag npc = ((BukkitTagContext) event.getContext()).npc;
-        if (attribute.hasContext(1)) {
-            if (NPCTag.matches(attribute.getContext(1))) {
-                npc = NPCTag.valueOf(attribute.getContext(1), attribute.context);
-            }
-            else {
-                if (!event.hasAlternative()) {
-                    Debug.echoError("Could not match '" + attribute.getContext(1) + "' to a valid NPC!");
-                }
-                return;
-            }
-        }
-        if (npc == null || !npc.isValid()) {
-            if (!event.hasAlternative()) {
-                Debug.echoError("Invalid or missing NPC for tag <" + event.raw_tag + ">!");
-            }
-            return;
-        }
-        event.setReplacedObject(CoreUtilities.autoAttrib(npc, attribute.fulfill(1)));
-
     }
 
     ///////

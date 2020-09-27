@@ -19,6 +19,8 @@ public class EntityTransformScriptEvent extends BukkitScriptEvent implements Lis
     //
     // @Regex ^on [^\s]+ transforms( into [^\s]+)?$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     // @Switch because:<reason> to only process the event if a specific reason caused the transformation.
     //
@@ -29,7 +31,7 @@ public class EntityTransformScriptEvent extends BukkitScriptEvent implements Lis
     // @Context
     // <context.entity> returns the old entity that was transformed from.
     // <context.new_entities> returns a list of new entities that were transformed into.
-    // <context.cause> returns the reason for transformation, from <@link url https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/event/entity/EntityTransformEvent.TransformReason.html>.
+    // <context.cause> returns the reason for transformation, from <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/event/entity/EntityTransformEvent.TransformReason.html>.
     //
     // -->
 
@@ -43,7 +45,13 @@ public class EntityTransformScriptEvent extends BukkitScriptEvent implements Lis
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("transforms");
+        if (!path.eventArgLowerAt(1).equals("transforms")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

@@ -26,6 +26,7 @@ public class GlowCommand extends AbstractCommand {
         setName("glow");
         setSyntax("glow [<entity>|...] (<should glow>)");
         setRequiredArguments(1, 2);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -37,7 +38,7 @@ public class GlowCommand extends AbstractCommand {
     // @Group player
     //
     // @Description
-    // Makes the link player see the chosen entities as glowing.
+    // Makes the linked player see the chosen entities as glowing.
     // BE WARNED, THIS COMMAND IS HIGHLY EXPERIMENTAL AND MAY NOT WORK AS EXPECTED.
     // This command works by globally enabling the glow effect, then whitelisting who is allowed to see it.
     // This command does it's best to disable glow effect when the entity is unloaded, but does not guarantee it.
@@ -68,9 +69,7 @@ public class GlowCommand extends AbstractCommand {
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-
         for (Argument arg : scriptEntry.getProcessedArgs()) {
-
             if (!scriptEntry.hasObject("entities")
                     && arg.matchesArgumentList(EntityTag.class)) {
                 scriptEntry.addObject("entities", arg.asType(ListTag.class).filter(EntityTag.class, scriptEntry));
@@ -83,13 +82,10 @@ public class GlowCommand extends AbstractCommand {
                 arg.reportUnhandled();
             }
         }
-
         scriptEntry.defaultObject("glowing", new ElementTag("true"));
-
         if (!Utilities.entryHasPlayer(scriptEntry)) {
             throw new InvalidArgumentsException("Must have a valid player link!");
         }
-
         if (!scriptEntry.hasObject("entities")) {
             throw new InvalidArgumentsException("Must specify entities to make glow!");
         }
@@ -97,25 +93,13 @@ public class GlowCommand extends AbstractCommand {
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-
         final ArrayList<EntityTag> entities = (ArrayList<EntityTag>) scriptEntry.getObject("entities");
         ElementTag glowing = scriptEntry.getElement("glowing");
-
         if (scriptEntry.dbCallShouldDebug()) {
-
             Debug.report(scriptEntry, getName(), ArgumentHelper.debugList("entities", entities) + glowing.debug());
-
         }
-
         boolean shouldGlow = glowing.asBoolean();
-
         final UUID puuid = Utilities.getEntryPlayer(scriptEntry).getOfflinePlayer().getUniqueId();
-
-        if (puuid == null) {
-            Debug.echoError(scriptEntry.getResidingQueue(), "Invalid/non-spawned player link!");
-            return;
-        }
-
         for (EntityTag ent : entities) {
             if (Depends.citizens != null && CitizensAPI.getNPCRegistry().isNPC(ent.getLivingEntity())) {
                 CitizensAPI.getNPCRegistry().getNPC(ent.getLivingEntity()).data().setPersistent(NPC.GLOWING_METADATA, shouldGlow);

@@ -30,6 +30,8 @@ public class ChatScriptEvent extends BukkitScriptEvent implements Listener {
     //
     // @Regex ^on player chats$
     //
+    // @Group Player
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -68,7 +70,10 @@ public class ChatScriptEvent extends BukkitScriptEvent implements Listener {
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("player chats");
+        if (!path.eventLower.startsWith("player chats")) {
+            return false;
+        }
+        return true;
     }
 
     @Override

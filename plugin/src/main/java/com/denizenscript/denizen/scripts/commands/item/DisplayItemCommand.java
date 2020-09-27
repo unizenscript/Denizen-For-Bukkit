@@ -31,6 +31,7 @@ public class DisplayItemCommand extends AbstractCommand implements Listener {
         setSyntax("displayitem [<item>] [<location>] (duration:<value>)");
         setRequiredArguments(2, 3);
         Bukkit.getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
+        isProcedural = false;
     }
 
     // <--[command]
@@ -112,7 +113,7 @@ public class DisplayItemCommand extends AbstractCommand implements Listener {
             throw new InvalidArgumentsException("Must specify a location!");
         }
 
-        scriptEntry.defaultObject("duration", DurationTag.valueOf("1m"));
+        scriptEntry.defaultObject("duration", new DurationTag(60));
         scriptEntry.defaultObject("no_gravity", new ElementTag(false));
         scriptEntry.defaultObject("permanent", new ElementTag(false));
     }
@@ -165,7 +166,6 @@ public class DisplayItemCommand extends AbstractCommand implements Listener {
         ElementTag permanent = scriptEntry.getObjectTag("permanent");
 
         if (scriptEntry.dbCallShouldDebug()) {
-
             Debug.report(scriptEntry, getName(),
                     item.debug()
                             + duration.debug()
@@ -185,8 +185,9 @@ public class DisplayItemCommand extends AbstractCommand implements Listener {
                 .dropItem(location.getBlockLocation().clone().add(0.5, 1.5, 0.5), item.getItemStack());
         NMSHandler.getEntityHelper().makeItemDisplayOnly(dropped);
         dropped.setGravity(!noGravity.asBoolean());
-        dropped.teleport(location);
+        dropped.teleport(location); // Force teleport to correct drop
         if (!dropped.isValid()) {
+            Debug.echoDebug(scriptEntry, "Item failed to spawned (likely blocked by some plugin).");
             return;
         }
         final UUID itemUUID = dropped.getUniqueId();

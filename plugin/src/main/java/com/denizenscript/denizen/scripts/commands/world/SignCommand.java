@@ -5,9 +5,6 @@ import com.denizenscript.denizen.objects.properties.material.MaterialDirectional
 import com.denizenscript.denizen.utilities.blocks.MaterialCompat;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.NMSVersion;
-import com.denizenscript.denizen.nms.interfaces.BlockData;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
@@ -27,6 +24,7 @@ public class SignCommand extends AbstractCommand {
         setName("sign");
         setSyntax("sign (type:{automatic}/sign_post/wall_sign) (material:<material>) [<line>|...] [<location>] (direction:north/east/south/west)");
         setRequiredArguments(1, 5);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -59,7 +57,7 @@ public class SignCommand extends AbstractCommand {
     //
     // @Usage
     // Use to force a sign to be a wall_sign if no sign is found.
-    // - sign type:wall_sign "Player<&co>|<player.name>|Online Players<&co>|<server.list_online_players.size>" <context.location>
+    // - sign type:wall_sign "Player<&co>|<player.name>|Online Players<&co>|<server.online_players.size>" <context.location>
     //
     // -->
 
@@ -105,18 +103,10 @@ public class SignCommand extends AbstractCommand {
     }
 
     public void setWallSign(Block sign, BlockFace bf, MaterialTag material) {
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            sign.setType(material == null ? MaterialCompat.WALL_SIGN : material.getMaterial(), false);
-            MaterialTag signMaterial = new MaterialTag(sign);
-            MaterialDirectional.getFrom(signMaterial).setFacing(bf);
-            signMaterial.getModernData().setToBlock(sign);
-        }
-        else {
-            org.bukkit.material.Sign sgntmp = new org.bukkit.material.Sign(MaterialCompat.WALL_SIGN);
-            sgntmp.setFacingDirection(bf);
-            BlockData blockData = NMSHandler.getBlockHelper().getBlockData(MaterialCompat.WALL_SIGN, sgntmp.getData());
-            blockData.setBlock(sign, false);
-        }
+        sign.setType(material == null ? MaterialCompat.WALL_SIGN : material.getMaterial(), false);
+        MaterialTag signMaterial = new MaterialTag(sign);
+        MaterialDirectional.getFrom(signMaterial).setFacing(bf);
+        signMaterial.getModernData().setToBlock(sign);
     }
 
     @Override

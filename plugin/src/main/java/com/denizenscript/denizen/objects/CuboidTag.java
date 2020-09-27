@@ -5,8 +5,6 @@ import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.depends.Depends;
 import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizen.utilities.Settings;
-import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.interfaces.BlockHelper;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.notable.Notable;
@@ -16,6 +14,7 @@ import com.denizenscript.denizencore.tags.ObjectTagProcessor;
 import com.denizenscript.denizencore.tags.TagContext;
 import com.denizenscript.denizencore.tags.TagRunnable;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
+import com.denizenscript.denizencore.utilities.Deprecations;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.Bukkit;
@@ -28,7 +27,7 @@ import org.bukkit.util.Vector;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
+public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable, AreaContainmentObject {
 
     // <--[language]
     // @name CuboidTag Objects
@@ -49,7 +48,6 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
     //
     // -->
 
-    // Cloning
     @Override
     public CuboidTag clone() {
         if (noteName != null) {
@@ -89,6 +87,7 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
     //    OBJECT FETCHER
     ////////////////
 
+    @Deprecated
     public static CuboidTag valueOf(String string) {
         return valueOf(string, null);
     }
@@ -107,23 +106,23 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                     && LocationTag.matches(positions.get(0))
                     && LocationTag.matches(positions.get(1))) {
                 if (positions.size() % 2 != 0) {
-                    if (context == null || context.debug) {
+                    if (context == null || context.showErrors()) {
                         Debug.echoError("valueOf CuboidTag returning null (Uneven number of locations): '" + string + "'.");
                     }
                     return null;
                 }
                 CuboidTag toReturn = new CuboidTag();
                 for (int i = 0; i < positions.size(); i += 2) {
-                    LocationTag pos_1 = LocationTag.valueOf(positions.get(i));
-                    LocationTag pos_2 = LocationTag.valueOf(positions.get(i + 1));
+                    LocationTag pos_1 = LocationTag.valueOf(positions.get(i), context);
+                    LocationTag pos_2 = LocationTag.valueOf(positions.get(i + 1), context);
                     if (pos_1 == null || pos_2 == null) {
-                        if (context == null || context.debug) {
+                        if (context == null || context.showErrors()) {
                             Debug.echoError("valueOf in CuboidTag returning null (null locations): '" + string + "'.");
                         }
                         return null;
                     }
                     if (pos_1.getWorldName() == null || pos_2.getWorldName() == null) {
-                        if (context == null || context.debug) {
+                        if (context == null || context.showErrors()) {
                             Debug.echoError("valueOf in CuboidTag returning null (null worlds): '" + string + "'.");
                         }
                         return null;
@@ -138,7 +137,7 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
         else if (CoreUtilities.contains(string, ',')) {
             List<String> subStrs = CoreUtilities.split(string, ',');
             if (subStrs.size() < 7 || (subStrs.size() - 1) % 6 != 0) {
-                if (context == null || context.debug) {
+                if (context == null || context.showErrors()) {
                     Debug.echoError("valueOf CuboidTag returning null (Improper number of commas): '" + string + "'.");
                 }
                 return null;
@@ -158,7 +157,7 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 }
             }
             catch (NumberFormatException ex) {
-                if (context == null || context.debug) {
+                if (context == null || context.showErrors()) {
                     Debug.echoError("valueOf CuboidTag returning null (Improper number value inputs): '" + ex.getMessage() + "'.");
                 }
                 return null;
@@ -173,7 +172,7 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
             return (CuboidTag) noted;
         }
 
-        if (context == null || context.debug) {
+        if (context == null || context.showErrors()) {
             Debug.echoError("Minor: valueOf CuboidTag returning null: " + string);
         }
         return null;
@@ -232,6 +231,16 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
             }
         }
         return true;
+    }
+
+    @Override
+    public String getNoteName() {
+        return noteName;
+    }
+
+    @Override
+    public boolean doesContainLocation(Location loc) {
+        return isInsideCuboid(loc);
     }
 
     ///////////////
@@ -603,23 +612,17 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
         LocationTag loc;
         ListTag list = new ListTag();
         int index = 0;
-
-        BlockHelper blockHelper = NMSHandler.getBlockHelper();
         for (LocationPair pair : pairs) {
-
             LocationTag loc_1 = pair.low;
             int y_distance = pair.yDistance();
             int z_distance = pair.zDistance();
             int x_distance = pair.xDistance();
-
             for (int x = 0; x != x_distance + 1; x++) {
                 for (int y = 0; y != y_distance + 1; y++) {
                     for (int z = 0; z != z_distance + 1; z++) {
-                        loc = new LocationTag(loc_1.clone()
-                                .add(x, y, z));
-
-                        if (blockHelper.isSafeBlock(loc.getBlockTypeForTag(attribute))
-                                && blockHelper.isSafeBlock(new LocationTag(loc.clone().add(0, 1, 0)).getBlockTypeForTag(attribute))
+                        loc = new LocationTag(loc_1.clone().add(x, y, z));
+                        if (!loc.getBlockTypeForTag(attribute).isSolid()
+                                && !(new LocationTag(loc.clone().add(0, 1, 0)).getBlockTypeForTag(attribute)).isSolid()
                                 && new LocationTag(loc.clone().add(0, -1, 0)).getBlockTypeForTag(attribute).isSolid()
                                 && matchesMaterialList(loc.clone().add(0, -1, 0), mats, attribute)) {
                             // Get the center of the block, so the entity won't suffocate
@@ -763,16 +766,15 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
     public static void registerTags() {
 
         // <--[tag]
-        // @attribute <CuboidTag.blocks[<material>|...]>
+        // @attribute <CuboidTag.blocks[(<material>|...)]>
         // @returns ListTag(LocationTag)
         // @description
         // Returns each block location within the CuboidTag.
-        // Optionally, specify a list of materials to only return locations
-        // with that block type.
+        // Optionally, specify a list of materials to only return locations with that block type.
         // -->
         registerTag("blocks", (attribute, cuboid) -> {
             if (attribute.hasContext(1)) {
-                return new ListTag(cuboid.getBlocks(ListTag.valueOf(attribute.getContext(1), attribute.context).filter(MaterialTag.class, attribute.context), attribute));
+                return new ListTag(cuboid.getBlocks(attribute.contextAsType(1, ListTag.class).filter(MaterialTag.class, attribute.context), attribute));
             }
             else {
                 return new ListTag(cuboid.getBlocks(attribute));
@@ -790,17 +792,15 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
         });
 
         // <--[tag]
-        // @attribute <CuboidTag.spawnable_blocks[<Material>|...]>
+        // @attribute <CuboidTag.spawnable_blocks[(<material>|...)]>
         // @returns ListTag(LocationTag)
         // @description
-        // Returns each LocationTag within the CuboidTag that is
-        // safe for players or similar entities to spawn in.
-        // Optionally, specify a list of materials to only return locations
-        // with that block type.
+        // Returns each LocationTag within the CuboidTag that is safe for players or similar entities to spawn in.
+        // Optionally, specify a list of materials to only return locations with that block type.
         // -->
         registerTag("spawnable_blocks", (attribute, cuboid) -> {
             if (attribute.hasContext(1)) {
-                return new ListTag(cuboid.getSpawnableBlocks(ListTag.valueOf(attribute.getContext(1), attribute.context).filter(MaterialTag.class, attribute.context), attribute));
+                return new ListTag(cuboid.getSpawnableBlocks(attribute.contextAsType(1, ListTag.class).filter(MaterialTag.class, attribute.context), attribute));
             }
             else {
                 return new ListTag(cuboid.getSpawnableBlocks(attribute));
@@ -838,7 +838,7 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 attribute.echoError("The tag CuboidTag.intersects[...] must have a value.");
                 return null;
             }
-            CuboidTag cub2 = CuboidTag.valueOf(attribute.getContext(1));
+            CuboidTag cub2 = attribute.contextAsType(1, CuboidTag.class);
             if (cub2 != null) {
                 boolean intersects = false;
                 whole_loop:
@@ -874,7 +874,7 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 attribute.echoError("The tag CuboidTag.contains_location[...] must have a value.");
                 return null;
             }
-            LocationTag loc = LocationTag.valueOf(attribute.getContext(1));
+            LocationTag loc = attribute.contextAsType(1, LocationTag.class);
             return new ElementTag(cuboid.isInsideCuboid(loc));
         });
 
@@ -889,7 +889,7 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 attribute.echoError("The tag CuboidTag.is_within[...] must have a value.");
                 return null;
             }
-            CuboidTag cub2 = CuboidTag.valueOf(attribute.getContext(1));
+            CuboidTag cub2 = attribute.contextAsType(1, CuboidTag.class);
             if (cub2 != null) {
                 boolean contains = true;
                 for (LocationPair pair2 : cuboid.pairs) {
@@ -963,6 +963,7 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
         // <--[tag]
         // @attribute <CuboidTag.set[<cuboid>].at[<index>]>
         // @returns CuboidTag
+        // @mechanism CuboidTag.set_member
         // @description
         // Returns a modified copy of this cuboid, with the specific sub-cuboid index changed to hold the input cuboid.
         // -->
@@ -972,7 +973,7 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 return null;
             }
             else {
-                CuboidTag subCuboid = CuboidTag.valueOf(attribute.getContext(1));
+                CuboidTag subCuboid = attribute.contextAsType(1, CuboidTag.class);
                 if (!attribute.startsWith("at", 2)) {
                     attribute.echoError("The tag CuboidTag.set[...] must be followed by an 'at'.");
                     return null;
@@ -1009,7 +1010,7 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 return null;
             }
             cuboid = cuboid.clone();
-            CuboidTag subCuboid = CuboidTag.valueOf(attribute.getContext(1));
+            CuboidTag subCuboid = attribute.contextAsType(1, CuboidTag.class);
             int member = cuboid.pairs.size() + 1;
 
             // <--[tag]
@@ -1083,11 +1084,11 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 }
                 pair = cuboid.pairs.get(member - 1);
             }
-            Location base = pair.high.clone().add(pair.low.clone()).add(1.0, 1.0, 1.0);
+            LocationTag base = pair.high.clone().add(pair.low).add(1.0, 1.0, 1.0);
             base.setX(base.getX() / 2.0);
             base.setY(base.getY() / 2.0);
             base.setZ(base.getZ() / 2.0);
-            return new LocationTag(base);
+            return base;
         });
 
         // <--[tag]
@@ -1188,7 +1189,7 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
             if (newCuboid != null) {
                 return cuboid.including(newCuboid.getLow(0)).including(newCuboid.getHigh(0));
             }
-            LocationTag loc = LocationTag.valueOf(attribute.getContext(1));
+            LocationTag loc = attribute.contextAsType(1, LocationTag.class);
             if (loc != null) {
                 return cuboid.including(loc);
             }
@@ -1272,7 +1273,7 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 attribute.echoError("The tag CuboidTag.with_world[...] must have a value.");
                 return null;
             }
-            WorldTag world = WorldTag.valueOf(attribute.getContext(1), attribute.context);
+            WorldTag world = attribute.contextAsType(1, WorldTag.class);
             if (world == null) {
                 attribute.echoError("World '" + attribute.getContext(1) + "' does not exist.");
                 return null;
@@ -1299,7 +1300,7 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 attribute.echoError("The tag CuboidTag.with_min[...] must have a value.");
                 return null;
             }
-            LocationTag location = LocationTag.valueOf(attribute.getContext(1));
+            LocationTag location = attribute.contextAsType(1, LocationTag.class);
             return new CuboidTag(location, cuboid.pairs.get(0).high);
         });
 
@@ -1317,7 +1318,7 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 attribute.echoError("The tag CuboidTag.with_max[...] must have a value.");
                 return null;
             }
-            LocationTag location = LocationTag.valueOf(attribute.getContext(1));
+            LocationTag location = attribute.contextAsType(1, LocationTag.class);
             return new CuboidTag(location, cuboid.pairs.get(0).low);
         });
 
@@ -1341,19 +1342,19 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 expandBy = new Vector(val, val, val);
             }
             else {
-                expandBy = LocationTag.valueOf(attribute.getContext(1)).toVector();
+                expandBy = attribute.contextAsType(1, LocationTag.class).toVector();
             }
             LocationPair pair = cuboid.pairs.get(0);
             return new CuboidTag(pair.low.clone().subtract(expandBy), pair.high.clone().add(expandBy));
         });
 
         // <--[tag]
-        // @attribute <CuboidTag.list_players>
+        // @attribute <CuboidTag.players>
         // @returns ListTag(PlayerTag)
         // @description
         // Gets a list of all players currently within the CuboidTag.
         // -->
-        registerTag("list_players", (attribute, cuboid) -> {
+        registerTag("players", (attribute, cuboid) -> {
             ArrayList<PlayerTag> players = new ArrayList<>();
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (cuboid.isInsideCuboid(player.getLocation())) {
@@ -1361,39 +1362,39 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 }
             }
             return new ListTag(players);
-        });
+        }, "list_players");
 
         // <--[tag]
-        // @attribute <CuboidTag.list_npcs>
+        // @attribute <CuboidTag.npcs>
         // @returns ListTag(NPCTag)
         // @description
         // Gets a list of all NPCs currently within the CuboidTag.
         // -->
         if (Depends.citizens != null) {
-            registerTag("list_npcs", (attribute, cuboid) -> {
+            registerTag("npcs", (attribute, cuboid) -> {
                 ArrayList<NPCTag> npcs = new ArrayList<>();
                 for (NPC npc : CitizensAPI.getNPCRegistry()) {
-                    NPCTag dnpc = NPCTag.mirrorCitizensNPC(npc);
+                    NPCTag dnpc = new NPCTag(npc);
                     if (cuboid.isInsideCuboid(dnpc.getLocation())) {
                         npcs.add(dnpc);
                     }
                 }
                 return new ListTag(npcs);
-            });
+            }, "list_npcs");
         }
 
         // <--[tag]
-        // @attribute <CuboidTag.list_entities[<entity>|...]>
+        // @attribute <CuboidTag.entities[(<entity>|...)]>
         // @returns ListTag(EntityTag)
         // @description
         // Gets a list of all entities currently within the CuboidTag, with
         // an optional search parameter for the entity type.
         // -->
-        registerTag("list_entities", (attribute, cuboid) -> {
+        registerTag("entities", (attribute, cuboid) -> {
             ArrayList<EntityTag> entities = new ArrayList<>();
             ListTag types = new ListTag();
             if (attribute.hasContext(1)) {
-                types = ListTag.valueOf(attribute.getContext(1), attribute.context);
+                types = attribute.contextAsType(1, ListTag.class);
             }
             for (Entity ent : new WorldTag(cuboid.getWorld()).getEntitiesForTag()) {
                 EntityTag current = new EntityTag(ent);
@@ -1412,16 +1413,16 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 }
             }
             return new ListTag(entities);
-        });
+        }, "list_entities");
 
         // <--[tag]
-        // @attribute <CuboidTag.list_living_entities>
+        // @attribute <CuboidTag.living_entities>
         // @returns ListTag(EntityTag)
         // @description
         // Gets a list of all living entities currently within the CuboidTag.
         // This includes Players, mobs, NPCs, etc., but excludes dropped items, experience orbs, etc.
         // -->
-        registerTag("list_living_entities", (attribute, cuboid) -> {
+        registerTag("living_entities", (attribute, cuboid) -> {
             ArrayList<EntityTag> entities = new ArrayList<>();
             for (Entity ent : cuboid.getWorld().getLivingEntities()) {
                 if (cuboid.isInsideCuboid(ent.getLocation()) && !EntityTag.isCitizensNPC(ent)) {
@@ -1429,15 +1430,15 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 }
             }
             return new ListTag(entities);
-        });
+        }, "list_living_entities");
 
         // <--[tag]
-        // @attribute <CuboidTag.list_chunks>
+        // @attribute <CuboidTag.chunks>
         // @returns ListTag(ChunkTag)
         // @description
         // Gets a list of all chunks entirely within the CuboidTag (ignoring the Y axis).
         // -->
-        registerTag("list_chunks", (attribute, cuboid) -> {
+        registerTag("chunks", (attribute, cuboid) -> {
             ListTag chunks = new ListTag();
             for (LocationPair pair : cuboid.pairs) {
                 int minY = pair.low.getBlockY();
@@ -1462,15 +1463,15 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 }
             }
             return chunks.deduplicate();
-        });
+        }, "list_chunks");
 
         // <--[tag]
-        // @attribute <CuboidTag.list_partial_chunks>
+        // @attribute <CuboidTag.partial_chunks>
         // @returns ListTag(ChunkTag)
         // @description
         // Gets a list of all chunks partially or entirely within the CuboidTag.
         // -->
-        registerTag("list_partial_chunks", (attribute, cuboid) -> {
+        registerTag("partial_chunks", (attribute, cuboid) -> {
             ListTag chunks = new ListTag();
             for (LocationPair pair : cuboid.pairs) {
                 ChunkTag minChunk = new ChunkTag(pair.low);
@@ -1482,43 +1483,25 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 }
             }
             return chunks;
-        });
+        }, "list_partial_chunks");
 
         // <--[tag]
-        // @attribute <CuboidTag.notable_name>
+        // @attribute <CuboidTag.note_name>
         // @returns ElementTag
         // @description
-        // Gets the name of a Notable CuboidTag. If the cuboid isn't noted,
-        // this is null.
+        // Gets the name of a noted CuboidTag. If the cuboid isn't noted, this is null.
         // -->
-        registerTag("notable_name", (attribute, cuboid) -> {
+        registerTag("note_name", (attribute, cuboid) -> {
             String notname = NotableManager.getSavedId(cuboid);
             if (notname == null) {
                 return null;
             }
             return new ElementTag(notname);
-        });
+        }, "notable_name");
 
-        // <--[tag]
-        // @attribute <CuboidTag.full>
-        // @returns ElementTag
-        // @group conversion
-        // @description
-        // Returns a full reusable identification for this cuboid, without applying the notable name or other special-case formats.
-        // -->
         registerTag("full", (attribute, cuboid) -> {
+            Deprecations.cuboidFullTag.warn(attribute.context);
             return new ElementTag(cuboid.identifyFull());
-        });
-
-        // <--[tag]
-        // @attribute <CuboidTag.type>
-        // @returns ElementTag
-        // @description
-        // Always returns 'Cuboid' for CuboidTag objects. All objects fetchable by the Object Fetcher will return the
-        // type of object that is fulfilling this attribute.
-        // -->
-        registerTag("type", (attribute, cuboid) -> {
-            return new ElementTag("Cuboid");
         });
     }
 
@@ -1591,7 +1574,7 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 member = new ElementTag(value.substring(0, comma)).asInt();
                 value = value.substring(comma + 1);
             }
-            CuboidTag subCuboid = CuboidTag.valueOf(value);
+            CuboidTag subCuboid = CuboidTag.valueOf(value, mechanism.context);
             if (member < 1) {
                 member = 1;
             }
@@ -1623,7 +1606,7 @@ public class CuboidTag implements ObjectTag, Cloneable, Notable, Adjustable {
                 member = new ElementTag(value.substring(0, comma)).asInt();
                 value = value.substring(comma + 1);
             }
-            CuboidTag subCuboid = CuboidTag.valueOf(value);
+            CuboidTag subCuboid = CuboidTag.valueOf(value, mechanism.context);
             if (member < 1) {
                 member = 1;
             }

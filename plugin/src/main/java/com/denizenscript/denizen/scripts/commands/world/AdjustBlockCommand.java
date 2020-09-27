@@ -22,6 +22,7 @@ public class AdjustBlockCommand extends AbstractCommand {
         setName("adjustblock");
         setSyntax("adjustblock [<location>|...] [<mechanism>](:<value>) (no_physics)");
         setRequiredArguments(2, 3);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -119,7 +120,7 @@ public class AdjustBlockCommand extends AbstractCommand {
                 NMSHandler.getBlockHelper().applyPhysics(location.clone().add(0, -1, 0));
             }
             else {
-                ModifyBlockCommand.setBlock(block.getLocation(), specialMaterial, false, false);
+                ModifyBlockCommand.setBlock(block.getLocation(), specialMaterial, false, null);
             }
         }
     }

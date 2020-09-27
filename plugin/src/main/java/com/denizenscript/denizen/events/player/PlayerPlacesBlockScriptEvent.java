@@ -15,9 +15,11 @@ public class PlayerPlacesBlockScriptEvent extends BukkitScriptEvent implements L
     // <--[event]
     // @Events
     // player places block
-    // player places <material>
+    // player places <item>
     //
     // @Regex ^on player places [^\s]+$
+    //
+    // @Group Player
     //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     // @Switch using:<hand type> to only process the event if the player is using the specified hand type (HAND or OFF_HAND).
@@ -50,23 +52,24 @@ public class PlayerPlacesBlockScriptEvent extends BukkitScriptEvent implements L
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        String mat = path.eventArgLowerAt(2);
-        return path.eventLower.startsWith("player places")
-                && (!mat.equals("hanging") && !mat.equals("painting") && !mat.equals("item_frame") && !mat.equals("leash_hitch"));
+        if (!path.eventLower.startsWith("player places")) {
+            return false;
+        }
+        if (!couldMatchItem(path.eventArgLowerAt(2)) && !couldMatchBlock(path.eventArgLowerAt(2))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean matches(ScriptPath path) {
-
         String mat = path.eventArgLowerAt(2);
         if (!tryItem(item_in_hand, mat) && !tryMaterial(material, mat)) {
             return false;
         }
-
         if (!runGenericSwitchCheck(path, "using", hand.asString())) {
             return false;
         }
-
         if (!runInCheck(path, location)) {
             return false;
         }

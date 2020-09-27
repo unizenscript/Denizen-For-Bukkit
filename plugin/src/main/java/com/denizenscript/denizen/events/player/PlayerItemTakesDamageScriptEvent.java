@@ -25,6 +25,8 @@ public class PlayerItemTakesDamageScriptEvent extends BukkitScriptEvent implemen
     //
     // @Regex ^on player [^\s]+ takes damage$
     //
+    // @Group Player
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -54,9 +56,16 @@ public class PlayerItemTakesDamageScriptEvent extends BukkitScriptEvent implemen
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return (path.eventLower.startsWith("players") || path.eventLower.startsWith("player")) &&
-                path.eventArgLowerAt(2).equals("takes") &&
-                path.eventArgLowerAt(3).equals("damage");
+        if (!path.eventArgLowerAt(0).equals("player")) {
+            return false;
+        }
+        if (!path.eventArgLowerAt(2).equals("takes") || !path.eventArgLowerAt(3).equals("damage")) {
+            return false;
+        }
+        if (!couldMatchItem(path.eventArgLowerAt(1))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

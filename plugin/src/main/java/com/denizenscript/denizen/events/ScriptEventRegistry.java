@@ -2,9 +2,12 @@ package com.denizenscript.denizen.events;
 
 import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.events.block.*;
-import com.denizenscript.denizen.events.core.*;
 import com.denizenscript.denizen.events.entity.*;
+import com.denizenscript.denizen.events.item.*;
+import com.denizenscript.denizen.events.npc.NPCSpawnScriptEvent;
 import com.denizenscript.denizen.events.player.*;
+import com.denizenscript.denizen.events.server.*;
+import com.denizenscript.denizen.events.vehicle.*;
 import com.denizenscript.denizen.events.world.*;
 import com.denizenscript.denizen.utilities.depends.Depends;
 import com.denizenscript.denizen.nms.NMSHandler;
@@ -17,6 +20,7 @@ import dev.unizen.denizen.events.entity.EntityMountsEntityScriptEvent;
 public class ScriptEventRegistry {
 
     public static void registerMainEvents() {
+
         // Block events
         ScriptEvent.registerScriptEvent(new BlockBuiltScriptEvent());
         ScriptEvent.registerScriptEvent(new BlockBurnsScriptEvent());
@@ -39,12 +43,6 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(new PistonExtendsScriptEvent());
         ScriptEvent.registerScriptEvent(new PistonRetractsScriptEvent());
         ScriptEvent.registerScriptEvent(new RedstoneScriptEvent());
-
-        // Core events
-        ScriptEvent.registerScriptEvent(new ListPingScriptEvent());
-        ScriptEvent.registerScriptEvent(new ServerPrestartScriptEvent());
-        ScriptEvent.registerScriptEvent(new ServerStartScriptEvent());
-        ScriptEvent.registerScriptEvent(new TabCompleteScriptEvent());
 
         // Entity events
         ScriptEvent.registerScriptEvent(new CreeperPoweredScriptEvent());
@@ -74,6 +72,7 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(new EntityMountsEntityScriptEvent());
         if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
             ScriptEvent.registerScriptEvent(new EntityPotionEffectScriptEvent());
+            ScriptEvent.registerScriptEvent(new EntityPicksUpItemScriptEvent());
         }
         ScriptEvent.registerScriptEvent(new EntityResurrectScriptEvent());
         if (!Denizen.supportsPaper) {
@@ -81,45 +80,47 @@ public class ScriptEventRegistry {
         }
         ScriptEvent.registerScriptEvent(new EntitySpawnerSpawnScriptEvent());
         ScriptEvent.registerScriptEvent(new EntitySpawnScriptEvent());
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            ScriptEvent.registerScriptEvent(new EntitySwimScriptEvent());
-        }
+        ScriptEvent.registerScriptEvent(new EntitySwimScriptEvent());
         ScriptEvent.registerScriptEvent(new EntityTamesScriptEvent());
         ScriptEvent.registerScriptEvent(new EntityTargetsScriptEvent());
         ScriptEvent.registerScriptEvent(new EntityTeleportScriptEvent());
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            ScriptEvent.registerScriptEvent(new EntityTransformScriptEvent());
-        }
+        ScriptEvent.registerScriptEvent(new EntityTransformScriptEvent());
         ScriptEvent.registerScriptEvent(new EntityUnleashedScriptEvent());
         ScriptEvent.registerScriptEvent(new FireworkBurstsScriptEvent());
         ScriptEvent.registerScriptEvent(new HangingBreaksScriptEvent());
         ScriptEvent.registerScriptEvent(new HorseJumpsScriptEvent());
-        ScriptEvent.registerScriptEvent(new ItemDespawnsScriptEvent());
-        ScriptEvent.registerScriptEvent(new ItemEnchantedScriptEvent());
-        ScriptEvent.registerScriptEvent(new ItemMergesScriptEvent());
-        ScriptEvent.registerScriptEvent(new ItemSpawnsScriptEvent());
-        if (Depends.citizens != null) {
-            ScriptEvent.registerScriptEvent(new NPCSpawnScriptEvent());
-        }
         ScriptEvent.registerScriptEvent(new PigZappedScriptEvent());
         ScriptEvent.registerScriptEvent(new ProjectileHitsScriptEvent());
         ScriptEvent.registerScriptEvent(new ProjectileLaunchedScriptEvent());
         ScriptEvent.registerScriptEvent(new SheepDyedScriptEvent());
         ScriptEvent.registerScriptEvent(new SheepRegrowsScriptEvent());
         ScriptEvent.registerScriptEvent(new SlimeSplitsScriptEvent());
-        ScriptEvent.registerScriptEvent(new VehicleCollidesBlockScriptEvent());
-        ScriptEvent.registerScriptEvent(new VehicleCollidesEntityScriptEvent());
-        ScriptEvent.registerScriptEvent(new VehicleCreatedScriptEvent());
-        ScriptEvent.registerScriptEvent(new VehicleDamagedScriptEvent());
-        ScriptEvent.registerScriptEvent(new VehicleDestroyedScriptEvent());
-        ScriptEvent.registerScriptEvent(new VehicleMoveScriptEvent());
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
+            ScriptEvent.registerScriptEvent(new VillagerAcquiresTradeScriptEvent());
+            ScriptEvent.registerScriptEvent(new VillagerChangesProfessionScriptEvent());
+            ScriptEvent.registerScriptEvent(new VillagerReplenishesTradeScriptEvent());
+        }
+
+        // NPC events
+        if (Depends.citizens != null) {
+            ScriptEvent.registerScriptEvent(new NPCSpawnScriptEvent());
+        }
+
+        // Item events
+        ScriptEvent.registerScriptEvent(new InventoryPicksUpItemScriptEvent());
+        ScriptEvent.registerScriptEvent(new ItemDespawnsScriptEvent());
+        ScriptEvent.registerScriptEvent(new ItemEnchantedScriptEvent());
+        ScriptEvent.registerScriptEvent(new ItemMergesScriptEvent());
+        ScriptEvent.registerScriptEvent(new ItemMoveScriptEvent());
+        ScriptEvent.registerScriptEvent(new ItemRecipeFormedScriptEvent());
+        ScriptEvent.registerScriptEvent(new ItemSpawnsScriptEvent());
 
         // Player events
         ScriptEvent.registerScriptEvent(new BiomeEnterExitScriptEvent());
         ScriptEvent.registerScriptEvent(new ChatScriptEvent());
+        ScriptEvent.registerScriptEvent(new AreaEnterExitScriptEvent());
+        ScriptEvent.registerScriptEvent(new HotbarScrollScriptEvent());
         ScriptEvent.registerScriptEvent(new ExperienceBottleBreaksScriptEvent());
-        ScriptEvent.registerScriptEvent(new ItemRecipeFormedScriptEvent());
-        ScriptEvent.registerScriptEvent(new ItemScrollScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerAnimatesScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerBreaksBlockScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerBreaksItemScriptEvent());
@@ -156,21 +157,17 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(new PlayerLoginScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerMendsItemScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerOpensInvScriptEvent());
-        ScriptEvent.registerScriptEvent(new PlayerPicksUpScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerPlacesBlockScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerPlacesHangingScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerPreLoginScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerPreparesAnvilCraftScriptEvent());
+        ScriptEvent.registerScriptEvent(new PlayerPreparesEnchantScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerQuitsScriptEvent());
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            ScriptEvent.registerScriptEvent(new PlayerReceivesCommandsScriptEvent());
-        }
+        ScriptEvent.registerScriptEvent(new PlayerReceivesCommandsScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerReceivesMessageScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerRespawnsScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerRightClicksEntityScriptEvent());
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            ScriptEvent.registerScriptEvent(new PlayerRiptideScriptEvent());
-        }
+        ScriptEvent.registerScriptEvent(new PlayerRiptideScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerShearsScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerSneakScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerSprintScriptEvent());
@@ -189,14 +186,29 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(new PlayerWalksOverScriptEvent());
         ScriptEvent.registerScriptEvent(new ResourcePackStatusScriptEvent());
 
+        // Server events
+        ScriptEvent.registerScriptEvent(new CommandScriptEvent());
+        ScriptEvent.registerScriptEvent(new ListPingScriptEvent());
+        ScriptEvent.registerScriptEvent(new ServerPrestartScriptEvent());
+        ScriptEvent.registerScriptEvent(new ServerStartScriptEvent());
+        ScriptEvent.registerScriptEvent(new TabCompleteScriptEvent());
+
+        // Vehicle
+        ScriptEvent.registerScriptEvent(new VehicleCollidesBlockScriptEvent());
+        ScriptEvent.registerScriptEvent(new VehicleCollidesEntityScriptEvent());
+        ScriptEvent.registerScriptEvent(new VehicleCreatedScriptEvent());
+        ScriptEvent.registerScriptEvent(new VehicleDamagedScriptEvent());
+        ScriptEvent.registerScriptEvent(new VehicleDestroyedScriptEvent());
+        ScriptEvent.registerScriptEvent(new VehicleMoveScriptEvent());
+
         // World events
         ScriptEvent.registerScriptEvent(new ChunkLoadScriptEvent());
         ScriptEvent.registerScriptEvent(new ChunkUnloadScriptEvent());
-        ScriptEvent.registerScriptEvent(new CommandScriptEvent());
-        ScriptEvent.registerScriptEvent(new InventoryPicksUpItemScriptEvent());
-        ScriptEvent.registerScriptEvent(new ItemMoveScriptEvent());
         ScriptEvent.registerScriptEvent(new LightningStrikesScriptEvent());
         ScriptEvent.registerScriptEvent(new LingeringPotionSplashScriptEvent());
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_15)) {
+            ScriptEvent.registerScriptEvent(new LootGenerateScriptEvent());
+        }
         ScriptEvent.registerScriptEvent(new PortalCreateScriptEvent());
         ScriptEvent.registerScriptEvent(new PotionSplashScriptEvent());
         ScriptEvent.registerScriptEvent(new SpawnChangeScriptEvent());

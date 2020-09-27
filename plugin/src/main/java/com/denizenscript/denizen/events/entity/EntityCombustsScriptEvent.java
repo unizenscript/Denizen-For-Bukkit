@@ -24,6 +24,8 @@ public class EntityCombustsScriptEvent extends BukkitScriptEvent implements List
     //
     // @Regex ^on [^\s]+ combusts$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -37,7 +39,7 @@ public class EntityCombustsScriptEvent extends BukkitScriptEvent implements List
     // <context.source_type> returns the type of the source, which can be: ENTITY, LOCATION, NONE.
     //
     // @Determine
-    // ElementTag(Number) set the length of duration.
+    // DurationTag set the burn duration.
     //
     // @Player when the entity that catches fire is a player.
     //
@@ -55,20 +57,23 @@ public class EntityCombustsScriptEvent extends BukkitScriptEvent implements List
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("combusts");
+        if (!path.eventArgLowerAt(1).equals("combusts")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean matches(ScriptPath path) {
-
         if (!tryEntity(entity, path.eventArgLowerAt(0))) {
             return false;
         }
-
         if (!runInCheck(path, entity.getLocation())) {
             return false;
         }
-
         return super.matches(path);
     }
 
@@ -81,6 +86,10 @@ public class EntityCombustsScriptEvent extends BukkitScriptEvent implements List
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         if (determinationObj instanceof ElementTag && ((ElementTag) determinationObj).isInt()) {
             event.setDuration(((ElementTag) determinationObj).asInt());
+            return true;
+        }
+        else if (DurationTag.matches(determinationObj.toString())) {
+            event.setDuration(DurationTag.valueOf(determinationObj.toString(), getTagContext(path)).getTicksAsInt());
             return true;
         }
         return super.applyDetermination(path, determinationObj);

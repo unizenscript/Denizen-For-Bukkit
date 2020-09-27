@@ -12,8 +12,8 @@ import org.bukkit.Color;
 import org.bukkit.DyeColor;
 
 import java.lang.reflect.Field;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.HashMap;
+import java.util.List;
 
 public class ColorTag implements ObjectTag {
 
@@ -30,20 +30,34 @@ public class ColorTag implements ObjectTag {
     // For example, 'co@50,64,128' or 'co@red'.
     //
     // A list of accepted color names can be found at
-    // <@link url https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Color.html>
+    // <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Color.html>
     //
-    // Red/green/blue values are each from 0 to 256.
+    // Red/green/blue values are each from 0 to 255.
     //
     // -->
-
-    final static Pattern rgbPattern = Pattern.compile("(\\d+)[,:](\\d+)[,:](\\d+)");
 
     //////////////////
     //    OBJECT FETCHER
     ////////////////
 
+    @Deprecated
     public static ColorTag valueOf(String string) {
         return valueOf(string, null);
+    }
+
+    public static HashMap<String, Color> colorsByName = new HashMap<>();
+
+    static {
+        for (Field field : Color.class.getDeclaredFields()) {
+            if (field.getType() == Color.class) {
+                try {
+                    colorsByName.put(CoreUtilities.toLowerCase(field.getName()), (Color) field.get(null));
+                }
+                catch (Exception ex) {
+                    Debug.echoError(ex);
+                }
+            }
+        }
     }
 
     /**
@@ -54,40 +68,29 @@ public class ColorTag implements ObjectTag {
      */
     @Fetchable("co")
     public static ColorTag valueOf(String string, TagContext context) {
+        if (string.startsWith("co@")) {
+            string = string.substring("co@".length());
+        }
 
-        string = string.toUpperCase().replace("CO@", "");
-
-        if (string.equals("RANDOM")) {
-
+        if (string.equals("random")) {
             // Get a color using random RGB values
             return new ColorTag(CoreUtilities.getRandom().nextInt(256),
                     CoreUtilities.getRandom().nextInt(256),
                     CoreUtilities.getRandom().nextInt(256));
         }
 
-        Matcher m = rgbPattern.matcher(string);
+        List<String> split = CoreUtilities.split(string, ',');
+        if (split.size() == 3) {
 
-        if (m.matches()) {
-            if (!ArgumentHelper.matchesInteger(m.group(1)) || !ArgumentHelper.matchesInteger(m.group(2)) || !ArgumentHelper.matchesInteger(m.group(3))) {
+            if (!ArgumentHelper.matchesInteger(split.get(0)) || !ArgumentHelper.matchesInteger(split.get(1)) || !ArgumentHelper.matchesInteger(split.get(2))) {
                 return null;
             }
-            return new ColorTag(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)), Integer.parseInt(m.group(3)));
+            return new ColorTag(Integer.parseInt(split.get(0)), Integer.parseInt(split.get(1)), Integer.parseInt(split.get(2)));
         }
 
-        Field colorField = null;
-
-        try {
-            colorField = Color.class.getField(string.toUpperCase());
-        }
-        catch (SecurityException e1) {
-            Debug.echoError("Security exception getting color field!");
-        }
-        catch (NoSuchFieldException e1) {
-            Debug.echoError("No such color field '" + string + "'!");
-        }
-
-        if (colorField != null) {
-            return new ColorTag(colorField);
+        Color col = colorsByName.get(CoreUtilities.toLowerCase(string));
+        if (col != null) {
+            return new ColorTag(col);
         }
 
         // No match
@@ -101,25 +104,12 @@ public class ColorTag implements ObjectTag {
      * @return true if matched, otherwise false
      */
     public static boolean matches(String arg) {
-
-        arg = arg.toUpperCase().replace("CO@", "");
-
-        if (arg.toUpperCase().equals("RANDOM")) {
+        if (arg.startsWith("co@")) {
             return true;
         }
-
-        Matcher m = rgbPattern.matcher(arg);
-
-        if (m.matches()) {
+        if (valueOf(arg, CoreUtilities.noDebugContext) != null) {
             return true;
         }
-
-        for (Field field : Color.class.getFields()) {
-            if (arg.toUpperCase().matches(field.getName())) {
-                return true;
-            }
-        }
-
         return false;
     }
 
@@ -129,15 +119,6 @@ public class ColorTag implements ObjectTag {
 
     public ColorTag(int red, int green, int blue) {
         color = Color.fromRGB(red, green, blue);
-    }
-
-    public ColorTag(Field field) {
-        try {
-            color = (Color) field.get(null);
-        }
-        catch (Exception e) {
-            Debug.echoError("Exception trying to fetch color!");
-        }
     }
 
     public ColorTag(Color color) {
@@ -216,7 +197,7 @@ public class ColorTag implements ObjectTag {
         // @attribute <ColorTag.red>
         // @returns ElementTag(Number)
         // @description
-        // Returns the red value of this color.
+        // Returns the red value of this color (0 to 255).
         // -->
         registerTag("red", (attribute, object) -> {
             return new ElementTag(object.color.getRed());
@@ -226,7 +207,7 @@ public class ColorTag implements ObjectTag {
         // @attribute <ColorTag.green>
         // @returns ElementTag(Number)
         // @description
-        // Returns the green value of this color.
+        // Returns the green value of this color (0 to 255).
         // -->
         registerTag("green", (attribute, object) -> {
             return new ElementTag(object.color.getGreen());
@@ -236,7 +217,7 @@ public class ColorTag implements ObjectTag {
         // @attribute <ColorTag.blue>
         // @returns ElementTag(Number)
         // @description
-        // Returns the blue value of this color.
+        // Returns the blue value of this color (0 to 255).
         // -->
         registerTag("blue", (attribute, object) -> {
             return new ElementTag(object.color.getBlue());
@@ -258,7 +239,7 @@ public class ColorTag implements ObjectTag {
         // @attribute <ColorTag.hue>
         // @returns ElementTag(Number)
         // @description
-        // Returns the hue value of this color.
+        // Returns the hue value of this color (0 to 255).
         // -->
         registerTag("hue", (attribute, object) -> {
             return new ElementTag(object.ToHSB()[0]);
@@ -268,7 +249,7 @@ public class ColorTag implements ObjectTag {
         // @attribute <ColorTag.saturation>
         // @returns ElementTag(Number)
         // @description
-        // Returns the saturation value of this color.
+        // Returns the saturation value of this color (0 to 255).
         // -->
         registerTag("saturation", (attribute, object) -> {
             return new ElementTag(object.ToHSB()[1]);
@@ -278,7 +259,7 @@ public class ColorTag implements ObjectTag {
         // @attribute <ColorTag.brightness>
         // @returns ElementTag(Number)
         // @description
-        // Returns the brightness value of this color.
+        // Returns the brightness value of this color (0 to 255).
         // -->
         registerTag("brightness", (attribute, object) -> {
             return new ElementTag(object.ToHSB()[2]);
@@ -293,7 +274,73 @@ public class ColorTag implements ObjectTag {
         // -->
         registerTag("hsv", (attribute, object) -> {
             int[] HSV = object.ToHSB();
-            return new ElementTag(HSV[1] + "," + HSV[1] + "," + HSV[2]);
+            return new ElementTag(HSV[0] + "," + HSV[1] + "," + HSV[2]);
+        });
+
+        // <--[tag]
+        // @attribute <ColorTag.with_red[<red>]>
+        // @returns ColorTag
+        // @description
+        // Returns a copy of this color object with a different red value (0 to 255).
+        // -->
+        registerTag("with_red", (attribute, object) -> {
+            return new ColorTag(object.color.setRed(attribute.getIntContext(1)));
+        });
+
+        // <--[tag]
+        // @attribute <ColorTag.with_green[<green>]>
+        // @returns ColorTag
+        // @description
+        // Returns a copy of this color object with a different green value (0 to 255).
+        // -->
+        registerTag("with_green", (attribute, object) -> {
+            return new ColorTag(object.color.setGreen(attribute.getIntContext(1)));
+        });
+
+        // <--[tag]
+        // @attribute <ColorTag.with_blue[<blue>]>
+        // @returns ColorTag
+        // @description
+        // Returns a copy of this color object with a different blue value (0 to 255).
+        // -->
+        registerTag("with_blue", (attribute, object) -> {
+            return new ColorTag(object.color.setBlue(attribute.getIntContext(1)));
+        });
+
+        // <--[tag]
+        // @attribute <ColorTag.with_hue[<hue>]>
+        // @returns ColorTag
+        // @description
+        // Returns a copy of this color object with a different hue value (0 to 255).
+        // -->
+        registerTag("with_hue", (attribute, object) -> {
+            int[] HSB = object.ToHSB();
+            HSB[0] = attribute.getIntContext(1);
+            return fromHSB(HSB);
+        });
+
+        // <--[tag]
+        // @attribute <ColorTag.with_saturation[<saturation>]>
+        // @returns ColorTag
+        // @description
+        // Returns a copy of this color object with a different saturation value (0 to 255).
+        // -->
+        registerTag("with_saturation", (attribute, object) -> {
+            int[] HSB = object.ToHSB();
+            HSB[1] = attribute.getIntContext(1);
+            return fromHSB(HSB);
+        });
+
+        // <--[tag]
+        // @attribute <ColorTag.with_brightness[<brightness>]>
+        // @returns ColorTag
+        // @description
+        // Returns a copy of this color object with a different brightness value (0 to 255).
+        // -->
+        registerTag("with_brightness", (attribute, object) -> {
+            int[] HSB = object.ToHSB();
+            HSB[2] = attribute.getIntContext(1);
+            return fromHSB(HSB);
         });
 
         // <--[tag]
@@ -317,7 +364,7 @@ public class ColorTag implements ObjectTag {
                 Debug.echoError("The tag ListTag.insert[...] must have a value.");
                 return null;
             }
-            ColorTag mixed_with = ColorTag.valueOf(attribute.getContext(1));
+            ColorTag mixed_with = attribute.contextAsType(1, ColorTag.class);
             if (mixed_with != null) {
                 return new ColorTag(object.color.mixColors(mixed_with.getColor()));
             }
@@ -331,7 +378,7 @@ public class ColorTag implements ObjectTag {
         // @attribute <ColorTag.to_particle_offset>
         // @returns LocationTag
         // @description
-        // Returns the color as a particle offset, for use with PlayEffect.
+        // Returns the color as a particle offset, for use with <@link command playeffect>.
         // -->
         registerTag("to_particle_offset", (attribute, object) -> {
             Color valid = object.color;
@@ -339,17 +386,6 @@ public class ColorTag implements ObjectTag {
                 valid = Color.fromRGB(1, 0, 0);
             }
             return new LocationTag(null, valid.getRed() / 255F, valid.getGreen() / 255F, valid.getBlue() / 255F);
-        });
-
-        // <--[tag]
-        // @attribute <ColorTag.type>
-        // @returns ElementTag
-        // @description
-        // Always returns 'Color' for ColorTag objects. All objects fetchable by the Object Fetcher will return the
-        // type of object that is fulfilling this attribute.
-        // -->
-        registerTag("type", (attribute, object) -> {
-            return new ElementTag("Color");
         });
     }
 
@@ -364,8 +400,13 @@ public class ColorTag implements ObjectTag {
         return tagProcessor.getObjectAttribute(this, attribute);
     }
 
-    int[] ToHSB() {
+    public static ColorTag fromHSB(int[] hsv) {
+        int rgb = java.awt.Color.HSBtoRGB(hsv[0] / 255f, hsv[1] / 255f, hsv[2] / 255f) & 0x00ffffff;
+        return new ColorTag(Color.fromRGB(rgb));
+    }
+
+    public int[] ToHSB() {
         float[] base = java.awt.Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
-        return new int[] {(int) (base[0] * 255), (int) (base[1] * 255), (int) (base[2] * 255)};
+        return new int[] {Math.round(base[0] * 255f), Math.round(base[1] * 255f), Math.round(base[2] * 255f)};
     }
 }

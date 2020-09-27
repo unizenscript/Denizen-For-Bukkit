@@ -28,6 +28,7 @@ public class NarrateCommand extends AbstractCommand {
         setSyntax("narrate [<text>] (targets:<player>|...) (format:<script>) (per_player)");
         setRequiredArguments(1, 4);
         setParseArgs(false);
+        isProcedural = true;
     }
 
     // <--[command]
@@ -41,10 +42,10 @@ public class NarrateCommand extends AbstractCommand {
     // @Description
     // Prints some text into the target's chat area. If no target is specified it will default to the attached player or the console.
     //
-    // Accepts the 'format:<script>' argument, which will reformat the text according to the specified format script.
+    // Accepts the 'format:<script>' argument, which will reformat the text according to the specified format script. See <@link language Format Script Containers>.
     //
     // Optionally use 'per_player' with a list of player targets, to have the tags in the text input be reparsed for each and every player.
-    // So, for example, "- narrate 'hello <player.name>' targets:<server.list_online_players>"
+    // So, for example, "- narrate 'hello <player.name>' targets:<server.online_players>"
     // would normally say "hello bob" to every player (every player sees the exact same name in the text, ie bob sees "hello bob", steve also sees "hello bob", etc)
     // but if you use "per_player", each player online would see their own name (so bob sees "hello bob", steve sees "hello steve", etc).
     //
@@ -61,7 +62,7 @@ public class NarrateCommand extends AbstractCommand {
     //
     // @Usage
     // Use to narrate text to a unique message to every player on the server.
-    // - narrate "Hello <player.name>, your secret code is <util.random.duuid>." targets:<server.list_online_players> per_player
+    // - narrate "Hello <player.name>, your secret code is <util.random.duuid>." targets:<server.online_players> per_player
     // -->
 
     @Override
@@ -92,8 +93,7 @@ public class NarrateCommand extends AbstractCommand {
             }
         }
         if (!scriptEntry.hasObject("targets")) {
-            scriptEntry.addObject("targets",
-                    (Utilities.entryHasPlayer(scriptEntry) ? Arrays.asList(Utilities.getEntryPlayer(scriptEntry)) : null));
+            scriptEntry.addObject("targets", (Utilities.entryHasPlayer(scriptEntry) ? Arrays.asList(Utilities.getEntryPlayer(scriptEntry)) : null));
         }
         if (!scriptEntry.hasObject("text")) {
             throw new InvalidArgumentsException("Missing any text!");
@@ -103,17 +103,18 @@ public class NarrateCommand extends AbstractCommand {
     @SuppressWarnings("unchecked")
     @Override
     public void execute(ScriptEntry scriptEntry) {
+        if (scriptEntry.getResidingQueue().procedural) {
+            Debug.echoError("'Narrate' should not be used in a procedure script. Consider the 'debug' command instead.");
+        }
         List<PlayerTag> targets = (List<PlayerTag>) scriptEntry.getObject("targets");
         String text = scriptEntry.getElement("text").asString();
         ScriptTag formatObj = scriptEntry.getObjectTag("format");
         ElementTag perPlayerObj = scriptEntry.getElement("per_player");
-
         boolean perPlayer = perPlayerObj != null && perPlayerObj.asBoolean();
         BukkitTagContext context = (BukkitTagContext) scriptEntry.getContext();
         if (!perPlayer || targets == null) {
             text = TagManager.tag(text, context);
         }
-
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(),
                     ArgumentHelper.debugObj("Narrating", text)
@@ -121,13 +122,11 @@ public class NarrateCommand extends AbstractCommand {
                             + (formatObj != null ? formatObj.debug() : "")
                             + (perPlayerObj != null ? perPlayerObj.debug() : ""));
         }
-
         FormatScriptContainer format = formatObj == null ? null : (FormatScriptContainer) formatObj.getContainer();
         if (targets == null) {
             Bukkit.getServer().getConsoleSender().sendMessage(format != null ? format.getFormattedText(text, scriptEntry) : text);
             return;
         }
-
         for (PlayerTag player : targets) {
             if (player != null) {
                 if (!player.isOnline()) {

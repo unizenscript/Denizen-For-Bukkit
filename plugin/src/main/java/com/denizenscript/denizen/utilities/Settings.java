@@ -4,6 +4,7 @@ import com.denizenscript.denizencore.utilities.debugging.Debug;
 import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.scripts.ScriptHelper;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
+import com.denizenscript.denizencore.utilities.debugging.FutureWarning;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.nio.charset.Charset;
@@ -40,6 +41,7 @@ public class Settings {
         cache_defaultDebugMode = config.getBoolean("Debug.Container default", true);
         cache_debugLimitPerTick = config.getInt("Debug.Limit per tick", 5000);
         cache_debugPrefix = config.getString("Debug.Prefix", "");
+        FutureWarning.futureWarningsEnabled = config.getBoolean("Debug.Show future warnings", false);
         cache_scriptQueueSpeed = config.getString("Scripts.Queue speed", "instant");
         cache_interactQueueSpeed = config.getString("Scripts.Interact.Queue speed", "0.5s");
         cache_healthTraitEnabledByDefault = config.getBoolean("Traits.Health.Enabled", false);
@@ -73,7 +75,7 @@ public class Settings {
         cache_chatGloballyIfNoChatTriggers = config.getBoolean("Triggers.Chat.Appears globally.If triggers missing", true);
         cache_chatGloballyIfUninteractable = config.getBoolean("Triggers.Chat.Appears globally.If NPC uninteractable", true);
         cache_worldScriptChatEventAsynchronous = config.getBoolean("Scripts.World.Events.On player chats.Use asynchronous event", false);
-        cache_worldScriptTimeEventFrequency = DurationTag.valueOf(config.getString("Scripts.World.Events.On time changes.Frequency of check", "250t"));
+        cache_worldScriptTimeEventFrequency = DurationTag.valueOf(config.getString("Scripts.World.Events.On time changes.Frequency of check", "250t"), CoreUtilities.basicContext);
         cache_blockTagsMaxBlocks = config.getInt("Tags.Block tags.Max blocks", 1000000);
         cache_autoLoadChunks = config.getBoolean("Tags.Automatically load chunks", true);
         cache_chatHistoryMaxMessages = config.getInt("Tags.Chat history.Max messages", 10);
@@ -215,7 +217,7 @@ public class Settings {
     public static double triggerDefaultCooldown(String triggerName) {
         return DurationTag.valueOf(DenizenAPI.getCurrentInstance().getConfig()
                 .getString("Triggers." + String.valueOf(triggerName.charAt(0)).toUpperCase()
-                        + CoreUtilities.toLowerCase(triggerName.substring(1)) + ".Cooldown", "5s")).getSeconds();
+                        + CoreUtilities.toLowerCase(triggerName.substring(1)) + ".Cooldown", "5s"), CoreUtilities.basicContext).getSeconds();
     }
 
     /*

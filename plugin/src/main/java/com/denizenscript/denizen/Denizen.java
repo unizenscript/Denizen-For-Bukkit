@@ -3,6 +3,8 @@ package com.denizenscript.denizen;
 import com.denizenscript.denizen.events.ScriptEventRegistry;
 import com.denizenscript.denizen.events.bukkit.SavesReloadEvent;
 import com.denizenscript.denizen.events.core.*;
+import com.denizenscript.denizen.events.server.ServerPrestartScriptEvent;
+import com.denizenscript.denizen.events.server.ServerStartScriptEvent;
 import com.denizenscript.denizen.flags.FlagManager;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.InventoryTag;
@@ -11,13 +13,13 @@ import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.objects.notable.NotableManager;
 import com.denizenscript.denizen.objects.properties.PropertyRegistry;
 import com.denizenscript.denizen.scripts.commands.BukkitCommandRegistry;
+import com.denizenscript.denizen.scripts.commands.player.ClickableCommand;
 import com.denizenscript.denizen.scripts.containers.ContainerRegistry;
 import com.denizenscript.denizen.scripts.containers.core.*;
 import com.denizenscript.denizen.scripts.triggers.TriggerRegistry;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizen.tags.core.ServerTagBase;
 import com.denizenscript.denizen.utilities.*;
-import com.denizenscript.denizen.utilities.blocks.OldMaterialsHelper;
 import com.denizenscript.denizen.utilities.command.DenizenCommandHandler;
 import com.denizenscript.denizen.utilities.command.ExCommandHandler;
 import com.denizenscript.denizen.utilities.command.NPCCommandHandler;
@@ -68,6 +70,7 @@ import java.io.*;
 import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -145,7 +148,8 @@ public class Denizen extends JavaPlugin {
 
             CoreUtilities.noDebugContext = new BukkitTagContext(null, null, null, false, null);
             CoreUtilities.basicContext = new BukkitTagContext(null, null, null, true, null);
-
+            CoreUtilities.errorButNoDebugContext = new BukkitTagContext(null, null, null, false, null);
+            CoreUtilities.errorButNoDebugContext.showErrors = true;
             // Load Denizen's core
             DenizenCore.init(coreImplementation);
         }
@@ -155,19 +159,19 @@ public class Denizen extends JavaPlugin {
             startedSuccessful = false;
             return;
         }
-
         String javaVersion = System.getProperty("java.version");
         if (!javaVersion.startsWith("8") && !javaVersion.startsWith("1.8")) {
             if (javaVersion.startsWith("9") || javaVersion.startsWith("1.9") || javaVersion.startsWith("10") || javaVersion.startsWith("1.10") || javaVersion.startsWith("11")) {
                 getLogger().warning("Running unreliable Java version. Minecraft is built for Java 8. Newer Java versions are not guaranteed to function properly (due to changes Oracle made to how reflection works).");
+                getLogger().warning("Found java version: " + javaVersion);
             }
             else {
                 getLogger().warning("-------------------------------------");
                 getLogger().warning("Running incompatible Java version! Minecraft is built for Java 8. Older versions will not work, and newer versions will cause errors (due to Oracle removing reflection support)!");
+                getLogger().warning("Found java version: " + javaVersion);
                 getLogger().warning("-------------------------------------");
             }
         }
-
         if (!NMSHandler.initialize(this)) {
             getLogger().warning("-------------------------------------");
             getLogger().warning("This build of Denizen is not compatible with this Spigot version! Deactivating Denizen!");
@@ -176,7 +180,6 @@ public class Denizen extends JavaPlugin {
             startedSuccessful = false;
             return;
         }
-
         if (!NMSHandler.getInstance().isCorrectMappingsCode()) {
             getLogger().warning("-------------------------------------");
             getLogger().warning("This build of Denizen was built for a different Spigot revision! This may potentially cause issues."
@@ -184,11 +187,9 @@ public class Denizen extends JavaPlugin {
                     + " If this message appears with both Denizen and Spigot fully up-to-date, contact the Denizen team (via GitHub, Spigot, or Discord) to request an update be built.");
             getLogger().warning("-------------------------------------");
         }
-
         try {
             // Activate dependencies
             Depends.initialize();
-
             if (Depends.citizens == null || !Depends.citizens.isEnabled()) {
                 getLogger().warning("Citizens does not seem to be activated! Denizen will have greatly reduced functionality!");
             }
@@ -197,12 +198,10 @@ public class Denizen extends JavaPlugin {
         catch (Exception e) {
             Debug.echoError(e);
         }
-
         try {
             // Populate config.yml if it doesn't yet exist.
             saveDefaultConfig();
             reloadConfig();
-
             // Startup procedure
             Debug.log(ChatColor.LIGHT_PURPLE + "+-------------------------+");
             Debug.log(ChatColor.YELLOW + " _/_ _  ._  _ _  ");
@@ -217,7 +216,6 @@ public class Denizen extends JavaPlugin {
         catch (Exception e) {
             Debug.echoError(e);
         }
-
         try {
             if (Class.forName("com.destroystokyo.paper.PaperConfig") != null) {
                 supportsPaper = true;
@@ -229,7 +227,6 @@ public class Denizen extends JavaPlugin {
         catch (Throwable ex) {
             Debug.echoError(ex);
         }
-
         // bstats.org
         try {
             BStatsMetricsLite metrics = new BStatsMetricsLite(this);
@@ -237,27 +234,22 @@ public class Denizen extends JavaPlugin {
         catch (Throwable e) {
             Debug.echoError(e);
         }
-
         try {
             // If Citizens is enabled, Create the NPC Helper
             if (Depends.citizens != null) {
                 npcHelper = new DenizenNPCHelper(this);
             }
-
             // Create our CommandManager to handle '/denizen' commands
             commandManager = new CommandManager();
             commandManager.setInjector(new Injector(this));
             commandManager.register(DenizenCommandHandler.class);
-
             // If Citizens is enabled, let it handle '/npc' commands
             if (Depends.citizens != null) {
                 Depends.citizens.registerCommandClass(NPCCommandHandler.class);
             }
-
             DenizenEntityType.registerEntityType("ITEM_PROJECTILE", ItemProjectile.class);
             DenizenEntityType.registerEntityType("FAKE_ARROW", FakeArrow.class);
             DenizenEntityType.registerEntityType("FAKE_PLAYER", FakePlayer.class);
-
             // Track all player names for quick PlayerTag matching
             for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
                 PlayerTag.notePlayer(player);
@@ -266,7 +258,6 @@ public class Denizen extends JavaPlugin {
         catch (Exception e) {
             Debug.echoError(e);
         }
-
         try {
             DenizenCore.setCommandRegistry(getCommandRegistry());
             getCommandRegistry().registerCommands();
@@ -274,7 +265,6 @@ public class Denizen extends JavaPlugin {
         catch (Exception e) {
             Debug.echoError(e);
         }
-
         try {
             // Register script-container types
             ScriptRegistry._registerCoreTypes();
@@ -282,20 +272,17 @@ public class Denizen extends JavaPlugin {
         catch (Exception e) {
             Debug.echoError(e);
         }
-
         try {
             ContainerRegistry.registerMainContainers();
         }
         catch (Exception e) {
             Debug.echoError(e);
         }
-
         try {
             // Ensure the Scripts and Midi folder exist
             new File(getDataFolder() + "/scripts").mkdirs();
             new File(getDataFolder() + "/midi").mkdirs();
             new File(getDataFolder() + "/schematics").mkdirs();
-
             // Ensure the example Denizen.mid sound file is available
             if (!new File(getDataFolder() + "/midi/Denizen.mid").exists()) {
                 String sourceFile = URLDecoder.decode(Denizen.class.getProtectionDomain().getCodeSource().getLocation().getFile());
@@ -306,7 +293,6 @@ public class Denizen extends JavaPlugin {
         catch (Exception e) {
             Debug.echoError(e);
         }
-
         try {
             // Automatic config file update
             InputStream properConfig = Denizen.class.getResourceAsStream("/config.yml");
@@ -328,7 +314,6 @@ public class Denizen extends JavaPlugin {
         catch (Exception e) {
             Debug.echoError(e);
         }
-
         try {
             worldScriptHelper = new BukkitWorldScriptHelper();
             itemScriptHelper = new ItemScriptHelper();
@@ -339,7 +324,6 @@ public class Denizen extends JavaPlugin {
         catch (Exception e) {
             Debug.echoError(e);
         }
-
         try {
             if (Depends.citizens != null) {
                 // Register traits
@@ -349,7 +333,6 @@ public class Denizen extends JavaPlugin {
         catch (Exception e) {
             Debug.echoError(e);
         }
-
         // Register Core Members in the Denizen Registries
         try {
             if (Depends.citizens != null) {
@@ -359,23 +342,16 @@ public class Denizen extends JavaPlugin {
         catch (Exception e) {
             Debug.echoError(e);
         }
-
         try {
             AdjustCommand.specialAdjustables.put("server", ServerTagBase::adjustServer);
-
             tagManager().registerCoreTags();
-
             CommonRegistries.registerMainTagHandlers();
-
             eventManager = new OldEventManager();
             // Register all the legacy 'Core' SmartEvents.
-            OldEventManager.registerSmartEvent(new CuboidEnterExitSmartEvent());
             OldEventManager.registerSmartEvent(new FlagSmartEvent());
             OldEventManager.registerSmartEvent(new NPCNavigationSmartEvent());
-
             // Register all the modern script events
             ScriptEventRegistry.registerMainEvents();
-
             // Register Core ObjectTags with the ObjectFetcher
             ObjectFetcher.registerCoreObjects();
             CommonRegistries.registerMainObjects();
@@ -383,17 +359,13 @@ public class Denizen extends JavaPlugin {
         catch (Exception e) {
             Debug.echoError(e);
         }
-
         try {
-            // Initialize old Materials helper
-            OldMaterialsHelper._initialize();
             // Initialize all properties
             PropertyRegistry.registermainProperties();
         }
         catch (Exception e) {
             Debug.echoError(e);
         }
-
         try {
             for (World world : getServer().getWorlds()) {
                 EntityScriptHelper.linkWorld(world);
@@ -402,7 +374,6 @@ public class Denizen extends JavaPlugin {
         catch (Exception e) {
             Debug.echoError(e);
         }
-
         if (Settings.packetInterception()) {
             NMSHandler.getInstance().enablePacketInterception(new DenizenPacketHandler());
         }
@@ -421,13 +392,10 @@ public class Denizen extends JavaPlugin {
         }
         ExCommandHandler exCommand = new ExCommandHandler();
         exCommand.enableFor(getCommand("ex"));
-
         // Load script files without processing.
         DenizenCore.preloadScripts();
-
         // Load the saves.yml into memory
         reloadSaves();
-
         try {
             // Fire the 'on Server PreStart' world event
             ServerPrestartScriptEvent.instance.specialHackRunEvent();
@@ -435,38 +403,31 @@ public class Denizen extends JavaPlugin {
         catch (Throwable ex) {
             Debug.echoError(ex);
         }
-
         // Run everything else on the first server tick
         Bukkit.getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
             @Override
             public void run() {
                 try {
                     exCommand.processTagList();
-
                     // Process script files (events, etc).
                     DenizenCore.postLoadScripts();
-
                     // Synchronize any script commands added while loading scripts.
                     CommandScriptHelper.syncDenizenCommands();
-
                     // Reload notables from notables.yml into memory
                     notableManager.reloadNotables();
-
                     Debug.log(ChatColor.LIGHT_PURPLE + "+-------------------------+");
-
                     // Fire the 'on Server Start' world event
                     ServerStartScriptEvent.instance.fire();
                     worldScriptHelper.serverStartEvent();
-
                     if (Settings.allowStupidx()) {
                         Debug.echoError("Don't screw with bad config values.");
                         Bukkit.shutdown();
                     }
-
                     Bukkit.getScheduler().scheduleSyncRepeatingTask(Denizen.this, new Runnable() {
                         @Override
                         public void run() {
                             Debug.outputThisTick = 0;
+                            Debug.errorDuplicatePrevention = false;
                             DenizenCore.tick(50); // Sadly, minecraft has no delta timing, so a tick is always 50ms.
                         }
                     }, 1, 1);
@@ -477,7 +438,6 @@ public class Denizen extends JavaPlugin {
                 }
             }
         }, 1);
-
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -486,7 +446,6 @@ public class Denizen extends JavaPlugin {
                 }
             }
         }.runTaskTimer(this, 100, 20 * 60 * 60);
-
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -675,6 +634,20 @@ public class Denizen extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String cmdName, String[] args) {
+        if (cmd.getName().equals("denizenclickable")) {
+            if (args.length != 1 || !(sender instanceof Player)) {
+                return false;
+            }
+            UUID id;
+            try {
+                id = UUID.fromString(args[0]);
+            }
+            catch (IllegalArgumentException ex) {
+                return false;
+            }
+            ClickableCommand.runClickable(id, (Player) sender);
+            return true;
+        }
         String modifier = args.length > 0 ? args[0] : "";
         if (!commandManager.hasCommand(cmd, modifier) && !modifier.isEmpty()) {
             return suggestClosestModifier(sender, cmd.getName(), modifier);
@@ -704,7 +677,7 @@ public class Denizen extends JavaPlugin {
                     String owner = string.substring(3, cb);
                     String flag = string.substring(cb + 2);
                     if (PlayerTag.matches(owner)) {
-                        PlayerTag player = PlayerTag.valueOf(owner);
+                        PlayerTag player = PlayerTag.valueOf(owner, CoreUtilities.basicContext);
                         if (FlagManager.playerHasFlag(player, flag)) {
                             return flag_manager.getPlayerFlag(player, flag);
                         }
@@ -713,7 +686,7 @@ public class Denizen extends JavaPlugin {
                         }
                     }
                     else if (Depends.citizens != null && NPCTag.matches(owner)) {
-                        NPCTag npc = NPCTag.valueOf(owner);
+                        NPCTag npc = NPCTag.valueOf(owner, CoreUtilities.basicContext);
                         if (FlagManager.npcHasFlag(npc, flag)) {
                             return flag_manager.getNPCFlag(npc.getId(), flag);
                         }
@@ -722,7 +695,7 @@ public class Denizen extends JavaPlugin {
                         }
                     }
                     else if (EntityTag.matches(owner)) {
-                        EntityTag entity = EntityTag.valueOf(owner);
+                        EntityTag entity = EntityTag.valueOf(owner, CoreUtilities.basicContext);
                         if (FlagManager.entityHasFlag(entity, flag)) {
                             return flag_manager.getEntityFlag(entity, flag);
                         }

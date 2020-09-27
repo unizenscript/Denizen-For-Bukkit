@@ -21,6 +21,7 @@ public class PlaySoundCommand extends AbstractCommand {
         setName("playsound");
         setSyntax("playsound [<location>|.../<player>|...] [sound:<name>] (volume:<#.#>) (pitch:<#.#>) (custom) (sound_category:<category name>)");
         setRequiredArguments(2, 6);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -39,7 +40,7 @@ public class PlaySoundCommand extends AbstractCommand {
     //
     // Sounds are by default played under their normal sound type (eg zombie sounds are under the type Mobs/Animals).
     // You can optionally instead specify an alternate sound category to use.
-    // For a list of all valid sound categories, check <@link url https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/SoundCategory.html>
+    // For a list of all valid sound categories, check <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/SoundCategory.html>
     //
     // Specifying a player or list of players will only play the sound for each player, from their own location (but will not follow them if they move).
     // If a location is specified, it will play the sound for any players that are near the location specified.
@@ -52,7 +53,7 @@ public class PlaySoundCommand extends AbstractCommand {
     // A volume above 1.0 however will not be louder - instead it will be audible from farther (approximately 1 extra chunk of distance per value, eg 2.0 is 2 more chunks, 5.0 is 5 more chunks, etc.).
     //
     // @Tags
-    // <server.list_sounds>
+    // <server.sound_types>
     //
     // @Usage
     // Use to play a sound for a player
@@ -62,7 +63,7 @@ public class PlaySoundCommand extends AbstractCommand {
     // - playsound <player.location> sound:ENTITY_PLAYER_LEVELUP
     // @Usage
     // Use to notify all players with a sound
-    // - playsound <server.list_online_players> sound:ENTITY_PLAYER_LEVELUP volume:0.5 pitch:0.8
+    // - playsound <server.online_players> sound:ENTITY_PLAYER_LEVELUP volume:0.5 pitch:0.8
     // -->
 
     @Override

@@ -22,11 +22,13 @@ public class PlayerConsumesScriptEvent extends BukkitScriptEvent implements List
     //
     // @Regex ^on player consumes [^\s]+$
     //
+    // @Group Player
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
     //
-    // @Triggers when a player consumes an item.
+    // @Triggers when a player consumes (eats/drinks) an item (like food or potions).
     //
     // @Context
     // <context.item> returns the ItemTag.
@@ -49,7 +51,13 @@ public class PlayerConsumesScriptEvent extends BukkitScriptEvent implements List
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("player consumes");
+        if (!path.eventLower.startsWith("player consumes")) {
+            return false;
+        }
+        if (!couldMatchItem(path.eventArgLowerAt(2))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

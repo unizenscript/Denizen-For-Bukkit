@@ -3,9 +3,11 @@ package com.denizenscript.denizen.events.entity;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
+import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
+import com.denizenscript.denizencore.utilities.Deprecations;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityAirChangeEvent;
@@ -19,6 +21,8 @@ public class EntityAirLevelChangeScriptEvent extends BukkitScriptEvent implement
     //
     // @Regex ^on [^\s]+ changes air level$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -27,10 +31,10 @@ public class EntityAirLevelChangeScriptEvent extends BukkitScriptEvent implement
     //
     // @Context
     // <context.entity> returns the EntityTag.
-    // <context.air> returns an ElementTag(Number) of the entity's new air level (measured in ticks).
+    // <context.air_duration> returns a DurationTag of the entity's new air level.
     //
     // @Determine
-    // ElementTag(Decimal) to set the entity's new air level.
+    // DurationTag to set the entity's new air level.
     //
     // @Player when the entity that's air level has changed is a player.
     //
@@ -48,7 +52,13 @@ public class EntityAirLevelChangeScriptEvent extends BukkitScriptEvent implement
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.contains("changes air level");
+        if (!path.eventLower.contains("changes air level")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -77,6 +87,10 @@ public class EntityAirLevelChangeScriptEvent extends BukkitScriptEvent implement
             event.setAmount(((ElementTag) determinationObj).asInt());
             return true;
         }
+        else if (DurationTag.matches(determinationObj.toString())) {
+            event.setAmount(DurationTag.valueOf(determinationObj.toString(), getTagContext(path)).getTicksAsInt());
+            return true;
+        }
         return super.applyDetermination(path, determinationObj);
     }
 
@@ -91,7 +105,11 @@ public class EntityAirLevelChangeScriptEvent extends BukkitScriptEvent implement
             return entity.getDenizenObject();
         }
         else if (name.equals("air")) {
+            Deprecations.airLevelEventDuration.warn();
             return new ElementTag(event.getAmount());
+        }
+        else if (name.equals("air_duration")) {
+            return new DurationTag((long) event.getAmount());
         }
         return super.getContext(name);
     }

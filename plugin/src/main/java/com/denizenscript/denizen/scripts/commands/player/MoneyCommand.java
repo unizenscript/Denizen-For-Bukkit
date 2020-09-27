@@ -22,6 +22,7 @@ public class MoneyCommand extends AbstractCommand {
         setName("money");
         setSyntax("money [give/take/set] (quantity:<#.#>) (players:<player>|...)");
         setRequiredArguments(1, 3);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -52,11 +53,11 @@ public class MoneyCommand extends AbstractCommand {
     //
     // @Usage
     // Use to give all players on the server 100 money.
-    // - money give quantity:100 to:<server.list_players>
+    // - money give quantity:100 to:<server.players>
     //
     // @Usage
     // Use to set the money of all online players to 250.
-    // - money set quantity:250 players:<server.list_online_players>
+    // - money set quantity:250 players:<server.online_players>
     // -->
 
     enum Action {
@@ -71,7 +72,6 @@ public class MoneyCommand extends AbstractCommand {
             Debug.echoError("No economy loaded! Have you installed Vault and a compatible economy plugin?");
             return;
         }
-
         for (Argument arg : scriptEntry.getProcessedArgs()) {
             if (!scriptEntry.hasObject("action") && arg.matchesEnum(Action.values())) {
                 scriptEntry.addObject("action", arg.asElement());
@@ -88,9 +88,7 @@ public class MoneyCommand extends AbstractCommand {
                 arg.reportUnhandled();
             }
         }
-
         scriptEntry.defaultObject("quantity", new ElementTag(1));
-
         if (!scriptEntry.hasObject("players")) {
             if (!Utilities.entryHasPlayer(scriptEntry)) {
                 throw new InvalidArgumentsException("This command must have a player attached!");
@@ -110,11 +108,8 @@ public class MoneyCommand extends AbstractCommand {
         ElementTag action = scriptEntry.getElement("action");
         ElementTag quantity = scriptEntry.getElement("quantity");
         List<PlayerTag> players = (List<PlayerTag>) scriptEntry.getObject("players");
-
         if (scriptEntry.dbCallShouldDebug()) {
-
             Debug.report(scriptEntry, getName(), ArgumentHelper.debugList("Player(s)", players) + action.debug() + quantity.debug());
-
         }
         Economy eco = Depends.economy;
         double amt = quantity.asDouble();
@@ -124,13 +119,11 @@ public class MoneyCommand extends AbstractCommand {
                     eco.depositPlayer(player.getOfflinePlayer(), amt);
                 }
                 break;
-
             case TAKE:
                 for (PlayerTag player : players) {
                     eco.withdrawPlayer(player.getOfflinePlayer(), amt);
                 }
                 break;
-
             case SET:
                 for (PlayerTag player : players) {
                     double balance = eco.getBalance(player.getOfflinePlayer());
@@ -141,6 +134,7 @@ public class MoneyCommand extends AbstractCommand {
                         eco.withdrawPlayer(player.getOfflinePlayer(), balance - amt);
                     }
                 }
+                break;
         }
     }
 }

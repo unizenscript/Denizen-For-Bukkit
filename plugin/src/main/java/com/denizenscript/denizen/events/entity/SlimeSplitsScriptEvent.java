@@ -16,6 +16,8 @@ public class SlimeSplitsScriptEvent extends BukkitScriptEvent implements Listene
     //
     // @Regex ^on slime splits( into [^\s]+)?$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -41,7 +43,10 @@ public class SlimeSplitsScriptEvent extends BukkitScriptEvent implements Listene
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("slime splits");
+        if (!path.eventLower.startsWith("slime splits")) {
+            return false;
+        }
+        return true;
     }
 
     @Override

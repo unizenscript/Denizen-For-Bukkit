@@ -47,9 +47,6 @@ public abstract class Sidebar {
     }
 
     public final void setTitle(String title) {
-        if (title.length() > 32) {
-            title = title.substring(0, 32);
-        }
         if (this.title == null || !this.title.equals(title)) {
             this.title = title;
             setDisplayName(title);

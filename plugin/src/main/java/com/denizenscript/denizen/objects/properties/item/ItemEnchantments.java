@@ -1,7 +1,5 @@
 package com.denizenscript.denizen.objects.properties.item;
 
-import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.objects.ItemTag;
@@ -47,10 +45,7 @@ public class ItemEnchantments implements Property {
     }
 
     public static String getName(Enchantment enchantment) {
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            return enchantment.getKey().getKey();
-        }
-        return enchantment.getName();
+        return enchantment.getKey().getKey();
     }
 
     ItemTag item;
@@ -158,8 +153,8 @@ public class ItemEnchantments implements Property {
         if (item.getItemStack().getEnchantments().size() > 0) {
             return item.getItemStack().getEnchantments().entrySet();
         }
-        else if (item.getItemStack().hasItemMeta() && item.getItemStack().getItemMeta() instanceof EnchantmentStorageMeta) {
-            return ((EnchantmentStorageMeta) item.getItemStack().getItemMeta()).getStoredEnchants().entrySet();
+        else if (item.getItemMeta() instanceof EnchantmentStorageMeta) {
+            return ((EnchantmentStorageMeta) item.getItemMeta()).getStoredEnchants().entrySet();
         }
         return new HashSet<>();
     }
@@ -190,7 +185,7 @@ public class ItemEnchantments implements Property {
         // <--[mechanism]
         // @object ItemTag
         // @name remove_enchantments
-        // @input None
+        // @input ListTag
         // @description
         // Removes the specified enchantments from the item (as a list of enchantment names).
         // Give no value input to remove all enchantments.
@@ -208,20 +203,21 @@ public class ItemEnchantments implements Property {
                 }
             }
             if (item.getItemStack().getType() == Material.ENCHANTED_BOOK) {
-                EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemStack().getItemMeta();
+                EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemMeta();
                 for (Enchantment ench : new ArrayList<>(meta.getStoredEnchants().keySet())) {
                     if (names == null || names.contains(CoreUtilities.toLowerCase(ench.getName())) ||
                             names.contains(CoreUtilities.toLowerCase(getName(ench)))) {
                         meta.removeStoredEnchant(ench);
                     }
                 }
-                item.getItemStack().setItemMeta(meta);
+                item.setItemMeta(meta);
             }
             else {
                 for (Enchantment ench : new ArrayList<>(item.getItemStack().getEnchantments().keySet())) {
                     if (names == null || names.contains(CoreUtilities.toLowerCase(ench.getName())) ||
                             names.contains(CoreUtilities.toLowerCase(getName(ench)))) {
                         item.getItemStack().removeEnchantment(ench);
+                        item.meta = null;
                     }
                 }
             }
@@ -254,12 +250,13 @@ public class ItemEnchantments implements Property {
                             Enchantment ench = Utilities.getEnchantmentByName(data[0]);
                             if (ench != null) {
                                 if (item.getItemStack().getType() == Material.ENCHANTED_BOOK) {
-                                    EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemStack().getItemMeta();
+                                    EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemMeta();
                                     meta.addStoredEnchant(ench, Integer.valueOf(data[1]), true);
-                                    item.getItemStack().setItemMeta(meta);
+                                    item.setItemMeta(meta);
                                 }
                                 else {
                                     item.getItemStack().addUnsafeEnchantment(ench, Integer.valueOf(data[1]));
+                                    item.meta = null;
                                 }
                             }
                             else {

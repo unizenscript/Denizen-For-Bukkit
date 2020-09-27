@@ -10,16 +10,17 @@ import com.denizenscript.denizen.nms.v1_14.impl.blocks.BlockLightImpl;
 import com.denizenscript.denizen.nms.v1_14.impl.jnbt.CompoundTagImpl;
 import com.denizenscript.denizen.nms.v1_14.impl.network.handlers.DenizenPacketListenerImpl;
 import com.denizenscript.denizen.nms.util.jnbt.Tag;
+import com.denizenscript.denizen.utilities.FormattedTextHelper;
 import com.denizenscript.denizen.utilities.packets.DenizenPacketHandler;
 import com.google.common.collect.Iterables;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.denizenscript.denizen.nms.util.PlayerProfile;
-import com.denizenscript.denizen.nms.util.ReflectionHelper;
+import com.denizenscript.denizencore.utilities.ReflectionHelper;
 import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
-import dev.unizen.denizen.nms.v1_14.helpers.ArrowHelperImpl;
+import net.md_5.bungee.api.chat.HoverEvent;
 import net.minecraft.server.v1_14_R1.Entity;
 import net.minecraft.server.v1_14_R1.IInventory;
 import net.minecraft.server.v1_14_R1.INamableTileEntity;
@@ -216,5 +217,10 @@ public class Handler extends NMSHandler {
     @Override
     public BiomeNMS getBiomeNMS(Biome biome) {
         return new BiomeNMSImpl(biome);
+    }
+
+    @Override
+    public String stringForHover(HoverEvent hover) {
+        return FormattedTextHelper.stringify(hover.getValue());
     }
 }

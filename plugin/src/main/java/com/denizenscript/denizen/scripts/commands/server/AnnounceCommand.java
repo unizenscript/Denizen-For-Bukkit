@@ -22,6 +22,7 @@ public class AnnounceCommand extends AbstractCommand {
         setName("announce");
         setSyntax("announce [<text>] (to_ops/to_console/to_flagged:<flag_name>) (format:<name>)");
         setRequiredArguments(1, 3);
+        isProcedural = true;
     }
 
     // <--[command]
@@ -33,16 +34,15 @@ public class AnnounceCommand extends AbstractCommand {
     // @Group server
     //
     // @Description
-    // Announce sends a raw message to players. Simply using announce with text will send
-    // the message to all online players. Specifing the 'to_ops' argument will narrow down the players
-    // in which the message is sent to ops only. Alternatively, using the 'to_flagged' argument
-    // will send the message to players only if the specified flag does not equal true. You can also
-    // use the 'to_console' argument to make it so it only shows in the server console. Announce
-    // can also utilize a format script with the 'format' argument. See the format script-container
-    // for more information.
+    // Announce sends a raw message to players.
+    // Simply using announce with text will send the message to all online players using the Spigot broadcast system.
+    // Specifying the 'to_ops' argument will narrow down the players in which the message is sent to ops only.
+    // Alternatively, using the 'to_flagged' argument will send the message to only players that have the specified flag.
+    // You can also use the 'to_console' argument to make it so it only shows in the server console.
     //
-    // Note that the default announce mode (that shows for all players) relies on the Bukkit broadcast
-    // system, which requires the permission "bukkit.broadcast.user" to see broadcasts.
+    // Announce can also utilize a format script with the 'format' argument. See <@link language Format Script Containers>.
+    //    //
+    // Note that the default announce mode (that shows for all players) relies on the Spigot broadcast system, which requires the permission "bukkit.broadcast.user" to see broadcasts.
     //
     // @Tags
     // None
@@ -117,6 +117,9 @@ public class AnnounceCommand extends AbstractCommand {
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
+        if (scriptEntry.getResidingQueue().procedural) {
+            Debug.echoError("'Announce' should not be used in a procedure script. Consider the 'debug' command instead.");
+        }
         ElementTag text = scriptEntry.getElement("text");
         AnnounceType type = (AnnounceType) scriptEntry.getObject("type");
         FormatScriptContainer format = (FormatScriptContainer) scriptEntry.getObject("format");

@@ -169,6 +169,7 @@ public class Debug {
     public static boolean errorDuplicatePrevention = false;
 
     public static void echoError(ScriptQueue sourceQueue, String message, boolean reformat) {
+        message = cleanTextForDebugOutput(message);
         if (errorDuplicatePrevention) {
             finalOutputDebugText("Error within error (??!!!! REPORT THIS, SOMETHING WENT SUPER WRONG!): " + message, sourceQueue, reformat);
             return;
@@ -269,7 +270,7 @@ public class Debug {
     // @Events
     // server generates exception
     //
-    // @Regex ^on script generates exception$
+    // @Regex ^on server generates exception$
     //
     // @Triggers when an exception occurs on the server.
     // @Context

@@ -21,6 +21,8 @@ public class PlayerRightClicksEntityScriptEvent extends BukkitScriptEvent implem
     //
     // @Regex ^on player right clicks [^\s]+$
     //
+    // @Group Player
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     // @Switch with:<item> to only process the event when the player is holding a specified item.
     //
@@ -47,8 +49,7 @@ public class PlayerRightClicksEntityScriptEvent extends BukkitScriptEvent implem
         if (!path.eventLower.startsWith("player right clicks")) {
             return false;
         }
-        String clickedEntity = path.eventArgLowerAt(3);
-        if (clickedEntity.equals("fake") || clickedEntity.equals("block") || (MaterialTag.matches(clickedEntity) && !EntityTag.matches(clickedEntity))) {
+        if (!couldMatchEntity(path.eventArgLowerAt(3))) {
             return false;
         }
         return true;

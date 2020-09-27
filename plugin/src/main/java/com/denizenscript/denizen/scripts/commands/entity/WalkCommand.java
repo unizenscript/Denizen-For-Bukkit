@@ -33,6 +33,7 @@ public class WalkCommand extends AbstractCommand implements Holdable {
         if (Depends.citizens != null) {
             DenizenAPI.getCurrentInstance().getServer().getPluginManager().registerEvents(new WalkCommandCitizensEvents(), DenizenAPI.getCurrentInstance());
         }
+        isProcedural = false;
     }
 
     // <--[command]
@@ -96,9 +97,7 @@ public class WalkCommand extends AbstractCommand implements Holdable {
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-
         for (Argument arg : scriptEntry.getProcessedArgs()) {
-
             if (!scriptEntry.hasObject("lookat")
                     && arg.matchesPrefix("lookat")
                     && arg.matchesArgumentType(LocationTag.class)) {
@@ -134,11 +133,9 @@ public class WalkCommand extends AbstractCommand implements Holdable {
                 arg.reportUnhandled();
             }
         }
-
         if (!scriptEntry.hasObject("location") && !scriptEntry.hasObject("stop")) {
             throw new InvalidArgumentsException("Must specify a location!");
         }
-
         if (!scriptEntry.hasObject("entities")) {
             if (Utilities.getEntryNPC(scriptEntry) == null
                     || !Utilities.getEntryNPC(scriptEntry).isValid()
@@ -146,17 +143,14 @@ public class WalkCommand extends AbstractCommand implements Holdable {
                 throw new InvalidArgumentsException("Must have a valid spawned NPC attached.");
             }
             else {
-                scriptEntry.addObject("entities",
-                        Arrays.asList(Utilities.getEntryNPC(scriptEntry).getDenizenEntity()));
+                scriptEntry.addObject("entities", Arrays.asList(Utilities.getEntryNPC(scriptEntry).getDenizenEntity()));
             }
         }
-
         scriptEntry.defaultObject("stop", new ElementTag(false));
     }
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-
         LocationTag loc = scriptEntry.getObjectTag("location");
         ElementTag speed = scriptEntry.getElement("speed");
         ElementTag auto_range = scriptEntry.getElement("auto_range");
@@ -164,7 +158,6 @@ public class WalkCommand extends AbstractCommand implements Holdable {
         ElementTag stop = scriptEntry.getElement("stop");
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
         final LocationTag lookat = scriptEntry.getObjectTag("lookat");
-
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), (loc != null ? loc.debug() : "")
                     + (speed != null ? speed.debug() : "")
@@ -174,11 +167,7 @@ public class WalkCommand extends AbstractCommand implements Holdable {
                     + stop.debug()
                     + (ArgumentHelper.debugObj("entities", entities)));
         }
-
-        // Do the execution
-
         boolean shouldStop = stop.asBoolean();
-
         List<NPCTag> npcs = new ArrayList<>();
         final List<EntityTag> waitForEntities = new ArrayList<>();
         for (final EntityTag entity : entities) {
@@ -189,22 +178,17 @@ public class WalkCommand extends AbstractCommand implements Holdable {
                     Debug.echoError(scriptEntry.getResidingQueue(), "NPC " + npc.identify() + " is not spawned!");
                     continue;
                 }
-
                 if (shouldStop) {
                     npc.getNavigator().cancelNavigation();
                     continue;
                 }
-
-                if (auto_range != null
-                        && auto_range.asBoolean()) {
+                if (auto_range != null && auto_range.asBoolean()) {
                     double distance = npc.getLocation().distance(loc);
                     if (npc.getNavigator().getLocalParameters().range() < distance + 10) {
                         npc.getNavigator().getLocalParameters().range((float) distance + 10);
                     }
                 }
-
                 npc.getNavigator().setTarget(loc);
-
                 if (lookat != null) {
                     npc.getNavigator().getLocalParameters().lookAtFunction(new Function<Navigator, Location>() {
                         @Override
@@ -213,11 +197,9 @@ public class WalkCommand extends AbstractCommand implements Holdable {
                         }
                     });
                 }
-
                 if (speed != null) {
                     npc.getNavigator().getLocalParameters().speedModifier(speed.asFloat());
                 }
-
                 if (radius != null) {
                     npc.getNavigator().getLocalParameters().distanceMargin(radius.asDouble());
                     npc.getNavigator().getLocalParameters().pathDistanceMargin(radius.asDouble());
@@ -230,7 +212,7 @@ public class WalkCommand extends AbstractCommand implements Holdable {
             }
             else {
                 waitForEntities.add(entity);
-                NMSHandler.getEntityHelper().walkTo(entity.getBukkitEntity(), loc, speed != null ? speed.asDouble() : 0.2,
+                NMSHandler.getEntityHelper().walkTo(entity.getLivingEntity(), loc, speed != null ? speed.asDouble() : 0.2,
                         new Runnable() {
                             @Override
                             public void run() {
@@ -239,7 +221,6 @@ public class WalkCommand extends AbstractCommand implements Holdable {
                         });
             }
         }
-
         if (scriptEntry.shouldWaitFor()) {
             held.add(scriptEntry);
             if (!npcs.isEmpty()) {

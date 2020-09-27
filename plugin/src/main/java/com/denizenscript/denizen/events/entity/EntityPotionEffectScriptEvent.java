@@ -23,6 +23,8 @@ public class EntityPotionEffectScriptEvent extends BukkitScriptEvent implements 
     //
     // @Regex ^on [^\s]+ potion effects [^\s]+$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     // @Switch cause:<cause> to only process the event when it came from a specified cause.
     // @Switch effect:<effect type> to only process the event when a specified potion effect is applied.
@@ -36,8 +38,8 @@ public class EntityPotionEffectScriptEvent extends BukkitScriptEvent implements 
     // <context.cause> returns the cause of the effect change, based on <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/event/entity/EntityPotionEffectEvent.Cause.html>
     // <context.action> returns the action of the effect changed, which can be 'added', 'changed', 'cleared', or 'removed'
     // <context.override> returns whether the new potion effect will override the old.
-    // <context.new_effect> returns the new potion effect (in the same format as <@link tag EntityTag.list_effects>).
-    // <context.old_effect> returns the new potion effect (in the same format as <@link tag EntityTag.list_effects>).
+    // <context.new_effect> returns the new potion effect (in the same format as <@link tag EntityTag.list_effects>) (if any).
+    // <context.old_effect> returns the old potion effect (in the same format as <@link tag EntityTag.list_effects>) (if any).
     // <context.effect_type> returns the name of the modified potion effect type.
     //
     // @Determine
@@ -59,7 +61,17 @@ public class EntityPotionEffectScriptEvent extends BukkitScriptEvent implements 
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.contains(" potion effects ");
+        if (!path.eventLower.contains(" potion effects ")) {
+            return false;
+        }
+        String change = path.eventArgAt(3);
+        if (!change.equals("modified") && !couldMatchEnum(change, EntityPotionEffectEvent.Action.values())) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

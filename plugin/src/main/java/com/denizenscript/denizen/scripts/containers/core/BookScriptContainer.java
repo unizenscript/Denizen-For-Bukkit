@@ -3,7 +3,6 @@ package com.denizenscript.denizen.scripts.containers.core;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizen.utilities.FormattedTextHelper;
-import com.denizenscript.denizen.utilities.blocks.MaterialCompat;
 import com.denizenscript.denizencore.objects.core.ScriptTag;
 import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.tags.TagContext;
@@ -66,7 +65,7 @@ public class BookScriptContainer extends ScriptContainer {
             context = new BukkitTagContext(null, null, new ScriptTag(this));
         }
         // Get current ItemMeta from the book
-        BookMeta bookInfo = (BookMeta) book.getItemStack().getItemMeta();
+        BookMeta bookInfo = (BookMeta) book.getItemMeta();
         if (contains("title")) {
             String title = getString("title");
             title = TagManager.tag(title, context);
@@ -74,7 +73,7 @@ public class BookScriptContainer extends ScriptContainer {
         }
         if (contains("signed")) {
             if (getString("signed").equalsIgnoreCase("false")) {
-                book.getItemStack().setType(MaterialCompat.WRITABLE_BOOK);
+                book.getItemStack().setType(Material.WRITABLE_BOOK);
             }
         }
         if (contains("author")) {
@@ -89,7 +88,7 @@ public class BookScriptContainer extends ScriptContainer {
                 bookInfo.spigot().addPage(FormattedTextHelper.parse(page));
             }
         }
-        book.getItemStack().setItemMeta(bookInfo);
+        book.setItemMeta(bookInfo);
         return book;
     }
 }

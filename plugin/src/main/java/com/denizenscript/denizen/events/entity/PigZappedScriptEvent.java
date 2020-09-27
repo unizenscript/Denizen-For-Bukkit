@@ -16,6 +16,8 @@ public class PigZappedScriptEvent extends BukkitScriptEvent implements Listener 
     //
     // @Regex ^on pig zapped$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -41,7 +43,10 @@ public class PigZappedScriptEvent extends BukkitScriptEvent implements Listener 
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.equals("pig zapped");
+        if (!path.eventLower.equals("pig zapped")) {
+            return false;
+        }
+        return true;
     }
 
     @Override

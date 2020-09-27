@@ -73,9 +73,12 @@ public class PlayerClicksInInventoryScriptEvent extends BukkitScriptEvent implem
     // player clicks in inventory
     // player (<click type>) clicks (<item>) in <inventory>
     //
-    // @Regex ^on player( [^\s]+)? clicks [^\s]+( in [^\s]+)?$
+    // @Regex ^on player( [^\s]+)? clicks( [^\s]+)? in [^\s]+$
+    //
+    // @Group Player
     //
     // @Switch with:<item> to only process the event if a specified cursor item was used.
+    // @Switch in_area:<area> to only process the event if it occurred within a specified area.
     //
     // @Triggers when a player clicks in an inventory. Note that you likely will also want to listen to <@link event player drags in inventory>.
     //
@@ -84,7 +87,7 @@ public class PlayerClicksInInventoryScriptEvent extends BukkitScriptEvent implem
     // <context.inventory> returns the InventoryTag (the 'top' inventory, regardless of which slot was clicked).
     // <context.clicked_inventory> returns the InventoryTag that was clicked in.
     // <context.cursor_item> returns the item the Player is clicking with.
-    // <context.click> returns an ElementTag with the name of the click type. Click type list: <@link url http://bit.ly/2IjY198>
+    // <context.click> returns an ElementTag with the name of the click type. Click type list: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/event/inventory/ClickType.html>
     // <context.slot_type> returns an ElementTag with the name of the slot type that was clicked.
     // <context.slot> returns an ElementTag with the number of the slot that was clicked.
     // <context.raw_slot> returns an ElementTag with the raw number of the slot that was clicked.
@@ -118,11 +121,12 @@ public class PlayerClicksInInventoryScriptEvent extends BukkitScriptEvent implem
         if (!path.eventLower.startsWith("player")) {
             return false;
         }
-        if (!path.eventArgLowerAt(1).equals("clicks") && !path.eventArgLowerAt(2).equals("clicks")) {
+        boolean clickFirst = path.eventArgLowerAt(1).equals("clicks");
+        if (!clickFirst && !path.eventArgLowerAt(2).equals("clicks")) {
             return false;
         }
-        String clickedObj = path.eventArgLowerAt(3);
-        if (matchHelpList.contains(clickedObj)) {
+        String clickedOn = path.eventArgLowerAt(clickFirst ? 2 : 3);
+        if (matchHelpList.contains(clickedOn)) {
             return false;
         }
         int inIndex = -1;
@@ -163,6 +167,9 @@ public class PlayerClicksInInventoryScriptEvent extends BukkitScriptEvent implem
             return false;
         }
         if (!nonSwitchWithCheck(path, cursor)) {
+            return false;
+        }
+        if (!runInCheck(path, event.getWhoClicked().getLocation(), "in_area")) {
             return false;
         }
         return super.matches(path);

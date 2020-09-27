@@ -25,7 +25,9 @@ public class PlayerDragsInInvScriptEvent extends BukkitScriptEvent implements Li
     // player drags in inventory
     // player drags (<item>) (in <inventory>)
     //
-    // @Regex ^on player drags( ^[\s]+)?(in [^\s]+)?$
+    // @Regex ^on player drags( [^\s]+)?( in [^\s]+)?$
+    //
+    // @Group Player
     //
     // @Switch in_area:<area> to only process the event if it occurred within a specified area.
     //
@@ -63,7 +65,6 @@ public class PlayerDragsInInvScriptEvent extends BukkitScriptEvent implements Li
 
     @Override
     public boolean matches(ScriptPath path) {
-
         String arg2 = path.eventArgLowerAt(2);
         String arg3 = path.eventArgLowerAt(3);
         String arg4 = path.eventArgLowerAt(4);

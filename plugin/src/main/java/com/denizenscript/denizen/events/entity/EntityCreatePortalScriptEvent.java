@@ -22,6 +22,8 @@ public class EntityCreatePortalScriptEvent extends BukkitScriptEvent implements 
     //
     // @Regex ^on [^\s]+ creates portal$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -47,7 +49,13 @@ public class EntityCreatePortalScriptEvent extends BukkitScriptEvent implements 
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.contains("creates portal");
+        if (!path.eventLower.contains("creates portal")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

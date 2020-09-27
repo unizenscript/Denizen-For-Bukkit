@@ -24,6 +24,8 @@ public class EntityExplodesScriptEvent extends BukkitScriptEvent implements List
     //
     // @Regex ^on [^\s]+ explodes$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -53,7 +55,13 @@ public class EntityExplodesScriptEvent extends BukkitScriptEvent implements List
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("explodes");
+        if (!path.eventArgLowerAt(1).equals("explodes")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -86,7 +94,7 @@ public class EntityExplodesScriptEvent extends BukkitScriptEvent implements List
         if (ListTag.matches(determination)) {
             event.blockList().clear();
             for (String loc : ListTag.valueOf(determination, getTagContext(path))) {
-                LocationTag location = LocationTag.valueOf(loc);
+                LocationTag location = LocationTag.valueOf(loc, getTagContext(path));
                 if (location == null) {
                     Debug.echoError("Invalid location '" + loc + "' check [" + getName() + "]: '  for " + path.container.getName());
                 }

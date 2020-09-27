@@ -17,6 +17,8 @@ public class ExperienceBottleBreaksScriptEvent extends BukkitScriptEvent impleme
     //
     // @Regex ^on experience bottle breaks$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -43,7 +45,10 @@ public class ExperienceBottleBreaksScriptEvent extends BukkitScriptEvent impleme
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("experience bottle breaks");
+        if (!path.eventLower.startsWith("experience bottle breaks")) {
+            return false;
+        }
+        return true;
     }
 
     @Override

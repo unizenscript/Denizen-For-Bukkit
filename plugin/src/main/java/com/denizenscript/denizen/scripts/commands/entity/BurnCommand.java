@@ -11,7 +11,6 @@ import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class BurnCommand extends AbstractCommand {
@@ -20,6 +19,7 @@ public class BurnCommand extends AbstractCommand {
         setName("burn");
         setSyntax("burn [<entity>|...] (duration:<value>)");
         setRequiredArguments(1, 2);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -39,6 +39,7 @@ public class BurnCommand extends AbstractCommand {
     //
     // @Tags
     // <EntityTag.fire_time>
+    // <EntityTag.on_fire>
     //
     // @Usage
     // Use to set an entity on fire.
@@ -51,31 +52,21 @@ public class BurnCommand extends AbstractCommand {
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-
         for (Argument arg : scriptEntry.getProcessedArgs()) {
-
             if (!scriptEntry.hasObject("entities")
                     && arg.matchesArgumentList(EntityTag.class)) {
-
                 scriptEntry.addObject("entities", arg.asType(ListTag.class).filter(EntityTag.class, scriptEntry));
             }
             else if (!scriptEntry.hasObject("duration")
                     && arg.matchesArgumentType(DurationTag.class)) {
-
                 scriptEntry.addObject("duration", arg.asType(DurationTag.class));
             }
             else {
                 arg.reportUnhandled();
             }
         }
-
-        // Use the NPC or the Player as the default entity
-        scriptEntry.defaultObject("entities",
-                (Utilities.entryHasPlayer(scriptEntry) ? Arrays.asList(Utilities.getEntryPlayer(scriptEntry).getDenizenEntity()) : null),
-                (Utilities.entryHasNPC(scriptEntry) ? Arrays.asList(Utilities.getEntryNPC(scriptEntry).getDenizenEntity()) : null));
-
-        // Use default duration if one is not specified
-        scriptEntry.defaultObject("duration", DurationTag.valueOf("5s"));
+        scriptEntry.defaultObject("entities", Utilities.entryDefaultEntityList(scriptEntry, true));
+        scriptEntry.defaultObject("duration", new DurationTag(5));
     }
 
     @SuppressWarnings("unchecked")
@@ -83,13 +74,10 @@ public class BurnCommand extends AbstractCommand {
     public void execute(final ScriptEntry scriptEntry) {
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
         DurationTag duration = scriptEntry.getObjectTag("duration");
-
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), duration.debug() +
                     ArgumentHelper.debugObj("entities", entities.toString()));
         }
-
-        // Go through all the entities and set them on fire
         for (EntityTag entity : entities) {
             if (entity.isSpawned()) {
                 entity.getBukkitEntity().setFireTicks(duration.getTicksAsInt());

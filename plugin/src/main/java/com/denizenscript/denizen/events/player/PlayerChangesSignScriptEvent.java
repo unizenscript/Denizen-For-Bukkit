@@ -6,7 +6,6 @@ import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.tags.core.EscapeTagBase;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.event.EventHandler;
@@ -24,6 +23,8 @@ public class PlayerChangesSignScriptEvent extends BukkitScriptEvent implements L
     //
     // @Regex ^on player changes [^\s]+$
     //
+    // @Group Player
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -37,7 +38,7 @@ public class PlayerChangesSignScriptEvent extends BukkitScriptEvent implements L
     // <context.material> returns the MaterialTag of the sign.
     //
     // @Determine
-    // ListTag to change the lines (Uses escaping, see <@link language Property Escaping>)
+    // ListTag to change the lines.
     //
     // @Player Always.
     //
@@ -58,14 +59,17 @@ public class PlayerChangesSignScriptEvent extends BukkitScriptEvent implements L
             return false;
         }
         String sign = path.eventArgAt(2);
-        return (sign.equals("sign") || MaterialTag.matches(sign));
+        if  (!sign.equals("sign") && !couldMatchBlock(sign)) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean matches(ScriptPath path) {
 
         String mat = path.eventArgLowerAt(2);
-        if (!mat.equals("sign") && (!mat.equals(material.identifyNoIdentifier()) && !mat.equals(material.identifyFullNoIdentifier()))) {
+        if (!mat.equals("sign") && (!tryMaterial(material, mat))) {
             return false;
         }
 
@@ -87,7 +91,7 @@ public class PlayerChangesSignScriptEvent extends BukkitScriptEvent implements L
         if (determination.length() > 0 && !isDefaultDetermination(determinationObj)) {
             ListTag new_text = ListTag.valueOf(determination, getTagContext(path));
             for (int i = 0; i < 4 && i < new_text.size(); i++) {
-                event.setLine(i, EscapeTagBase.unEscape(new_text.get(i)));
+                event.setLine(i, new_text.get(i));
             }
             return true;
         }

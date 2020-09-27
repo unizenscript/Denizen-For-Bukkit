@@ -22,12 +22,14 @@ public class PlayerClicksBlockScriptEvent extends BukkitScriptEvent implements L
     // <--[event]
     // @Events
     // player clicks block
-    // player (right/left) clicks (<material>)
+    // player (right/left) clicks <material>
     // player (right/left) clicks block
     //
     // @Cancellable true
     //
     // @Regex ^on player ([^\s]+ )?clicks [^\s]+$
+    //
+    // @Group Player
     //
     // @Switch with:<item> to only process the event if a specified item was held.
     // @Switch using:hand/off_hand/either_hand to only process the event if the specified hand was used to click.
@@ -78,7 +80,7 @@ public class PlayerClicksBlockScriptEvent extends BukkitScriptEvent implements L
             Debug.echoError("Invalid USING hand in " + getName() + " for '" + path.event + "' in " + path.container.getName());
             return false;
         }
-        if (!using.equals("either_hand") && !using.equalsIgnoreCase(hand.identify())) {
+        if (!using.equals("either_hand") && !runGenericCheck(using, hand.identify())) {
             return false;
         }
         return true;
@@ -88,13 +90,28 @@ public class PlayerClicksBlockScriptEvent extends BukkitScriptEvent implements L
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return ((path.eventLower.startsWith("player clicks")
-                && !path.eventArgLowerAt(2).equals("fake"))
-                || (path.eventLower.startsWith("player left clicks")
-                || path.eventLower.startsWith("player right clicks")
-                && !matchHelpList.contains(path.eventArgLowerAt(3))
-                && !EntityTag.matches(path.eventArgLowerAt(3))))
-                && couldMatchInArea(path.eventLower);  // Avoid matching "clicks in inventory"
+        if (!path.eventArgLowerAt(0).equals("player")) {
+            return false;
+        }
+        boolean clickFirst = path.eventArgLowerAt(1).equals("clicks");
+        if (!clickFirst && !path.eventArgLowerAt(2).equals("clicks")) {
+            return false;
+        }
+        if (!clickFirst && !path.eventArgLowerAt(1).equals("right") && !path.eventArgLowerAt(1).equals("left")) {
+            return false;
+        }
+        String clickedOn = path.eventArgLowerAt(clickFirst ? 2 : 3);
+        if (matchHelpList.contains(clickedOn)) {
+            return false;
+        }
+        if (!clickedOn.isEmpty() && !couldMatchBlock(clickedOn)
+                && !clickedOn.equals("with") && !clickedOn.equals("in") && !clickedOn.equals("using")) { // Legacy format support
+            return false;
+        }
+        if (!couldMatchInArea(path.eventLower)) {
+            return false;
+        }
+        return true;
     }
 
     private static final HashSet<String> withHelpList = new HashSet<>(Arrays.asList("with", "using", "in"));

@@ -28,7 +28,7 @@ public class ChunkUnloadScriptEvent extends BukkitScriptEvent implements Listene
     // @Triggers when a chunk is unloaded
     //
     // @Context
-    // <context.chunk> returns the loading chunk.
+    // <context.chunk> returns the unloading chunk.
     //
     // -->
 
@@ -43,7 +43,10 @@ public class ChunkUnloadScriptEvent extends BukkitScriptEvent implements Listene
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("chunk unloads");
+        if (!path.eventLower.startsWith("chunk unloads")) {
+            return false;
+        }
+        return true;
     }
 
     @Override

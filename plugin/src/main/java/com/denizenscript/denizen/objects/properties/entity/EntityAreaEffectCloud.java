@@ -117,7 +117,6 @@ public class EntityAreaEffectCloud implements Property {
                 return new ElementTag(getHelper().getBPExtended())
                         .getObjectAttribute(attribute.fulfill(1));
             }
-
             return new ElementTag(getHelper().getBPName() + "," + getHelper().getBPUpgraded() + "," + getHelper().getBPExtended())
                     .getObjectAttribute(attribute);
         }
@@ -144,7 +143,6 @@ public class EntityAreaEffectCloud implements Property {
                 return new ColorTag(getHelper().getColor())
                         .getObjectAttribute(attribute.fulfill(1));
             }
-
             return new ElementTag(getHelper().getParticle())
                     .getObjectAttribute(attribute);
         }
@@ -172,7 +170,6 @@ public class EntityAreaEffectCloud implements Property {
                 return new DurationTag(getHelper().getDurationOnUse())
                         .getObjectAttribute(attribute.fulfill(1));
             }
-
             return new DurationTag(getHelper().getDuration())
                     .getObjectAttribute(attribute);
         }
@@ -213,7 +210,6 @@ public class EntityAreaEffectCloud implements Property {
                 return new ElementTag(getHelper().getRadiusPerTick())
                         .getObjectAttribute(attribute.fulfill(1));
             }
-
             return new ElementTag(getHelper().getRadius())
                     .getObjectAttribute(attribute);
         }
@@ -247,7 +243,7 @@ public class EntityAreaEffectCloud implements Property {
         }
 
         // <--[tag]
-        // @attribute <EntityTag.has_custom_effect[<effect>]>
+        // @attribute <EntityTag.has_custom_effect[(<effect>)]>
         // @returns ElementTag(Boolean)
         // @mechanism EntityTag.custom_effects
         // @group properties
@@ -256,7 +252,6 @@ public class EntityAreaEffectCloud implements Property {
         // If no effect is specified, returns whether it has any custom effect.
         // -->
         if (attribute.startsWith("has_custom_effect")) {
-
             if (attribute.hasContext(1)) {
                 PotionEffectType effectType = PotionEffectType.getByName(attribute.getContext(1));
                 for (PotionEffect effect : getHelper().getCustomEffects()) {
@@ -266,7 +261,6 @@ public class EntityAreaEffectCloud implements Property {
                 }
                 return new ElementTag(false).getObjectAttribute(attribute.fulfill(1));
             }
-
             return new ElementTag(getHelper().hasCustomEffects())
                     .getObjectAttribute(attribute.fulfill(1));
         }
@@ -298,7 +292,6 @@ public class EntityAreaEffectCloud implements Property {
         // -->
         if (attribute.startsWith("custom_effects")) {
             List<PotionEffect> effects = getHelper().getCustomEffects();
-
             if (!attribute.hasContext(1)) {
                 ListTag list = new ListTag();
                 for (PotionEffect effect : effects) {
@@ -310,12 +303,10 @@ public class EntityAreaEffectCloud implements Property {
                 }
                 return list.getObjectAttribute(attribute.fulfill(1));
             }
-
             int val = attribute.getIntContext(1) - 1;
             if (val < 0 || val >= effects.size()) {
                 return null;
             }
-
             attribute = attribute.fulfill(1);
             PotionEffect effect = effects.get(val);
 
@@ -412,7 +403,7 @@ public class EntityAreaEffectCloud implements Property {
         // <--[mechanism]
         // @object EntityTag
         // @name remove_custom_effect
-        // @input Element
+        // @input ElementTag
         // @description
         // Removes the specified custom effect from the Area Effect Cloud
         // @tags
@@ -444,7 +435,7 @@ public class EntityAreaEffectCloud implements Property {
                 if (potionData.size() >= 3) {
                     PotionEffectType type = PotionEffectType.getByName(potionData.get(0));
                     ElementTag amplifier = new ElementTag(potionData.get(1));
-                    DurationTag duration = DurationTag.valueOf(potionData.get(2));
+                    DurationTag duration = DurationTag.valueOf(potionData.get(2), mechanism.context);
                     ElementTag ambient = new ElementTag((potionData.size() > 3) ? potionData.get(3) : "false");
                     ElementTag particles = new ElementTag((potionData.size() > 4) ? potionData.get(4) : "true");
 
@@ -473,13 +464,13 @@ public class EntityAreaEffectCloud implements Property {
         // <EntityTag.particle.color>
         // -->
         if (mechanism.matches("particle_color") && mechanism.requireObject(ColorTag.class)) {
-            getHelper().setColor(ColorTag.valueOf(mechanism.getValue().asString()).getColor());
+            getHelper().setColor(mechanism.valueAsType(ColorTag.class).getColor());
         }
 
         // <--[mechanism]
         // @object EntityTag
         // @name base_potion
-        // @input Element
+        // @input ElementTag
         // @description
         // Sets the Area Effect Cloud's base potion.
         // In the form: Type,Upgraded,Extended
@@ -489,7 +480,7 @@ public class EntityAreaEffectCloud implements Property {
         // <EntityTag.base_potion.type>
         // <EntityTag.base_potion.is_upgraded>
         // <EntityTag.base_potion.is_extended>
-        // <server.list_potion_types>
+        // <server.potion_types>
         // -->
         if (mechanism.matches("base_potion")) {
             List<String> data = CoreUtilities.split(mechanism.getValue().asString().toUpperCase(), ',');
@@ -499,8 +490,8 @@ public class EntityAreaEffectCloud implements Property {
             else {
                 try {
                     PotionType type = PotionType.valueOf(data.get(0));
-                    boolean extended = type.isExtendable() && CoreUtilities.toLowerCase(data.get(1)).equals("true");
-                    boolean upgraded = type.isUpgradeable() && CoreUtilities.toLowerCase(data.get(2)).equals("true");
+                    boolean extended = type.isExtendable() && CoreUtilities.equalsIgnoreCase(data.get(1), "true");
+                    boolean upgraded = type.isUpgradeable() && CoreUtilities.equalsIgnoreCase(data.get(2), "true");
                     if (extended && upgraded) {
                         Debug.echoError("Potion cannot be both upgraded and extended");
                     }
@@ -524,7 +515,7 @@ public class EntityAreaEffectCloud implements Property {
         // <EntityTag.duration>
         // -->
         if (mechanism.matches("duration") && mechanism.requireObject(DurationTag.class)) {
-            getHelper().setDuration(DurationTag.valueOf(mechanism.getValue().asString()).getTicksAsInt());
+            getHelper().setDuration(mechanism.valueAsType(DurationTag.class).getTicksAsInt());
         }
 
         // <--[mechanism]
@@ -538,13 +529,13 @@ public class EntityAreaEffectCloud implements Property {
         // <EntityTag.duration.on_use>
         // -->
         if (mechanism.matches("duration_on_use") && mechanism.requireObject(DurationTag.class)) {
-            getHelper().setDurationOnUse(DurationTag.valueOf(mechanism.getValue().asString()).getTicksAsInt());
+            getHelper().setDurationOnUse(mechanism.valueAsType(DurationTag.class).getTicksAsInt());
         }
 
         // <--[mechanism]
         // @object EntityTag
         // @name particle
-        // @input Element
+        // @input ElementTag
         // @description
         // Sets the particle of the Area Effect Cloud
         // @tags
@@ -606,7 +597,7 @@ public class EntityAreaEffectCloud implements Property {
         // <EntityTag.reapplication_delay>
         // -->
         if (mechanism.matches("reapplication_delay") && mechanism.requireObject(DurationTag.class)) {
-            getHelper().setReappDelay(DurationTag.valueOf(mechanism.getValue().asString()).getTicksAsInt());
+            getHelper().setReappDelay(mechanism.valueAsType(DurationTag.class).getTicksAsInt());
         }
 
         // <--[mechanism]
@@ -619,7 +610,7 @@ public class EntityAreaEffectCloud implements Property {
         // <EntityTag.source>
         // -->
         if (mechanism.matches("source") && mechanism.requireObject(EntityTag.class)) {
-            getHelper().setSource((ProjectileSource) EntityTag.valueOf(mechanism.getValue().asString()).getBukkitEntity());
+            getHelper().setSource((ProjectileSource) mechanism.valueAsType(EntityTag.class).getBukkitEntity());
         }
 
         // <--[mechanism]
@@ -633,7 +624,7 @@ public class EntityAreaEffectCloud implements Property {
         // <EntityTag.wait_time>
         // -->
         if (mechanism.matches("wait_time") && mechanism.requireObject(DurationTag.class)) {
-            getHelper().setWaitTime(DurationTag.valueOf(mechanism.getValue().asString()).getTicksAsInt());
+            getHelper().setWaitTime(mechanism.valueAsType(DurationTag.class).getTicksAsInt());
         }
     }
 }

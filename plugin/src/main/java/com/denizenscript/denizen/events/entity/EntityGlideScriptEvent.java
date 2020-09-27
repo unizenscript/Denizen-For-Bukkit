@@ -17,8 +17,11 @@ public class EntityGlideScriptEvent extends BukkitScriptEvent implements Listene
     // entity toggles gliding
     // entity starts gliding
     // entity stops gliding
+    // <entity> (starts/stops/toggles) gliding
     //
-    // @Regex ^on player (toggles|starts|stops) gliding$
+    // @Regex ^on [^\s]+ (toggles|starts|stops) gliding$
+    //
+    // @Group Entity
     //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
@@ -46,7 +49,17 @@ public class EntityGlideScriptEvent extends BukkitScriptEvent implements Listene
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(2).equals("gliding");
+        if (!path.eventArgLowerAt(2).equals("gliding")) {
+            return false;
+        }
+        String cmd = path.eventArgLowerAt(1);
+        if (!cmd.equals("starts") && !cmd.equals("stops") && !cmd.equals("toggles")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

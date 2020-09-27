@@ -14,6 +14,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 
+import java.util.Arrays;
+import java.util.HashSet;
+
 public class PlayerBreaksBlockScriptEvent extends BukkitScriptEvent implements Listener {
 
     // <--[event]
@@ -22,6 +25,8 @@ public class PlayerBreaksBlockScriptEvent extends BukkitScriptEvent implements L
     // player breaks <material>
     //
     // @Regex ^on player breaks [^\s]+$
+    //
+    // @Group Player
     //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     // @Switch with:<item> to only process the event when the player is breaking the block with a specified item.
@@ -53,12 +58,20 @@ public class PlayerBreaksBlockScriptEvent extends BukkitScriptEvent implements L
     public MaterialTag material;
     public BlockBreakEvent event;
 
+    public static HashSet<String> notRelevantBreakables = new HashSet<>(Arrays.asList("item", "held", "hanging", "painting", "item_frame", "leash_hitch"));
+
     @Override
     public boolean couldMatch(ScriptPath path) {
-        if (path.eventArgLowerAt(2).equals("item") || path.eventArgLowerAt(3).equals("held")) {
+        if (!path.eventLower.startsWith("player breaks")) {
             return false;
         }
-        return path.eventLower.startsWith("player breaks");
+        if (notRelevantBreakables.contains(path.eventArgLowerAt(2))) {
+            return false;
+        }
+        if (!couldMatchBlock(path.eventArgLowerAt(2))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

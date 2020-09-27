@@ -18,6 +18,8 @@ public class EntityUnleashedScriptEvent extends BukkitScriptEvent implements Lis
     //
     // @Regex ^on [^\s]+ unleashed( because [^\s]+)?$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Triggers when an entity is unleashed.
@@ -42,7 +44,13 @@ public class EntityUnleashedScriptEvent extends BukkitScriptEvent implements Lis
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("unleashed");
+        if (!path.eventArgLowerAt(1).equals("unleashed")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

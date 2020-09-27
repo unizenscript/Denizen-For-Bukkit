@@ -33,6 +33,8 @@ public class EntityDeathScriptEvent extends BukkitScriptEvent implements Listene
     //
     // @Regex ^on [^\s]+ (death|dies)$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     // @Switch by:<entity type> to only process the event if the killer is of a specified entity type.
     // @Switch cause:<cause> to only process the event if it was caused by a specific damage cause.
@@ -79,29 +81,30 @@ public class EntityDeathScriptEvent extends BukkitScriptEvent implements Listene
     @Override
     public boolean couldMatch(ScriptPath path) {
         String cmd = path.eventArgLowerAt(1);
-        return cmd.equals("dies") || cmd.equals("death");
+        if (!cmd.equals("dies") && !cmd.equals("death")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean matches(ScriptPath path) {
         String target = path.eventArgLowerAt(0);
-
         if (!tryEntity(entity, target)) {
             return false;
         }
-
         if (!runInCheck(path, entity.getLocation())) {
             return false;
         }
-
         if (path.switches.containsKey("by") && (damager == null || !tryEntity(damager, path.switches.get("by")))) {
             return false;
         }
-
         if (!runGenericSwitchCheck(path, "cause", cause == null ? null : cause.asString())) {
             return false;
         }
-
         return super.matches(path);
     }
 

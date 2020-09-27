@@ -1,13 +1,10 @@
 package com.denizenscript.denizen.objects;
 
 import com.denizenscript.denizen.objects.properties.material.*;
-import com.denizenscript.denizen.utilities.blocks.OldMaterialsHelper;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.utilities.blocks.ModernBlockData;
-import com.denizenscript.denizen.nms.interfaces.BlockData;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -17,15 +14,10 @@ import com.denizenscript.denizencore.tags.ObjectTagProcessor;
 import com.denizenscript.denizencore.tags.TagContext;
 import com.denizenscript.denizencore.tags.TagRunnable;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
-import com.denizenscript.denizencore.utilities.Deprecations;
-import dev.unizen.denizen.objects.properties.material.*;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.inventory.meta.BlockStateMeta;
-import org.bukkit.material.MaterialData;
 
 import java.util.List;
 
@@ -44,30 +36,9 @@ public class MaterialTag implements ObjectTag, Adjustable {
     // Block materials may sometimes also contain property data,
     // for specific values on the block material such as the growth stage of a plant or the orientation of a stair block.
     //
+    // Material types: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Material.html>.
+    //
     // -->
-
-    /**
-     * Legacy MaterialTag identities.
-     */
-    private String forcedIdentity = null,
-            forcedIdentityLow = null;
-
-    /**
-     * Legacy MaterialTag identities. Do not use.
-     */
-    public MaterialTag forceIdentifyAs(String string) {
-        forcedIdentity = string;
-        forcedIdentityLow = CoreUtilities.toLowerCase(string);
-        return this;
-    }
-
-    //////////////////
-    //    OBJECT FETCHER
-    ////////////////
-
-    public static MaterialTag valueOf(String string) {
-        return valueOf(string, null);
-    }
 
     /**
      * Gets a Material Object from a string form.
@@ -77,108 +48,27 @@ public class MaterialTag implements ObjectTag, Adjustable {
      */
     @Fetchable("m")
     public static MaterialTag valueOf(String string, TagContext context) {
-
-        ///////
-        // Handle objects with properties through the object fetcher
         if (ObjectFetcher.isObjectWithProperties(string)) {
-            return ObjectFetcher.getObjectFrom(MaterialTag.class, string, context);
+            return ObjectFetcher.getObjectFromWithProperties(MaterialTag.class, string, context);
         }
-
         string = string.toUpperCase();
         if (string.startsWith("M@")) {
             string = string.substring("M@".length());
         }
         if (string.equals("RANDOM")) {
-            return OldMaterialsHelper.getMaterialFrom(Material.values()[CoreUtilities.getRandom().nextInt(Material.values().length)]);
-        }
-        int index = string.indexOf(',');
-        if (index < 0) {
-            index = string.indexOf(':');
-        }
-        int data = 0;
-        if (index >= 0) {
-            String dataStr = string.substring(index + 1);
-            if (ArgumentHelper.matchesInteger(dataStr)) {
-                data = Integer.parseInt(dataStr);
-                string = string.substring(0, index);
-            }
+            return new MaterialTag(Material.values()[CoreUtilities.getRandom().nextInt(Material.values().length)]);
         }
         Material m = Material.getMaterial(string);
-        if (m == null && NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            m = Material.getMaterial(string, true);
-            if (m != null) {
-                m = Bukkit.getUnsafe().fromLegacy(m);
-                if (context == null || context.debug) {
-                    Debug.log("'" + string + "' is a legacy (pre-1.13) material name. It is now '" + m.name() + "'.");
-                }
-            }
-        }
         if (m != null) {
-            if (index >= 0) {
-                if (context != noDebugContext && NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-                    Deprecations.materialIdsSuggestProperties.warn(context);
-                }
-            }
-            else if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-                return new MaterialTag(m);
-            }
-            return OldMaterialsHelper.getMaterialFrom(m, data);
-        }
-        if (OldMaterialsHelper.all_dMaterials != null) {
-            MaterialTag mat = OldMaterialsHelper.all_dMaterials.get(string);
-            if (mat != null) {
-                if (index >= 0 && context != noDebugContext && NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-                    Deprecations.materialIdsSuggestProperties.warn(context);
-                }
-                if (data == 0) {
-                    if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-                        return new MaterialTag(mat.material);
-                    }
-                    return mat;
-                }
-                return OldMaterialsHelper.getMaterialFrom(mat.material, data);
-            }
-        }
-        if (ArgumentHelper.matchesInteger(string)) {
-            int matid = Integer.parseInt(string);
-            if (matid != 0) {
-                // It's always an error (except in the 'matches' call) to use a material ID number instead of a name.
-                if (context != noDebugContext) {
-                    Deprecations.materialIdsSuggestNames.warn(context);
-                }
-                m = OldMaterialsHelper.getLegacyMaterial(matid);
-                if (m != null) {
-                    return OldMaterialsHelper.getMaterialFrom(m, data);
-                }
-            }
+            return new MaterialTag(m);
         }
         return null;
     }
 
     public static MaterialTag quickOfNamed(String string) {
-        string = string.toUpperCase();
-        int index = string.indexOf(',');
-        if (index < 0) {
-            index = string.indexOf(':');
-        }
-        int data = 0;
-        if (index >= 0) {
-            String dataStr = string.substring(index + 1);
-            if (ArgumentHelper.matchesInteger(dataStr)) {
-                data = Integer.parseInt(dataStr);
-                string = string.substring(0, index);
-            }
-        }
-        Material m = Material.getMaterial(string);
+        Material m = Material.getMaterial(string.toUpperCase());
         if (m != null) {
-            return OldMaterialsHelper.getMaterialFrom(m, data);
-        }
-        MaterialTag mat = OldMaterialsHelper.all_dMaterials.get(string);
-        if (mat != null) {
-            if (data == 0) {
-                return mat;
-            }
-            return OldMaterialsHelper.getMaterialFrom(mat.material, data);
+            return new MaterialTag(m);
         }
         return null;
     }
@@ -215,77 +105,33 @@ public class MaterialTag implements ObjectTag, Adjustable {
     @Override
     public boolean equals(Object object) {
         if (object instanceof MaterialTag) {
-            return getMaterial() == ((MaterialTag) object).getMaterial()
-                    && getData((byte) 0) == ((MaterialTag) object).getData((byte) 0);
+            return getMaterial() == ((MaterialTag) object).getMaterial();
         }
         else {
-            MaterialTag parsed = valueOf(object.toString());
+            MaterialTag parsed = valueOf(object.toString(), CoreUtilities.noDebugContext);
             return equals(parsed);
         }
     }
 
     public boolean matchesBlock(Block b) {
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            return getMaterial() == b.getType();
-        }
-        return matchesMaterialData(b.getType().getNewData(b.getData()));
+        return getMaterial() == b.getType();
     }
 
-    ///////////////
-    //   Constructors
-    /////////////
-
-    /**
-     * Legacy material format. Do not use.
-     */
-    public MaterialTag(Material material, int data) {
+    public MaterialTag(Material material) {
         this.material = material;
-        if (data < 0) {
-            this.data = null;
-        }
-        else {
-            this.data = (byte) data;
-        }
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)
-                && material.isBlock()) {
+        if (material.isBlock()) {
             modernData = new ModernBlockData(material);
         }
     }
 
-    public MaterialTag(Material material) {
-        this(material, 0);
-    }
-
     public MaterialTag(BlockState state) {
         this.material = state.getType();
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            this.modernData = new ModernBlockData(state);
-        }
-        else {
-            this.data = state.getRawData();
-        }
-    }
-
-    public MaterialTag(BlockData block) {
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            this.modernData = block.modern();
-            this.material = modernData.getMaterial();
-        }
-        else {
-            this.material = block.getMaterial();
-            this.data = block.getData();
-        }
+        this.modernData = new ModernBlockData(state);
     }
 
     public MaterialTag(Block block) {
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            this.modernData = new ModernBlockData(block);
-            this.material = modernData.getMaterial();
-        }
-        else {
-            this.material = block.getType();
-            this.data = block.getData();
-        }
+        this.modernData = new ModernBlockData(block);
+        this.material = modernData.getMaterial();
     }
 
     public MaterialTag(ModernBlockData data) {
@@ -293,12 +139,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         this.material = data.getMaterial();
     }
 
-    /////////////////////
-    //   INSTANCE FIELDS/METHODS
-    /////////////////
-
     private Material material;
-    private Byte data = 0;
     private ModernBlockData modernData;
 
     public boolean hasModernData() {
@@ -306,10 +147,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
     }
 
     public ModernBlockData getModernData() {
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            return modernData;
-        }
-        throw new IllegalStateException("Modern block data handler is not available prior to MC 1.13.");
+        return modernData;
     }
 
     public void setModernData(ModernBlockData data) {
@@ -320,64 +158,13 @@ public class MaterialTag implements ObjectTag, Adjustable {
         return material;
     }
 
-    public BlockData getNmsBlockData() {
-        if (modernData != null) {
-            return NMSHandler.getBlockHelper().getBlockData(modernData);
-        }
-        return NMSHandler.getBlockHelper().getBlockData(getMaterial(), getData((byte) 0));
-    }
-
     public String name() {
         return material.name();
     }
 
-    public byte getData(byte fallback) {
-        if (data == null) {
-            return fallback;
-        }
-        else {
-            return data;
-        }
-    }
-
-    public Byte getData() {
-        return data;
-    }
-
-    public boolean hasData() {
-        return data != null;
-    }
-
-    public boolean matchesMaterialData(MaterialData data) {
-        // If this material has data, check datas
-        if (hasData()) {
-            return (material == data.getItemType() && this.data == data.getData());
-        }
-
-        // Else, return matched itemType/materialType
-        else {
-            return material == data.getItemType();
-        }
-    }
-
-    public MaterialData getMaterialData() {
-        return new MaterialData(material, data != null ? data : 0);
-    }
-
     public boolean isStructure() {
-        if (material == Material.CHORUS_PLANT) {
+        if (material == Material.CHORUS_PLANT || material == Material.RED_MUSHROOM_BLOCK || material == Material.BROWN_MUSHROOM_BLOCK) {
             return true;
-        }
-        else if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)
-                && (material == Material.RED_MUSHROOM_BLOCK || material == Material.BROWN_MUSHROOM_BLOCK)) {
-            return true;
-        }
-        else if (NMSHandler.getVersion().isAtMost(NMSVersion.v1_12)) {
-            if (material == Material.RED_MUSHROOM || material == Material.BROWN_MUSHROOM) {
-                return true;
-            }
-            String name = material.name();
-            return name.equals("SAPLING") || name.equals("HUGE_MUSHROOM_1") || name.equals("HUGE_MUSHROOM_2");
         }
         return false;
     }
@@ -404,50 +191,21 @@ public class MaterialTag implements ObjectTag, Adjustable {
         return "m@" + identifyNoIdentifier();
     }
 
-    public String identifyFull() {
-        return "m@" + identifyFullNoIdentifier();
-    }
-
     @Override
     public String identifySimple() {
         return "m@" + identifySimpleNoIdentifier();
     }
 
     public String identifyNoPropertiesNoIdentifier() {
-        if (forcedIdentity != null) {
-            return forcedIdentityLow;
-        }
-        if (NMSHandler.getVersion().isAtMost(NMSVersion.v1_12) && getData() != null && getData() > 0) {
-            return CoreUtilities.toLowerCase(material.name()) + "," + getData();
-        }
         return CoreUtilities.toLowerCase(material.name());
     }
 
     public String identifyNoIdentifier() {
-        if (forcedIdentity != null) {
-            return forcedIdentityLow;
-        }
-        if (NMSHandler.getVersion().isAtMost(NMSVersion.v1_12) && getData() != null && getData() > 0) {
-            return CoreUtilities.toLowerCase(material.name()) + "," + getData();
-        }
         return CoreUtilities.toLowerCase(material.name()) + PropertyParser.getPropertiesString(this);
     }
 
     public String identifySimpleNoIdentifier() {
-        if (forcedIdentity != null) {
-            return forcedIdentityLow;
-        }
         return CoreUtilities.toLowerCase(material.name());
-    }
-
-    public String identifyFullNoIdentifier() {
-        if (forcedIdentity != null) {
-            return forcedIdentityLow + (getData() != null ? "," + getData() : "");
-        }
-        if (NMSHandler.getVersion().isAtMost(NMSVersion.v1_12) && getData() != null && getData() > 0) {
-            return CoreUtilities.toLowerCase(material.name()) + "," + getData();
-        }
-        return CoreUtilities.toLowerCase(material.name()) + PropertyParser.getPropertiesString(this);
     }
 
     @Override
@@ -456,9 +214,6 @@ public class MaterialTag implements ObjectTag, Adjustable {
     }
 
     public String realName() {
-        if (forcedIdentity != null) {
-            return forcedIdentityLow;
-        }
         return CoreUtilities.toLowerCase(material.name());
     }
 
@@ -471,18 +226,6 @@ public class MaterialTag implements ObjectTag, Adjustable {
     }
 
     public static void registerTags() {
-
-        registerTag("id", (attribute, object) -> {
-            Deprecations.materialIdsSuggestNames.warn(attribute.getScriptEntry());
-            return new ElementTag(object.material.getId());
-        });
-
-        registerTag("data", (attribute, object) -> {
-            if (attribute.context == null || attribute.context.debug) {
-                Deprecations.materialIdsSuggestProperties.warn(attribute.getScriptEntry());
-            }
-            return new ElementTag(object.getData());
-        });
 
         // <--[tag]
         // @attribute <MaterialTag.is_ageable>
@@ -910,23 +653,11 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // <--[tag]
         // @attribute <MaterialTag.max_stack_size>
         // @returns ElementTag(Number)
+        // @mechanism MaterialTag.max_stack_size
         // @description
         // Returns the maximum amount of this material that can be held in a stack.
         // -->
         registerTag("max_stack_size", (attribute, object) -> new ElementTag(object.material.getMaxStackSize()));
-
-        // <--[tag]
-        // @attribute <MaterialTag.is_made_of[<material>]>
-        // @returns ElementTag(Boolean)
-        // @description
-        // Returns true if the material is a variety of the specified material.
-        // Example: <m@red_wool.is_made_of[m@wool]> will return true.
-        // Invalid for 1.13+ servers.
-        // -->
-        registerTag("is_made_of", (attribute, object) -> {
-            MaterialTag compared = MaterialTag.valueOf(attribute.getContext(1));
-            return new ElementTag(compared != null && object.material == compared.getMaterial());
-        });
 
         // <--[tag]
         // @attribute <MaterialTag.bukkit_enum>
@@ -943,10 +674,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @returns ElementTag
         // @description
         // Returns the localized name of the material.
-        // Note that this is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
-        // This instead generates the special modern Minecraft JSON codes for translatable text through the Denizen message processor.
-        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
-        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
+        // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
         // -->
         registerTag("translated_name", (attribute, object) -> {
             String key = object.material.getKey().getKey();
@@ -961,25 +689,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @description
         // Returns the name of the material.
         // -->
-        registerTag("name", (attribute, object) ->
-                new ElementTag(object.forcedIdentity != null ? object.forcedIdentityLow :
-                CoreUtilities.toLowerCase(object.material.name())));
-
-        // <--[tag]
-        // @attribute <MaterialTag.full>
-        // @returns ElementTag
-        // @description
-        // Returns the material's full identification.
-        // Irrelevant on modern (1.13+) servers.
-        // -->
-        registerTag("full", (attribute, object) -> {
-            if (object.hasData()) {
-                return new ElementTag(object.identifyFull());
-            }
-            else {
-                return new ElementTag(object.identify());
-            }
-        });
+        registerTag("name", (attribute, object) -> new ElementTag(CoreUtilities.toLowerCase(object.material.name())));
 
         // <--[tag]
         // @attribute <MaterialTag.item>
@@ -989,10 +699,8 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // -->
         registerTag("item", (attribute, object) -> {
             ItemTag item = new ItemTag(object, 1);
-            if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-                if (item.getItemStack().hasItemMeta() && item.getItemStack().getItemMeta() instanceof BlockStateMeta) {
-                    ((BlockStateMeta) item.getItemStack().getItemMeta()).setBlockState(object.modernData.getBlockState());
-                }
+            if (item.getItemMeta() instanceof BlockStateMeta) {
+                ((BlockStateMeta) item.getItemMeta()).setBlockState(object.modernData.getBlockState());
             }
             return item;
         });
@@ -1029,10 +737,28 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // @attribute <MaterialTag.type>
         // @returns ElementTag
         // @description
-        // Always returns 'Material' for MaterialTag objects. All objects fetchable by the Object Fetcher will return the
-        // type of object that is fulfilling this attribute.
+        // Always returns 'Location' for LocationTag objects.
+        // All objects fetchable by the Object Fetcher will return the type of object that is fulfilling this attribute.
         // -->
         registerTag("type", (attribute, object) -> new ElementTag("Material"));
+
+        // <--[tag]
+        // @attribute <MaterialTag.has_vanilla_data_tag[<data_tag_name>]>
+        // @returns ElementTag(Boolean)
+        // @description
+        // Returns whether this material has the specified Minecraft vanilla Data Pack Tag.
+        // See <@link url https://minecraft.gamepedia.com/Tag>.
+        // -->
+        registerTag("has_vanilla_data_tag", (attribute, object) -> {
+            if (!attribute.hasContext(1)) {
+                attribute.echoError("MaterialTag.has_vanilla_data_tag[...] tag must have an input value.");
+                return null;
+            }
+            NamespacedKey key = NamespacedKey.minecraft(CoreUtilities.toLowerCase(attribute.getContext(1)));
+            Tag<Material> tagBlock = Bukkit.getTag("blocks", key, Material.class);
+            Tag<Material> tagItem = Bukkit.getTag("items", key, Material.class);
+            return new ElementTag((tagBlock != null && tagBlock.isTagged(object.getMaterial()) || (tagItem != null && tagItem.isTagged(object.getMaterial()))));
+        });
 
         // <--[tag]
         // @attribute <MaterialTag.with[<mechanism>=<value>;...]>
@@ -1043,7 +769,8 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // -->
         registerTag("with", (attribute, object) -> {
             if (!attribute.hasContext(1)) {
-                Debug.echoError("MaterialTag.with[...] tag must have an input mechanism list.");
+                attribute.echoError("MaterialTag.with[...] tag must have an input mechanism list.");
+                return null;
             }
             MaterialTag mat = new MaterialTag(object.getModernData().clone());
             List<String> properties = ObjectFetcher.separateProperties("[" + attribute.getContext(1) + "]");
@@ -1057,6 +784,17 @@ public class MaterialTag implements ObjectTag, Adjustable {
                 }
             }
             return mat;
+        });
+
+        // <--[tag]
+        // @attribute <MaterialTag.property_map>
+        // @returns MapTag
+        // @group properties
+        // @description
+        // Returns the material's property map.
+        // -->
+        registerTag("property_map", (attribute, object) -> {
+            return PropertyParser.getPropertiesMap(object);
         });
     }
 
@@ -1078,6 +816,21 @@ public class MaterialTag implements ObjectTag, Adjustable {
 
     @Override
     public void adjust(Mechanism mechanism) {
+
+        // <--[mechanism]
+        // @object MaterialTag
+        // @name max_stack_size
+        // @input ElementTag(Number)
+        // @description
+        // Sets the maximum stack size for all items this material type.
+        // Note that altering this will probably require a script performing "- inventory update" in the event "after player clicks in inventory:" to maintain sync.
+        // The maximum the client will interact with is stacks of 64, however you can set the max up to 127 and the client will render it, but refuse to move stacks properly.
+        // @tags
+        // <MaterialTag.max_stack_size>
+        // -->
+        if (!mechanism.isProperty && mechanism.matches("max_stack_size") && mechanism.requireInteger()) {
+            NMSHandler.getItemHelper().setMaxStackSize(material, mechanism.getValue().asInt());
+        }
 
         // <--[mechanism]
         // @object MaterialTag
@@ -1114,7 +867,7 @@ public class MaterialTag implements ObjectTag, Adjustable {
         // <--[mechanism]
         // @object MaterialTag
         // @name piston_reaction
-        // @input Element
+        // @input ElementTag
         // @description
         // Sets the piston reaction for all blocks of this material type.
         // Input may be: NORMAL (push and pull allowed), DESTROY (break when pushed), BLOCK (prevent a push or pull), IGNORE (don't use this), or PUSH_ONLY (push allowed but not pull)

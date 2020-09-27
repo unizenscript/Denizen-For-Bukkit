@@ -1,5 +1,6 @@
 package com.denizenscript.denizen.scripts.commands.item;
 
+import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
@@ -15,9 +16,12 @@ import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
+import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.Deprecations;
 import org.bukkit.Material;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BookMeta;
 
 import java.util.List;
 import java.util.function.Function;
@@ -28,6 +32,7 @@ public class TakeCommand extends AbstractCommand {
         setName("take");
         setSyntax("take [money/xp/iteminhand/scriptname:<name>/bydisplay:<name>/bycover:<title>|<author>/slot:<slot>/nbt:<key>/material:<material>/<item>|...] (quantity:<#>) (from:<inventory>)");
         setRequiredArguments(1, 3);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -89,9 +94,7 @@ public class TakeCommand extends AbstractCommand {
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-
         for (Argument arg : scriptEntry.getProcessedArgs()) {
-
             if (!scriptEntry.hasObject("type")
                     && arg.matches("money", "coins")) {
                 scriptEntry.addObject("type", Type.MONEY);
@@ -104,10 +107,10 @@ public class TakeCommand extends AbstractCommand {
                     && arg.matches("item_in_hand", "iteminhand")) {
                 scriptEntry.addObject("type", Type.ITEMINHAND);
             }
-            else if (!scriptEntry.hasObject("qty")
+            else if (!scriptEntry.hasObject("quantity")
                     && arg.matchesPrefix("q", "qty", "quantity")
                     && arg.matchesFloat()) {
-                scriptEntry.addObject("qty", arg.asElement());
+                scriptEntry.addObject("quantity", arg.asElement());
             }
             else if (!scriptEntry.hasObject("items")
                     && arg.matchesPrefix("bydisplay")
@@ -169,31 +172,24 @@ public class TakeCommand extends AbstractCommand {
                 arg.reportUnhandled();
             }
         }
-
         scriptEntry.defaultObject("type", Type.ITEM)
-                .defaultObject("qty", new ElementTag(1));
-
+                .defaultObject("quantity", new ElementTag(1));
         Type type = (Type) scriptEntry.getObject("type");
-
         if (type != Type.MONEY && scriptEntry.getObject("inventory") == null) {
             scriptEntry.addObject("inventory", Utilities.entryHasPlayer(scriptEntry) ? Utilities.getEntryPlayer(scriptEntry).getInventory() : null);
         }
-
         if (!scriptEntry.hasObject("inventory") && type != Type.MONEY) {
             throw new InvalidArgumentsException("Must specify an inventory to take from!");
         }
-
         if (type == Type.ITEM && scriptEntry.getObject("items") == null) {
             throw new InvalidArgumentsException("Must specify item/items!");
         }
-
     }
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-
         InventoryTag inventory = scriptEntry.getObjectTag("inventory");
-        ElementTag qty = scriptEntry.getElement("qty");
+        ElementTag quantity = scriptEntry.getElement("quantity");
         ElementTag displayname = scriptEntry.getElement("displayname");
         ItemTag scriptitem = scriptEntry.getObjectTag("scriptitem");
         ElementTag slot = scriptEntry.getElement("slot");
@@ -201,17 +197,14 @@ public class TakeCommand extends AbstractCommand {
         ElementTag nbtKey = scriptEntry.getElement("nbt_key");
         MaterialTag material = scriptEntry.getObjectTag("material");
         Type type = (Type) scriptEntry.getObject("type");
-
         Object items_object = scriptEntry.getObject("items");
         List<ItemTag> items = null;
-
         if (items_object != null) {
             items = (List<ItemTag>) items_object;
         }
-
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), ArgumentHelper.debugObj("Type", type.name())
-                            + qty.debug()
+                            + quantity.debug()
                             + (inventory != null ? inventory.debug() : "")
                             + (displayname != null ? displayname.debug() : "")
                             + (scriptitem != null ? scriptitem.debug() : "")
@@ -221,7 +214,6 @@ public class TakeCommand extends AbstractCommand {
                             + (material != null ? material.debug() : "")
                             + (titleAuthor != null ? titleAuthor.debug() : ""));
         }
-
         switch (type) {
             case INVENTORY: {
                 inventory.clear();
@@ -229,7 +221,7 @@ public class TakeCommand extends AbstractCommand {
             }
             case ITEMINHAND: {
                 int inHandAmt = Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().getEquipment().getItemInMainHand().getAmount();
-                int theAmount = (int) qty.asDouble();
+                int theAmount = (int) quantity.asDouble();
                 ItemStack newHandItem = new ItemStack(Material.AIR);
                 if (theAmount > inHandAmt) {
                     Debug.echoDebug(scriptEntry, "...player did not have enough of the item in hand, taking all...");
@@ -255,19 +247,19 @@ public class TakeCommand extends AbstractCommand {
                     Debug.echoError(scriptEntry.getResidingQueue(), "No economy loaded! Have you installed Vault and a compatible economy plugin?");
                     return;
                 }
-                Depends.economy.withdrawPlayer(Utilities.getEntryPlayer(scriptEntry).getOfflinePlayer(), qty.asDouble());
+                Depends.economy.withdrawPlayer(Utilities.getEntryPlayer(scriptEntry).getOfflinePlayer(), quantity.asDouble());
                 break;
             }
             case XP: {
-                Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().giveExp(-qty.asInt());
+                Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().giveExp(-quantity.asInt());
                 break;
             }
             case ITEM: {
                 for (ItemTag item : items) {
                     ItemStack is = item.getItemStack();
-                    is.setAmount(qty.asInt());
-                    if (!inventory.removeItem(item, item.getAmount())) {
-                        Debug.echoDebug(scriptEntry, "Inventory does not contain at least " + qty.asInt() + " of " + item.getFullString() + "... Taking all...");
+                    is.setAmount(quantity.asInt());
+                    if (!removeItem(inventory.getInventory(), item, item.getAmount())) {
+                        Debug.echoDebug(scriptEntry, "Inventory does not contain at least " + quantity.asInt() + " of " + item.identify() + "... Taking all...");
                     }
                 }
                 break;
@@ -278,7 +270,7 @@ public class TakeCommand extends AbstractCommand {
                     return;
                 }
                 takeByMatcher(inventory, (item) -> item.hasItemMeta() && item.getItemMeta().hasDisplayName() &&
-                        item.getItemMeta().getDisplayName().equalsIgnoreCase(displayname.identify()), qty.asInt());
+                        item.getItemMeta().getDisplayName().equalsIgnoreCase(displayname.identify()), quantity.asInt());
                 break;
             }
             case BYCOVER: {
@@ -286,7 +278,9 @@ public class TakeCommand extends AbstractCommand {
                     Debug.echoError(scriptEntry.getResidingQueue(), "Must specify a cover!");
                     return;
                 }
-                inventory.removeBook(titleAuthor.get(0), titleAuthor.size() > 1 ? titleAuthor.get(1) : null, qty.asInt());
+                takeByMatcher(inventory, (item) -> item.hasItemMeta() && item.getItemMeta() instanceof BookMeta
+                                && equalOrNull(titleAuthor.get(0), ((BookMeta) item.getItemMeta()).getTitle())
+                                && (titleAuthor.size() == 1 || equalOrNull(titleAuthor.get(1), ((BookMeta) item.getItemMeta()).getAuthor())), quantity.asInt());
                 break;
             }
             case NBT: {
@@ -294,7 +288,7 @@ public class TakeCommand extends AbstractCommand {
                     Debug.echoError(scriptEntry.getResidingQueue(), "Must specify an NBT key!");
                     return;
                 }
-                takeByMatcher(inventory, (item) -> CustomNBT.hasCustomNBT(item, nbtKey.asString(), CustomNBT.KEY_DENIZEN), qty.asInt());
+                takeByMatcher(inventory, (item) -> CustomNBT.hasCustomNBT(item, nbtKey.asString(), CustomNBT.KEY_DENIZEN), quantity.asInt());
                 break;
             }
             case SCRIPTNAME: {
@@ -302,7 +296,7 @@ public class TakeCommand extends AbstractCommand {
                     Debug.echoError(scriptEntry.getResidingQueue(), "Must specify a valid script name!");
                     return;
                 }
-                takeByMatcher(inventory, (item) -> scriptitem.getScriptName().equalsIgnoreCase(new ItemTag(item).getScriptName()), qty.asInt());
+                takeByMatcher(inventory, (item) -> scriptitem.getScriptName().equalsIgnoreCase(new ItemTag(item).getScriptName()), quantity.asInt());
                 break;
             }
             case MATERIAL: {
@@ -310,7 +304,7 @@ public class TakeCommand extends AbstractCommand {
                     Debug.echoError(scriptEntry.getResidingQueue(), "Must specify a valid material!");
                     return;
                 }
-                takeByMatcher(inventory, (item) -> item.getType() == material.getMaterial() && !(new ItemTag(item).isItemscript()), qty.asInt());
+                takeByMatcher(inventory, (item) -> item.getType() == material.getMaterial() && !(new ItemTag(item).isItemscript()), quantity.asInt());
                 break;
             }
             case SLOT: {
@@ -321,8 +315,8 @@ public class TakeCommand extends AbstractCommand {
                 }
                 ItemStack original = inventory.getInventory().getItem(slotId);
                 if (original != null && original.getType() != Material.AIR) {
-                    if (original.getAmount() > qty.asInt()) {
-                        original.setAmount(original.getAmount() - qty.asInt());
+                    if (original.getAmount() > quantity.asInt()) {
+                        original.setAmount(original.getAmount() - quantity.asInt());
                         inventory.setSlots(slotId, original);
                     }
                     else {
@@ -334,22 +328,64 @@ public class TakeCommand extends AbstractCommand {
         }
     }
 
+    private static boolean equalOrNull(String a, String b) {
+        return b == null || a == null || a.equalsIgnoreCase(b);
+    }
+
     public void takeByMatcher(InventoryTag inventory, Function<ItemStack, Boolean> matcher, int quantity) {
         int itemsTaken = 0;
-        for (ItemStack it : inventory.getContents()) {
+        ItemStack[] contents = inventory.getInventory().getContents();
+        for (int i = 0; i < contents.length; i++) {
+            ItemStack it = contents[i];
             if (itemsTaken < quantity
                     && it != null
                     && matcher.apply(it)) {
                 int amt = it.getAmount();
                 if (itemsTaken + amt <= quantity) {
-                    inventory.getInventory().removeItem(it);
+                    inventory.getInventory().setItem(i, new ItemStack(Material.AIR));
                     itemsTaken += amt;
                 }
                 else {
                     it.setAmount(amt - (quantity - itemsTaken));
+                    inventory.getInventory().setItem(i, it);
                     break;
                 }
             }
         }
+    }
+
+    public boolean removeItem(Inventory inventory, ItemTag item, int amount) {
+        if (item == null) {
+            return false;
+        }
+        item = new ItemTag(item.getItemStack().clone());
+        item.setAmount(1);
+        String myItem = CoreUtilities.toLowerCase(item.identify());
+        for (int i = 0; i < inventory.getSize(); i++) {
+            ItemStack is = inventory.getItem(i);
+            if (is == null) {
+                continue;
+            }
+            is = is.clone();
+            int count = is.getAmount();
+            is.setAmount(1);
+            // Note: this double-parsing is intentional, as part of a hotfix for a larger issue
+            String newItem = CoreUtilities.toLowerCase(ItemTag.valueOf(new ItemTag(is).identify(), false).identify());
+            if (myItem.equals(newItem)) {
+                if (count <= amount) {
+                    NMSHandler.getItemHelper().setInventoryItem(inventory, null, i);
+                    amount -= count;
+                    if (amount == 0) {
+                        return true;
+                    }
+                }
+                else {
+                    is.setAmount(count - amount);
+                    NMSHandler.getItemHelper().setInventoryItem(inventory, is, i);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

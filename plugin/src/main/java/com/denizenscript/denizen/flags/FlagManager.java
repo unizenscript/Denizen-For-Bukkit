@@ -245,11 +245,11 @@ public class FlagManager {
                 Map<String, ObjectTag> context = new HashMap<>();
                 PlayerTag player = null;
                 if (PlayerTag.matches(OldOwner)) {
-                    player = PlayerTag.valueOf(OldOwner);
+                    player = PlayerTag.valueOf(OldOwner, CoreUtilities.basicContext);
                 }
                 NPCTag npc = null;
                 if (Depends.citizens != null && NPCTag.matches(OldOwner)) {
-                    npc = NPCTag.valueOf(OldOwner);
+                    npc = NPCTag.valueOf(OldOwner, CoreUtilities.basicContext);
                 }
 
                 String type;
@@ -500,15 +500,15 @@ public class FlagManager {
                 Map<String, ObjectTag> context = new HashMap<>();
                 PlayerTag player = null;
                 if (PlayerTag.matches(oldOwner)) {
-                    player = PlayerTag.valueOf(oldOwner);
+                    player = PlayerTag.valueOf(oldOwner, CoreUtilities.basicContext);
                 }
                 NPCTag npc = null;
                 if (Depends.citizens != null && NPCTag.matches(oldOwner)) {
-                    npc = NPCTag.valueOf(oldOwner);
+                    npc = NPCTag.valueOf(oldOwner, CoreUtilities.basicContext);
                 }
                 EntityTag entity = null;
                 if (EntityTag.matches(oldOwner)) {
-                    entity = EntityTag.valueOf(oldOwner);
+                    entity = EntityTag.valueOf(oldOwner, CoreUtilities.basicContext);
                 }
 
                 String type;
@@ -571,15 +571,15 @@ public class FlagManager {
                         Map<String, ObjectTag> context = new HashMap<>();
                         PlayerTag player = null;
                         if (PlayerTag.matches(oldOwner)) {
-                            player = PlayerTag.valueOf(oldOwner);
+                            player = PlayerTag.valueOf(oldOwner, CoreUtilities.basicContext);
                         }
                         NPCTag npc = null;
                         if (Depends.citizens != null && NPCTag.matches(oldOwner)) {
-                            npc = NPCTag.valueOf(oldOwner);
+                            npc = NPCTag.valueOf(oldOwner, CoreUtilities.basicContext);
                         }
                         EntityTag entity = null;
                         if (EntityTag.matches(oldOwner)) {
-                            entity = EntityTag.valueOf(oldOwner);
+                            entity = EntityTag.valueOf(oldOwner, CoreUtilities.basicContext);
                         }
 
                         String type;
@@ -912,18 +912,6 @@ public class FlagManager {
                 return toReturn;
             }
             return new ListTag(values);
-        }
-
-        public ListTag asList(String prefix) {
-            if (values == null) {
-                ListTag toReturn = new ListTag();
-                toReturn.setPrefix(prefix);
-                if (size != 0) {
-                    toReturn.add(firstValue);
-                }
-                return toReturn;
-            }
-            return new ListTag(values, prefix);
         }
 
         /**

@@ -2,7 +2,6 @@ package com.denizenscript.denizen.objects.properties.item;
 
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.objects.ColorTag;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -41,7 +40,7 @@ public class ItemPotion implements Property {
     }
 
     public static final String[] handledTags = new String[] {
-            "potion_base", "has_potion_effect", "potion_effect"
+            "potion_base_type", "potion_base", "has_potion_effect", "potion_effect", "potion_effects"
     };
 
     public static final String[] handledMechs = new String[] {
@@ -60,10 +59,8 @@ public class ItemPotion implements Property {
                 .append(effect.getAmplifier()).append(",")
                 .append(effect.getDuration()).append(",")
                 .append(effect.isAmbient()).append(",")
-                .append(effect.hasParticles());
-        if (NMSHandler.getVersion().isAtMost(NMSVersion.v1_12) && effect.getColor() != null) {
-            sb.append(",").append(new ColorTag(effect.getColor()).identify().replace(",", "&comma"));
-        }
+                .append(effect.hasParticles()).append(",")
+                .append(effect.hasIcon());
         return sb.toString();
     }
 
@@ -74,25 +71,18 @@ public class ItemPotion implements Property {
         // as compared to the PotionEffect constructor!
         int duration = new ElementTag(d2[2]).asInt();
         int amplifier = new ElementTag(d2[1]).asInt();
-        boolean ambient = new ElementTag(d2[3]).asBoolean();
-        boolean particles = new ElementTag(d2[4]).asBoolean();
+        boolean ambient = true;
+        boolean particles = true;
+        if (d2.length > 3) {
+            ambient = new ElementTag(d2[3]).asBoolean();
+            particles = new ElementTag(d2[4]).asBoolean();
+        }
         Color color = null;
         boolean icon = false;
         if (d2.length > 5) {
-            if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-                ElementTag check = new ElementTag(d2[5]);
-                if (check.isBoolean()) {
-                    icon = check.asBoolean();
-                }
-                else {
-                    Debug.echoError("Custom effects with the color option are not supported as of Minecraft version 1.13.");
-                }
-            }
-            else {
-                String check = d2[5].replace("&comma", ",");
-                if (ColorTag.matches(check)) {
-                    color = ColorTag.valueOf(check).getColor();
-                }
+            ElementTag check = new ElementTag(d2[5]);
+            if (check.isBoolean()) {
+                icon = check.asBoolean();
             }
         }
         return NMSHandler.getItemHelper().getPotionEffect(type, duration, amplifier, ambient, particles, color, icon);
@@ -100,13 +90,10 @@ public class ItemPotion implements Property {
 
     @Override
     public String getPropertyString() {
-        if (!item.getItemStack().hasItemMeta()) {
+        if (!(item.getItemMeta() instanceof PotionMeta)) {
             return null;
         }
-        if (!(item.getItemStack().getItemMeta() instanceof PotionMeta)) {
-            return null;
-        }
-        PotionMeta meta = (PotionMeta) item.getItemStack().getItemMeta();
+        PotionMeta meta = (PotionMeta) item.getItemMeta();
         ListTag effects = new ListTag();
         effects.add(meta.getBasePotionData().getType()
                 + "," + meta.getBasePotionData().isUpgraded()
@@ -131,8 +118,22 @@ public class ItemPotion implements Property {
             return null;
         }
 
-        boolean has = item.getItemStack().hasItemMeta() && item.getItemStack().getItemMeta() instanceof PotionMeta
-                && ((PotionMeta) item.getItemStack().getItemMeta()).hasCustomEffects();
+        boolean has = item.getItemMeta() instanceof PotionMeta
+                && ((PotionMeta) item.getItemMeta()).hasCustomEffects();
+
+        // <--[tag]
+        // @attribute <ItemTag.potion_base_type>
+        // @returns ElementTag
+        // @mechanism ItemTag.potion_effects
+        // @group properties
+        // @description
+        // Returns the base potion type name for this potion item.
+        // The type will be from <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/potion/PotionType.html>.
+        // -->
+        if (attribute.startsWith("potion_base_type") && item.getItemMeta() instanceof PotionMeta) {
+            PotionMeta meta = ((PotionMeta) item.getItemMeta());
+            return new ElementTag(meta.getBasePotionData().getType().name()).getObjectAttribute(attribute.fulfill(1));
+        }
 
         // <--[tag]
         // @attribute <ItemTag.potion_base>
@@ -144,12 +145,30 @@ public class ItemPotion implements Property {
         // In the format Type,Level,Extended,Splash,Color
         // The type will be from <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/potion/PotionType.html>.
         // -->
-        if (attribute.startsWith("potion_base") && item.getItemStack().hasItemMeta() && item.getItemStack().getItemMeta() instanceof PotionMeta) {
-            PotionMeta meta = ((PotionMeta) item.getItemStack().getItemMeta());
+        if (attribute.startsWith("potion_base") && item.getItemMeta() instanceof PotionMeta) {
+            PotionMeta meta = ((PotionMeta) item.getItemMeta());
             return new ElementTag(meta.getBasePotionData().getType().name() + "," + (meta.getBasePotionData().isUpgraded() ? 2 : 1)
                     + "," + meta.getBasePotionData().isExtended() + "," + (item.getItemStack().getType() == Material.SPLASH_POTION)
                     + (meta.hasColor() ? "," + new ColorTag(meta.getColor()).identify() : "")
-            ).getObjectAttribute(attribute.fulfill(1));
+                ).getObjectAttribute(attribute.fulfill(1));
+        }
+
+        // <--[tag]
+        // @attribute <ItemTag.potion_effects>
+        // @returns ListTag
+        // @mechanism ItemTag.potion_effects
+        // @group properties
+        // @description
+        // Returns the list of potion effects on this item.
+        // The effect type will be from <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/potion/PotionEffectType.html>.
+        // -->
+        if (attribute.startsWith("potion_effects") && item.getItemMeta() instanceof PotionMeta) {
+            ListTag result = new ListTag();
+            PotionMeta meta = ((PotionMeta) item.getItemMeta());
+            for (PotionEffect pot : meta.getCustomEffects()) {
+                result.add(stringifyEffect(pot));
+            }
+            return result.getObjectAttribute(attribute.fulfill(1));
         }
 
         // <--[tag]
@@ -166,7 +185,7 @@ public class ItemPotion implements Property {
 
         if (has) {
             if (attribute.startsWith("potion_effect")) {
-                PotionMeta meta = ((PotionMeta) item.getItemStack().getItemMeta());
+                PotionMeta meta = ((PotionMeta) item.getItemMeta());
 
                 int potN = attribute.hasContext(1) ? attribute.getIntContext(1) - 1 : 0;
                 if (potN < 0 || potN > meta.getCustomEffects().size()) {
@@ -228,24 +247,6 @@ public class ItemPotion implements Property {
                 }
 
                 // <--[tag]
-                // @attribute <ItemTag.potion_effect[<#>].color>
-                // @returns ColorTag
-                // @mechanism ItemTag.potion_effects
-                // @group properties
-                // @description
-                // Returns the potion effect's color.
-                // NOTE: Not supported as of Minecraft version 1.13.
-                // -->
-                if (attribute.startsWith("color")) {
-                    if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-                        Debug.echoError("Custom effects with the color option are not supported as of Minecraft version 1.13.");
-                        return null;
-                    }
-                    return new ColorTag(meta.getCustomEffects().get(potN).getColor())
-                            .getObjectAttribute(attribute.fulfill(1));
-                }
-
-                // <--[tag]
                 // @attribute <ItemTag.potion_effect[<#>].icon>
                 // @returns ElementTag(Boolean)
                 // @mechanism ItemTag.potion_effects
@@ -253,7 +254,7 @@ public class ItemPotion implements Property {
                 // @description
                 // Returns whether the potion effect shows an icon.
                 // -->
-                if (attribute.startsWith("icon") && NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
+                if (attribute.startsWith("icon")) {
                     return new ElementTag(meta.getCustomEffects().get(potN).hasIcon()).getObjectAttribute(attribute.fulfill(1));
                 }
 
@@ -343,11 +344,10 @@ public class ItemPotion implements Property {
         // @input ListTag
         // @description
         // Sets the potion's potion effect(s).
-        // Input is a formed like: Type,Upgraded,Extended(,Color)|Effect,Amplifier,Duration,Ambient,Particles(,Icon)|...
+        // Input is a formed like: Type,Upgraded,Extended(,Color)|Effect,Amplifier,Duration,Ambient,Particles,Icon|...
         // For example: SPEED,true,false|SPEED,2,200,false,true,true
         // Second example: REGEN,false,true,RED|REGENERATION,1,500,true,false,false
         // Color can also be used like "255&comma128&comma0" (r,g,b but replace ',' with '&comma').
-        // NOTE: In pre-1.13 Minecraft versions, you could set a color in the custom effects list instead of "icon".
         // The primary type must be from <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/potion/PotionType.html>.
         // The effect type must be from <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/potion/PotionEffectType.html>.
         // @tags
@@ -357,26 +357,25 @@ public class ItemPotion implements Property {
         // <ItemTag.potion_effect[<#>].amplifier>
         // <ItemTag.potion_effect[<#>].is_ambient>
         // <ItemTag.potion_effect[<#>].has_particles>
-        // <ItemTag.potion_effect[<#>].color>
         // <ItemTag.potion_effect[<#>].icon>
-        // <server.list_potion_types>
-        // <server.list_potion_effects>
+        // <server.potion_types>
+        // <server.potion_effect_types>
         // -->
         if (mechanism.matches("potion_effects")) {
             ListTag data = mechanism.valueAsType(ListTag.class);
             String[] d1 = data.get(0).split(",");
-            PotionMeta meta = (PotionMeta) item.getItemStack().getItemMeta();
+            PotionMeta meta = (PotionMeta) item.getItemMeta();
             meta.setBasePotionData(new PotionData(PotionType.valueOf(d1[0].toUpperCase()),
-                    CoreUtilities.toLowerCase(d1[2]).equals("true"),
-                    CoreUtilities.toLowerCase(d1[1]).equals("true")));
+                    CoreUtilities.equalsIgnoreCase(d1[2], "true"),
+                    CoreUtilities.equalsIgnoreCase(d1[1], "true")));
             if (d1.length > 3) {
-                meta.setColor(ColorTag.valueOf(d1[3].replace("&comma", ",")).getColor());
+                meta.setColor(ColorTag.valueOf(d1[3].replace("&comma", ","), mechanism.context).getColor());
             }
             meta.clearCustomEffects();
             for (int i = 1; i < data.size(); i++) {
                 meta.addCustomEffect(parseEffect(data.get(i)), false);
             }
-            item.getItemStack().setItemMeta(meta);
+            item.setItemMeta(meta);
         }
 
         if (mechanism.matches("potion")) {
@@ -422,7 +421,6 @@ public class ItemPotion implements Property {
                     pot.setHasExtendedDuration(data2.asBoolean());
                 }
                 pot.setSplash(data3.asBoolean());
-                item.setDurability((short) 0);
                 pot.apply(item.getItemStack());
             }
         }

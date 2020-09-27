@@ -17,6 +17,8 @@ public class NoteBlockPlaysNoteScriptEvent extends BukkitScriptEvent implements 
     //
     // @Regex ^on noteblock plays note$
     //
+    // @Group Block
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     // @Switch instrument:<instrument> to only process the event if a specific instrument was played.
     //
@@ -28,7 +30,7 @@ public class NoteBlockPlaysNoteScriptEvent extends BukkitScriptEvent implements 
     // <context.location> returns the LocationTag of the note block.
     // <context.instrument> returns the name of the instrument played, see list at <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Instrument.html>.
     // <context.sound> returns the name of the sound (that fits into <@link command playsound>) represented by the instrument.
-    // <context.tone> returns the the note tone played (A to G).
+    // <context.tone> returns the note tone played (A to G).
     // <context.octave> returns the octave the note is played at (as a number).
     // <context.sharp> returns a boolean indicating whether the note is sharp.
     // <context.pitch> returns the computed pitch value (that fits into <@link command playsound>). Note that volume is always 3.
@@ -45,7 +47,10 @@ public class NoteBlockPlaysNoteScriptEvent extends BukkitScriptEvent implements 
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("noteblock plays note");
+        if (!path.eventLower.startsWith("noteblock plays note")) {
+            return false;
+        }
+        return true;
     }
 
     @Override

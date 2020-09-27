@@ -18,6 +18,8 @@ public class EntityResurrectScriptEvent extends BukkitScriptEvent implements Lis
     //
     // @Regex ^on [^\s]+ resurrected$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -41,7 +43,13 @@ public class EntityResurrectScriptEvent extends BukkitScriptEvent implements Lis
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("resurrected");
+        if (!path.eventArgLowerAt(1).equals("resurrected")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -78,8 +86,10 @@ public class EntityResurrectScriptEvent extends BukkitScriptEvent implements Lis
 
     @EventHandler
     public void onEntityResurrect(EntityResurrectEvent event) {
+        EntityTag.rememberEntity(event.getEntity());
         entity = new EntityTag(event.getEntity());
         this.event = event;
         fire(event);
+        EntityTag.forgetEntity(event.getEntity());
     }
 }

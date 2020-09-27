@@ -1,7 +1,6 @@
 package com.denizenscript.denizen.objects;
 
 import com.denizenscript.denizencore.objects.*;
-import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizencore.objects.properties.PropertyParser;
 import com.denizenscript.denizencore.tags.Attribute;
 import com.denizenscript.denizencore.tags.ObjectTagProcessor;
@@ -45,27 +44,14 @@ public class TradeTag implements ObjectTag, Adjustable {
     //
     // -->
 
-    //////////////////
-    //    OBJECT FETCHER
-    ////////////////
-
-    public static TradeTag valueOf(String string) {
-        return valueOf(string, null);
-    }
-
     @Fetchable("trade")
     public static TradeTag valueOf(String string, TagContext context) {
         if (string == null) {
             return null;
         }
-
-        ///////
-        // Handle objects with properties through the object fetcher
         if (ObjectFetcher.isObjectWithProperties(string)) {
-            return ObjectFetcher.getObjectFrom(TradeTag.class, string, new BukkitTagContext(((BukkitTagContext) context).player,
-                    ((BukkitTagContext) context).npc, null, !context.debug, null));
+            return ObjectFetcher.getObjectFromWithProperties(TradeTag.class, string, context);
         }
-
         string = CoreUtilities.toLowerCase(string).replace("trade@", "");
         if (string.toLowerCase().matches("trade")) {
             MerchantRecipe recipe = new MerchantRecipe(new ItemStack(Material.AIR), 0);
@@ -79,18 +65,11 @@ public class TradeTag implements ObjectTag, Adjustable {
         return valueOf(str, CoreUtilities.noDebugContext) != null;
     }
 
-    ///////////////
-    //   Constructors
-    /////////////
-
     public TradeTag(MerchantRecipe recipe) {
         this.recipe = recipe;
     }
 
-    /////////////////////
-    //   INSTANCE FIELDS/METHODS
-    /////////////////
-
+    @Override
     public String toString() {
         return identify();
     }
@@ -105,44 +84,49 @@ public class TradeTag implements ObjectTag, Adjustable {
         this.recipe = recipe;
     }
 
-    //////////////////////////////
-    //  DSCRIPT ARGUMENT METHODS
-    /////////////////////////
-
+    @Override
     public String getPrefix() {
         return "trade";
     }
 
+    @Override
     public TradeTag setPrefix(String prefix) {
         return this;
     }
 
+    @Override
     public boolean isUnique() {
         return false;
     }
 
+    @Override
     public String getObjectType() {
         return "Trade";
     }
 
+    @Override
     public String identify() {
-        return getPrefix() + "@trade" + PropertyParser.getPropertiesString(this);
+        return "trade@trade" + PropertyParser.getPropertiesString(this);
     }
 
+    @Override
     public String identifySimple() {
         return identify();
     }
 
     public static ObjectTagProcessor<TradeTag> tagProcessor = new ObjectTagProcessor<>();
 
+    @Override
     public ObjectTag getObjectAttribute(Attribute attribute) {
         return tagProcessor.getObjectAttribute(this, attribute);
     }
 
+    @Override
     public void applyProperty(Mechanism mechanism) {
         adjust(mechanism);
     }
 
+    @Override
     public void adjust(Mechanism mechanism) {
         CoreUtilities.autoPropertyMechanism(this, mechanism);
     }

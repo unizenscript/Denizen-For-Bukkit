@@ -21,7 +21,7 @@ public class BlockDispensesScriptEvent extends BukkitScriptEvent implements List
     // <block> dispenses item
     // <block> dispenses <item>
     //
-    // @Regex ^on [^\s]+ dispense [^\s]+$
+    // @Regex ^on [^\s]+ dispenses [^\s]+$
     //
     // @Group Block
     //
@@ -54,7 +54,16 @@ public class BlockDispensesScriptEvent extends BukkitScriptEvent implements List
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("dispenses");
+        if (!path.eventArgLowerAt(1).equals("dispenses")) {
+            return false;
+        }
+        if (!couldMatchBlock(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        if (!couldMatchItem(path.eventArgLowerAt(2))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -87,7 +96,7 @@ public class BlockDispensesScriptEvent extends BukkitScriptEvent implements List
             return true;
         }
         else if (LocationTag.matches(determination)) {
-            LocationTag vel = LocationTag.valueOf(determination);
+            LocationTag vel = LocationTag.valueOf(determination, getTagContext(path));
             if (vel == null) {
                 Debug.echoError("[" + getName() + "] Invalid velocity '" + determination + "'!");
             }

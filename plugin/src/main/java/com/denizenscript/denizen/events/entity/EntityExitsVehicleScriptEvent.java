@@ -20,6 +20,8 @@ public class EntityExitsVehicleScriptEvent extends BukkitScriptEvent implements 
     //
     // @Regex ^on [^\s]+ exits [^\s]+$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -47,21 +49,27 @@ public class EntityExitsVehicleScriptEvent extends BukkitScriptEvent implements 
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("exits");
+        if (!path.eventArgLowerAt(1).equals("exits")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        if (!couldMatchVehicle(path.eventArgLowerAt(2))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean matches(ScriptPath path) {
-
         if (!tryEntity(entity, path.eventArgLowerAt(0))
                 || !tryEntity(vehicle, path.eventArgLowerAt(2))) {
             return false;
         }
-
         if (!runInCheck(path, vehicle.getLocation())) {
             return false;
         }
-
         return super.matches(path);
     }
 

@@ -5,7 +5,7 @@
     <parent>
         <groupId>dev.unizen</groupId>
         <artifactId>denizen-parent</artifactId>
-        <version>1.1.4-SNAPSHOT</version>
+        <version>1.1.7-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -47,6 +47,12 @@
         <dependency>
             <groupId>dev.unizen</groupId>
             <artifactId>denizen-v1_15</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>dev.unizen</groupId>
+            <artifactId>denizen-v1_16</artifactId>
             <version>${project.parent.version}</version>
             <scope>compile</scope>
         </dependency>

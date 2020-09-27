@@ -1,12 +1,11 @@
 package com.denizenscript.denizen.events.block;
 
-import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizen.objects.properties.material.MaterialAge;
 import com.denizenscript.denizencore.objects.ObjectTag;
+import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockGrowEvent;
@@ -50,10 +49,13 @@ public class BlockGrowsScriptEvent extends BukkitScriptEvent implements Listener
             return false;
         }
         String block = path.eventArgLowerAt(0);
+        if (!couldMatchBlock(block)) {
+            return false;
+        }
         if (block.equals("block")) {
             return true;
         }
-        MaterialTag mat = MaterialTag.valueOf(block);
+        MaterialTag mat = MaterialTag.valueOf(block, CoreUtilities.noDebugContext);
         return mat != null && !mat.isStructure();
     }
 
@@ -65,10 +67,21 @@ public class BlockGrowsScriptEvent extends BukkitScriptEvent implements Listener
         if (!tryMaterial(material, path.eventArgLowerAt(0))) {
             return false;
         }
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13) && MaterialAge.describes(material)) {
+        if (path.switches.containsKey("from")) {
+            if (!MaterialAge.describes(new MaterialTag(location.getBlockState()))) {
+                return false;
+            }
             int oldState = MaterialAge.getFrom(new MaterialTag(location.getBlockState())).getCurrent();
+            if (!path.checkSwitch("from", String.valueOf(oldState))) {
+                return false;
+            }
+        }
+        if (path.switches.containsKey("to")) {
+            if (!MaterialAge.describes(material)) {
+                return false;
+            }
             int newState = MaterialAge.getFrom(material).getCurrent();
-            if (!path.checkSwitch("from", String.valueOf(oldState)) || !path.checkSwitch("to", String.valueOf(newState))) {
+            if (!path.checkSwitch("to", String.valueOf(newState))) {
                 return false;
             }
         }

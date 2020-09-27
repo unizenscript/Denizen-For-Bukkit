@@ -6,6 +6,8 @@ import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
+import com.denizenscript.denizen.utilities.inventory.RecipeHelper;
+import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
@@ -13,6 +15,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
@@ -26,12 +29,15 @@ public class PlayerCraftsItemScriptEvent extends BukkitScriptEvent implements Li
     //
     // @Regex ^on player crafts [^\s]+$
     //
+    // @Group Player
+    //
     // @Cancellable true
     //
     // @Triggers when a player fully crafts an item.
     // @Context
     // <context.inventory> returns the InventoryTag of the crafting inventory.
     // <context.item> returns the ItemTag to be crafted.
+    // <context.amount> returns the amount of the item that will be crafted (usually 1, except when shift clicked. Can be above 64).
     // <context.recipe> returns a ListTag of ItemTags in the recipe.
     //
     // @Determine
@@ -52,7 +58,13 @@ public class PlayerCraftsItemScriptEvent extends BukkitScriptEvent implements Li
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(0).equals("player") && path.eventArgLowerAt(1).equals("crafts");
+        if (!path.eventArgLowerAt(0).equals("player") || !path.eventArgLowerAt(1).equals("crafts")) {
+            return false;
+        }
+        if (!couldMatchItem(path.eventArgLowerAt(2))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -95,6 +107,13 @@ public class PlayerCraftsItemScriptEvent extends BukkitScriptEvent implements Li
         else if (name.equals("inventory")) {
             return InventoryTag.mirrorBukkitInventory(event.getInventory());
         }
+        else if (name.equals("amount")) {
+            int amount = event.getRecipe().getResult().getAmount();
+            if (event.getClick() == ClickType.SHIFT_LEFT) {
+                amount *= RecipeHelper.getMaximumOutputQuantity(event.getRecipe(), event.getInventory());
+            }
+            return new ElementTag(amount);
+        }
         else if (name.equals("recipe")) {
             ListTag recipe = new ListTag();
             for (ItemStack itemStack : event.getInventory().getMatrix()) {
@@ -120,6 +139,15 @@ public class PlayerCraftsItemScriptEvent extends BukkitScriptEvent implements Li
 
     @EventHandler
     public void onCraftItem(CraftItemEvent event) {
+        // This event fires even when nothing crafts due to a cursor item, so disregard those cases.
+        if (event.getClick() != ClickType.SHIFT_LEFT && event.getCursor() != null && event.getCursor().getType() != Material.AIR) {
+            if (!event.getCursor().isSimilar(event.getCurrentItem())) {
+                return;
+            }
+            if (event.getCursor().getAmount() + event.getRecipe().getResult().getAmount() > event.getCursor().getType().getMaxStackSize()) {
+                return;
+            }
+        }
         HumanEntity humanEntity = event.getWhoClicked();
         if (EntityTag.isNPC(humanEntity)) {
             return;

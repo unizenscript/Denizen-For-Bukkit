@@ -17,6 +17,8 @@ public class CreeperPoweredScriptEvent extends BukkitScriptEvent implements List
     //
     // @Regex ^on creeper powered( because [^\s]+)?$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -26,7 +28,7 @@ public class CreeperPoweredScriptEvent extends BukkitScriptEvent implements List
     // @Context
     // <context.entity> returns the EntityTag of the creeper.
     // <context.lightning> returns the EntityTag of the lightning.
-    // <context.cause> returns an ElementTag of the cause for the creeper being powered.
+    // <context.cause> returns an ElementTag of the cause for the creeper being powered. Refer to <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/event/entity/CreeperPowerEvent.PowerCause.html>.
     //
     // -->
 
@@ -47,16 +49,13 @@ public class CreeperPoweredScriptEvent extends BukkitScriptEvent implements List
 
     @Override
     public boolean matches(ScriptPath path) {
-
         if (path.eventArgLowerAt(2).equals("because")
                 && !path.eventArgLowerAt(3).equals(CoreUtilities.toLowerCase(cause.toString()))) {
             return false;
         }
-
         if (!runInCheck(path, entity.getLocation())) {
             return false;
         }
-
         return super.matches(path);
     }
 

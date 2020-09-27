@@ -21,6 +21,7 @@ public class HealCommand extends AbstractCommand {
         setName("heal");
         setSyntax("heal (<#.#>) ({player}/<entity>|...)");
         setRequiredArguments(0, 2);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -37,6 +38,7 @@ public class HealCommand extends AbstractCommand {
     //
     // @Tags
     // <EntityTag.health>
+    // <EntityTag.health_max>
     //
     // @Usage
     // Use to fully heal a player.
@@ -47,7 +49,7 @@ public class HealCommand extends AbstractCommand {
     // - heal 10
     //
     // @Usage
-    // Use to heal a player by the name of steve fully.
+    // Use to heal a defined player fully.
     // - heal <[someplayer]>
     // -->
 

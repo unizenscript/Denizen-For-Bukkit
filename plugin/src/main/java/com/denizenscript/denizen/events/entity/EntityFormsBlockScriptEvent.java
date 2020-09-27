@@ -22,6 +22,8 @@ public class EntityFormsBlockScriptEvent extends BukkitScriptEvent implements Li
     //
     // @Regex ^on [^\s]+ forms [^\s]+$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -48,7 +50,16 @@ public class EntityFormsBlockScriptEvent extends BukkitScriptEvent implements Li
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("forms");
+        if (!path.eventArgLowerAt(1).equals("forms")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        if (!couldMatchBlock(path.eventArgLowerAt(2))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

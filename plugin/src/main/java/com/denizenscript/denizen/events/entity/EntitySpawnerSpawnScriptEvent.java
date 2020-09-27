@@ -20,6 +20,8 @@ public class EntitySpawnerSpawnScriptEvent extends BukkitScriptEvent implements 
     //
     // @Regex ^on spawner spawns [^\s]+$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -45,7 +47,13 @@ public class EntitySpawnerSpawnScriptEvent extends BukkitScriptEvent implements 
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("spawner spawns");
+        if (!path.eventLower.startsWith("spawner spawns")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(2))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

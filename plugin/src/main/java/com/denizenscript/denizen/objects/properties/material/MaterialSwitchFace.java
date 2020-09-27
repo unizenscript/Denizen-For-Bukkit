@@ -12,6 +12,7 @@ import org.bukkit.block.data.type.Switch;
 public class MaterialSwitchFace implements Property {
 
     public static boolean describes(ObjectTag material) {
+        // TODO: After 1.14 is dropped, update this to use FaceAttachable (added in Spigot 1.15)
         return material instanceof MaterialTag
                 && ((MaterialTag) material).hasModernData()
                 && ((MaterialTag) material).getModernData().data instanceof Switch;
@@ -85,7 +86,7 @@ public class MaterialSwitchFace implements Property {
         // <--[mechanism]
         // @object MaterialTag
         // @name switch_face
-        // @input Element
+        // @input ElementTag
         // @description
         // Sets the current attach direction for a switch.
         // @tags

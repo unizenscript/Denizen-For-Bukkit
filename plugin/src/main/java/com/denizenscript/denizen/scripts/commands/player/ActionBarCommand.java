@@ -28,6 +28,7 @@ public class ActionBarCommand extends AbstractCommand {
         setSyntax("actionbar [<text>] (targets:<player>|...) (format:<name>) (per_player)");
         setRequiredArguments(1, 4);
         setParseArgs(false);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -41,10 +42,10 @@ public class ActionBarCommand extends AbstractCommand {
     // @Description
     // Sends a message to the target's action bar area.
     // If no target is specified it will default to the attached player.
-    // Accepts the 'format:<name>' argument, which will reformat the text according to the specified format script.
+    // Accepts the 'format:<name>' argument, which will reformat the text according to the specified format script. See <@link language Format Script Containers>.
     //
     // Optionally use 'per_player' with a list of player targets, to have the tags in the text input be reparsed for each and every player.
-    // So, for example, "- actionbar 'hello <player.name>' targets:<server.list_online_players>"
+    // So, for example, "- actionbar 'hello <player.name>' targets:<server.online_players>"
     // would normally show "hello bob" to every player (every player sees the exact same name in the text, ie bob sees "hello bob", steve also sees "hello bob", etc)
     // but if you use "per_player", each player online would see their own name (so bob sees "hello bob", steve sees "hello steve", etc).
     //
@@ -66,9 +67,7 @@ public class ActionBarCommand extends AbstractCommand {
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-
         for (Argument arg : ArgumentHelper.interpret(scriptEntry, scriptEntry.getOriginalArguments())) {
-
             if (arg.matchesPrefix("format", "f")) {
                 String formatStr = TagManager.tag(arg.getValue(), scriptEntry.getContext());
                 FormatScriptContainer format = ScriptRegistry.getScriptContainer(formatStr);
@@ -88,15 +87,12 @@ public class ActionBarCommand extends AbstractCommand {
                 scriptEntry.addObject("text", new ElementTag(arg.raw_value));
             }
         }
-
         if (!scriptEntry.hasObject("text")) {
             throw new InvalidArgumentsException("Must specify a message!");
         }
-
         if (!scriptEntry.hasObject("targets") && !Utilities.entryHasPlayer(scriptEntry)) {
             throw new InvalidArgumentsException("Must specify target(s).");
         }
-
         if (!scriptEntry.hasObject("targets")) {
             if (!Utilities.entryHasPlayer(scriptEntry)) {
                 throw new InvalidArgumentsException("Must specify valid player Targets!");
@@ -113,13 +109,11 @@ public class ActionBarCommand extends AbstractCommand {
         String text = scriptEntry.getElement("text").asString();
         ScriptTag formatObj = scriptEntry.getObjectTag("format");
         ElementTag perPlayerObj = scriptEntry.getElement("per_player");
-
         boolean perPlayer = perPlayerObj != null && perPlayerObj.asBoolean();
         BukkitTagContext context = (BukkitTagContext) scriptEntry.getContext();
         if (!perPlayer) {
             text = TagManager.tag(text, context);
         }
-
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(),
                     ArgumentHelper.debugObj("Message", text)
@@ -127,9 +121,7 @@ public class ActionBarCommand extends AbstractCommand {
                             + (formatObj != null ? formatObj.debug() : "")
                             + (perPlayerObj != null ? perPlayerObj.debug() : ""));
         }
-
         FormatScriptContainer format = formatObj == null ? null : (FormatScriptContainer) formatObj.getContainer();
-
         for (PlayerTag player : targets) {
             if (player != null) {
                 if (!player.isOnline()) {

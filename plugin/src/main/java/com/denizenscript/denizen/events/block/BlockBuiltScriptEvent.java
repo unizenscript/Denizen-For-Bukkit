@@ -1,7 +1,5 @@
 package com.denizenscript.denizen.events.block;
 
-import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
@@ -52,7 +50,13 @@ public class BlockBuiltScriptEvent extends BukkitScriptEvent implements Listener
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("being") && path.eventArgLowerAt(2).equals("built");
+        if (!path.eventArgLowerAt(1).equals("being") ||!path.eventArgLowerAt(2).equals("built")) {
+            return false;
+        }
+        if (!couldMatchBlock(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -114,12 +118,7 @@ public class BlockBuiltScriptEvent extends BukkitScriptEvent implements Listener
     public void onBlockBuilt(BlockCanBuildEvent event) {
         location = new LocationTag(event.getBlock().getLocation());
         old_material = new MaterialTag(event.getBlock());
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            new_material = new MaterialTag(new ModernBlockData(event.getBlockData()));
-        }
-        else {
-            new_material = new MaterialTag(event.getMaterial());
-        }
+        new_material = new MaterialTag(new ModernBlockData(event.getBlockData()));
         cancelled = !event.isBuildable();
         this.event = event;
         fire(event);

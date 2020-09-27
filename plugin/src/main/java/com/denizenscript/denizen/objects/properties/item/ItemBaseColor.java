@@ -1,9 +1,6 @@
 package com.denizenscript.denizen.objects.properties.item;
 
-import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.objects.ItemTag;
-import com.denizenscript.denizen.utilities.blocks.MaterialCompat;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.Mechanism;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -12,7 +9,6 @@ import com.denizenscript.denizencore.tags.Attribute;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.block.Banner;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -21,13 +17,7 @@ public class ItemBaseColor implements Property {
 
     public static boolean describes(ObjectTag item) {
         if (item instanceof ItemTag) {
-            Material material = ((ItemTag) item).getItemStack().getType();
-            if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-                return material == Material.SHIELD;
-            }
-            else {
-                return MaterialCompat.isBannerOrShield(material);
-            }
+            return ((ItemTag) item).getItemStack().getType() == Material.SHIELD;
         }
         return false;
     }
@@ -56,8 +46,13 @@ public class ItemBaseColor implements Property {
     ItemTag item;
 
     private DyeColor getBaseColor() {
-        ItemMeta itemMeta = item.getItemStack().getItemMeta();
+        ItemMeta itemMeta = item.getItemMeta();
         if (itemMeta instanceof BlockStateMeta) {
+            if (item.getItemStack().getType() == Material.SHIELD) { // Hack to avoid blank shields misdisplaying as white
+                if (!itemMeta.serialize().containsKey("internal")) {
+                    return null;
+                }
+            }
             return ((Banner) ((BlockStateMeta) itemMeta).getBlockState()).getBaseColor();
         }
         else {
@@ -66,8 +61,7 @@ public class ItemBaseColor implements Property {
     }
 
     private void setBaseColor(DyeColor color) {
-        ItemStack itemStack = item.getItemStack();
-        ItemMeta itemMeta = itemStack.getItemMeta();
+        ItemMeta itemMeta = item.getItemMeta();
         if (itemMeta instanceof BlockStateMeta) {
             Banner banner = (Banner) ((BlockStateMeta) itemMeta).getBlockState();
             banner.setBaseColor(color);
@@ -77,7 +71,7 @@ public class ItemBaseColor implements Property {
         else {
             ((BannerMeta) itemMeta).setBaseColor(color);
         }
-        itemStack.setItemMeta(itemMeta);
+        item.setItemMeta(itemMeta);
     }
 
     @Override
@@ -94,7 +88,7 @@ public class ItemBaseColor implements Property {
         // @mechanism ItemTag.base_color
         // @description
         // Gets the base color of a shield.
-        // For the list of possible colors, see <@link url http://bit.ly/1dydq12>.
+        // For the list of possible colors, see <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/DyeColor.html>.
         // -->
         if (attribute.startsWith("base_color")) {
             DyeColor baseColor = getBaseColor();
@@ -127,10 +121,10 @@ public class ItemBaseColor implements Property {
         // <--[mechanism]
         // @object ItemTag
         // @name base_color
-        // @input Element
+        // @input ElementTag
         // @description
         // Changes the base color of a shield.
-        // For the list of possible colors, see <@link url http://bit.ly/1dydq12>.
+        // For the list of possible colors, see <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/DyeColor.html>.
         // @tags
         // <ItemTag.base_color>
         // -->

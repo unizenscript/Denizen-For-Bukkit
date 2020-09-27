@@ -4,14 +4,11 @@ import com.denizenscript.denizen.objects.properties.item.*;
 import com.denizenscript.denizen.scripts.containers.core.BookScriptContainer;
 import com.denizenscript.denizen.scripts.containers.core.ItemScriptContainer;
 import com.denizenscript.denizen.scripts.containers.core.ItemScriptHelper;
-import com.denizenscript.denizen.utilities.blocks.MaterialCompat;
 import com.denizenscript.denizen.utilities.Utilities;
-import com.denizenscript.denizen.utilities.blocks.OldMaterialsHelper;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.utilities.blocks.ModernBlockData;
 import com.denizenscript.denizen.nms.util.jnbt.StringTag;
 import com.denizenscript.denizen.objects.notable.NotableManager;
@@ -38,8 +35,8 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Item;
 import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.BlockStateMeta;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.material.MaterialData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -96,13 +93,10 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         if (string == null || string.equals("")) {
             return null;
         }
-
         ItemTag stack = null;
-
         if (ObjectFetcher.isObjectWithProperties(string)) {
-            return ObjectFetcher.getObjectFrom(ItemTag.class, string, context);
+            return ObjectFetcher.getObjectFromWithProperties(ItemTag.class, string, context);
         }
-
         Notable noted = NotableManager.getSavedObject(string);
         if (noted instanceof ItemTag) {
             Deprecations.notableItems.warn();
@@ -112,34 +106,22 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
             string = string.substring("i@".length());
         }
         string = CoreUtilities.toLowerCase(string);
-        int commaIndex = string.indexOf(',');
-        if (commaIndex == -1) {
-            commaIndex = string.indexOf(':');
-        }
-        String dataValue = null;
-        if (commaIndex != -1) {
-            dataValue = string.substring(commaIndex + 1);
-            string = string.substring(0, commaIndex);
-        }
-
         try {
-
             if (ScriptRegistry.containsScript(string, ItemScriptContainer.class)) {
                 ItemScriptContainer isc = ScriptRegistry.getScriptContainerAs(string, ItemScriptContainer.class);
                 // TODO: If a script does not contain tags, get the clean reference here.
                 stack = isc.getItemFrom(context);
-                if (stack == null && (context == null || context.debug)) {
+                if (stack == null && (context == null || context.showErrors())) {
                     Debug.echoError("Item script '" + isc.getName() + "' returned a null item.");
                 }
             }
             else if (ScriptRegistry.containsScript(string, BookScriptContainer.class)) {
                 BookScriptContainer book = ScriptRegistry.getScriptContainerAs(string, BookScriptContainer.class);
                 stack = book.getBookFrom(context);
-                if (stack == null && (context == null || context.debug)) {
+                if (stack == null && (context == null || context.showErrors())) {
                     Debug.echoError("Book script '" + book.getName() + "' returned a null item.");
                 }
             }
-
             if (stack != null) {
                 return stack;
             }
@@ -149,7 +131,6 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
                 Debug.echoError(ex);
             }
         }
-
         try {
             if (ArgumentHelper.matchesInteger(string)) {
                 if (context == null || context.debug) {
@@ -160,31 +141,22 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
             else {
                 MaterialTag mat = MaterialTag.valueOf(string.toUpperCase(), context);
                 stack = new ItemTag(mat.getMaterial());
-                if (mat.hasData() && NMSHandler.getVersion().isAtMost(NMSVersion.v1_12)) {
-                    stack.setDurability(mat.getData());
-                }
             }
-
-            if (dataValue != null) {
-                stack.setDurability(Short.valueOf(dataValue));
+            if (stack != null) {
+                return stack;
             }
-
-            return stack;
         }
         catch (Exception ex) {
-            if (!string.equalsIgnoreCase("none") && (context == null || context.debug)) {
+            if (!string.equalsIgnoreCase("none") && (context == null || context.showErrors())) {
                 Debug.log("Does not match a valid item ID or material: " + string);
             }
             if (Debug.verbose) {
                 Debug.echoError(ex);
             }
         }
-
-        if (context == null || context.debug) {
+        if (context == null || context.showErrors()) {
             Debug.log("valueOf ItemTag returning null: " + string);
         }
-
-        // No match! Return null.
         return null;
     }
 
@@ -231,41 +203,12 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         this(new ItemStack(material));
     }
 
-    @Deprecated
-    public ItemTag(int itemId) {
-        this(MaterialCompat.updateItem(itemId));
-    }
-
-    private static ItemStack fixQty(ItemStack item, int qty) {
-        item.setAmount(qty);
-        return item;
-    }
-
-    @Deprecated
-    public ItemTag(int itemId, int qty) {
-        this(fixQty(MaterialCompat.updateItem(itemId), qty));
-    }
-
     public ItemTag(Material material, int qty) {
         this(new ItemStack(material, qty));
     }
 
     public ItemTag(MaterialTag material, int qty) {
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            this.item = new ItemStack(material.getMaterial(), qty);
-        }
-        else {
-            this.item = new ItemStack(material.getMaterial(), qty, (short) 0, material.getData());
-        }
-    }
-
-    public ItemTag(MaterialData data) {
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13) && item.getType().isLegacy()) {
-            this.item = new ItemStack(Bukkit.getUnsafe().fromLegacy(data));
-        }
-        else {
-            this.item = data.toItemStack();
-        }
+        this.item = new ItemStack(material.getMaterial(), qty);
     }
 
     public ItemTag(ItemStack item) {
@@ -285,16 +228,29 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
     //   INSTANCE FIELDS/METHODS
     /////////////////
 
-    // Bukkit itemstack associated
+    private ItemStack item;
 
-    private ItemStack item = null;
+    public ItemMeta meta;
 
     public ItemStack getItemStack() {
         return item;
     }
 
+    public ItemMeta getItemMeta() {
+        if (meta == null) {
+            meta = item.getItemMeta();
+        }
+        return meta;
+    }
+
+    public void setItemMeta(ItemMeta meta) {
+        this.meta = meta;
+        item.setItemMeta(meta);
+    }
+
     public void setItemStack(ItemStack item) {
         this.item = item;
+        meta = null;
     }
 
     // Compare item to item.
@@ -404,49 +360,6 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         return determination;
     }
 
-    // Additional helper methods
-
-    public void setStackSize(int size) {
-        getItemStack().setAmount(size);
-    }
-
-    /**
-     * Check whether this item contains a lore that starts
-     * with a certain prefix.
-     *
-     * @param prefix The prefix
-     * @return True if it does, otherwise false
-     */
-    public boolean containsLore(String prefix) {
-
-        if (getItemStack().hasItemMeta() && getItemStack().getItemMeta().hasLore()) {
-            for (String itemLore : getItemStack().getItemMeta().getLore()) {
-                if (itemLore.startsWith(prefix)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Get the lore from this item that starts with a
-     * certain prefix.
-     *
-     * @param prefix The prefix
-     * @return String  The lore
-     */
-    public String getLore(String prefix) {
-        for (String itemLore : getItemStack().getItemMeta().getLore()) {
-            if (itemLore.startsWith(prefix)) {
-                return itemLore.substring(prefix.length());
-            }
-        }
-
-        return "";
-    }
-
     /**
      * Check whether this item contains the lore specific
      * to item scripts.
@@ -454,11 +367,11 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
      * @return True if it does, otherwise false
      */
     public boolean isItemscript() {
-        return ItemScriptHelper.isItemscript(item);
+        return ItemScriptHelper.isItemscript(this);
     }
 
     public String getScriptName() {
-        ItemScriptContainer cont = ItemScriptHelper.getItemScriptContainer(item);
+        ItemScriptContainer cont = ItemScriptHelper.getItemScriptContainer(this);
         if (cont != null) {
             return cont.getName();
         }
@@ -484,10 +397,7 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
     }
 
     public MaterialTag getMaterial() {
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            return new MaterialTag(getItemStack().getType());
-        }
-        return OldMaterialsHelper.getMaterialFrom(getItemStack().getType(), getItemStack().getData().getData());
+        return new MaterialTag(getItemStack().getType());
     }
 
     public String getMaterialName() {
@@ -500,10 +410,6 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         }
     }
 
-    public int getMaxStackSize() {
-        return item.getMaxStackSize();
-    }
-
     public int getAmount() {
         if (item != null) {
             return item.getAmount();
@@ -514,19 +420,15 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
     }
 
     public void setDurability(short value) {
-        if (item != null) {
-            item.setDurability(value);
-        }
-    }
-
-    public void setData(byte value) {
-        if (item != null) {
-            item.getData().setData(value);
+        ItemMeta meta = getItemMeta();
+        if (meta instanceof Damageable) {
+            ((Damageable) meta).setDamage(value);
+            setItemMeta(meta);
         }
     }
 
     public boolean isRepairable() {
-        return item.getType().getMaxDurability() > 0;
+        return getItemMeta() instanceof Damageable;
     }
 
     //////////////////////////////
@@ -553,20 +455,13 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
 
     @Override
     public String identify() {
-
         if (item == null || item.getType() == Material.AIR) {
             return "i@air";
         }
-
         // If saved item, return that
         if (isUnique()) {
             Deprecations.notableItems.warn();
             return "i@" + NotableManager.getSavedId(this) + PropertyParser.getPropertiesString(this);
-        }
-
-        // Else, return the material name
-        else if (NMSHandler.getVersion().isAtMost(NMSVersion.v1_12) && (item.getDurability() >= 16 || item.getDurability() < 0) && item.getType() != Material.AIR) {
-            return "i@" + getMaterial().realName() + "," + item.getDurability() + PropertyParser.getPropertiesString(this);
         }
         return "i@" + getMaterial().identifyNoPropertiesNoIdentifier().replace("m@", "") + PropertyParser.getPropertiesString(this);
     }
@@ -599,17 +494,6 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         return getMaterial().identifySimple();
     }
 
-    public String identifyMaterialNoIdentifier() {
-        return getMaterial().identifySimpleNoIdentifier();
-    }
-
-    public String getFullString() {
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            return identify();
-        }
-        return "i@" + getMaterial().realName() + "," + item.getDurability() + PropertyParser.getPropertiesString(this);
-    }
-
     @Override
     public String toString() {
         return identify();
@@ -627,7 +511,7 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
     @Override
     @Note("Items")
     public String getSaveObject() {
-        return getFullString();
+        return identify();
     }
 
     @Override
@@ -643,16 +527,6 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
     }
 
     public static void registerTags() {
-
-        registerTag("id", (attribute, object) -> {
-            Deprecations.materialIds.warn(attribute.getScriptEntry());
-            return new ElementTag(object.getItemStack().getType().getId());
-        });
-
-        registerTag("data", (attribute, object) -> {
-            Deprecations.materialIds.warn(attribute.getScriptEntry());
-            return new ElementTag(object.getItemStack().getData().getData());
-        });
 
         // <--[tag]
         // @attribute <ItemTag.with[<mechanism>=<value>;...]>
@@ -680,6 +554,17 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         });
 
         // <--[tag]
+        // @attribute <ItemTag.property_map>
+        // @returns MapTag
+        // @group properties
+        // @description
+        // Returns the item's property map.
+        // -->
+        registerTag("property_map", (attribute, object) -> {
+            return PropertyParser.getPropertiesMap(object);
+        });
+
+        // <--[tag]
         // @attribute <ItemTag.repairable>
         // @returns ElementTag(Boolean)
         // @group properties
@@ -691,19 +576,6 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // -->
         registerTag("repairable", (attribute, object) -> {
             return new ElementTag(ItemDurability.describes(object));
-        });
-
-        // <--[tag]
-        // @attribute <ItemTag.is_crop>
-        // @returns ElementTag(Boolean)
-        // @group properties
-        // @description
-        // Returns whether the item is a growable crop.
-        // If this returns true, it will enable access to:
-        // <@link mechanism ItemTag.plant_growth> and <@link tag ItemTag.plant_growth>.
-        // -->
-        registerTag("is_crop", (attribute, object) -> {
-            return new ElementTag(ItemPlantgrowth.describes(object));
         });
 
         // <--[tag]
@@ -789,14 +661,13 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
             if (attribute.getAttribute(2).equals("formatted")) {
                 return object;
             }
-            if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13) &&
-                    object.getItemStack().hasItemMeta() && object.getItemStack().getItemMeta() instanceof BlockStateMeta) {
+            if (object.getItemMeta() instanceof BlockStateMeta) {
                 if (object.getItemStack().getType() == Material.SHIELD) {
                     MaterialTag material = new MaterialTag(Material.SHIELD);
-                    material.setModernData(new ModernBlockData(((BlockStateMeta) object.getItemStack().getItemMeta()).getBlockState()));
+                    material.setModernData(new ModernBlockData(((BlockStateMeta) object.getItemMeta()).getBlockState()));
                     return material;
                 }
-                return new MaterialTag(new ModernBlockData(((BlockStateMeta) object.getItemStack().getItemMeta()).getBlockState()));
+                return new MaterialTag(new ModernBlockData(((BlockStateMeta) object.getItemMeta()).getBlockState()));
             }
             return object.getMaterial();
         });
@@ -827,11 +698,6 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
             return new ElementTag(config.saveToString());
         });
 
-        registerTag("full", (attribute, object) -> {
-            Deprecations.fullTags.warn(attribute.context);
-            return new ElementTag(object.getFullString());
-        });
-
         // <--[tag]
         // @attribute <ItemTag.simple>
         // @returns ElementTag
@@ -855,7 +721,7 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // -->
         registerTag("recipe_ids", (attribute, object) -> {
             String type = attribute.hasContext(1) ? CoreUtilities.toLowerCase(attribute.getContext(1)) : null;
-            ItemScriptContainer container = object.isItemscript() ? ItemScriptHelper.getItemScriptContainer(object.getItemStack()) : null;
+            ItemScriptContainer container = object.isItemscript() ? ItemScriptHelper.getItemScriptContainer(object) : null;
             ListTag list = new ListTag();
             for (Recipe recipe : Bukkit.getRecipesFor(object.getItemStack())) {
                 if (!Utilities.isRecipeOfType(recipe, type)) {
@@ -895,80 +761,59 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // Correctly uses singular and plural forms of item names, among other things.
         // -->
         registerTag("formatted", (attribute, object) -> {
-            String id = CoreUtilities.toLowerCase(object.getMaterial().realName()).replace('_', ' ');
-
-            if (id.equals("air")) {
-                return new ElementTag("nothing");
-            }
-
-            if (id.equals("ice") || id.equals("dirt")) {
-                return new ElementTag(id);
-            }
-
-            if (object.getItemStack().getAmount() > 1) {
-                if (id.equals("cactus")) {
-                    return new ElementTag("cactuses");
-                }
-
-                if (id.endsWith(" off")) {
-                    id = id.substring(0, id.length() - 4);
-                }
-                if (id.endsWith(" on")) {
-                    id = id.substring(0, id.length() - 3);
-                }
-
-                if (id.equals("rotten flesh") || id.equals("cooked fish")
-                        || id.equals("raw fish") || id.endsWith("s")) {
-                    return new ElementTag(id);
-                }
-                if (id.endsWith("y")) {
-                    return new ElementTag(id.substring(0, id.length() - 1) + "ies")
-                            ;  // ex: lily -> lilies
-                }
-                if (id.endsWith("sh") || id.endsWith("ch")) {
-                    return new ElementTag(id + "es");
-                }
-                // else
-                return new ElementTag(id + "s")
-                        ; // iron sword -> iron swords
-
-            }
-            else {
-                if (id.equals("cactus")) {
-                    return new ElementTag("a cactus");
-                }
-                if (id.endsWith("s")) {
-                    return new ElementTag(id);
-                }
-
-                if (id.endsWith(" off")) {
-                    return new ElementTag("a " + id.substring(0, id.length() - 4));
-                }
-                if (id.endsWith(" on")) {
-                    return new ElementTag("a " + id.substring(0, id.length() - 3));
-                }
-
-                if (id.startsWith("a") || id.startsWith("e") || id.startsWith("i")
-                        || id.startsWith("o") || id.startsWith("u")) {
-                    return new ElementTag("an " + id)
-                            ;// ex: emerald -> an emerald
-                }
-                // else
-                return new ElementTag("a " + id)
-                        ;// ex: diamond -> a diamond
-            }
+            return new ElementTag(object.formattedName());
         });
+    }
 
-        // <--[tag]
-        // @attribute <ItemTag.type>
-        // @returns ElementTag
-        // @description
-        // Always returns 'Item' for ItemTag objects. All objects fetchable by the Object Fetcher will return the
-        // type of object that is fulfilling this attribute.
-        // -->
-        registerTag("type", (attribute, object) -> {
-            return new ElementTag("Item");
-        });
+    public String formattedName() {
+        String id = CoreUtilities.toLowerCase(getMaterial().realName()).replace('_', ' ');
+        if (id.equals("air")) {
+            return "nothing";
+        }
+        if (id.equals("ice") || id.equals("dirt")) {
+            return id;
+        }
+        if (getItemStack().getAmount() > 1) {
+            if (id.equals("cactus")) {
+                return "cactuses";
+            }
+            if (id.endsWith(" off")) {
+                id = id.substring(0, id.length() - 4);
+            }
+            if (id.endsWith(" on")) {
+                id = id.substring(0, id.length() - 3);
+            }
+            if (id.equals("rotten flesh") || id.equals("cooked fish")
+                    || id.equals("raw fish") || id.endsWith("s")) {
+                return id;
+            }
+            if (id.endsWith("y")) {
+                return id.substring(0, id.length() - 1) + "ies";  // ex: lily -> lilies
+            }
+            if (id.endsWith("sh") || id.endsWith("ch")) {
+                return id + "es";
+            }
+            return id + "s"; // iron sword -> iron swords
+        }
+        else {
+            if (id.equals("cactus")) {
+                return "a cactus";
+            }
+            if (id.endsWith("s")) {
+                return id;
+            }
+            if (id.endsWith(" off")) {
+                return "a " + id.substring(0, id.length() - 4);
+            }
+            if (id.endsWith(" on")) {
+                return "a " + id.substring(0, id.length() - 3);
+            }
+            if (id.startsWith("a") || id.startsWith("e") || id.startsWith("i")
+                    || id.startsWith("o") || id.startsWith("u")) {
+                return "an " + id; // ex: emerald -> an emerald
+            }
+            return "a " + id; // ex: diamond -> a diamond
+        }
     }
 
     public static ObjectTagProcessor<ItemTag> tagProcessor = new ObjectTagProcessor<>();

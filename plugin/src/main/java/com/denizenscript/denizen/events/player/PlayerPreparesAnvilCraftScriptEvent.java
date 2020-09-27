@@ -23,6 +23,8 @@ public class PlayerPreparesAnvilCraftScriptEvent extends BukkitScriptEvent imple
     //
     // @Regex ^on player prepares anvil craft [^\s]+$
     //
+    // @Group Player
+    //
     // @Triggers when a player prepares an anvil to craft an item.
     //
     // @Warning The player doing the crafting is estimated and may be inaccurate.
@@ -52,7 +54,13 @@ public class PlayerPreparesAnvilCraftScriptEvent extends BukkitScriptEvent imple
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("player prepares anvil craft");
+        if (!path.eventLower.startsWith("player prepares anvil craft")) {
+            return false;
+        }
+        if (!couldMatchItem(path.eventArgLowerAt(4))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

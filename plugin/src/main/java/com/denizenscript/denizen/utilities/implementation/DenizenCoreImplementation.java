@@ -10,6 +10,7 @@ import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
+import com.denizenscript.denizen.utilities.debugging.DebugSubmit;
 import com.denizenscript.denizen.utilities.depends.Depends;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizencore.DenizenImplementation;
@@ -23,11 +24,15 @@ import com.denizenscript.denizencore.tags.TagContext;
 import com.denizenscript.denizencore.tags.TagManager;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.debugging.Debuggable;
+import com.denizenscript.denizencore.utilities.debugging.StrongWarning;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.function.Consumer;
 
 public class DenizenCoreImplementation implements DenizenImplementation {
@@ -188,30 +193,42 @@ public class DenizenCoreImplementation implements DenizenImplementation {
     // If you need to use the original player/NPC in a tag on the same line, use the define command to track it.
     // -->
 
+    public static StrongWarning invalidPlayerArg = new StrongWarning("The 'player:' arg should not be used in commands like define/flag/yaml/... just input the player directly instead.");
+    public static StrongWarning invalidNpcArg = new StrongWarning("The 'npc:' arg should not be used in commands like define/flag/yaml/... just input the npc directly instead.");
+    public static HashSet<String> invalidPlayerArgCommands = new HashSet<>(Arrays.asList("DEFINE", "FLAG", "YAML"));
+
     @Override
     public boolean handleCustomArgs(ScriptEntry scriptEntry, Argument arg, boolean if_ignore) {
         // Fill player/off-line player
         if (arg.matchesPrefix("player") && !if_ignore) {
+            if (invalidPlayerArgCommands.contains(scriptEntry.getCommandName())) {
+                invalidPlayerArg.warn(scriptEntry);
+            }
             Debug.echoDebug(scriptEntry, "...replacing the linked player with " + arg.getValue());
             String value = TagManager.tag(arg.getValue(), scriptEntry.getContext());
-            PlayerTag player = PlayerTag.valueOf(value);
+            PlayerTag player = PlayerTag.valueOf(value, scriptEntry.context);
             if (player == null || !player.isValid()) {
                 Debug.echoError(scriptEntry.getResidingQueue(), value + " is an invalid player!");
             }
             ((BukkitScriptEntryData) scriptEntry.entryData).setPlayer(player);
+            ((BukkitTagContext) scriptEntry.context).player = player;
             return true;
         }
 
         // Fill NPC argument
         else if (arg.matchesPrefix("npc") && !if_ignore) {
+            if (invalidPlayerArgCommands.contains(scriptEntry.getCommandName())) {
+                invalidNpcArg.warn(scriptEntry);
+            }
             Debug.echoDebug(scriptEntry, "...replacing the linked NPC with " + arg.getValue());
             String value = TagManager.tag(arg.getValue(), scriptEntry.getContext());
-            NPCTag npc = NPCTag.valueOf(value);
+            NPCTag npc = NPCTag.valueOf(value, scriptEntry.context);
             if (npc == null || !npc.isValid()) {
                 Debug.echoError(scriptEntry.getResidingQueue(), value + " is an invalid NPC!");
                 return false;
             }
             ((BukkitScriptEntryData) scriptEntry.entryData).setNPC(npc);
+            ((BukkitTagContext) scriptEntry.context).npc = npc;
             return true;
         }
         return false;
@@ -221,7 +238,6 @@ public class DenizenCoreImplementation implements DenizenImplementation {
     public void refreshScriptContainers() {
         ItemScriptHelper.item_scripts.clear();
         ItemScriptHelper.item_scripts_by_hash_id.clear();
-        InventoryScriptHelper.inventory_scripts.clear();
     }
 
     @Override
@@ -340,7 +356,7 @@ public class DenizenCoreImplementation implements DenizenImplementation {
             outcome = EntityTag.matches(comparable);
         }
         else if (comparedto.equalsIgnoreCase("spawnedentity")) {
-            outcome = (EntityTag.matches(comparable) && EntityTag.valueOf(comparable).isSpawned());
+            outcome = (EntityTag.matches(comparable) && EntityTag.valueOf(comparable, CoreUtilities.basicContext).isSpawned());
         }
         else if (comparedto.equalsIgnoreCase("npc")) {
             outcome = NPCTag.matches(comparable);
@@ -349,10 +365,10 @@ public class DenizenCoreImplementation implements DenizenImplementation {
             outcome = PlayerTag.matches(comparable);
         }
         else if (comparedto.equalsIgnoreCase("offlineplayer")) {
-            outcome = (PlayerTag.valueOf(comparable) != null && !PlayerTag.valueOf(comparable).isOnline());
+            outcome = (PlayerTag.valueOf(comparable, CoreUtilities.basicContext) != null && !PlayerTag.valueOf(comparable, CoreUtilities.basicContext).isOnline());
         }
         else if (comparedto.equalsIgnoreCase("onlineplayer")) {
-            outcome = (PlayerTag.valueOf(comparable) != null && PlayerTag.valueOf(comparable).isOnline());
+            outcome = (PlayerTag.valueOf(comparable, CoreUtilities.basicContext) != null && PlayerTag.valueOf(comparable, CoreUtilities.basicContext).isOnline());
         }
         else if (comparedto.equalsIgnoreCase("item")) {
             outcome = ItemTag.matches(comparable);
@@ -462,5 +478,44 @@ public class DenizenCoreImplementation implements DenizenImplementation {
     @Override
     public boolean allowStrangeYAMLSaves() {
         return Settings.allowStrangeYAMLSaves();
+    }
+
+    @Override
+    public void startRecording() {
+        Debug.record = true;
+        Debug.Recording = new StringBuilder();
+    }
+
+    @Override
+    public void stopRecording() {
+        Debug.record = false;
+        Debug.Recording = new StringBuilder();
+    }
+
+    @Override
+    public void submitRecording(Consumer<String> processResult) {
+        if (!Debug.record) {
+            processResult.accept("disabled");
+            return;
+        }
+        Debug.record = false;
+        final DebugSubmit submit = new DebugSubmit();
+        submit.recording = Debug.Recording.toString();
+        Debug.Recording = new StringBuilder();
+        submit.start();
+        BukkitRunnable task = new BukkitRunnable() {
+            public void run() {
+                if (!submit.isAlive()) {
+                    this.cancel();
+                    if (submit.Result == null) {
+                        processResult.accept(null);
+                    }
+                    else {
+                        processResult.accept("https://one.denizenscript.com" + submit.Result);
+                    }
+                }
+            }
+        };
+        task.runTaskTimer(DenizenAPI.getCurrentInstance(), 0, 5);
     }
 }

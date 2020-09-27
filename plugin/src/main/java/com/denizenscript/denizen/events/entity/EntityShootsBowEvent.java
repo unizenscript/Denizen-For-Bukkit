@@ -31,6 +31,8 @@ public class EntityShootsBowEvent extends BukkitScriptEvent implements Listener 
     //
     // @Regex ^on [^\s]+ shoots [^\s]+$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -67,7 +69,13 @@ public class EntityShootsBowEvent extends BukkitScriptEvent implements Listener 
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("shoots");
+        if (!path.eventArgLowerAt(1).equals("shoots")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

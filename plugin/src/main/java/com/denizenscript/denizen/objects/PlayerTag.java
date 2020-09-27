@@ -21,10 +21,7 @@ import com.denizenscript.denizen.nms.abstracts.ImprovedOfflinePlayer;
 import com.denizenscript.denizen.nms.abstracts.Sidebar;
 import com.denizenscript.denizen.nms.interfaces.PlayerHelper;
 import com.denizenscript.denizen.tags.core.PlayerTagBase;
-import com.denizenscript.denizencore.objects.core.DurationTag;
-import com.denizenscript.denizencore.objects.core.ElementTag;
-import com.denizenscript.denizencore.objects.core.ListTag;
-import com.denizenscript.denizencore.objects.core.ScriptTag;
+import com.denizenscript.denizencore.objects.core.*;
 import com.denizenscript.denizencore.tags.Attribute;
 import com.denizenscript.denizencore.tags.ObjectTagProcessor;
 import com.denizenscript.denizencore.tags.TagContext;
@@ -111,6 +108,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
     //   OBJECT FETCHER
     /////////////////
 
+    @Deprecated
     public static PlayerTag valueOf(String string) {
         return valueOf(string, null);
     }
@@ -130,7 +128,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         if (string == null) {
             return null;
         }
-        boolean announce = context == null ? defaultAnnounce : context.debug;
+        boolean announce = context == null ? defaultAnnounce : context.showErrors();
 
         string = string.replace("p@", "").replace("P@", "");
 
@@ -255,7 +253,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         if (Depends.citizens != null && CitizensAPI.hasImplementation()) {
             NPC npc = CitizensAPI.getDefaultNPCSelector().getSelected(getPlayerEntity());
             if (npc != null) {
-                return NPCTag.mirrorCitizensNPC(npc);
+                return new NPCTag(npc);
             }
         }
         return null;
@@ -768,7 +766,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             if (attribute.hasContext(1)) {
                 try {
                     outcome = DenizenAPI.getCurrentInstance().getSaves().getString("Players." + object.getName() + ".Scripts."
-                            + ScriptTag.valueOf(attribute.getContext(1)).getName() + ".Current Step");
+                            + attribute.contextAsType(1, ScriptTag.class).getName() + ".Current Step");
                 }
                 catch (Exception e) {
                     outcome = "null";
@@ -801,7 +799,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // <--[tag]
         // @attribute <PlayerTag.money>
         // @returns ElementTag(Decimal)
-        // @mechanism PlayerTag.money
         // @plugin Vault
         // @description
         // Returns the amount of money the player has with the registered Economy system.
@@ -885,7 +882,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
                             if (obj instanceof EntityTag) {
                                 filterEntity = (EntityTag) obj;
                             }
-                            else if (CoreUtilities.toLowerCase(obj.toString()).equals("npc")) {
+                            else if (CoreUtilities.equalsIgnoreCase(obj.toString(), "npc")) {
                                 valid = EntityTag.isCitizensNPC(entity);
                             }
                             else {
@@ -967,17 +964,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         /////////////////
 
         // <--[tag]
-        // @attribute <PlayerTag.type>
-        // @returns ElementTag
-        // @description
-        // Always returns 'Player' for PlayerTag objects. All objects fetchable by the Object Fetcher will return the
-        // type of object that is fulfilling this attribute.
-        // -->
-        registerTag("type", (attribute, object) -> {
-            return new ElementTag("Player");
-        });
-
-        // <--[tag]
         // @attribute <PlayerTag.save_name>
         // @returns ElementTag
         // @description
@@ -1044,13 +1030,17 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         });
 
         // <--[tag]
-        // @attribute <PlayerTag.first_played>
-        // @returns DurationTag
+        // @attribute <PlayerTag.first_played_time>
+        // @returns TimeTag
         // @description
-        // Returns the millisecond time of when the player first logged on to this server.
+        // Returns the time of when the player first logged on to this server.
         // Works with offline players.
         // -->
+        registerTag("first_played_time", (attribute, object) -> {
+            return new TimeTag(object.getOfflinePlayer().getFirstPlayed());
+        });
         registerTag("first_played", (attribute, object) -> {
+            Deprecations.playerTimePlayedTags.warn(attribute.context);
             return new DurationTag(object.getOfflinePlayer().getFirstPlayed() / 50);
         });
 
@@ -1218,14 +1208,21 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         });
 
         // <--[tag]
-        // @attribute <PlayerTag.last_played>
-        // @returns DurationTag
+        // @attribute <PlayerTag.last_played_time>
+        // @returns TimeTag
         // @description
-        // Returns the datestamp of when the player was last seen as a DurationTag date/time object.
+        // Returns the time of when the player was last seen.
         // Works with offline players.
         // Not very useful for online players.
         // -->
+        registerTag("last_played_time", (attribute, object) -> {
+            if (object.isOnline()) {
+                return TimeTag.now();
+            }
+            return new TimeTag(object.getOfflinePlayer().getLastPlayed());
+        });
         registerTag("last_played", (attribute, object) -> {
+            Deprecations.playerTimePlayedTags.warn(attribute.context);
             if (object.isOnline()) {
                 return new DurationTag(System.currentTimeMillis() / 50);
             }
@@ -1233,7 +1230,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         });
 
         // <--[tag]
-        // @attribute <PlayerTag.groups>
+        // @attribute <PlayerTag.groups[(<world>)]>
         // @returns ListTag
         // @description
         // Returns a list of all groups the player is in.
@@ -1247,9 +1244,16 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
                 return null;
             }
             ListTag list = new ListTag();
-            // TODO: optionally specify world
+            WorldTag world = null;
+            if (attribute.hasContext(1)) {
+                world = attribute.contextAsType(1, WorldTag.class);
+                if (world == null) {
+                    Debug.echoError("Invalid world specified: " + attribute.getContext(1));
+                    return null;
+                }
+            }
             for (String group : Depends.permissions.getGroups()) {
-                if (Depends.permissions.playerInGroup(null, object.getOfflinePlayer(), group)) {
+                if (Depends.permissions.playerInGroup(world != null ? world.getName() : null, object.getOfflinePlayer(), group)) {
                     list.add(group);
                 }
             }
@@ -1257,13 +1261,21 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         });
 
         // <--[tag]
-        // @attribute <PlayerTag.ban_expiration>
-        // @returns DurationTag
+        // @attribute <PlayerTag.ban_expiration_time>
+        // @returns TimeTag
         // @description
         // Returns the expiration of the player's ban, if they are banned.
         // Potentially can be null.
         // -->
+        registerTag("ban_expiration_time", (attribute, object) -> {
+            BanEntry ban = Bukkit.getBanList(BanList.Type.NAME).getBanEntry(object.getName());
+            if (ban == null || ban.getExpiration() == null || (ban.getExpiration() != null && ban.getExpiration().before(new Date()))) {
+                return null;
+            }
+            return new TimeTag(ban.getExpiration().getTime());
+        });
         registerTag("ban_expiration", (attribute, object) -> {
+            Deprecations.playerTimePlayedTags.warn(attribute.context);
             BanEntry ban = Bukkit.getBanList(BanList.Type.NAME).getBanEntry(object.getName());
             if (ban == null || ban.getExpiration() == null || (ban.getExpiration() != null && ban.getExpiration().before(new Date()))) {
                 return null;
@@ -1286,11 +1298,18 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         });
 
         // <--[tag]
-        // @attribute <PlayerTag.ban_created>
-        // @returns DurationTag
+        // @attribute <PlayerTag.ban_created_time>
+        // @returns TimeTag
         // @description
-        // Returns when the player's ban was created as a Duration time tag, if they are banned.
+        // Returns when the player's ban was created, if they are banned.
         // -->
+        registerTag("ban_created_time", (attribute, object) -> {
+            BanEntry ban = Bukkit.getBanList(BanList.Type.NAME).getBanEntry(object.getName());
+            if (ban == null || (ban.getExpiration() != null && ban.getExpiration().before(new Date()))) {
+                return null;
+            }
+            return new TimeTag(ban.getCreated().getTime());
+        });
         registerTag("ban_created", (attribute, object) -> {
             BanEntry ban = Bukkit.getBanList(BanList.Type.NAME).getBanEntry(object.getName());
             if (ban == null || (ban.getExpiration() != null && ban.getExpiration().before(new Date()))) {
@@ -1387,9 +1406,16 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
 
             // Permission in certain world
             else if (attribute.startsWith("world", 2)) {
-                String world = attribute.getContext(2);
+                WorldTag world = null;
+                if (attribute.hasContext(2)) {
+                    world = attribute.contextAsType(2, WorldTag.class);
+                    if (world == null) {
+                        Debug.echoError("Invalid world specified: " + attribute.getContext(2));
+                        return null;
+                    }
+                }
                 attribute.fulfill(1);
-                return new ElementTag(Depends.permissions.playerInGroup(world, object.getOfflinePlayer(), group));
+                return new ElementTag(Depends.permissions.playerInGroup(world != null ? world.getName() : null, object.getOfflinePlayer(), group));
             }
 
             // Permission in current world
@@ -1473,7 +1499,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @returns ElementTag(Number)
         // @description
         // Returns the player's current value for the specified statistic.
-        // Valid statistics: <@link url https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Statistic.html>
+        // Valid statistics: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Statistic.html>
         // Works with offline players.
         // -->
         registerTag("statistic", (attribute, object) -> {
@@ -1495,7 +1521,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             // @description
             // Returns the player's current value for the specified statistic, with the
             // specified qualifier, which can be either an entity or material.
-            // Valid statistics: <@link url https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Statistic.html>
+            // Valid statistics: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Statistic.html>
             // To check a statistic type dynamically, refer to <@link tag server.statistic_type>.
             // -->
             if (attribute.startsWith("qualifier", 2)) {
@@ -1540,6 +1566,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // <--[tag]
         // @attribute <PlayerTag.list_name>
         // @returns ElementTag
+        // @mechanism PlayerTag.player_list_name
         // @description
         // Returns the name of the player as shown in the player list.
         // -->
@@ -1677,7 +1704,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // <--[tag]
         // @attribute <PlayerTag.item_on_cursor>
         // @returns ItemTag
-        // @Mechanism PlayerTag.item_on_cursor
+        // @mechanism PlayerTag.item_on_cursor
         // @description
         // Returns the item on the player's cursor, if any. This includes
         // chest interfaces, inventories, and hotbars, etc.
@@ -1709,7 +1736,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @attribute <PlayerTag.sidebar_lines>
         // @returns ListTag
         // @description
-        // Returns the current lines set on the player's Sidebar via the Sidebar command.
+        // Returns the current lines set on the player's Sidebar via <@link command sidebar>.
         // -->
         registerOnlineOnlyTag("sidebar_lines", (attribute, object) -> {
             Sidebar sidebar = SidebarCommand.getSidebar(object);
@@ -1723,7 +1750,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @attribute <PlayerTag.sidebar_title>
         // @returns ElementTag
         // @description
-        // Returns the current title set on the player's Sidebar via the Sidebar command.
+        // Returns the current title set on the player's Sidebar via <@link command sidebar>.
         // -->
         registerOnlineOnlyTag("sidebar_title", (attribute, object) -> {
             Sidebar sidebar = SidebarCommand.getSidebar(object);
@@ -1737,7 +1764,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @attribute <PlayerTag.sidebar_scores>
         // @returns ListTag
         // @description
-        // Returns the current scores set on the player's Sidebar via the Sidebar command,
+        // Returns the current scores set on the player's Sidebar via <@link command sidebar>,
         // in the same order as <@link tag PlayerTag.sidebar_lines>.
         // -->
         registerOnlineOnlyTag("sidebar_scores", (attribute, object) -> {
@@ -1962,8 +1989,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @returns NPCTag
         // @mechanism PlayerTag.selected_npc
         // @description
-        // Returns the NPCTag that the player currently has selected with
-        // '/npc select', null if no player selected.
+        // Returns the NPCTag that the player currently has selected with '/npc select', null if no NPC selected.
         // -->
         registerOnlineOnlyTag("selected_npc", (attribute, object) -> {
             if (object.getPlayerEntity().hasMetadata("selected")) {
@@ -1981,7 +2007,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @returns EntityTag
         // @description
         // Returns the EntityTag object of the player.
-        // (Note: This should never actually be needed. <PlayerTag> is considered a valid EntityTag by script commands.)
+        // (Note: This should never actually be needed. PlayerTags are considered valid EntityTags.)
         // -->
         registerOnlineOnlyTag("entity", (attribute, object) -> {
             return new EntityTag(object.getPlayerEntity());
@@ -2061,7 +2087,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             if (!attribute.hasContext(1)) {
                 return null;
             }
-            ChunkTag chunk = ChunkTag.valueOf(attribute.getContext(1));
+            ChunkTag chunk = attribute.contextAsType(1, ChunkTag.class);
             if (chunk == null) {
                 return null;
             }
@@ -2089,6 +2115,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @mechanism PlayerTag.fly_speed
         // @description
         // Returns the speed the player can fly at.
+        // Default value is '0.2'.
         // -->
         registerOnlineOnlyTag("fly_speed", (attribute, object) -> {
             return new ElementTag(object.getPlayerEntity().getFlySpeed());
@@ -2110,7 +2137,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @returns ElementTag(Decimal)
         // @mechanism PlayerTag.saturation
         // @description
-        // Returns the current saturation of the player.
+        // Returns the current food saturation of the player.
         // -->
         registerOnlineOnlyTag("saturation", (attribute, object) -> {
             return new ElementTag(object.getPlayerEntity().getSaturation());
@@ -2281,12 +2308,12 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         });
 
         // <--[tag]
-        // @attribute <PlayerTag.list_advancements>
+        // @attribute <PlayerTag.advancements>
         // @returns ListTag
         // @description
         // Returns a list of the names of all advancements the player has completed.
         // -->
-        registerOnlineOnlyTag("list_advancements", (attribute, object) -> {
+        registerOnlineOnlyTag("advancements", (attribute, object) -> {
             ListTag list = new ListTag();
             Bukkit.advancementIterator().forEachRemaining((adv) -> {
                 if (object.getPlayerEntity().getAdvancementProgress(adv).isDone()) {
@@ -2294,7 +2321,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
                 }
             });
             return list;
-        });
+        }, "list_advancements");
 
         // <--[tag]
         // @attribute <PlayerTag.time_asleep>
@@ -2303,13 +2330,12 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // Returns the time the player has been asleep.
         // -->
         registerOnlineOnlyTag("time_asleep", (attribute, object) -> {
-            return new DurationTag(object.getPlayerEntity().getSleepTicks() / 20);
+            return new DurationTag((long) object.getPlayerEntity().getSleepTicks());
         });
 
         // <--[tag]
         // @attribute <PlayerTag.time>
         // @returns ElementTag(Number)
-        // @mechanism PlayerTag.time
         // @description
         // Returns the time the player is currently experiencing. This time could differ from
         // the time that the rest of the world is currently experiencing if a 'time' or 'freeze_time'
@@ -2322,7 +2348,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // <--[tag]
         // @attribute <PlayerTag.weather>
         // @returns ElementTag
-        // @mechanism PlayerTag.weather
         // @description
         // Returns the type of weather the player is experiencing. This will be different
         // from the weather currently in the world that the player is residing in if
@@ -2469,7 +2494,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             if (!attribute.hasContext(1)) {
                 return null;
             }
-            LocationTag input = LocationTag.valueOf(attribute.getContext(1));
+            LocationTag input = attribute.contextAsType(1, LocationTag.class);
             FakeBlock.FakeBlockMap map = FakeBlock.blocks.get(object.getOfflinePlayer().getUniqueId());
             if (map != null) {
                 FakeBlock block = map.byLocation.get(input);
@@ -2489,7 +2514,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // -->
         registerTag("fake_entities", (attribute, object) -> {
             ListTag list = new ListTag();
-            FakeEntity.FakeEntityMap map = FakeEntity.entityMap.get(object.getOfflinePlayer().getUniqueId());
+            FakeEntity.FakeEntityMap map = FakeEntity.playersToEntities.get(object.getOfflinePlayer().getUniqueId());
             if (map != null) {
                 for (Map.Entry<Integer, FakeEntity> entry : map.byId.entrySet()) {
                     list.addObject(entry.getValue().entity);
@@ -2592,8 +2617,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @name level
         // @input ElementTag(Number)
         // @description
-        // Sets the level on the player. Does not affect the current progression
-        // of experience towards next level.
+        // Sets the level on the player. Does not affect the current progression of experience towards next level.
         // @tags
         // <PlayerTag.xp_level>
         // -->
@@ -2965,43 +2989,18 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             setGameMode(GameMode.valueOf(mechanism.getValue().asString().toUpperCase()));
         }
 
-        // <--[mechanism]
-        // @object PlayerTag
-        // @name kick
-        // @input ElementTag
-        // @description
-        // Kicks the player, with the specified message.
-        // -->
         if (mechanism.matches("kick")) {
+            Deprecations.oldKickMech.warn(mechanism.context);
             getPlayerEntity().kickPlayer(mechanism.getValue().asString());
         }
 
-        // <--[mechanism]
-        // @object PlayerTag
-        // @name weather
-        // @input ElementTag
-        // @description
-        // Sets the weather condition for the player. This does NOT affect the weather
-        // in the world, and will block any world weather changes until the 'reset_weather'
-        // mechanism is used. Valid weather: CLEAR, DOWNFALL
-        // @tags
-        // <PlayerTag.weather>
-        // -->
         if (mechanism.matches("weather") && mechanism.requireEnum(false, WeatherType.values())) {
+            Deprecations.oldWeatherMech.warn(mechanism.context);
             getPlayerEntity().setPlayerWeather(WeatherType.valueOf(mechanism.getValue().asString().toUpperCase()));
         }
 
-        // <--[mechanism]
-        // @object PlayerTag
-        // @name reset_weather
-        // @input None
-        // @description
-        // Resets the weather on the Player to the conditions currently taking place in the Player's
-        // current world.
-        // @tags
-        // <PlayerTag.weather>
-        // -->
         if (mechanism.matches("reset_weather")) {
+            Deprecations.oldWeatherMech.warn(mechanism.context);
             getPlayerEntity().resetPlayerWeather();
         }
 
@@ -3058,37 +3057,13 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             setLocation(mechanism.valueAsType(LocationTag.class));
         }
 
-        // <--[mechanism]
-        // @object PlayerTag
-        // @name time
-        // @input ElementTag(Number)
-        // @description
-        // Sets the time of day the Player is currently experiencing. Setting this will cause the
-        // player to have a different time than other Players in the world are experiencing though
-        // time will continue to progress. Using the 'reset_time' mechanism, or relogging your player
-        // will reset this mechanism to match the world's current time. Valid range is 0-24000.
-        // The value is relative to the current world time, and will continue moving at the same rate as current world time moves.
-        // @tags
-        // <PlayerTag.time>
-        // -->
         if (mechanism.matches("time") && mechanism.requireInteger()) {
+            Deprecations.oldTimeMech.warn(mechanism.context);
             getPlayerEntity().setPlayerTime(mechanism.getValue().asInt(), true);
         }
 
-        // <--[mechanism]
-        // @object PlayerTag
-        // @name freeze_time
-        // @input ElementTag(Number)
-        // @description
-        // Sets the time of day the Player is currently experiencing and freezes it there. Note:
-        // there is a small 'twitch effect' when looking at the sky when time is frozen.
-        // Setting this will cause the player to have a different time than other Players in
-        // the world are experiencing. Using the 'reset_time' mechanism, or relogging your player
-        // will reset this mechanism to match the world's current time. Valid range is 0-24000.
-        // @tags
-        // <PlayerTag.time>
-        // -->
         if (mechanism.matches("freeze_time")) {
+            Deprecations.oldTimeMech.warn(mechanism.context);
             if (mechanism.requireInteger("Invalid integer specified. Assuming current world time.")) {
                 getPlayerEntity().setPlayerTime(mechanism.getValue().asInt(), false);
             }
@@ -3097,17 +3072,8 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             }
         }
 
-        // <--[mechanism]
-        // @object PlayerTag
-        // @name reset_time
-        // @input None
-        // @description
-        // Resets any altered time that has been applied to this player. Using this will make
-        // the Player's time match the world's current time.
-        // @tags
-        // <PlayerTag.time>
-        // -->
         if (mechanism.matches("reset_time")) {
+            Deprecations.oldTimeMech.warn(mechanism.context);
             getPlayerEntity().resetPlayerTime();
         }
 
@@ -3151,25 +3117,20 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // <--[mechanism]
         // @object PlayerTag
         // @name hide_entity
-        // @input EntityTag(|ElementTag(Boolean))
+        // @input EntityTag
         // @description
-        // Hides an entity from the player. You can optionally also specify a boolean to determine
-        // whether the entity should be kept in the tab list (players only).
+        // Hides an entity from the player.
         // -->
         if (mechanism.matches("hide_entity")) {
             if (!mechanism.getValue().asString().isEmpty()) {
                 ListTag split = mechanism.valueAsType(ListTag.class);
                 if (split.size() > 0 && new ElementTag(split.get(0)).matchesType(EntityTag.class)) {
-                    EntityTag entity = EntityTag.valueOf(split.get(0));
+                    EntityTag entity = EntityTag.valueOf(split.get(0), mechanism.context);
                     if (!entity.isSpawnedOrValidForTag()) {
                         Debug.echoError("Can't hide the unspawned entity '" + split.get(0) + "'!");
                     }
-                    else if (split.size() > 1 && new ElementTag(split.get(1)).isBoolean()) {
-                        NMSHandler.getEntityHelper().hideEntity(getPlayerEntity(), entity.getBukkitEntity(),
-                                new ElementTag(split.get(1)).asBoolean());
-                    }
                     else {
-                        NMSHandler.getEntityHelper().hideEntity(getPlayerEntity(), entity.getBukkitEntity(), false);
+                        NMSHandler.getEntityHelper().hideEntity(getPlayerEntity(), entity.getBukkitEntity());
                     }
                 }
                 else {
@@ -3181,20 +3142,8 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             }
         }
 
-        // <--[mechanism]
-        // @object PlayerTag
-        // @name show_boss_bar
-        // @input (ElementTag(Number)|)Element
-        // @description
-        // Shows the player a boss health bar with the specified text as a name.
-        // Use with no input value to remove the bar.
-        // Optionally, precede the text with a number indicating the health value
-        // based on an arbitrary scale of 0 to 200. For example:
-        // - adjust <player> show_boss_bar:Hello
-        // - adjust <player> show_boss_bar:100|Hello
-        // NOTE: This has been replaced by <@link command bossbar>!
-        // -->
         if (mechanism.matches("show_boss_bar")) {
+            Deprecations.oldBossBarMech.warn(mechanism.context);
             if (!mechanism.getValue().asString().isEmpty()) {
                 String[] split = mechanism.getValue().asString().split("\\|", 2);
                 if (split.length == 2 && new ElementTag(split[0]).isDouble()) {
@@ -3214,11 +3163,10 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @name fake_experience
         // @input ElementTag(Decimal)(|ElementTag(Number))
         // @description
-        // Shows the player a fake experience bar, with a number between 0.0 and 1.0
-        // to specify how far along the bar is.
+        // Shows the player a fake experience bar, with a number between 0.0 and 1.0 to specify how far along the bar is.
         // Use with no input value to reset to the player's normal experience.
         // Optionally, you can specify a fake experience level.
-        // - adjust <player> fake_experience:0.5|5
+        // For example: - adjust <player> fake_experience:0.5|5
         // -->
         if (mechanism.matches("fake_experience")) {
             if (!mechanism.getValue().asString().isEmpty()) {
@@ -3247,8 +3195,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @name fake_health
         // @input ElementTag(Decimal)(|ElementTag(Number)(|ElementTag(Decimal)))
         // @description
-        // Shows the player a fake health bar, with a number between 0 and 20,
-        // where 1 is half of a heart.
+        // Shows the player a fake health bar, with a number between 0 and 20, where 1 is half of a heart.
         // Use with no input value to reset to the player's normal health.
         // Optionally, you can specify a fake food level, between 0 and 20.
         // You can also optionally specify a food saturation level between 0 and 10.
@@ -3287,13 +3234,11 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // <--[mechanism]
         // @object PlayerTag
         // @name fake_equipment
-        // @input EntityTag(|Element|ItemTag)
+        // @input EntityTag(|ElementTag|ItemTag)
         // @description
-        // Shows the player fake equipment on the specified living entity, which has
-        // no real non-visual effects, in the form Entity|Slot|Item, where the slot
-        // can be one of the following: HAND, OFF_HAND, BOOTS, LEGS, CHEST, HEAD
-        // Optionally, exclude the slot and item to stop showing the fake equipment,
-        // if any, on the specified entity.
+        // Shows the player fake equipment on the specified living entity, which has no real non-visual effects.
+        // Input is in the form Entity|Slot|Item, where the slot can be one of the following: HAND, OFF_HAND, BOOTS, LEGS, CHEST, HEAD
+        // Optionally, exclude the slot and item to stop showing the fake equipment, if any, on the specified entity.
         // - adjust <player> fake_equipment:<[some_entity]>|chest|diamond_chestplate
         // - adjust <player> fake_equipment:<player>|head|jack_o_lantern
         // -->
@@ -3357,8 +3302,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @name item_message
         // @input ElementTag
         // @description
-        // Shows the player an item message as if the item they are carrying had
-        // changed names to the specified Element.
+        // Shows the player an item message as if the item they are carrying had changed names to the input message.
         // -->
         if (mechanism.matches("item_message")) {
             ItemChangeMessage.sendMessage(getPlayerEntity(), mechanism.getValue().asString());
@@ -3392,9 +3336,8 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @input EntityTag
         // @description
         // Forces the player to spectate from the entity's point of view.
-        // Note: They cannot cancel the spectating without a re-log -- you
-        // must make them spectate themselves to cancel the effect.
-        // (i.e. - adjust <player> "spectate:<player>")
+        // Note: They cannot cancel the spectating without a re-log -- you must make them spectate themselves to cancel the effect.
+        // (i.e. - adjust <player> spectate:<player>)
         // -->
         if (mechanism.matches("spectate") && mechanism.requireObject(EntityTag.class)) {
             NMSHandler.getPacketHelper().forceSpectate(getPlayerEntity(), mechanism.valueAsType(EntityTag.class).getBukkitEntity());
@@ -3406,8 +3349,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @input None
         // @description
         // Forces the player to open the written book in their hand.
-        // The book can safely be removed from the player's hand
-        // without the player closing the book.
+        // The book can safely be removed from the player's hand without the player closing the book.
         // -->
         if (mechanism.matches("open_book")) {
             NMSHandler.getPacketHelper().openBook(getPlayerEntity(), EquipmentSlot.HAND);
@@ -3419,8 +3361,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @input None
         // @description
         // Forces the player to open the written book in their offhand.
-        // The book can safely be removed from the player's offhand
-        // without the player closing the book.
+        // The book can safely be removed from the player's offhand without the player closing the book.
         // -->
         if (mechanism.matches("open_offhand_book")) {
             NMSHandler.getPacketHelper().openBook(getPlayerEntity(), EquipmentSlot.OFF_HAND);
@@ -3431,12 +3372,12 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @name show_book
         // @input ItemTag
         // @description
-        // Displays a book to a player.
+        // Displays a book to a player. Must be a WRITTEN_BOOK item.
         // -->
         if (mechanism.matches("show_book")
                 && mechanism.requireObject(ItemTag.class)) {
             ItemTag book = mechanism.valueAsType(ItemTag.class);
-            if (!book.getItemStack().hasItemMeta() || !(book.getItemStack().getItemMeta() instanceof BookMeta)) {
+            if (!(book.getItemMeta() instanceof BookMeta)) {
                 Debug.echoError("show_book mechanism must have a book as input.");
                 return;
             }
@@ -3524,8 +3465,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @name edit_sign
         // @input LocationTag
         // @description
-        // Allows the player to edit an existing sign. To create a
-        // sign, see <@link command Sign>.
+        // Allows the player to edit an existing sign. To create a sign, see <@link command Sign>.
         // -->
         if (mechanism.matches("edit_sign") && mechanism.requireObject(LocationTag.class)) {
             if (!NMSHandler.getPacketHelper().showSignEditor(getPlayerEntity(), mechanism.valueAsType(LocationTag.class))) {
@@ -3538,8 +3478,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @name tab_list_info
         // @input ElementTag(|ElementTag)
         // @description
-        // Show the player some text in the header and footer area
-        // in their tab list.
+        // Show the player some text in the header and footer area in their tab list.
         // - adjust <player> tab_list_info:<header>|<footer>
         // -->
         if (mechanism.matches("tab_list_info")) {
@@ -3574,7 +3513,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
                 String[] split = mechanism.getValue().asString().split("\\|", 2);
                 if (LocationTag.matches(split[0]) && split.length > 1) {
                     ListTag lines = ListTag.valueOf(split[1], mechanism.context);
-                    getPlayerEntity().sendSignChange(LocationTag.valueOf(split[0]), lines.toArray(new String[4]));
+                    getPlayerEntity().sendSignChange(LocationTag.valueOf(split[0], mechanism.context), lines.toArray(new String[4]));
                 }
                 else {
                     Debug.echoError("Must specify a valid location and at least one sign line!");
@@ -3588,21 +3527,23 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // <--[mechanism]
         // @object PlayerTag
         // @name banner_update
-        // @input LocationTag|ElementTag(|ListTag)
+        // @input LocationTag|ListTag
         // @description
-        // Shows the player a fake base color and, optionally, patterns on a banner. Input must be
-        // in the form: "LOCATION|BASE_COLOR(|COLOR/PATTERN|...)"
-        // For the list of possible colors, see <@link url http://bit.ly/1dydq12>.
-        // For the list of possible patterns, see <@link url http://bit.ly/1MqRn7T>.
+        // Shows the player fake patterns on a banner. Input must be in the form: "LOCATION|COLOR/PATTERN|..."
+        // As of Minecraft 1.13, the base color is unique material types, and so <@link command showfake> must be used for base color changes.
+        // For the list of possible patterns, see <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/block/banner/PatternType.html>.
         // -->
         if (mechanism.matches("banner_update")) {
             if (mechanism.getValue().asString().length() > 0) {
                 String[] split = mechanism.getValue().asString().split("\\|");
                 List<org.bukkit.block.banner.Pattern> patterns = new ArrayList<>();
-                if (split.length > 2) {
+                if (LocationTag.matches(split[0]) && split.length > 1) {
                     List<String> splitList;
-                    for (int i = 2; i < split.length; i++) {
+                    for (int i = 1; i < split.length; i++) {
                         String string = split[i];
+                        if (i == 1 && !string.contains("/")) {
+                            continue; // Comapt with old input format that had base_color
+                        }
                         try {
                             splitList = CoreUtilities.split(string, '/', 2);
                             patterns.add(new org.bukkit.block.banner.Pattern(DyeColor.valueOf(splitList.get(0).toUpperCase()),
@@ -3612,21 +3553,11 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
                             Debug.echoError("Could not apply pattern to banner: " + string);
                         }
                     }
-                }
-                if (LocationTag.matches(split[0]) && split.length > 1) {
-                    LocationTag location = LocationTag.valueOf(split[0]);
-                    DyeColor base;
-                    try {
-                        base = DyeColor.valueOf(split[1].toUpperCase());
-                    }
-                    catch (Exception e) {
-                        Debug.echoError("Could not apply base color to banner: " + split[1]);
-                        return;
-                    }
-                    NMSHandler.getPacketHelper().showBannerUpdate(getPlayerEntity(), location, base, patterns);
+                    LocationTag location = LocationTag.valueOf(split[0], mechanism.context);
+                    NMSHandler.getPacketHelper().showBannerUpdate(getPlayerEntity(), location, DyeColor.WHITE, patterns);
                 }
                 else {
-                    Debug.echoError("Must specify a valid location and a base color!");
+                    Debug.echoError("Must specify a valid location and pattern list!");
                 }
             }
         }
@@ -3637,8 +3568,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @input ElementTag
         // @description
         // Stops all sounds of the specified type for the player.
-        // Valid types are AMBIENT, BLOCKS, HOSTILE, MASTER, MUSIC,
-        // NEUTRAL, PLAYERS, RECORDS, VOICE, and WEATHER
+        // Valid types are AMBIENT, BLOCKS, HOSTILE, MASTER, MUSIC, NEUTRAL, PLAYERS, RECORDS, VOICE, and WEATHER
         // If no sound type is specified, all types will be stopped.
         // -->
         if (mechanism.matches("stop_sound")) {
@@ -3746,18 +3676,8 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             getOfflinePlayer().setOp(mechanism.getValue().asBoolean());
         }
 
-        // <--[mechanism]
-        // @object PlayerTag
-        // @name money
-        // @input ElementTag(Number)
-        // @plugin Vault
-        // @description
-        // Set the amount of money a player has with the linked economy system (through Vault).
-        // (Only if supported by the registered Economy system.)
-        // @tags
-        // <PlayerTag.money>
-        // -->
         if (mechanism.matches("money") && mechanism.requireDouble() && Depends.economy != null) {
+            Deprecations.oldMoneyMech.warn(mechanism.context);
             double bal = Depends.economy.getBalance(getOfflinePlayer());
             double goal = mechanism.getValue().asDouble();
             if (goal > bal) {

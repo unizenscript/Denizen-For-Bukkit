@@ -10,7 +10,6 @@ import com.denizenscript.denizen.utilities.inventory.SlotHelper;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.utilities.Deprecations;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -26,6 +25,8 @@ public class PlayerBreaksItemScriptEvent extends BukkitScriptEvent implements Li
     // player breaks held <item>
     //
     // @Regex ^on player breaks held [^\s]+$
+    //
+    // @Group Player
     //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
@@ -51,34 +52,26 @@ public class PlayerBreaksItemScriptEvent extends BukkitScriptEvent implements Li
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        if (path.eventArgLowerAt(2).equals("block")) {
+        if (!path.eventLower.startsWith("player breaks held")) {
             return false;
         }
-        // TODO: *require* "held"
-        return path.eventLower.startsWith("player breaks");
+        if (!couldMatchItem(path.eventArgLowerAt(3))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean matches(ScriptPath path) {
-        boolean isModern = path.eventArgLowerAt(2).equals("held");
-        String iCheck = path.eventArgLowerAt(isModern ? 3 : 2);
+        String iCheck = path.eventArgLowerAt(3);
         if (!tryItem(item, iCheck)) {
-            return false;
-        }
-        if (!isModern && item.getMaterial().getMaterial().isBlock()) { // Prevent "breaks block" collision with old style event.
             return false;
         }
         if (!runInCheck(path, event.getPlayer().getLocation())) {
             return false;
         }
-        if (!isModern) {
-            Deprecations.oldStylePlayerBreaksItemEvent.message = oldWarningMessage + " (for event: " + path.toString() + ").";
-            Deprecations.oldStylePlayerBreaksItemEvent.warn();
-        }
         return super.matches(path);
     }
-
-    public static String oldWarningMessage = Deprecations.oldStylePlayerBreaksItemEvent.message;
 
     @Override
     public String getName() {

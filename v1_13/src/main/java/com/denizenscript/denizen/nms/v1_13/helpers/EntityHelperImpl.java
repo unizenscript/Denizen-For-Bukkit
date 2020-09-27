@@ -1,12 +1,10 @@
 package com.denizenscript.denizen.nms.v1_13.helpers;
 
 import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.interfaces.BlockData;
 import com.denizenscript.denizen.nms.interfaces.EntityHelper;
 import com.denizenscript.denizen.nms.util.BoundingBox;
-import com.denizenscript.denizen.nms.util.ReflectionHelper;
+import com.denizenscript.denizencore.utilities.ReflectionHelper;
 import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
-import com.denizenscript.denizen.nms.v1_13.impl.blocks.BlockDataImpl;
 import com.denizenscript.denizen.nms.v1_13.impl.jnbt.CompoundTagImpl;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.Utilities;
@@ -161,21 +159,6 @@ public class EntityHelperImpl extends EntityHelper {
     }
 
     @Override
-    public boolean isBreeding(Animals entity) {
-        return ((CraftAnimals) entity).getHandle().isInLove();
-    }
-
-    @Override
-    public void setBreeding(Animals entity, boolean breeding) {
-        if (breeding) {
-            ((CraftAnimals) entity).getHandle().a((EntityHuman) null);
-        }
-        else {
-            ((CraftAnimals) entity).getHandle().resetLove();
-        }
-    }
-
-    @Override
     public void setTarget(Creature entity, LivingEntity target) {
         EntityLiving nmsTarget = target != null ? ((CraftLivingEntity) target).getHandle() : null;
         ((CraftCreature) entity).getHandle().setGoalTarget(nmsTarget, EntityTargetEvent.TargetReason.CUSTOM, true);
@@ -218,24 +201,6 @@ public class EntityHelperImpl extends EntityHelper {
             return;
         }
         ((EntityInsentient) nmsEntity).getNavigation().q();
-    }
-
-    @Override
-    public void toggleAI(Entity entity, boolean hasAI) {
-        net.minecraft.server.v1_13_R2.Entity nmsEntity = ((CraftEntity) entity).getHandle();
-        if (!(nmsEntity instanceof EntityInsentient)) {
-            return;
-        }
-        ((EntityInsentient) nmsEntity).setNoAI(!hasAI);
-    }
-
-    @Override
-    public boolean isAIDisabled(Entity entity) {
-        net.minecraft.server.v1_13_R2.Entity nmsEntity = ((CraftEntity) entity).getHandle();
-        if (!(nmsEntity instanceof EntityInsentient)) {
-            return true;
-        }
-        return ((EntityInsentient) nmsEntity).isNoAI();
     }
 
     @Override
@@ -326,7 +291,7 @@ public class EntityHelperImpl extends EntityHelper {
     }
 
     @Override
-    public void walkTo(final Entity entity, Location location, double speed, final Runnable callback) {
+    public void walkTo(final LivingEntity entity, Location location, double speed, final Runnable callback) {
         if (entity == null || location == null) {
             return;
         }
@@ -339,9 +304,9 @@ public class EntityHelperImpl extends EntityHelper {
         final NavigationAbstract entityNavigation = nmsEntity.getNavigation();
 
         final PathEntity path;
-        final boolean aiDisabled = isAIDisabled(entity);
+        final boolean aiDisabled = !entity.hasAI();
         if (aiDisabled) {
-            toggleAI(entity, true);
+            entity.setAI(true);
             nmsEntity.onGround = true;
         }
         path = entityNavigation.a(location.getX(), location.getY(), location.getZ());
@@ -359,7 +324,7 @@ public class EntityHelperImpl extends EntityHelper {
                         }
                         nmsEntity.getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue(oldSpeed);
                         if (aiDisabled) {
-                            toggleAI(entity, false);
+                            entity.setAI(false);
                         }
                         cancel();
                     }
@@ -517,38 +482,6 @@ public class EntityHelperImpl extends EntityHelper {
     }
 
     @Override
-    public Location rayTraceBlock(Location start, Vector direction, double range) {
-        Vector startVec = start.toVector();
-        MovingObjectPosition l = rayTrace(start.getWorld(), startVec, startVec.clone().add(direction.multiply(range)));
-        if (l != null && l.pos != null) {
-            return new Location(start.getWorld(), l.pos.x - (l.direction.getAdjacentX() * 0.05),
-                    l.pos.y - (l.direction.getAdjacentY() * 0.05),
-                    l.pos.z - (l.direction.getAdjacentZ() * 0.05));
-        }
-        return null;
-    }
-
-    @Override
-    public Location rayTrace(Location start, Vector direction, double range) {
-        Vector startVec = start.toVector();
-        MovingObjectPosition l = rayTrace(start.getWorld(), startVec, startVec.clone().add(direction.multiply(range)));
-        if (l != null && l.pos != null) {
-            return new Location(start.getWorld(), l.pos.x, l.pos.y, l.pos.z);
-        }
-        return null;
-    }
-
-    @Override
-    public Location getImpactNormal(Location start, Vector direction, double range) {
-        Vector startVec = start.toVector();
-        MovingObjectPosition l = rayTrace(start.getWorld(), startVec, startVec.clone().add(direction.multiply(range)));
-        if (l != null && l.direction != null) {
-            return new Location(start.getWorld(), l.direction.getAdjacentX(), l.direction.getAdjacentY(), l.direction.getAdjacentZ());
-        }
-        return null;
-    }
-
-    @Override
     public void move(Entity entity, Vector vector) {
         ((CraftEntity) entity).getHandle().move(EnumMoveType.SELF, vector.getX(), vector.getY(), vector.getZ());
     }
@@ -589,11 +522,6 @@ public class EntityHelperImpl extends EntityHelper {
         if (horse instanceof ChestedHorse) {
             ((ChestedHorse) horse).setCarryingChest(carrying);
         }
-    }
-
-    @Override
-    public BlockData getBlockDataFor(FallingBlock entity) {
-        return new BlockDataImpl(entity.getBlockData());
     }
 
     // Unizen start

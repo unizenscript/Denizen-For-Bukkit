@@ -20,6 +20,7 @@ public class TeamCommand extends AbstractCommand {
         setName("team");
         setSyntax("team (id:<scoreboard>/{main}) [name:<team>] (add:<entry>|...) (remove:<entry>|...) (prefix:<prefix>) (suffix:<suffix>) (option:<type> status:<status>) (color:<color>)");
         setRequiredArguments(2, 9);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -129,12 +130,13 @@ public class TeamCommand extends AbstractCommand {
         }
 
         if (!scriptEntry.hasObject("add") && !scriptEntry.hasObject("remove")
+                && !scriptEntry.hasObject("option") && !scriptEntry.hasObject("color")
                 && !scriptEntry.hasObject("prefix") && !scriptEntry.hasObject("suffix")) {
             throw new InvalidArgumentsException("Must specify something to do with the team!");
         }
 
-        if ((prefix != null && prefix.length() > 16) || (suffix != null && suffix.length() > 16)) {
-            throw new InvalidArgumentsException("Prefixes and suffixes must be 16 characters or less!");
+        if ((prefix != null && prefix.length() > 64) || (suffix != null && suffix.length() > 64)) {
+            throw new InvalidArgumentsException("Prefixes and suffixes must be 64 characters or less!");
         }
 
         if (scriptEntry.hasObject("option") != scriptEntry.hasObject("status")) {
@@ -187,7 +189,7 @@ public class TeamCommand extends AbstractCommand {
         if (add != null) {
             for (String string : add) {
                 if (string.startsWith("p@")) {
-                    string = PlayerTag.valueOf(string).getName();
+                    string = PlayerTag.valueOf(string, scriptEntry.context).getName();
                 }
                 if (!team.hasEntry(string)) {
                     team.addEntry(string);
@@ -197,7 +199,7 @@ public class TeamCommand extends AbstractCommand {
         if (remove != null) {
             for (String string : remove) {
                 if (string.startsWith("p@")) {
-                    string = PlayerTag.valueOf(string).getName();
+                    string = PlayerTag.valueOf(string, scriptEntry.context).getName();
                 }
                 if (team.hasEntry(string)) {
                     team.removeEntry(string);

@@ -23,6 +23,8 @@ public class EntityTeleportScriptEvent extends BukkitScriptEvent implements List
     //
     // @Regex ^on [^\s]+ teleports$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     // @Switch cause:<cause> to only process the event when it came from a specified cause.
     //
@@ -61,24 +63,26 @@ public class EntityTeleportScriptEvent extends BukkitScriptEvent implements List
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("teleports");
+        if (!path.eventArgLowerAt(1).equals("teleports")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean matches(ScriptPath path) {
-
         if (!tryEntity(entity, path.eventArgLowerAt(0))) {
             return false;
         }
-
         if (!runGenericSwitchCheck(path, "cause", cause)) {
             return false;
         }
-
         if (!runInCheck(path, from)) {
             return false;
         }
-
         return super.matches(path);
     }
 
@@ -92,7 +96,7 @@ public class EntityTeleportScriptEvent extends BukkitScriptEvent implements List
         String determination = determinationObj.toString();
         String dlow = CoreUtilities.toLowerCase(determination);
         if (dlow.startsWith("origin:")) {
-            LocationTag new_from = LocationTag.valueOf(determination.substring("origin:".length()));
+            LocationTag new_from = LocationTag.valueOf(determination.substring("origin:".length()), getTagContext(path));
             if (new_from != null) {
                 from = new_from;
                 if (event != null) {
@@ -105,7 +109,7 @@ public class EntityTeleportScriptEvent extends BukkitScriptEvent implements List
             }
         }
         else if (dlow.startsWith("destination:")) {
-            LocationTag new_to = LocationTag.valueOf(determination.substring("destination:".length()));
+            LocationTag new_to = LocationTag.valueOf(determination.substring("destination:".length()), getTagContext(path));
             if (new_to != null) {
                 to = new_to;
                 if (event != null) {
@@ -118,7 +122,7 @@ public class EntityTeleportScriptEvent extends BukkitScriptEvent implements List
             }
         }
         else if (LocationTag.matches(determination)) {
-            LocationTag new_to = LocationTag.valueOf(determination);
+            LocationTag new_to = LocationTag.valueOf(determination, getTagContext(path));
             if (new_to != null) {
                 to = new_to;
                 if (event != null) {

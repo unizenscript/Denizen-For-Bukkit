@@ -19,6 +19,8 @@ public class EntityFoodLevelChangeScriptEvent extends BukkitScriptEvent implemen
     //
     // @Regex ^on [^\s]+ changes food level$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -30,7 +32,7 @@ public class EntityFoodLevelChangeScriptEvent extends BukkitScriptEvent implemen
     // <context.food> returns an ElementTag(Number) of the entity's new food level.
     //
     // @Determine
-    // ElementTag(Decimal) to set the entity's new food level.
+    // ElementTag(Number) to set the entity's new food level.
     //
     // @Player when the entity that's food level has changed is a player.
     //
@@ -48,7 +50,13 @@ public class EntityFoodLevelChangeScriptEvent extends BukkitScriptEvent implemen
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.contains("changes food level");
+        if (!path.eventLower.contains("changes food level")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

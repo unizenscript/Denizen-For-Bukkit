@@ -1,10 +1,9 @@
 package com.denizenscript.denizen.nms.v1_15.helpers;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.util.ReflectionHelper;
-import com.denizenscript.denizen.nms.v1_15.impl.blocks.BlockDataImpl;
+import com.denizenscript.denizencore.utilities.ReflectionHelper;
 import com.denizenscript.denizen.nms.v1_15.impl.jnbt.CompoundTagImpl;
-import com.denizenscript.denizen.nms.interfaces.BlockData;
 import com.denizenscript.denizen.nms.interfaces.EntityHelper;
 import com.denizenscript.denizen.nms.util.BoundingBox;
 import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
@@ -190,21 +189,6 @@ public class EntityHelperImpl extends EntityHelper {
     }
 
     @Override
-    public boolean isBreeding(Animals entity) {
-        return ((CraftAnimals) entity).getHandle().isInLove();
-    }
-
-    @Override
-    public void setBreeding(Animals entity, boolean breeding) {
-        if (breeding) {
-            ((CraftAnimals) entity).getHandle().a((EntityHuman) null);
-        }
-        else {
-            ((CraftAnimals) entity).getHandle().resetLove();
-        }
-    }
-
-    @Override
     public void setTarget(Creature entity, LivingEntity target) {
         EntityLiving nmsTarget = target != null ? ((CraftLivingEntity) target).getHandle() : null;
         ((CraftCreature) entity).getHandle().setGoalTarget(nmsTarget, EntityTargetEvent.TargetReason.CUSTOM, true);
@@ -247,24 +231,6 @@ public class EntityHelperImpl extends EntityHelper {
             return;
         }
         ((EntityInsentient) nmsEntity).getNavigation().o();
-    }
-
-    @Override
-    public void toggleAI(Entity entity, boolean hasAI) {
-        net.minecraft.server.v1_15_R1.Entity nmsEntity = ((CraftEntity) entity).getHandle();
-        if (!(nmsEntity instanceof EntityInsentient)) {
-            return;
-        }
-        ((EntityInsentient) nmsEntity).setNoAI(!hasAI);
-    }
-
-    @Override
-    public boolean isAIDisabled(Entity entity) {
-        net.minecraft.server.v1_15_R1.Entity nmsEntity = ((CraftEntity) entity).getHandle();
-        if (!(nmsEntity instanceof EntityInsentient)) {
-            return true;
-        }
-        return ((EntityInsentient) nmsEntity).isNoAI();
     }
 
     @Override
@@ -355,7 +321,7 @@ public class EntityHelperImpl extends EntityHelper {
     }
 
     @Override
-    public void walkTo(final Entity entity, Location location, double speed, final Runnable callback) {
+    public void walkTo(final LivingEntity entity, Location location, double speed, final Runnable callback) {
         if (entity == null || location == null) {
             return;
         }
@@ -368,9 +334,9 @@ public class EntityHelperImpl extends EntityHelper {
         final NavigationAbstract entityNavigation = nmsEntity.getNavigation();
 
         final PathEntity path;
-        final boolean aiDisabled = isAIDisabled(entity);
+        final boolean aiDisabled = !entity.hasAI();
         if (aiDisabled) {
-            toggleAI(entity, true);
+            entity.setAI(true);
             nmsEntity.onGround = true;
         }
         path = entityNavigation.a(location.getX(), location.getY(), location.getZ(), 0);
@@ -398,7 +364,7 @@ public class EntityHelperImpl extends EntityHelper {
                         }
                         nmsEntity.getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue(oldSpeed);
                         if (aiDisabled) {
-                            toggleAI(entity, false);
+                            entity.setAI(false);
                         }
                         cancel();
                     }
@@ -410,6 +376,20 @@ public class EntityHelperImpl extends EntityHelper {
         else {
             entity.teleport(location);
         }
+    }
+
+    @Override
+    public List<Player> getPlayersThatSee(Entity entity) {
+        PlayerChunkMap tracker = ((WorldServer) ((CraftEntity) entity).getHandle().world).getChunkProvider().playerChunkMap;
+        PlayerChunkMap.EntityTracker entityTracker = tracker.trackedEntities.get(entity.getEntityId());
+        ArrayList<Player> output = new ArrayList<>();
+        if (entityTracker == null) {
+            return output;
+        }
+        for (EntityPlayer player : entityTracker.trackedPlayers) {
+            output.add(player.getBukkitEntity());
+        }
+        return output;
     }
 
     /*
@@ -426,12 +406,14 @@ public class EntityHelperImpl extends EntityHelper {
         CraftPlayer craftPlayer = (CraftPlayer) pl;
         EntityPlayer entityPlayer = craftPlayer.getHandle();
         if (entityPlayer.playerConnection != null && !craftPlayer.equals(entity)) {
-            // TODO: 1.14 - make sure this works
             PlayerChunkMap tracker = ((WorldServer) craftPlayer.getHandle().world).getChunkProvider().playerChunkMap;
             net.minecraft.server.v1_15_R1.Entity other = ((CraftEntity) entity).getHandle();
             PlayerChunkMap.EntityTracker entry = tracker.trackedEntities.get(other.getId());
             if (entry != null) {
                 entry.clear(entityPlayer);
+            }
+            if (Denizen.supportsPaper) { // Workaround for Paper issue
+                entityPlayer.playerConnection.sendPacket(new PacketPlayOutEntityDestroy(other.getId()));
             }
         }
     }
@@ -445,7 +427,6 @@ public class EntityHelperImpl extends EntityHelper {
         CraftPlayer craftPlayer = (CraftPlayer) pl;
         EntityPlayer entityPlayer = craftPlayer.getHandle();
         if (entityPlayer.playerConnection != null && !craftPlayer.equals(entity)) {
-            // TODO: 1.14 - same as hide packet above
             PlayerChunkMap tracker = ((WorldServer) craftPlayer.getHandle().world).getChunkProvider().playerChunkMap;
             net.minecraft.server.v1_15_R1.Entity other = ((CraftEntity) entity).getHandle();
             PlayerChunkMap.EntityTracker entry = tracker.trackedEntities.get(other.getId());
@@ -566,40 +547,6 @@ public class EntityHelperImpl extends EntityHelper {
     }
 
     @Override
-    public Location rayTraceBlock(Location start, Vector direction, double range) {
-        Vector startVec = start.toVector();
-        MovingObjectPosition l = rayTrace(start.getWorld(), startVec, startVec.clone().add(direction.multiply(range)));
-        if (l instanceof MovingObjectPositionBlock && l.getPos() != null) {
-            return new Location(start.getWorld(), l.getPos().x - (((MovingObjectPositionBlock) l).getDirection().getAdjacentX() * 0.05),
-                    l.getPos().y - (((MovingObjectPositionBlock) l).getDirection().getAdjacentY() * 0.05),
-                    l.getPos().z - (((MovingObjectPositionBlock) l).getDirection().getAdjacentZ() * 0.05));
-        }
-        return null;
-    }
-
-    @Override
-    public Location rayTrace(Location start, Vector direction, double range) {
-        Vector startVec = start.toVector();
-        MovingObjectPosition l = rayTrace(start.getWorld(), startVec, startVec.clone().add(direction.multiply(range)));
-        if (l != null && l.getPos() != null) {
-            return new Location(start.getWorld(), l.getPos().x, l.getPos().y, l.getPos().z);
-        }
-        return null;
-    }
-
-    @Override
-    public Location getImpactNormal(Location start, Vector direction, double range) {
-        Vector startVec = start.toVector();
-        MovingObjectPosition l = rayTrace(start.getWorld(), startVec, startVec.clone().add(direction.multiply(range)));
-        if (l instanceof MovingObjectPositionBlock && ((MovingObjectPositionBlock) l).getDirection() != null) {
-            return new Location(start.getWorld(), ((MovingObjectPositionBlock) l).getDirection().getAdjacentX(),
-                    ((MovingObjectPositionBlock) l).getDirection().getAdjacentY(),
-                    ((MovingObjectPositionBlock) l).getDirection().getAdjacentZ());
-        }
-        return null;
-    }
-
-    @Override
     public void move(Entity entity, Vector vector) {
         ((CraftEntity) entity).getHandle().move(EnumMoveType.SELF, new Vec3D(vector.getX(), vector.getY(), vector.getZ()));
     }
@@ -640,11 +587,6 @@ public class EntityHelperImpl extends EntityHelper {
         if (horse instanceof ChestedHorse) {
             ((ChestedHorse) horse).setCarryingChest(carrying);
         }
-    }
-
-    @Override
-    public BlockData getBlockDataFor(FallingBlock entity) {
-        return new BlockDataImpl(entity.getBlockData());
     }
 
     // Unizen start

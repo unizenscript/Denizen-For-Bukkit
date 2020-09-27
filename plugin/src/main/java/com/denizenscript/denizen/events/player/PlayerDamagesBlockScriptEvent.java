@@ -20,6 +20,8 @@ public class PlayerDamagesBlockScriptEvent extends BukkitScriptEvent implements 
     //
     // @Regex ^on player damages [^\s]+$
     //
+    // @Group Player
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     // @Switch with:<item> to only process the event when the player is hitting the block with a specified item.
     //
@@ -52,8 +54,7 @@ public class PlayerDamagesBlockScriptEvent extends BukkitScriptEvent implements 
         if (!path.eventLower.startsWith("player damages")) {
             return false;
         }
-        String mat = path.eventArgLowerAt(2);
-        if (!mat.equals("block") && !MaterialTag.matches(mat)) {
+        if (!couldMatchBlock(path.eventArgLowerAt(2))) {
             return false;
         }
         return true;
@@ -85,7 +86,7 @@ public class PlayerDamagesBlockScriptEvent extends BukkitScriptEvent implements 
     @Override
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         if (determinationObj instanceof ElementTag) {
-            if (CoreUtilities.toLowerCase(determinationObj.toString()).equals("instabreak")) {
+            if (CoreUtilities.equalsIgnoreCase(determinationObj.toString(), "instabreak")) {
                 event.setInstaBreak(true);
                 return true;
             }

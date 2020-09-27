@@ -25,9 +25,11 @@ import net.citizensnpcs.api.ai.Navigator;
 import net.citizensnpcs.api.ai.TeleportStuckAction;
 import net.citizensnpcs.api.event.DespawnReason;
 import net.citizensnpcs.api.npc.NPC;
+import net.citizensnpcs.api.npc.NPCRegistry;
 import net.citizensnpcs.api.trait.Trait;
 import net.citizensnpcs.api.trait.trait.Equipment;
 import net.citizensnpcs.api.trait.trait.Owner;
+import net.citizensnpcs.npc.ai.NPCHolder;
 import net.citizensnpcs.npc.skin.SkinnableEntity;
 import net.citizensnpcs.trait.Anchors;
 import net.citizensnpcs.trait.LookClose;
@@ -63,14 +65,24 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
     //
     // -->
 
-    public static NPCTag mirrorCitizensNPC(NPC npc) {
-        return new NPCTag(npc);
+    public static NPCRegistry getRegistryByName(String name) {
+        NPCRegistry registry = CitizensAPI.getNamedNPCRegistry(name);
+        if (registry != null) {
+            return registry;
+        }
+        for (NPCRegistry possible : CitizensAPI.getNPCRegistries()) {
+            if (possible.getName().equals(name)) {
+                return possible;
+            }
+        }
+        return null;
     }
 
     public static NPCTag fromEntity(Entity entity) {
-        return mirrorCitizensNPC(CitizensAPI.getNPCRegistry().getNPC(entity));
+        return new NPCTag(((NPCHolder) entity).getNPC());
     }
 
+    @Deprecated
     public static NPCTag valueOf(String string) {
         return valueOf(string, null);
     }
@@ -80,73 +92,59 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         if (string == null) {
             return null;
         }
-
-        ////////
-        // Match NPC id
-
-        string = string.toUpperCase().replace("N@", "");
-        NPC npc;
-        if (ArgumentHelper.matchesInteger(string)) {
-            int id = Integer.parseInt(string);
-
-            npc = CitizensAPI.getNPCRegistry().getById(id);
+        if (string.startsWith("n@")) {
+            string = string.substring("n@".length());
+        }
+        NPCRegistry registry;
+        int commaIndex = string.indexOf(',');
+        String idText = string;
+        if (commaIndex == -1) {
+            registry = CitizensAPI.getNPCRegistry();
+        }
+        else {
+            registry = getRegistryByName(string.substring(commaIndex + 1));
+            if (registry == null) {
+                if (context == null || context.showErrors()) {
+                    Debug.echoError("Unknown NPC registry for '" + string + "'.");
+                }
+                return null;
+            }
+            idText = string.substring(0, commaIndex);
+        }
+        if (ArgumentHelper.matchesInteger(idText)) {
+            int id = Integer.parseInt(idText);
+            NPC npc = registry.getById(id);
             if (npc != null) {
                 return new NPCTag(npc);
             }
+            else if (context == null || context.showErrors()) {
+                Debug.echoError("NPC '" + id + "' does not exist in " + registry.getName() + ".");
+            }
         }
-
         return null;
     }
 
     public static boolean matches(String string) {
-
-        // If using object notation, assume it's valid
         if (CoreUtilities.toLowerCase(string).startsWith("n@")) {
             return true;
         }
-
-        // Otherwise, let's do checks
-        string = string.toUpperCase().replace("N@", "");
-        NPC npc;
-        if (ArgumentHelper.matchesInteger(string)) {
-            npc = CitizensAPI.getNPCRegistry().getById(Integer.parseInt(string));
-            if (npc != null) {
-                return true;
-            }
-        }
-        else {
-            for (NPC test : CitizensAPI.getNPCRegistry()) {
-                if (test.getName().equalsIgnoreCase(string)) {
-                    return true;
-                }
-            }
+        if (valueOf(string, CoreUtilities.noDebugContext) != null) {
+            return true;
         }
         return false;
     }
 
     public boolean isValid() {
-        return getCitizen() != null;
+        return npc != null && npc.getOwningRegistry().getById(npc.getId()) != null;
     }
 
-    private int npcid = -1;
-    private final org.bukkit.Location locationCache = new org.bukkit.Location(null, 0, 0, 0);
+    public NPC npc;
 
     public NPCTag(NPC citizensNPC) {
-        if (citizensNPC != null) {
-            this.npcid = citizensNPC.getId();
-        }
+        this.npc = citizensNPC;
     }
 
     public NPC getCitizen() {
-        if (npcid < 0) {
-            return null;
-        }
-        NPC npc = CitizensAPI.getNPCRegistry().getById(npcid);
-        if (npc == null) {
-            //dB.echoError(new RuntimeException("StackTraceOutput"));
-            //dB.log("Uh oh! Denizen has encountered a NPE while trying to fetch an NPC. " +
-            //        "Has this NPC been removed?");
-        }
         return npc;
     }
 
@@ -205,7 +203,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
     }
 
     public InventoryTag getDenizenInventory() {
-        return new InventoryTag(this);
+        return new InventoryTag(getInventory(), this);
     }
 
     public EntityType getEntityType() {
@@ -217,7 +215,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
     }
 
     public int getId() {
-        return npcid;
+        return npc.getId();
     }
 
     public String getName() {
@@ -280,8 +278,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
     }
 
     public boolean isSpawned() {
-        NPC npc = CitizensAPI.getNPCRegistry().getById(npcid);
-        return npc != null && npc.isSpawned();
+        return npc.isSpawned();
     }
 
     public String getOwner() {
@@ -323,14 +320,6 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         return npc.getTrait(FishingTrait.class);
     }
 
-    public HealthTrait getHealthTrait() {
-        NPC npc = getCitizen();
-        if (!npc.hasTrait(HealthTrait.class)) {
-            npc.addTrait(HealthTrait.class);
-        }
-        return npc.getTrait(HealthTrait.class);
-    }
-
     public net.citizensnpcs.api.trait.trait.Inventory getInventoryTrait() {
         NPC npc = getCitizen();
         if (!npc.hasTrait(net.citizensnpcs.api.trait.trait.Inventory.class)) {
@@ -365,19 +354,10 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
 
     public String action(String actionName, PlayerTag player, Map<String, ObjectTag> context) {
         if (getCitizen() != null) {
-            if (getCitizen().hasTrait(AssignmentTrait.class))
-            // Return the result from the ActionHandler
-            {
-                return DenizenAPI.getCurrentInstance().getNPCHelper()
-                        .getActionHandler().doAction(
-                                actionName,
-                                this,
-                                player,
-                                getAssignmentTrait().getAssignment(),
-                                context);
+            if (getCitizen().hasTrait(AssignmentTrait.class)) {
+                return DenizenAPI.getCurrentInstance().getNPCHelper().getActionHandler().doAction(actionName, this, player, getAssignmentTrait().getAssignment(), context);
             }
         }
-
         return "none";
     }
 
@@ -394,7 +374,12 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
 
     @Override
     public String debuggable() {
-        return "n@" + npcid + "<GR> (" + getName() + ")";
+        if (npc.getOwningRegistry() == CitizensAPI.getNPCRegistry()) {
+            return "n@" + npc.getId() + "<GR> (" + getName() + ")";
+        }
+        else {
+            return "n@" + npc.getId() + "<G>," + npc.getOwningRegistry().getName() + "<GR> (" + getName() + ")";
+        }
     }
 
     @Override
@@ -409,7 +394,12 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
 
     @Override
     public String identify() {
-        return "n@" + npcid;
+        if (npc.getOwningRegistry() == CitizensAPI.getNPCRegistry()) {
+            return "n@" + npc.getId();
+        }
+        else {
+            return "n@" + npc.getId() + "," + npc.getOwningRegistry().getName();
+        }
     }
 
     @Override
@@ -507,18 +497,18 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         });
 
         // <--[tag]
-        // @attribute <NPCTag.list_traits>
+        // @attribute <NPCTag.traits>
         // @returns ListTag
         // @description
         // Returns a list of all of the NPC's traits.
         // -->
-        registerTag("list_traits", (attribute, object) -> {
+        registerTag("traits", (attribute, object) -> {
             List<String> list = new ArrayList<>();
             for (Trait trait : object.getCitizen().getTraits()) {
                 list.add(trait.getName());
             }
             return new ListTag(list);
-        });
+        }, "list_traits");
 
         // <--[tag]
         // @attribute <NPCTag.has_trait[<trait>]>
@@ -824,7 +814,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
 
         // <--[tag]
         // @attribute <NPCTag.owner>
-        // @returns PlayerTag/Element
+        // @returns PlayerTag/ElementTag
         // @mechanism NPCTag.owner
         // @description
         // Returns the owner of the NPC as a PlayerTag if it's a player, otherwise as just the name.
@@ -845,7 +835,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
 
         // <--[tag]
         // @attribute <NPCTag.has_skin>
-        // @returns ElementTag
+        // @returns ElementTag(Boolean)
         // @mechanism NPCTag.skin
         // @description
         // Returns whether the NPC has a custom skin.
@@ -956,7 +946,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
 
         // <--[tag]
         // @attribute <NPCTag.teleport_on_stuck>
-        // @returns LocationTag
+        // @returns ElementTag(Boolean)
         // @mechanism NPCTag.teleport_on_stuck
         // @description
         // Returns whether the NPC teleports when it is stuck.
@@ -1062,6 +1052,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // @returns ElementTag
         // @description
         // Returns the NPC's current navigator attack strategy.
+        // Not related to Sentinel combat.
         // -->
         registerTag("attack_strategy", (attribute, object) -> {
             return new ElementTag(object.getNavigator().getLocalParameters().attackStrategy().toString());
@@ -1114,7 +1105,8 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // @attribute <NPCTag.is_fighting>
         // @returns ElementTag(Boolean)
         // @description
-        // Returns whether the NPC is in combat.
+        // Returns whether the NPC is currently targeting an entity for the Citizens internal punching pathfinder.
+        // Not compatible with Sentinel.
         // -->
         registerTag("is_fighting", (attribute, object) -> {
             return new ElementTag(object.getNavigator().getEntityTarget() != null && object.getNavigator().getEntityTarget().isAggressive());
@@ -1146,20 +1138,19 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
             return new EntityTag(object.getNavigator().getEntityTarget().getTarget());
         });
 
+        // <--[tag]
+        // @attribute <NPCTag.registry_name>
+        // @returns ElementTag
+        // @description
+        // Returns the name of the registry this NPC came from.
+        // -->
+        registerTag("registry_name", (attribute, object) -> {
+            return new ElementTag(object.getCitizen().getOwningRegistry().getName());
+        });
+
         registerTag("navigator", (attribute, object) -> {
             Deprecations.oldNPCNavigator.warn(attribute.context);
             return object;
-        });
-
-        // <--[tag]
-        // @attribute <NPCTag.type>
-        // @returns ElementTag
-        // @description
-        // Always returns 'NPC' for NPCTag objects. All objects fetchable by the Object Fetcher will return the
-        // type of object that is fulfilling this attribute.
-        // -->
-        registerTag("type", (attribute, object) -> {
-            return new ElementTag("NPC");
         });
     }
 
@@ -1207,7 +1198,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // <--[mechanism]
         // @object NPCTag
         // @name remove_assignment
-        // @input none
+        // @input None
         // @description
         // Removes the NPC's assigment script.
         // @tags
@@ -1220,7 +1211,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // <--[mechanism]
         // @object NPCTag
         // @name set_nickname
-        // @input Element
+        // @input ElementTag
         // @description
         // Sets the NPC's nickname.
         // @tags
@@ -1233,7 +1224,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // <--[mechanism]
         // @object NPCTag
         // @name remove_nickname
-        // @input none
+        // @input None
         // @description
         // Removes the NPC's nickname.
         // @tags
@@ -1259,7 +1250,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // <--[mechanism]
         // @object NPCTag
         // @name name
-        // @input Element
+        // @input ElementTag
         // @description
         // Sets the name of the NPC.
         // @tags
@@ -1290,7 +1281,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // <--[mechanism]
         // @object NPCTag
         // @name skin_blob
-        // @input Element
+        // @input ElementTag
         // @description
         // Sets the skin blob of an NPC, in the form of "texture;signature;name".
         // Call with no value to clear the custom skin value.
@@ -1324,7 +1315,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // <--[mechanism]
         // @object NPCTag
         // @name skin
-        // @input Element
+        // @input ElementTag
         // @description
         // Sets the skin of an NPC by name.
         // Call with no value to clear the custom skin value.
@@ -1378,17 +1369,8 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
             }
         }
 
-        // <--[mechanism]
-        // @object NPCTag
-        // @name spawn
-        // @input LocationTag
-        // @description
-        // Spawns the NPC at a location. If no location is specified, the NPC will spawn
-        // at its last known location.
-        // @tags
-        // <NPCTag.is_spawned>
-        // -->
         if (mechanism.matches("spawn")) {
+            Deprecations.npcSpawnMechanism.warn(mechanism.context);
             if (mechanism.requireObject("Invalid LocationTag specified. Assuming last known NPC location.", LocationTag.class)) {
                 getCitizen().spawn(mechanism.valueAsType(LocationTag.class));
             }
@@ -1439,7 +1421,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // <--[mechanism]
         // @object NPCTag
         // @name despawn
-        // @input none
+        // @input None
         // @description
         // Despawns the NPC.
         // @tags
@@ -1544,7 +1526,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // <--[mechanism]
         // @object NPCTag
         // @name name_visible
-        // @input Element
+        // @input ElementTag
         // @description
         // Sets whether the NPC's nameplate is visible. Input is 'true' (always visible), 'false' (never visible), or 'hover' (only visible while looking at the NPC).
         // @tags

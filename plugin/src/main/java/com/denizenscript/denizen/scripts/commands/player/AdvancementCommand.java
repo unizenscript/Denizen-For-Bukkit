@@ -28,6 +28,7 @@ public class AdvancementCommand extends AbstractCommand {
         setName("advancement");
         setSyntax("advancement [id:<name>] (delete/grant:<players>/revoke:<players>/{create}) (parent:<name>) (icon:<item>) (title:<text>) (description:<text>) (background:<key>) (frame:<type>) (toast:<boolean>) (announce:<boolean>) (hidden:<boolean>) (x:<offset>) (y:<offset>)");
         setRequiredArguments(1, 13);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -60,7 +61,9 @@ public class AdvancementCommand extends AbstractCommand {
     // WARNING: Failure to re-create advancements on every server start may result in loss of data.
     //
     // @Tags
-    // None
+    // <PlayerTag.has_advancement[<advancement>]>
+    // <PlayerTag.advancements>
+    // <server.advancement_types>
     //
     // @Usage
     // Creates a new advancement that has a potato icon.

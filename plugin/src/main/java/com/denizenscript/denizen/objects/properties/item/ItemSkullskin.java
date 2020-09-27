@@ -1,7 +1,6 @@
 package com.denizenscript.denizen.objects.properties.item;
 
 import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.nms.util.PlayerProfile;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -21,7 +20,7 @@ public class ItemSkullskin implements Property {
 
     public static boolean describes(ObjectTag item) {
         return item instanceof ItemTag
-                && ((ItemTag) item).getItemStack().getItemMeta() instanceof SkullMeta;
+                && ((ItemTag) item).getItemMeta() instanceof SkullMeta;
     }
 
     public static ItemSkullskin getFrom(ObjectTag _item) {
@@ -34,7 +33,7 @@ public class ItemSkullskin implements Property {
     }
 
     public static final String[] handledTags = new String[] {
-            "skin", "has_skin"
+            "skin", "has_skin", "skull_skin"
     };
 
     public static final String[] handledMechs = new String[] {
@@ -115,21 +114,15 @@ public class ItemSkullskin implements Property {
         return null;
     }
 
-    public boolean isCorrectDurability() {
-        return NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13) || item.getItemStack().getDurability() == 3;
-    }
-
     @Override
     public String getPropertyString() {
-        if (isCorrectDurability()) {
-            PlayerProfile playerProfile = NMSHandler.getItemHelper().getSkullSkin(item.getItemStack());
-            if (playerProfile != null) {
-                String name = playerProfile.getName();
-                UUID uuid = playerProfile.getUniqueId();
-                return (uuid != null ? uuid : name)
-                        + (playerProfile.hasTexture() ? "|" + playerProfile.getTexture() +
-                        (uuid != null && name != null ? "|" + name : "") : "");
-            }
+        PlayerProfile playerProfile = NMSHandler.getItemHelper().getSkullSkin(item.getItemStack());
+        if (playerProfile != null) {
+            String name = playerProfile.getName();
+            UUID uuid = playerProfile.getUniqueId();
+            return (uuid != null ? uuid : name)
+                    + (playerProfile.hasTexture() ? "|" + playerProfile.getTexture() +
+                    (uuid != null && name != null ? "|" + name : "") : "");
         }
         return null;
     }
@@ -157,9 +150,6 @@ public class ItemSkullskin implements Property {
         // <ItemTag.has_skin>
         // -->
         if (mechanism.matches("skull_skin")) {
-            if (!isCorrectDurability()) {
-                item.getItemStack().setDurability((short) 3);
-            }
             ListTag list = mechanism.valueAsType(ListTag.class);
             String idString = list.get(0);
             String texture = null;
@@ -181,6 +171,9 @@ public class ItemSkullskin implements Property {
             profile = NMSHandler.getInstance().fillPlayerProfile(profile);
             if (texture != null) { // Ensure we didn't get overwritten
                 profile.setTexture(texture);
+            }
+            if (profile.getTexture() == null) {
+                return; // Can't set a skull skin to nothing.
             }
             item.setItemStack(NMSHandler.getItemHelper().setSkullSkin(item.getItemStack(), profile));
         }

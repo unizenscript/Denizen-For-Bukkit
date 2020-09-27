@@ -6,17 +6,14 @@ import com.denizenscript.denizen.objects.properties.material.MaterialHalf;
 import com.denizenscript.denizen.objects.properties.material.MaterialSwitchFace;
 import com.denizenscript.denizen.objects.properties.material.MaterialPersistent;
 import com.denizenscript.denizen.scripts.commands.world.SwitchCommand;
-import com.denizenscript.denizen.utilities.blocks.MaterialCompat;
 import com.denizenscript.denizen.utilities.world.PathFinder;
 import com.denizenscript.denizen.utilities.Utilities;
-import com.denizenscript.denizen.utilities.blocks.OldMaterialsHelper;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.entity.DenizenEntityType;
 import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.NMSVersion;
-import com.denizenscript.denizen.nms.interfaces.BlockData;
 import com.denizenscript.denizen.nms.interfaces.EntityHelper;
 import com.denizenscript.denizen.nms.util.PlayerProfile;
 import com.denizenscript.denizen.tags.BukkitTagContext;
@@ -43,7 +40,6 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.loot.Lootable;
 import org.bukkit.material.Attachable;
-import org.bukkit.material.Door;
 import org.bukkit.material.MaterialData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -153,6 +149,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
     //    OBJECT FETCHER
     ////////////////
 
+    @Deprecated
     public static LocationTag valueOf(String string) {
         return valueOf(string, null);
     }
@@ -196,7 +193,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                         Double.valueOf(split.get(1)));
             }
             catch (Exception e) {
-                if (context == null || context.debug) {
+                if (context == null || context.showErrors()) {
                     Debug.log("Minor: valueOf LocationTag returning null: " + string + "(internal exception:" + e.getMessage() + ")");
                 }
                 return null;
@@ -230,7 +227,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 return output;
             }
             catch (Exception e) {
-                if (context == null || context.debug) {
+                if (context == null || context.showErrors()) {
                     Debug.log("Minor: valueOf LocationTag returning null: " + string + "(internal exception:" + e.getMessage() + ")");
                 }
                 return null;
@@ -260,7 +257,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 return output;
             }
             catch (Exception e) {
-                if (context == null || context.debug) {
+                if (context == null || context.showErrors()) {
                     Debug.log("Minor: valueOf LocationTag returning null: " + string + "(internal exception:" + e.getMessage() + ")");
                 }
                 return null;
@@ -272,7 +269,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // x,y,z,pitch,yaw
         {
             try {
-                return new LocationTag(null,
+                return new LocationTag((World) null,
                         Double.valueOf(split.get(0)),
                         Double.valueOf(split.get(1)),
                         Double.valueOf(split.get(2)),
@@ -280,7 +277,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                         Float.valueOf(split.get(4)));
             }
             catch (Exception e) {
-                if (context == null || context.debug) {
+                if (context == null || context.showErrors()) {
                     Debug.log("Minor: valueOf LocationTag returning null: " + string + "(internal exception:" + e.getMessage() + ")");
                 }
                 return null;
@@ -305,7 +302,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                             Float.valueOf(split.get(3)),
                             Float.valueOf(split.get(4)));
                 }
-                LocationTag output = new LocationTag(null,
+                LocationTag output = new LocationTag((World) null,
                         Double.valueOf(split.get(0)),
                         Double.valueOf(split.get(1)),
                         Double.valueOf(split.get(2)),
@@ -315,14 +312,14 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 return output;
             }
             catch (Exception e) {
-                if (context == null || context.debug) {
+                if (context == null || context.showErrors()) {
                     Debug.log("Minor: valueOf LocationTag returning null: " + string + "(internal exception:" + e.getMessage() + ")");
                 }
                 return null;
             }
         }
 
-        if (context == null || context.debug) {
+        if (context == null || context.showErrors()) {
             Debug.log("Minor: valueOf LocationTag returning null: " + string);
         }
 
@@ -399,6 +396,11 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
     public LocationTag(World world, double x, double y, double z, float pitch, float yaw) {
         super(world, x, y, z, yaw, pitch);
+    }
+
+    public LocationTag(String worldName, double x, double y, double z, float pitch, float yaw) {
+        super(worldName == null ? null : Bukkit.getWorld(worldName), x, y, z, yaw, pitch);
+        backupWorld = worldName;
     }
 
     public boolean isChunkLoaded() {
@@ -589,6 +591,24 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         super.setYaw(yaw);
     }
 
+    @Override
+    public LocationTag add(double x, double y, double z) {
+        super.add(x, y, z);
+        return this;
+    }
+
+    @Override
+    public LocationTag add(Location input) {
+        super.add(input);
+        return this;
+    }
+
+    @Override
+    public LocationTag multiply(double input) {
+        super.multiply(input);
+        return this;
+    }
+
     public boolean hasInventory() {
         return getBlockState() instanceof InventoryHolder;
     }
@@ -704,7 +724,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         if ((other.getWorldName() == null && getWorldName() != null)
                 || (getWorldName() == null && other.getWorldName() != null)
                 || (getWorldName() != null && other.getWorldName() != null
-                && !getWorldName().equalsIgnoreCase(other.getWorldName()))) {
+                && !CoreUtilities.equalsIgnoreCase(getWorldName(), other.getWorldName()))) {
             return false;
         }
         return Math.floor(getX()) == Math.floor(other.getX())
@@ -979,7 +999,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             if (!attribute.hasContext(1)) {
                 return null;
             }
-            LocationTag offsetLoc = LocationTag.valueOf(attribute.getContext(1));
+            LocationTag offsetLoc = attribute.contextAsType(1, LocationTag.class);
             if (offsetLoc == null) {
                 return null;
             }
@@ -1033,23 +1053,6 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         });
 
         // <--[tag]
-        // @attribute <LocationTag.base_color>
-        // @mechanism LocationTag.base_color
-        // @returns ElementTag
-        // @description
-        // Returns the base color of the banner at this location.
-        // For the list of possible colors, see <@link url http://bit.ly/1dydq12>.
-        // As of 1.13+, this tag is no longer relevant.
-        // -->
-        registerTag("base_color", (attribute, object) -> {
-            if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-                Debug.echoError("Base_Color tag no longer relevant: banner types are now distinct materials.");
-            }
-            DyeColor color = ((Banner) object.getBlockStateForTag(attribute)).getBaseColor();
-            return new ElementTag(color != null ? color.name() : "BLACK");
-        });
-
-        // <--[tag]
         // @attribute <LocationTag.has_inventory>
         // @returns ElementTag(Boolean)
         // @description
@@ -1094,8 +1097,8 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // @mechanism LocationTag.patterns
         // @description
         // Lists the patterns of the banner at this location in the form "COLOR/PATTERN|COLOR/PATTERN" etc.
-        // For the list of possible colors, see <@link url http://bit.ly/1dydq12>.
-        // For the list of possible patterns, see <@link url http://bit.ly/1MqRn7T>.
+        // For the list of possible colors, see <@link url hhttps://hub.spigotmc.org/javadocs/spigot/org/bukkit/DyeColor.html>.
+        // For the list of possible patterns, see <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/block/banner/PatternType.html>.
         // -->
         registerTag("patterns", (attribute, object) -> {
             ListTag list = new ListTag();
@@ -1153,8 +1156,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // -->
         registerTag("spawner_type", (attribute, object) -> {
             if (object.getBlockStateForTag(attribute) instanceof CreatureSpawner) {
-                return new EntityTag(DenizenEntityType.getByName(((CreatureSpawner) object.getBlockStateForTag(attribute))
-                        .getSpawnedType().name()));
+                return new EntityTag(DenizenEntityType.getByName(((CreatureSpawner) object.getBlockStateForTag(attribute)).getSpawnedType().name()));
             }
             else {
                 return null;
@@ -1212,32 +1214,13 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         registerTag("drops", (attribute, object) -> {
             ItemStack inputItem = null;
             if (attribute.hasContext(1)) {
-                inputItem = ItemTag.valueOf(attribute.getContext(1), attribute.context).getItemStack();
+                inputItem = attribute.contextAsType(1, ItemTag.class).getItemStack();
             }
             ListTag list = new ListTag();
             for (ItemStack it : object.getDropsForTag(attribute, inputItem)) {
                 list.addObject(new ItemTag(it));
             }
             return list;
-        });
-
-        // <--[tag]
-        // @attribute <LocationTag.flowerpot_contents>
-        // @returns ElementTag
-        // @mechanism LocationTag.flowerpot_contents
-        // @description
-        // Returns the flower pot contents at the location.
-        // NOTE: Replaced by materials (such as POTTED_CACTUS) in 1.13 and above.
-        // -->
-        registerTag("flowerpot_contents", (attribute, object) -> {
-            if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-                Debug.echoError("As of Minecraft version 1.13 potted flowers each have their own material, such as POTTED_CACTUS.");
-            }
-            else if (object.getBlockTypeForTag(attribute) == Material.FLOWER_POT) {
-                MaterialData contents = NMSHandler.getBlockHelper().getFlowerpotContents(object.getBlockForTag(attribute));
-                return OldMaterialsHelper.getMaterialFrom(contents.getItemType(), contents.getData());
-            }
-            return null;
         });
 
         // <--[tag]
@@ -1319,7 +1302,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
                 // <--[tag]
                 // @attribute <LocationTag.skull_skin.full>
-                // @returns ElementTag|Element
+                // @returns ElementTag|ElementTag
                 // @mechanism LocationTag.skull_skin
                 // @description
                 // Returns the skin the skull item is displaying - just the name or UUID as text, not a player object,
@@ -1339,7 +1322,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
         // <--[tag]
         // @attribute <LocationTag.round>
-        // @returns ElementTag
+        // @returns LocationTag
         // @description
         // Returns a rounded version of the LocationTag's coordinates.
         // That is, each component (X, Y, Z, Yaw, Pitch) is rounded
@@ -1358,7 +1341,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
         // <--[tag]
         // @attribute <LocationTag.round_up>
-        // @returns ElementTag
+        // @returns LocationTag
         // @description
         // Returns a rounded-upward version of the LocationTag's coordinates.
         // That is, each component (X, Y, Z, Yaw, Pitch) is rounded upward
@@ -1376,7 +1359,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
         // <--[tag]
         // @attribute <LocationTag.round_down>
-        // @returns ElementTag
+        // @returns LocationTag
         // @description
         // Returns a rounded-downward version of the LocationTag's coordinates.
         // That is, each component (X, Y, Z, Yaw, Pitch) is rounded downward
@@ -1395,7 +1378,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
         // <--[tag]
         // @attribute <LocationTag.round_to[<#>]>
-        // @returns ElementTag
+        // @returns LocationTag
         // @description
         // Returns a rounded-to-precision version of the LocationTag's coordinates.
         // That is, each component (X, Y, Z, Yaw, Pitch) is rounded to the specified decimal place
@@ -1418,7 +1401,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
         // <--[tag]
         // @attribute <LocationTag.round_to_precision[<#.#>]>
-        // @returns ElementTag
+        // @returns LocationTag
         // @description
         // Returns a rounded-to-precision version of the LocationTag's coordinates.
         // That is, each component (X, Y, Z, Yaw, Pitch) is rounded to the specified precision value
@@ -1488,10 +1471,9 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             if (range < 1) {
                 range = 200;
             }
-            // TODO: after 1.12 support is dropped, World#rayTraceBlocks should be used.
-            Location location = NMSHandler.getEntityHelper().getImpactNormal(object, object.getDirection(), range);
-            if (location != null) {
-                return new LocationTag(location);
+            RayTraceResult traced = object.getWorld().rayTraceBlocks(object, object.getDirection(), range);
+            if (traced != null && traced.getHitBlockFace() != null) {
+                return new LocationTag(traced.getHitBlockFace().getDirection());
             }
             return null;
         });
@@ -1508,10 +1490,9 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             if (range < 1) {
                 range = 200;
             }
-            // TODO: after 1.12 support is dropped, World#rayTraceBlocks should be used.
-            Location location = NMSHandler.getEntityHelper().rayTraceBlock(object, object.getDirection(), range);
-            if (location != null) {
-                return new LocationTag(location).getBlockLocation();
+            RayTraceResult traced = object.getWorld().rayTraceBlocks(object, object.getDirection(), range);
+            if (traced != null && traced.getHitBlock() != null) {
+                return new LocationTag(traced.getHitBlock().getLocation());
             }
             return null;
         });
@@ -1528,10 +1509,9 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             if (range < 1) {
                 range = 200;
             }
-            // TODO: after 1.12 support is dropped, World#rayTraceBlocks should be used.
-            Location location = NMSHandler.getEntityHelper().rayTrace(object, object.getDirection(), range);
-            if (location != null) {
-                return new LocationTag(location);
+            RayTraceResult traced = object.getWorld().rayTraceBlocks(object, object.getDirection(), range);
+            if (traced != null && traced.getHitBlock() != null) {
+                return new LocationTag(traced.getHitBlock().getWorld(), traced.getHitPosition());
             }
             return null;
         });
@@ -1560,8 +1540,8 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             if (attribute.startsWith("type", 2) && attribute.hasContext(2)) {
                 attribute.fulfill(1);
                 Set<EntityType> types = new HashSet<>();
-                for (String str : ListTag.valueOf(attribute.getContext(1), attribute.context)) {
-                    types.add(EntityTag.valueOf(str).getBukkitEntityType());
+                for (String str : attribute.contextAsType(1, ListTag.class)) {
+                    types.add(EntityTag.valueOf(str, attribute.context).getBukkitEntityType());
                 }
                 result = object.getWorld().rayTraceEntities(object, object.getDirection(), range, (e) -> types.contains(e.getType()));
             }
@@ -1600,7 +1580,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // Finds all locations between this location and another, separated by 1 block-width each.
         // -->
         registerTag("points_between", (attribute, object) -> {
-            LocationTag target = LocationTag.valueOf(attribute.getContext(1));
+            LocationTag target = attribute.contextAsType(1, LocationTag.class);
             if (target == null) {
                 return null;
             }
@@ -1668,7 +1648,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             if (!attribute.hasContext(1)) {
                 return null;
             }
-            LocationTag location = LocationTag.valueOf(attribute.getContext(1));
+            LocationTag location = attribute.contextAsType(1, LocationTag.class);
             if (location != null) {
                 try {
                     NMSHandler.getChunkHelper().changeChunkServerThread(object.getWorld());
@@ -1704,7 +1684,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             if (attribute.hasContext(1) && LocationTag.matches(attribute.getContext(1))) {
                 // Subtract this location's vector from the other location's vector,
                 // not the other way around
-                LocationTag target = LocationTag.valueOf(attribute.getContext(1));
+                LocationTag target = attribute.contextAsType(1, LocationTag.class);
                 EntityHelper entityHelper = NMSHandler.getEntityHelper();
 
                 // <--[tag]
@@ -1738,7 +1718,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // Returns the location with the yaw rotated the specified amount (eg 180 to face the location backwards).
         // -->
         registerTag("rotate_yaw", (attribute, object) -> {
-            LocationTag loc = LocationTag.valueOf(object.identify());
+            LocationTag loc = LocationTag.valueOf(object.identify(), attribute.context).clone();
             loc.setYaw(loc.getYaw() + (float) attribute.getDoubleContext(1));
             return loc;
         });
@@ -1750,7 +1730,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // Returns the location with the pitch rotated the specified amount. Note that this is capped to +/- 90.
         // -->
         registerTag("rotate_pitch", (attribute, object) -> {
-            LocationTag loc = LocationTag.valueOf(object.identify());
+            LocationTag loc = LocationTag.valueOf(object.identify(), attribute.context).clone();
             loc.setPitch(Math.max(-90, Math.min(90, loc.getPitch() + (float) attribute.getDoubleContext(1))));
             return loc;
         });
@@ -1766,7 +1746,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             if (!attribute.hasContext(1)) {
                 return null;
             }
-            Location two = LocationTag.valueOf(attribute.getContext(1));
+            Location two = attribute.contextAsType(1, LocationTag.class);
             return new LocationTag(NMSHandler.getEntityHelper().faceLocation(object, two));
         });
 
@@ -1786,7 +1766,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                     facingLoc = object.clone();
                 }
                 else if (EntityTag.matches(attribute.getContext(1))) {
-                    facingLoc = EntityTag.valueOf(attribute.getContext(1)).getLocation();
+                    facingLoc = attribute.contextAsType(1, EntityTag.class).getLocation();
                 }
                 else {
                     if (!attribute.hasAlternative()) {
@@ -1844,7 +1824,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             float pitch = 0f;
             float yaw = 0f;
             if (EntityTag.matches(context)) {
-                EntityTag ent = EntityTag.valueOf(context);
+                EntityTag ent = EntityTag.valueOf(context, attribute.context);
                 if (ent.isSpawnedOrValidForTag()) {
                     pitch = ent.getBukkitEntity().getLocation().getPitch();
                     yaw = ent.getBukkitEntity().getLocation().getYaw();
@@ -1911,7 +1891,8 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // @attribute <LocationTag.rotate_around_x[<#.#>]>
         // @returns LocationTag
         // @description
-        // Returns the location rotated around the x axis by a specified angle in radians.
+        // Returns the location-vector rotated around the x axis by a specified angle in radians.
+        // Generally used in a format like <player.location.add[<location[0,1,0].rotate_around_x[<[some_angle]>]>]>.
         // -->
         registerTag("rotate_around_x", (attribute, object) -> {
             if (!attribute.hasContext(1)) {
@@ -1932,7 +1913,8 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // @attribute <LocationTag.rotate_around_y[<#.#>]>
         // @returns LocationTag
         // @description
-        // Returns the location rotated around the y axis by a specified angle in radians.
+        // Returns the location-vector rotated around the y axis by a specified angle in radians.
+        // Generally used in a format like <player.location.add[<location[1,0,0].rotate_around_y[<[some_angle]>]>]>.
         // -->
         registerTag("rotate_around_y", (attribute, object) -> {
             if (!attribute.hasContext(1)) {
@@ -1953,7 +1935,8 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // @attribute <LocationTag.rotate_around_z[<#.#>]>
         // @returns LocationTag
         // @description
-        // Returns the location rotated around the z axis by a specified angle in radians.
+        // Returns the location-vector rotated around the z axis by a specified angle in radians.
+        // Generally used in a format like <player.location.add[<location[1,0,0].rotate_around_z[<[some_angle]>]>]>.
         // -->
         registerTag("rotate_around_z", (attribute, object) -> {
             if (!attribute.hasContext(1)) {
@@ -1981,8 +1964,8 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             double radius = attribute.getDoubleContext(3);
 
             // <--[tag]
-            // @attribute <LocationTag.find.blocks[<block>|...].within[<#>]>
-            // @returns ListTag
+            // @attribute <LocationTag.find.blocks[(<material>|...)].within[<#>]>
+            // @returns ListTag(LocationTag)
             // @description
             // Returns a list of matching blocks within a radius.
             // Note: current implementation measures the center of nearby block's distance from the exact given location.
@@ -1992,7 +1975,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 ArrayList<LocationTag> found = new ArrayList<>();
                 List<MaterialTag> materials = new ArrayList<>();
                 if (attribute.hasContext(2)) {
-                    materials = ListTag.valueOf(attribute.getContext(2), attribute.context).filter(MaterialTag.class, attribute.context);
+                    materials = attribute.contextAsType(2, ListTag.class).filter(MaterialTag.class, attribute.context);
                 }
                 // Avoid NPE from invalid materials
                 if (materials == null) {
@@ -2021,13 +2004,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                             if (Utilities.checkLocation(object, tstart.clone().add(x + 0.5, y + 0.5, z + 0.5), radius)) {
                                 if (!materials.isEmpty()) {
                                     for (MaterialTag material : materials) {
-                                        if (NMSHandler.getVersion().isAtMost(NMSVersion.v1_12) && material.hasData() && material.getData() != 0) {
-                                            BlockState bs = new LocationTag(tstart.clone().add(x, y, z)).getBlockStateForTag(attribute);
-                                            if (bs != null && material.matchesMaterialData(bs.getData())) {
-                                                found.add(new LocationTag(tstart.clone().add(x, y, z)));
-                                            }
-                                        }
-                                        else if (material.getMaterial() == new LocationTag(tstart.clone().add(x, y, z)).getBlockTypeForTag(attribute)) {
+                                        if (material.getMaterial() == new LocationTag(tstart.clone().add(x, y, z)).getBlockTypeForTag(attribute)) {
                                             found.add(new LocationTag(tstart.clone().add(x, y, z)));
                                         }
                                     }
@@ -2051,8 +2028,8 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             }
 
             // <--[tag]
-            // @attribute <LocationTag.find.surface_blocks[<block>|...].within[<#.#>]>
-            // @returns ListTag
+            // @attribute <LocationTag.find.surface_blocks[(<material>|...)].within[<#.#>]>
+            // @returns ListTag(LocationTag)
             // @description
             // Returns a list of matching surface blocks within a radius.
             // Result list is sorted by closeness (1 = closest, 2 = next closest, ... last = farthest).
@@ -2061,7 +2038,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 ArrayList<LocationTag> found = new ArrayList<>();
                 List<MaterialTag> materials = new ArrayList<>();
                 if (attribute.hasContext(2)) {
-                    materials = ListTag.valueOf(attribute.getContext(2), attribute.context).filter(MaterialTag.class, attribute.context);
+                    materials = attribute.contextAsType(2, ListTag.class).filter(MaterialTag.class, attribute.context);
                 }
                 // Avoid NPE from invalid materials
                 if (materials == null) {
@@ -2119,7 +2096,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
             // <--[tag]
             // @attribute <LocationTag.find.players.within[<#.#>]>
-            // @returns ListTag
+            // @returns ListTag(PlayerTag)
             // @description
             // Returns a list of players within a radius.
             // Result list is sorted by closeness (1 = closest, 2 = next closest, ... last = farthest).
@@ -2128,7 +2105,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 ArrayList<PlayerTag> found = new ArrayList<>();
                 attribute.fulfill(2);
                 for (Player player : Bukkit.getOnlinePlayers()) {
-                    if (!player.isDead() && Utilities.checkLocation(object, player.getLocation(), radius)) {
+                    if (!player.isDead() && Utilities.checkLocationWithBoundingBox(object, player, radius)) {
                         found.add(new PlayerTag(player));
                     }
                 }
@@ -2145,7 +2122,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
             // <--[tag]
             // @attribute <LocationTag.find.npcs.within[<#.#>]>
-            // @returns ListTag
+            // @returns ListTag(NPCTag)
             // @description
             // Returns a list of NPCs within a radius.
             // Result list is sorted by closeness (1 = closest, 2 = next closest, ... last = farthest).
@@ -2154,7 +2131,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 ArrayList<NPCTag> found = new ArrayList<>();
                 attribute.fulfill(2);
                 for (NPC npc : CitizensAPI.getNPCRegistry()) {
-                    if (npc.isSpawned() && Utilities.checkLocation(object.getBlockForTag(attribute).getLocation(), npc.getStoredLocation(), radius)) {
+                    if (npc.isSpawned() && Utilities.checkLocationWithBoundingBox(object, npc.getEntity(), radius)) {
                         found.add(new NPCTag(npc));
                     }
                 }
@@ -2170,18 +2147,18 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             }
 
             // <--[tag]
-            // @attribute <LocationTag.find.entities[<entity>|...].within[<#.#>]>
-            // @returns ListTag
+            // @attribute <LocationTag.find.entities[(<entity>|...)].within[<#.#>]>
+            // @returns ListTag(EntityTag)
             // @description
             // Returns a list of entities within a radius, with an optional search parameter for the entity type.
             // Result list is sorted by closeness (1 = closest, 2 = next closest, ... last = farthest).
             // -->
             else if (attribute.startsWith("entities", 2)) {
-                ListTag ent_list = attribute.hasContext(2) ? ListTag.valueOf(attribute.getContext(2), attribute.context) : null;
+                ListTag ent_list = attribute.hasContext(2) ? attribute.contextAsType(2, ListTag.class) : null;
                 ListTag found = new ListTag();
                 attribute.fulfill(2);
                 for (Entity entity : new WorldTag(object.getWorld()).getEntitiesForTag()) {
-                    if (Utilities.checkLocation(object, entity.getLocation(), radius)) {
+                    if (Utilities.checkLocationWithBoundingBox(object, entity, radius)) {
                         EntityTag current = new EntityTag(entity);
                         if (ent_list != null) {
                             for (String ent : ent_list) {
@@ -2209,7 +2186,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
             // <--[tag]
             // @attribute <LocationTag.find.living_entities.within[<#.#>]>
-            // @returns ListTag
+            // @returns ListTag(EntityTag)
             // @description
             // Returns a list of living entities within a radius.
             // This includes Players, mobs, NPCs, etc., but excludes dropped items, experience orbs, etc.
@@ -2220,7 +2197,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 attribute.fulfill(2);
                 for (Entity entity : new WorldTag(object.getWorld()).getEntitiesForTag()) {
                     if (entity instanceof LivingEntity
-                            && Utilities.checkLocation(object, entity.getLocation(), radius)) {
+                            && Utilities.checkLocationWithBoundingBox(object, entity, radius)) {
                         found.addObject(new EntityTag(entity).getDenizenObject());
                     }
                 }
@@ -2240,7 +2217,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             // @returns LocationTag
             // @description
             // Returns the location of the nearest structure of the given type, within a maximum radius.
-            // To get a list of valid structure types, use <@link tag server.list_structure_types>.
+            // To get a list of valid structure types, use <@link tag server.structure_types>.
             // Note that structure type names are case sensitive, and likely to be all-lowercase in most cases.
             // -->
             else if (attribute.startsWith("structure", 2) && attribute.hasContext(2)) {
@@ -2263,7 +2240,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             // @returns LocationTag
             // @description
             // Returns the location of the nearest unexplored structure of the given type, within a maximum radius.
-            // To get a list of valid structure types, use <@link tag server.list_structure_types>.
+            // To get a list of valid structure types, use <@link tag server.structure_types>.
             // Note that structure type names are case sensitive, and likely to be all-lowercase in most cases.
             // -->
             else if (attribute.startsWith("unexplored_structure", 2) && attribute.hasContext(2)) {
@@ -2294,7 +2271,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             if (!attribute.hasContext(1)) {
                 return null;
             }
-            LocationTag two = LocationTag.valueOf(attribute.getContext(1));
+            LocationTag two = attribute.contextAsType(1, LocationTag.class);
             if (two == null) {
                 return null;
             }
@@ -2351,8 +2328,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // @attribute <LocationTag.raw>
         // @returns LocationTag
         // @description
-        // Returns the raw representation of this location,
-        //         ignoring any notables it might match.
+        // Returns the raw representation of this location, without any note name.
         // -->
         registerTag("raw", (attribute, object) -> {
             LocationTag rawLocation = new LocationTag(object);
@@ -2409,7 +2385,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // World, yaw, and pitch will be excluded from this output.
         // -->
         registerTag("xyz", (attribute, object) -> {
-            return new ElementTag(object.getX() + "," + object.getY() + "," + object.getZ());
+            return new ElementTag(CoreUtilities.doubleToString(object.getX()) + "," + CoreUtilities.doubleToString(object.getY()) + "," + CoreUtilities.doubleToString(object.getZ()));
         });
 
         // <--[tag]
@@ -2498,25 +2474,24 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 return null;
             }
             LocationTag output = object.clone();
-            WorldTag world = WorldTag.valueOf(attribute.getContext(1));
+            WorldTag world = attribute.contextAsType(1, WorldTag.class);
             output.setWorld(world.getWorld());
             return output;
         });
 
         // <--[tag]
-        // @attribute <LocationTag.notable_name>
+        // @attribute <LocationTag.note_name>
         // @returns ElementTag
         // @description
-        // Gets the name of a Notable LocationTag. If the location isn't noted,
-        // this is null.
+        // Gets the name of a noted LocationTag. If the location isn't noted, this is null.
         // -->
-        registerTag("notable_name", (attribute, object) -> {
+        registerTag("note_name", (attribute, object) -> {
             String notname = NotableManager.getSavedId((object));
             if (notname == null) {
                 return null;
             }
             return new ElementTag(notname);
-        });
+        }, "notable_name");
 
         /////////////////////
         //   MATHEMATICAL ATTRIBUTES
@@ -2543,7 +2518,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 }
             }
             if (LocationTag.matches(attribute.getContext(1))) {
-                return new LocationTag(object.clone().add(LocationTag.valueOf(attribute.getContext(1))));
+                return object.clone().add(attribute.contextAsType(1, LocationTag.class));
             }
             return null;
         });
@@ -2569,7 +2544,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 }
             }
             if (LocationTag.matches(attribute.getContext(1))) {
-                return new LocationTag(object.clone().subtract(LocationTag.valueOf(attribute.getContext(1))));
+                return new LocationTag(object.clone().subtract(attribute.contextAsType(1, LocationTag.class)));
             }
             return null;
         });
@@ -2653,7 +2628,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 return null;
             }
             if (LocationTag.matches(attribute.getContext(1))) {
-                LocationTag toLocation = LocationTag.valueOf(attribute.getContext(1));
+                LocationTag toLocation = attribute.contextAsType(1, LocationTag.class);
                 if (!object.getWorldName().equalsIgnoreCase(toLocation.getWorldName())) {
                     if (!attribute.hasAlternative()) {
                         Debug.echoError("Can't measure distance between two different worlds!");
@@ -2676,7 +2651,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 return null;
             }
             if (LocationTag.matches(attribute.getContext(1))) {
-                LocationTag toLocation = LocationTag.valueOf(attribute.getContext(1));
+                LocationTag toLocation = attribute.contextAsType(1, LocationTag.class);
 
                 // <--[tag]
                 // @attribute <LocationTag.distance[<location>].horizontal>
@@ -2762,18 +2737,32 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 return null;
             }
             if (EllipsoidTag.matches(attribute.getContext(1))) {
-                EllipsoidTag ellipsoid = EllipsoidTag.valueOf(attribute.getContext(1));
+                EllipsoidTag ellipsoid = attribute.contextAsType(1, EllipsoidTag.class);
                 if (ellipsoid != null) {
                     return new ElementTag(ellipsoid.contains(object));
                 }
             }
             else {
-                CuboidTag cuboid = CuboidTag.valueOf(attribute.getContext(1));
+                CuboidTag cuboid = attribute.contextAsType(1, CuboidTag.class);
                 if (cuboid != null) {
                     return new ElementTag(cuboid.isInsideCuboid(object));
                 }
             }
             return null;
+        });
+
+        // <--[tag]
+        // @attribute <LocationTag.to_cuboid[<location>]>
+        // @returns CuboidTag
+        // @description
+        // Returns a cuboid from this location to the specified location.
+        // -->
+        registerTag("to_cuboid", (attribute, object) -> {
+            if (!attribute.hasContext(1)) {
+                attribute.echoError("to_cuboid[...] tag must have input.");
+                return null;
+            }
+            return new CuboidTag(object.clone(), attribute.getContextObject(1).asType(LocationTag.class, attribute.context));
         });
 
         /////////////////////
@@ -2800,7 +2789,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // @attribute <LocationTag.cuboids>
         // @returns ListTag(CuboidTag)
         // @description
-        // Returns a ListTag of all notable CuboidTags that include this location.
+        // Returns a ListTag of all noted CuboidTags that include this location.
         // -->
         registerTag("cuboids", (attribute, object) -> {
             List<CuboidTag> cuboids = CuboidTag.getNotableCuboidsContaining(object);
@@ -2813,9 +2802,9 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
         // <--[tag]
         // @attribute <LocationTag.ellipsoids>
-        // @returns ListTag(CuboidTag)
+        // @returns ListTag(EllipsoidTag)
         // @description
-        // Returns a ListTag of all notable EllipsoidTags that include this location.
+        // Returns a ListTag of all noted EllipsoidTags that include this location.
         // -->
         registerTag("ellipsoids", (attribute, object) -> {
             List<EllipsoidTag> ellipsoids = EllipsoidTag.getNotableEllipsoidsContaining(object);
@@ -2950,8 +2939,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // -->
         registerTag("tree_distance", (attribute, object) -> {
             MaterialTag material = new MaterialTag(object.getBlockForTag(attribute));
-            if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)
-                    && MaterialPersistent.describes(material)) {
+            if (MaterialPersistent.describes(material)) {
                 return new ElementTag(MaterialPersistent.getFrom(material).getDistance());
             }
             return null;
@@ -3008,35 +2996,47 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         });
 
         // <--[tag]
-        // @attribute <LocationTag.furnace_burn_time>
-        // @returns ElementTag(Number)
-        // @mechanism LocationTag.furnace_burn_time
+        // @attribute <LocationTag.furnace_burn_duration>
+        // @returns DurationTag
+        // @mechanism LocationTag.furnace_burn_duration
         // @description
         // Returns the burn time a furnace has left.
         // -->
+        registerTag("furnace_burn_duration", (attribute, object) -> {
+            return new DurationTag((long) ((Furnace) object.getBlockStateForTag(attribute)).getBurnTime());
+        });
         registerTag("furnace_burn_time", (attribute, object) -> {
+            Deprecations.furnaceTimeTags.warn(attribute.context);
             return new ElementTag(((Furnace) object.getBlockStateForTag(attribute)).getBurnTime());
         });
 
         // <--[tag]
-        // @attribute <LocationTag.furnace_cook_time>
-        // @returns ElementTag(Number)
-        // @mechanism LocationTag.furnace_cook_time
+        // @attribute <LocationTag.furnace_cook_duration>
+        // @returns DurationTag
+        // @mechanism LocationTag.furnace_cook_duration
         // @description
         // Returns the cook time a furnace has been cooking its current item for.
         // -->
+        registerTag("furnace_cook_duration", (attribute, object) -> {
+            return new DurationTag((long) ((Furnace) object.getBlockStateForTag(attribute)).getCookTime());
+        });
         registerTag("furnace_cook_time", (attribute, object) -> {
+            Deprecations.furnaceTimeTags.warn(attribute.context);
             return new ElementTag(((Furnace) object.getBlockStateForTag(attribute)).getCookTime());
         });
 
         // <--[tag]
-        // @attribute <LocationTag.furnace_cook_time_total>
-        // @returns ElementTag(Number)
-        // @mechanism LocationTag.furnace_cook_time_total
+        // @attribute <LocationTag.furnace_cook_duration_total>
+        // @returns DurationTag
+        // @mechanism LocationTag.furnace_cook_duration_total
         // @description
         // Returns the total cook time a furnace has left.
         // -->
+        registerTag("furnace_cook_duration_total", (attribute, object) -> {
+            return new DurationTag((long) ((Furnace) object.getBlockStateForTag(attribute)).getCookTimeTotal());
+        });
         registerTag("furnace_cook_time_total", (attribute, object) -> {
+            Deprecations.furnaceTimeTags.warn(attribute.context);
             return new ElementTag(((Furnace) object.getBlockStateForTag(attribute)).getCookTimeTotal());
         });
 
@@ -3090,12 +3090,10 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         registerTag("attached_to", (attribute, object) -> {
             BlockFace face = BlockFace.SELF;
             MaterialTag material = new MaterialTag(object.getBlockForTag(attribute));
-            if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)
-                    && MaterialSwitchFace.describes(material)) {
+            if (MaterialSwitchFace.describes(material)) {
                 face = MaterialSwitchFace.getFrom(material).getAttachedTo();
             }
-            else if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)
-                    && material.hasModernData() && material.getModernData().data instanceof org.bukkit.block.data.type.WallSign) {
+            else if (material.hasModernData() && material.getModernData().data instanceof org.bukkit.block.data.type.WallSign) {
                 face = ((org.bukkit.block.data.type.WallSign) material.getModernData().data).getFacing().getOppositeFace();
             }
             else {
@@ -3119,48 +3117,13 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // You can test if this will be valid with <@link tag MaterialTag.is_bisected>.
         // -->
         registerTag("other_block", (attribute, object) -> {
-            if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-                Block b = object.getBlockForTag(attribute);
-                MaterialTag material = new MaterialTag(b);
-                if (MaterialHalf.describes(material)) {
-                    return new LocationTag(object.clone().add(MaterialHalf.getFrom(material).getRelativeBlockVector()));
-                }
-                if (!attribute.hasAlternative()) {
-                    Debug.echoError("Block of type " + object.getBlockTypeForTag(attribute).name() + " isn't supported by other_block.");
-                }
-                return null;
-            }
-            BlockState state = object.getBlockStateForTag(attribute);
-            if (state instanceof Chest) {
-                // There is no remotely sane API for this.
-                InventoryHolder holder = ((Chest) state).getBlockInventory().getHolder();
-                if (holder instanceof DoubleChest) {
-                    Location left = ((DoubleChest) holder).getLeftSide().getInventory().getLocation();
-                    Location right = ((DoubleChest) holder).getRightSide().getInventory().getLocation();
-                    if (left.getBlockX() == object.getBlockX() && left.getBlockY() == object.getBlockY() && left.getBlockZ() == object.getBlockZ()) {
-                        return new LocationTag(right);
-                    }
-                    else {
-                        return new LocationTag(left);
-                    }
-                }
-            }
-            else if (state.getData() instanceof Door) {
-                if (((Door) state.getData()).isTopHalf()) {
-                    return new LocationTag(object.clone().subtract(0, 1, 0));
-                }
-                else {
-                    return new LocationTag(object.clone().add(0, 1, 0));
-                }
-            }
-            else {
-                if (!attribute.hasAlternative()) {
-                    Debug.echoError("Block of type " + object.getBlockTypeForTag(attribute).name() + " isn't supported by other_block.");
-                }
-                return null;
+            Block b = object.getBlockForTag(attribute);
+            MaterialTag material = new MaterialTag(b);
+            if (MaterialHalf.describes(material)) {
+                return new LocationTag(object.clone().add(MaterialHalf.getFrom(material).getRelativeBlockVector()));
             }
             if (!attribute.hasAlternative()) {
-                Debug.echoError("Block of type " + object.getBlockTypeForTag(attribute).name() + " doesn't have an other block.");
+                Debug.echoError("Block of type " + object.getBlockTypeForTag(attribute).name() + " isn't supported by other_block.");
             }
             return null;
         });
@@ -3253,12 +3216,6 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
     @Override
     public void adjust(Mechanism mechanism) {
 
-        if (mechanism.matches("data") && mechanism.hasValue()) {
-            Deprecations.materialIds.warn(mechanism.context);
-            BlockData blockData = NMSHandler.getBlockHelper().getBlockData(getBlock().getType(), (byte) mechanism.getValue().asInt());
-            blockData.setBlock(getBlock(), false);
-        }
-
         // <--[mechanism]
         // @object LocationTag
         // @name block_facing
@@ -3291,7 +3248,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // -->
         if (mechanism.matches("block_type") && mechanism.requireObject(MaterialTag.class)) {
             MaterialTag mat = mechanism.valueAsType(MaterialTag.class);
-            mat.getNmsBlockData().setBlock(getBlock(), false);
+            getBlock().setBlockData(mat.getModernData().data, false);
         }
 
         // <--[mechanism]
@@ -3304,7 +3261,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // <LocationTag.biome>
         // -->
         if (mechanism.matches("biome") && mechanism.requireObject(BiomeTag.class)) {
-            mechanism.valueAsType(BiomeTag.class).getBiome().changeBlockBiome(this);
+            getBlock().setBiome(mechanism.valueAsType(BiomeTag.class).bukkitBiome);
         }
 
         // <--[mechanism]
@@ -3326,7 +3283,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // <--[mechanism]
         // @object LocationTag
         // @name lock
-        // @input Element
+        // @input ElementTag
         // @description
         // Sets the container's lock password.
         // Locked containers can only be opened while holding an item with the name of the lock.
@@ -3349,7 +3306,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // @description
         // Sets the contents of a sign block.
         // Note that this takes an escaped list.
-        // See <@link language property escaping>.
+        // See <@link language Escape Tags>.
         // @tags
         // <LocationTag.sign_contents>
         // -->
@@ -3386,11 +3343,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         if (mechanism.matches("skull_skin")) {
             final BlockState blockState = getBlockState();
             Material material = getBlock().getType();
-            if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)
-                    && material != Material.PLAYER_HEAD && material != Material.PLAYER_WALL_HEAD) {
-                Deprecations.skullSkinMaterials.warn(mechanism.context);
-            }
-            else if (blockState instanceof Skull) {
+            if (blockState instanceof Skull) {
                 ListTag list = mechanism.valueAsType(ListTag.class);
                 String idString = list.get(0);
                 String texture = null;
@@ -3422,30 +3375,8 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
         // <--[mechanism]
         // @object LocationTag
-        // @name flowerpot_contents
-        // @input MaterialTag
-        // @description
-        // Sets the contents of a flower pot.
-        // NOTE: Replaced by materials (such as POTTED_CACTUS) in 1.13 and above.
-        // NOTE: Flowerpot contents will not update client-side until players refresh the chunk.
-        // Refresh a chunk manually with mechanism: refresh_chunk_sections for ChunkTag objects
-        // @tags
-        // <LocationTag.flowerpot_contents>
-        // -->
-        if (mechanism.matches("flowerpot_contents") && mechanism.requireObject(MaterialTag.class)) {
-            if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-                Deprecations.flowerpotMechanism.warn(mechanism.context);
-            }
-            else if (getBlock().getType() == Material.FLOWER_POT) {
-                MaterialData data = mechanism.valueAsType(MaterialTag.class).getMaterialData();
-                NMSHandler.getBlockHelper().setFlowerpotContents(getBlock(), data);
-            }
-        }
-
-        // <--[mechanism]
-        // @object LocationTag
         // @name hive_max_bees
-        // @input Element(Number)
+        // @input ElementTag(Number)
         // @description
         // Sets the maximum allowed number of bees in a beehive.
         // @tags
@@ -3492,14 +3423,14 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // <--[mechanism]
         // @object LocationTag
         // @name command_block_name
-        // @input Element
+        // @input ElementTag
         // @description
         // Sets the name of a command block.
         // @tags
         // <LocationTag.command_block_name>
         // -->
         if (mechanism.matches("command_block_name")) {
-            if (getBlock().getType() == MaterialCompat.COMMAND_BLOCK) {
+            if (getBlock().getState() instanceof CommandBlock) {
                 CommandBlock block = ((CommandBlock) getBlockState());
                 block.setName(mechanism.getValue().asString());
                 block.update();
@@ -3509,14 +3440,14 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // <--[mechanism]
         // @object LocationTag
         // @name command_block
-        // @input Element
+        // @input ElementTag
         // @description
         // Sets the command of a command block.
         // @tags
         // <LocationTag.command_block>
         // -->
         if (mechanism.matches("command_block")) {
-            if (getBlock().getType() == MaterialCompat.COMMAND_BLOCK) {
+            if (getBlock().getState() instanceof CommandBlock) {
                 CommandBlock block = ((CommandBlock) getBlockState());
                 block.setCommand(mechanism.getValue().asString());
                 block.update();
@@ -3526,7 +3457,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // <--[mechanism]
         // @object LocationTag
         // @name custom_name
-        // @input Element
+        // @input ElementTag
         // @description
         // Sets the custom name of the block.
         // Use no value to reset the block's name.
@@ -3581,15 +3512,23 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
         // <--[mechanism]
         // @object LocationTag
-        // @name furnace_burn_time
-        // @input ElementTag(Number)
+        // @name furnace_burn_duration
+        // @input DurationTag
         // @description
-        // Sets the burn time for a furnace in ticks. Maximum is 32767.
+        // Sets the burn time for a furnace in ticks. Maximum is 32767 ticks.
         // @tags
-        // <LocationTag.furnace_burn_time>
+        // <LocationTag.furnace_burn_duration>
         // -->
+        if (mechanism.matches("furnace_burn_duration") && mechanism.requireObject(DurationTag.class)) {
+            if (getBlockState() instanceof Furnace) {
+                Furnace furnace = (Furnace) getBlockState();
+                furnace.setBurnTime((short) mechanism.valueAsType(DurationTag.class).getTicks());
+                furnace.update();
+            }
+        }
         if (mechanism.matches("furnace_burn_time")) {
-            if (MaterialCompat.isFurnace(getBlock().getType())) {
+            Deprecations.furnaceTimeTags.warn(mechanism.context);
+            if (getBlockState() instanceof Furnace) {
                 Furnace furnace = (Furnace) getBlockState();
                 furnace.setBurnTime((short) mechanism.getValue().asInt());
                 furnace.update();
@@ -3598,15 +3537,23 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
         // <--[mechanism]
         // @object LocationTag
-        // @name furnace_cook_time
-        // @input ElementTag(Number)
+        // @name furnace_cook_duration
+        // @input DurationTag
         // @description
-        // Sets the current cook time for a furnace in ticks. Maximum is 32767.
+        // Sets the current cook time for a furnace in ticks. Maximum is 32767 ticks.
         // @tags
-        // <LocationTag.furnace_cook_time>
+        // <LocationTag.furnace_cook_duration>
         // -->
+        if (mechanism.matches("furnace_cook_duration")) {
+            if (getBlockState() instanceof Furnace) {
+                Furnace furnace = (Furnace) getBlockState();
+                furnace.setCookTime((short) mechanism.valueAsType(DurationTag.class).getTicks());
+                furnace.update();
+            }
+        }
         if (mechanism.matches("furnace_cook_time")) {
-            if (MaterialCompat.isFurnace(getBlock().getType())) {
+            Deprecations.furnaceTimeTags.warn(mechanism.context);
+            if (getBlockState() instanceof Furnace) {
                 Furnace furnace = (Furnace) getBlockState();
                 furnace.setCookTime((short) mechanism.getValue().asInt());
                 furnace.update();
@@ -3615,15 +3562,23 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
         // <--[mechanism]
         // @object LocationTag
-        // @name furnace_cook_time_total
-        // @input ElementTag(Number)
+        // @name furnace_cook_duration_total
+        // @input DurationTag
         // @description
-        // Sets the total cook time for a furnace in ticks. Maximum is 32767.
+        // Sets the total cook time for a furnace in ticks. Maximum is 32767 ticks.
         // @tags
-        // <LocationTag.furnace_cook_time_total>
+        // <LocationTag.furnace_cook_duration_total>
         // -->
+        if (mechanism.matches("furnace_cook_duration_total")) {
+            if (getBlockState() instanceof Furnace) {
+                Furnace furnace = (Furnace) getBlockState();
+                furnace.setCookTimeTotal((short) mechanism.valueAsType(DurationTag.class).getTicks());
+                furnace.update();
+            }
+        }
         if (mechanism.matches("furnace_cook_time_total")) {
-            if (MaterialCompat.isFurnace(getBlock().getType())) {
+            Deprecations.furnaceTimeTags.warn(mechanism.context);
+            if (getBlockState() instanceof Furnace) {
                 Furnace furnace = (Furnace) getBlockState();
                 furnace.setCookTimeTotal((short) mechanism.getValue().asInt());
                 furnace.update();
@@ -3632,35 +3587,15 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
         // <--[mechanism]
         // @object LocationTag
-        // @name base_color
-        // @input Element
-        // @description
-        // Changes the base color of the banner at this location.
-        // For the list of possible colors, see <@link url http://bit.ly/1dydq12>.
-        // As of 1.13+, this mechanism is no longer relevant.
-        // @tags
-        // <LocationTag.base_color>
-        // -->
-        if (mechanism.matches("base_color")) {
-            if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-                Debug.echoError("Base_Color mechanism no longer relevant: banner types are now distinct materials.");
-            }
-            Banner banner = (Banner) getBlockState();
-            banner.setBaseColor(DyeColor.valueOf(mechanism.getValue().asString().toUpperCase()));
-            banner.update();
-        }
-
-        // <--[mechanism]
-        // @object LocationTag
         // @name patterns
         // @input ListTag
         // @description
         // Changes the patterns of the banner at this location. Input must be in the form "COLOR/PATTERN|COLOR/PATTERN" etc.
-        // For the list of possible colors, see <@link url http://bit.ly/1dydq12>.
-        // For the list of possible patterns, see <@link url http://bit.ly/1MqRn7T>.
+        // For the list of possible colors, see <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/DyeColor.html>.
+        // For the list of possible patterns, see <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/block/banner/PatternType.html>.
         // @tags
         // <LocationTag.patterns>
-        // <server.list_patterns>
+        // <server.pattern_types>
         // -->
         if (mechanism.matches("patterns")) {
             List<org.bukkit.block.banner.Pattern> patterns = new ArrayList<>();
@@ -3699,12 +3634,12 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // <--[mechanism]
         // @object LocationTag
         // @name generate_tree
-        // @input Element
+        // @input ElementTag
         // @description
         // Generates a tree at this location if possible.
-        // For a list of valid tree types, see <@link url http://bit.ly/2o7m1je>
+        // For a list of valid tree types, see <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/TreeType.html>
         // @tags
-        // <server.list_tree_types>
+        // <server.tree_types>
         // -->
         if (mechanism.matches("generate_tree") && mechanism.requireEnum(false, TreeType.values())) {
             boolean generated = getWorld().generateTree(this, TreeType.valueOf(mechanism.getValue().asString().toUpperCase()));

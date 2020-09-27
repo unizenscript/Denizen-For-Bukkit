@@ -1,14 +1,11 @@
 package com.denizenscript.denizen.utilities;
 
-import com.denizenscript.denizen.objects.MaterialTag;
+import com.denizenscript.denizen.objects.*;
 import com.denizenscript.denizen.objects.properties.material.MaterialDirectional;
 import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.nms.interfaces.BlockHelper;
 import com.denizenscript.denizen.npc.traits.TriggerTrait;
-import com.denizenscript.denizen.objects.NPCTag;
-import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizen.utilities.blocks.MaterialCompat;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
@@ -23,6 +20,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.*;
@@ -31,6 +29,7 @@ import org.bukkit.util.Vector;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -63,15 +62,44 @@ public class Utilities {
     }
 
     public static Enchantment getEnchantmentByName(String name) {
-        Enchantment ench = null;
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            NamespacedKey key = Utilities.parseNamespacedKey(name);
-            ench = Enchantment.getByKey(key);
-        }
+        Enchantment ench;
+        NamespacedKey key = parseNamespacedKey(name);
+        ench = Enchantment.getByKey(key);
         if (ench == null) {
             ench = Enchantment.getByName(name.toUpperCase());
         }
         return ench;
+    }
+
+    public static String getRecipeType(Recipe recipe) {
+        if (recipe == null) {
+            return null;
+        }
+        if (recipe instanceof ShapedRecipe) {
+            return "shaped";
+        }
+        else if (recipe instanceof ShapelessRecipe) {
+            return "shapeless";
+        }
+        else if (recipe instanceof CookingRecipe) {
+            if (recipe instanceof FurnaceRecipe) {
+                return "furnace";
+            }
+            else if (recipe instanceof BlastingRecipe) {
+                return "blasting";
+            }
+            else if (recipe instanceof CampfireRecipe) {
+                return "campfire";
+            }
+            else if (recipe instanceof SmokingRecipe) {
+                return "smoking";
+            }
+        }
+        else if (recipe instanceof StonecuttingRecipe) {
+            return "stonecutting";
+        }
+        Debug.echoError("Failed to determine recipe type for " + recipe.getClass().getName() + ": " + recipe);
+        return null;
     }
 
     public static boolean isRecipeOfType(Recipe recipe, String type) {
@@ -96,7 +124,7 @@ public class Utilities {
                     !f.getCanonicalPath().startsWith(new File(".").getCanonicalPath())) {
                 return false;
             }
-            if (!CoreUtilities.toLowerCase(Settings.fileLimitPath()).equals("none")
+            if (!CoreUtilities.equalsIgnoreCase(Settings.fileLimitPath(), "none")
                     && !f.getCanonicalPath().startsWith(new File("./" + Settings.fileLimitPath()).getCanonicalPath())) {
                 return false;
             }
@@ -202,9 +230,9 @@ public class Utilities {
             return false;
         }
         BlockHelper blockHelper = NMSHandler.getBlockHelper();
-        return !blockHelper.isSafeBlock(location.clone().subtract(0, 1, 0).getBlock().getType())
-                && blockHelper.isSafeBlock(location.getBlock().getType())
-                && blockHelper.isSafeBlock(location.clone().add(0, 1, 0).getBlock().getType());
+        return location.clone().subtract(0, 1, 0).getBlock().getType().isSolid()
+                && !location.getBlock().getType().isSolid()
+                && !location.clone().add(0, 1, 0).getBlock().getType().isSolid();
     }
 
     /**
@@ -265,6 +293,14 @@ public class Utilities {
             return null;
         }
         return new NPCTag(closestNPC);
+    }
+
+    public static boolean checkLocationWithBoundingBox(Location baseLocation, Entity entity, double theLeeway) {
+        if (!checkLocation(baseLocation, entity.getLocation(), theLeeway + 16)) {
+            return false;
+        }
+        double distanceSq = NMSHandler.getEntityHelper().getBoundingBox(entity).distanceSquared(baseLocation.toVector());
+        return distanceSq < theLeeway * theLeeway;
     }
 
     public static boolean checkLocation(LivingEntity entity, Location theLocation, double theLeeway) {
@@ -332,15 +368,9 @@ public class Utilities {
         else {
             return;
         }
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            MaterialTag signMaterial = new MaterialTag(signState.getBlock());
-            MaterialDirectional.getFrom(signMaterial).setFacing(bf);
-            signMaterial.getModernData().setToBlock(signState.getBlock());
-        }
-        else {
-            ((org.bukkit.material.Sign) signState.getData()).setFacingDirection(bf);
-            signState.update();
-        }
+        MaterialTag signMaterial = new MaterialTag(signState.getBlock());
+        MaterialDirectional.getFrom(signMaterial).setFacing(bf);
+        signMaterial.getModernData().setToBlock(signState.getBlock());
     }
 
     /**
@@ -357,7 +387,7 @@ public class Utilities {
             java.util.Enumeration myEnum = jar.entries();
             while (myEnum.hasMoreElements()) {
                 java.util.jar.JarEntry file = (java.util.jar.JarEntry) myEnum.nextElement();
-                if (file.getName().equalsIgnoreCase(fileName)) {
+                if (CoreUtilities.equalsIgnoreCase(file.getName(), fileName)) {
                     java.io.File f = new java.io.File(destDir + "/" + file.getName());
                     if (file.isDirectory()) {
                         continue;
@@ -412,6 +442,44 @@ public class Utilities {
 
     public static BukkitScriptEntryData getEntryData(ScriptEntry entry) {
         return (BukkitScriptEntryData) entry.entryData;
+    }
+
+    public static WorldTag entryDefaultWorld(ScriptEntry entry, boolean playerFirst) {
+        EntityTag entity = entryDefaultEntity(entry, playerFirst);
+        if (entity == null) {
+            return new WorldTag(Bukkit.getWorlds().get(0));
+        }
+        return new WorldTag(entity.getWorld());
+    }
+
+    public static LocationTag entryDefaultLocation(ScriptEntry entry, boolean playerFirst) {
+        EntityTag entity = entryDefaultEntity(entry, playerFirst);
+        if (entity == null) {
+            return null;
+        }
+        return entity.getLocation();
+    }
+
+    public static List<EntityTag> entryDefaultEntityList(ScriptEntry entry, boolean playerFirst) {
+        EntityTag entity = entryDefaultEntity(entry, playerFirst);
+        if (entity == null) {
+            return null;
+        }
+        return Collections.singletonList(entity);
+    }
+
+    public static EntityTag entryDefaultEntity(ScriptEntry entry, boolean playerFirst) {
+        BukkitScriptEntryData entryData = getEntryData(entry);
+        if (playerFirst && entryData.hasPlayer() && entryData.getPlayer().isOnline()) {
+            return entryData.getPlayer().getDenizenEntity();
+        }
+        if (entryData.hasNPC() && entryData.getNPC().isSpawned()) {
+            return entryData.getNPC().getDenizenEntity();
+        }
+        if (entryData.hasPlayer() && entryData.getPlayer().isOnline()) {
+            return entryData.getPlayer().getDenizenEntity();
+        }
+        return null;
     }
 
     public static boolean entryHasPlayer(ScriptEntry entry) {

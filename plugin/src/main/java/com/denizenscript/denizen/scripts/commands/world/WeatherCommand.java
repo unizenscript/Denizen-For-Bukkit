@@ -7,7 +7,6 @@ import com.denizenscript.denizen.objects.WorldTag;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.objects.core.DurationTag;
-import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
@@ -24,6 +23,7 @@ public class WeatherCommand extends AbstractCommand {
         setName("weather");
         setSyntax("weather ({global}/player) [sunny/storm/thunder/reset] (<world>) (reset:<duration>)");
         setRequiredArguments(1, 4);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -114,10 +114,7 @@ public class WeatherCommand extends AbstractCommand {
 
         // If the world has not been specified, try to use the NPC's or player's
         // world, or default to "world" if necessary
-        scriptEntry.defaultObject("world",
-                Utilities.entryHasNPC(scriptEntry) ? new WorldTag(Utilities.getEntryNPC(scriptEntry).getWorld()) : null,
-                Utilities.entryHasPlayer(scriptEntry) ? new WorldTag(Utilities.getEntryPlayer(scriptEntry).getWorld()) : null,
-                Bukkit.getWorlds().get(0));
+        scriptEntry.defaultObject("world", Utilities.entryDefaultWorld(scriptEntry, false));
     }
 
     public HashMap<UUID, Integer> resetTasks = new HashMap<>();

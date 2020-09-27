@@ -1,5 +1,6 @@
 package com.denizenscript.denizen.tags.core;
 
+import com.denizenscript.denizen.objects.ColorTag;
 import com.denizenscript.denizen.utilities.FormattedTextHelper;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
@@ -347,10 +348,7 @@ public class TextTagBase {
         // Returns a special chat code that makes the following text display the input hover text when the mouse is left over it.
         // This tag must be followed by an <&end_hover> tag.
         // For example: - narrate "There is a <&hover[you found it!]>secret<&end_hover> in this message!"
-        // Note that this is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
-        // This instead generates the special modern Minecraft JSON codes for hoverable text through the Denizen message processor.
-        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
-        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
+        // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
         // -->
         TagManager.registerTagHandler(new TagRunnable.RootForm() {
               @Override
@@ -364,13 +362,10 @@ public class TextTagBase {
                   // @description
                   // Returns a special chat code that makes the following text display the input hover text when the mouse is left over it.
                   // This tag must be followed by an <&end_hover> tag.
-                  // Optionally specify the hover type as one of: SHOW_TEXT, SHOW_ACHIEVEMENT, SHOW_ITEM, or SHOW_ENTITY.
+                  // Available hover types: SHOW_TEXT, SHOW_ACHIEVEMENT, SHOW_ITEM, or SHOW_ENTITY.
                   // For example: - narrate "There is a <&hover[you found it!].type[SHOW_TEXT]>secret<&end_hover> in this message!"
                   // Note: for "SHOW_ITEM", replace the text with a valid ItemTag. For "SHOW_ENTITY", replace the text with a valid spawned EntityTag (requires F3+H to see entities).
-                  // Note that this is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
-                  // This instead generates the special modern Minecraft JSON codes for hoverable text through the Denizen message processor.
-                  // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
-                  // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
+                  // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
                   // -->
                   String type = "SHOW_TEXT";
                   if (attribute.startsWith("type", 2)) {
@@ -390,10 +385,7 @@ public class TextTagBase {
         // This tag must be followed by an <&end_click> tag.
         // For example: - narrate "You can <&click[wow]>click here<&end_click> to say wow!"
         // For example: - narrate "You can <&click[/help]>click here<&end_click> for help!"
-        // Note that this is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
-        // This instead generates the special modern Minecraft JSON codes for clickable text through the Denizen message processor.
-        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
-        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
+        // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
         // -->
         TagManager.registerTagHandler(new TagRunnable.RootForm() {
             @Override
@@ -407,12 +399,9 @@ public class TextTagBase {
                 // @description
                 // Returns a special chat code that makes the following text execute the input command when clicked.
                 // This tag must be followed by an <&end_click> tag.
-                // Optionally specify the hover type as one of: OPEN_URL, OPEN_FILE, RUN_COMMAND, SUGGEST_COMMAND, or CHANGE_PAGE.
+                // Available command types: OPEN_URL, OPEN_FILE, RUN_COMMAND, SUGGEST_COMMAND, or CHANGE_PAGE.
                 // For example: - narrate "You can <&click[https://denizenscript.com].type[OPEN_URL]>click here<&end_click> to learn about Denizen!"
-                // Note that this is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
-                // This instead generates the special modern Minecraft JSON codes for clickable text through the Denizen message processor.
-                // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
-                // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
+                // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
                 // -->
                 String type = "RUN_COMMAND";
                 if (attribute.startsWith("type", 2)) {
@@ -430,10 +419,7 @@ public class TextTagBase {
         // Returns a special chat code that makes the following text insert the input message to chat when shift-clicked.
         // This tag must be followed by an <&end_insertion> tag.
         // For example: - narrate "You can <&insertion[wow]>click here<&end_insertion> to add 'wow' to your chat!"
-        // Note that this is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
-        // This instead generates the special modern Minecraft JSON codes for text insertions through the Denizen message processor.
-        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
-        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
+        // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
         // -->
         TagManager.registerTagHandler(new TagRunnable.RootForm() {
             @Override
@@ -449,6 +435,7 @@ public class TextTagBase {
         // @returns ElementTag
         // @description
         // Returns a special chat code that ends a '&click' tag.
+        // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
         // -->
         TagManager.registerTagHandler(new TagRunnable.RootForm() {
             @Override
@@ -463,6 +450,7 @@ public class TextTagBase {
         // @returns ElementTag
         // @description
         // Returns a special chat code that ends a '&hover' tag.
+        // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
         // -->
         TagManager.registerTagHandler(new TagRunnable.RootForm() {
             @Override
@@ -477,6 +465,7 @@ public class TextTagBase {
         // @returns ElementTag
         // @description
         // Returns a special chat code that ends an '&insertion' tag.
+        // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
         // -->
         TagManager.registerTagHandler(new TagRunnable.RootForm() {
             @Override
@@ -492,10 +481,7 @@ public class TextTagBase {
         // @description
         // Returns a special chat code that displays a keybind.
         // For example: - narrate "Press your <&keybind[key.jump]> key!"
-        // Note that this is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
-        // This instead generates the special modern Minecraft JSON codes for keybind autodisplays through the Denizen message processor.
-        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
-        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
+        // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
         // -->
         TagManager.registerTagHandler(new TagRunnable.RootForm() {
             @Override
@@ -511,10 +497,7 @@ public class TextTagBase {
         // @returns ElementTag
         // @description
         // Returns a special chat code that displays a vanilla selector.
-        // Note that this is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
-        // This instead generates the special modern Minecraft JSON codes for vanilla selectors through the Denizen message processor.
-        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
-        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
+        // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
         // -->
         TagManager.registerTagHandler(new TagRunnable.RootForm() {
             @Override
@@ -532,10 +515,7 @@ public class TextTagBase {
         // Returns a special chat code that displays an autotranslated message.
         // For example: - narrate "Reward: <&translate[item.minecraft.diamond_sword]>"
         // Be warned that language keys change between Minecraft versions.
-        // Note that this is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
-        // This instead generates the special modern Minecraft JSON codes for translatable text through the Denizen message processor.
-        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
-        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
+        // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
         // -->
         TagManager.registerTagHandler(new TagRunnable.RootForm() {
             @Override
@@ -552,14 +532,11 @@ public class TextTagBase {
                 // Be aware that missing 'with' values will cause exceptions in your console.
                 // For example: - narrate "<&translate[commands.give.success.single].with[32|<&translate[item.minecraft.diamond_sword].escaped>|<player.name.escaped>]>"
                 // Be warned that language keys change between Minecraft versions.
-                // Note that this is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
-                // This instead generates the special modern Minecraft JSON codes for translatable text through the Denizen message processor.
-                // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
-                // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
+                // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
                 // -->
                 StringBuilder with = new StringBuilder();
                 if (attribute.startsWith("with", 2)) {
-                    ListTag withList = ListTag.valueOf(attribute.getContext(2), attribute.context);
+                    ListTag withList = attribute.contextAsType(2, ListTag.class);
                     attribute.fulfill(1);
                     for (String str : withList) {
                         with.append(";").append(FormattedTextHelper.escape(EscapeTagBase.unEscape(str)));
@@ -575,17 +552,14 @@ public class TextTagBase {
         // @description
         // Returns a special chat code that displays a scoreboard entry. Input is an escaped list of:
         // Name of the relevant entity, name of the objective, then optionally a value (if unspecified, will use current scoreboard value).
-        // Note that this is a magic Denizen tool, and unlike other format codes (like 'bold') does not appear in Spigot's API or the old Minecraft chat system.
-        // This instead generates the special modern Minecraft JSON codes for scoreboard scores through the Denizen message processor.
-        // As such, it only works when sent through certain Denizen commands (narrate, announce, etc) or mechanisms (like ItemTag.book).
-        // This will not be valid anywhere that isn't in the chat bar or a book (titles, items, etc. will not work).
+        // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
         //
         // -->
         TagManager.registerTagHandler(new TagRunnable.RootForm() {
             @Override
             public void run(ReplaceableTagEvent event) {
                 Attribute attribute = event.getAttributes();
-                ListTag scoreList = ListTag.valueOf(attribute.getContext(1), attribute.context);
+                ListTag scoreList = attribute.contextAsType(1, ListTag.class);
                 if (scoreList.size() < 2) {
                     return;
                 }
@@ -595,6 +569,70 @@ public class TextTagBase {
                 event.setReplacedObject(new ElementTag(ChatColor.COLOR_CHAR + "[score=" + name + ";" + objective + ";" + value + "]").getObjectAttribute(attribute.fulfill(1)));
             }
         }, "&score");
+
+        // <--[tag]
+        // @attribute <&color[<color>]>
+        // @returns ElementTag
+        // @description
+        // Returns a chat code that makes the following text be the specified color.
+        // Color can be a color name, color code, hex, or ColorTag... that is: "&color[gold]", "&color[6]", "&color[#AABB00]", and "&color[co@128,64,0]" are all valid.
+        // -->
+        TagManager.registerTagHandler(new TagRunnable.RootForm() {
+            @Override
+            public void run(ReplaceableTagEvent event) {
+                Attribute attribute = event.getAttributes();
+                if (!attribute.hasContext(1)) {
+                    return;
+                }
+                String colorName = attribute.getContext(1);
+                String colorOut = null;
+                if (colorName.length() == 1) {
+                    ChatColor color = ChatColor.getByChar(colorName.charAt(0));
+                    if (color != null) {
+                        colorOut = color.toString();
+                    }
+                }
+                else if (colorName.length() == 7 && colorName.startsWith("#")) {
+                    colorOut = FormattedTextHelper.stringifyRGBSpigot(colorName.substring(1));
+                }
+                else if (colorName.startsWith("co@")) {
+                    ColorTag color = ColorTag.valueOf(colorName, attribute.context);
+                    String hex = Integer.toHexString(color.getColor().asRGB());
+                    colorOut = FormattedTextHelper.stringifyRGBSpigot(hex);
+                }
+                if (colorOut == null) {
+                    try {
+                        ChatColor color = ChatColor.valueOf(colorName.toUpperCase());
+                        colorOut = color.toString();
+                    }
+                    catch (IllegalArgumentException ex) {
+                        attribute.echoError("Color '" + colorName + "' doesn't exist (for tag &color[...]).");
+                        return;
+                    }
+                }
+                event.setReplacedObject(new ElementTag(colorOut).getObjectAttribute(attribute.fulfill(1)));
+            }
+        }, "&color");
+
+        // <--[tag]
+        // @attribute <&font[<font>]>
+        // @returns ElementTag
+        // @description
+        // Returns a chat code that makes the following text display with the specified font.
+        // The default font is "minecraft:default".
+        // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
+        // -->
+        TagManager.registerTagHandler(new TagRunnable.RootForm() {
+            @Override
+            public void run(ReplaceableTagEvent event) {
+                Attribute attribute = event.getAttributes();
+                if (!attribute.hasContext(1)) {
+                    return;
+                }
+                String fontName = attribute.getContext(1);
+                event.setReplacedObject(new ElementTag(ChatColor.COLOR_CHAR + "[font=" + fontName + "]").getObjectAttribute(attribute.fulfill(1)));
+            }
+        }, "&font");
 
         // <--[tag]
         // @attribute <&0>

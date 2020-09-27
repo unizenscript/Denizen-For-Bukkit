@@ -13,6 +13,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 
+import java.util.Arrays;
+import java.util.HashSet;
+
 public class EntityBreaksHangingScriptEvent extends BukkitScriptEvent implements Listener {
 
     // <--[event]
@@ -24,6 +27,8 @@ public class EntityBreaksHangingScriptEvent extends BukkitScriptEvent implements
     //
     // @Regex ^on [^\s]+ breaks [^\s]+( because [^\s]+)?$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -31,7 +36,7 @@ public class EntityBreaksHangingScriptEvent extends BukkitScriptEvent implements
     // @Triggers when a hanging entity (painting, item_frame, or leash_hitch) is broken.
     //
     // @Context
-    // <context.cause> returns the cause of the entity breaking. Causes list: <@link url http://bit.ly/1BeqxPX>
+    // <context.cause> returns the cause of the entity breaking. Causes list: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/event/hanging/HangingBreakEvent.RemoveCause.html>
     // <context.breaker> returns the EntityTag that broke the hanging entity, if any.
     // <context.hanging> returns the EntityTag of the hanging.
     //
@@ -52,9 +57,23 @@ public class EntityBreaksHangingScriptEvent extends BukkitScriptEvent implements
     public LocationTag location;
     public HangingBreakByEntityEvent event;
 
+    public static HashSet<String> notRelevantBreakables = new HashSet<>(Arrays.asList("item", "held", "block"));
+
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("breaks");
+        if (!path.eventArgLowerAt(1).equals("breaks")) {
+            return false;
+        }
+        if (notRelevantBreakables.contains(path.eventArgLowerAt(2))) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(2))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

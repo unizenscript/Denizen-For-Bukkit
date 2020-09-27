@@ -21,6 +21,8 @@ public class EntityTargetsScriptEvent extends BukkitScriptEvent implements Liste
     //
     // @Regex ^on [^\s]+ targets( [^\s]+)?( because [^\s]+)?$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -29,7 +31,7 @@ public class EntityTargetsScriptEvent extends BukkitScriptEvent implements Liste
     //
     // @Context
     // <context.entity> returns the targeting entity.
-    // <context.reason> returns the reason the entity changed targets.
+    // <context.reason> returns the reason the entity changed targets. Refer to <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/event/entity/EntityTargetEvent.TargetReason.html>.
     // <context.target> returns the targeted entity.
     //
     // @Determine
@@ -52,7 +54,13 @@ public class EntityTargetsScriptEvent extends BukkitScriptEvent implements Liste
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("targets");
+        if (!path.eventArgLowerAt(1).equals("targets")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -88,7 +96,7 @@ public class EntityTargetsScriptEvent extends BukkitScriptEvent implements Liste
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         String determination = determinationObj.toString();
         if (EntityTag.matches(determination)) {
-            target = EntityTag.valueOf(determination);
+            target = EntityTag.valueOf(determination, getTagContext(path));
         }
         return super.applyDetermination(path, determinationObj);
     }

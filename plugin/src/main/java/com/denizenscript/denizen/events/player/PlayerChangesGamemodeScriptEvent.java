@@ -7,7 +7,6 @@ import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
@@ -20,12 +19,14 @@ public class PlayerChangesGamemodeScriptEvent extends BukkitScriptEvent implemen
     //
     // @Regex ^on player changes gamemode( to [^\s]+)?$
     //
+    // @Group Player
+    //
     // @Cancellable true
     //
     // @Triggers when a player's gamemode is changed.
     //
     // @Context
-    // <context.gamemode> returns an ElementTag of the gamemode. Game Modes: <@link url http://bit.ly/1KHab43>
+    // <context.gamemode> returns an ElementTag of the gamemode. Game Modes: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/GameMode.html>
     //
     // @Player Always.
     //
@@ -41,14 +42,17 @@ public class PlayerChangesGamemodeScriptEvent extends BukkitScriptEvent implemen
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("player changes gamemode");
+        if (!path.eventLower.startsWith("player changes gamemode")) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean matches(ScriptPath path) {
         String mode = path.eventArgLowerAt(4);
         if (mode.length() > 0) {
-            if (!CoreUtilities.toLowerCase(gamemode.asString()).equals(mode)) {
+            if (!runGenericCheck(mode, gamemode.asString())) {
                 return false;
             }
         }

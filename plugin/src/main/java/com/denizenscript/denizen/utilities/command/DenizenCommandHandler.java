@@ -2,15 +2,12 @@ package com.denizenscript.denizen.utilities.command;
 
 import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.objects.LocationTag;
-import com.denizenscript.denizen.objects.notable.NotableManager;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.command.manager.Command;
 import com.denizenscript.denizen.utilities.command.manager.CommandContext;
 import com.denizenscript.denizen.utilities.command.manager.Paginator;
 import com.denizenscript.denizen.utilities.command.manager.exceptions.CommandException;
 import com.denizenscript.denizen.utilities.command.manager.messaging.Messaging;
-import com.denizenscript.denizen.utilities.debugging.DebugSubmit;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizencore.DenizenCore;
 import com.denizenscript.denizencore.scripts.ScriptHelper;
@@ -18,8 +15,6 @@ import com.denizenscript.denizencore.scripts.ScriptRegistry;
 import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.utilities.debugging.FutureWarning;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.Set;
 
@@ -38,8 +33,6 @@ public class DenizenCommandHandler {
     // The following is a list of all permission nodes Denizen uses within Bukkit.
     //
     // denizen.basic         # use the basics of the /denizen command
-    // denizen.notable       # use the /notable command
-    // denizen.notable.basic # functionality within the /notable command, such as add or list
     // denizen.ex            # use the /ex command
     // denizen.debug         # use the /denizen debug command
     // denizen.submit        # use the /denizen submit command
@@ -85,26 +78,15 @@ public class DenizenCommandHandler {
             Messaging.sendError(sender, "Use /denizen debug -r  to record debug information to be submitted");
             return;
         }
-        Debug.record = false;
         Messaging.send(sender, "Submitting...");
-        final DebugSubmit submit = new DebugSubmit();
-        submit.recording = Debug.Recording.toString();
-        Debug.Recording = new StringBuilder();
-        submit.start();
-        BukkitRunnable task = new BukkitRunnable() {
-            public void run() {
-                if (!submit.isAlive()) {
-                    if (submit.Result == null) {
-                        Messaging.sendError(sender, "Error while submitting.");
-                    }
-                    else {
-                        Messaging.send(sender, "Successfully submitted to https://one.denizenscript.com" + submit.Result);
-                    }
-                    this.cancel();
-                }
+        DenizenCore.getImplementation().submitRecording((s) -> {
+            if (s == null) {
+                Messaging.sendError(sender, "Error while submitting.");
             }
-        };
-        task.runTaskTimer(DenizenAPI.getCurrentInstance(), 0, 10);
+            else {
+                Messaging.send(sender, "Successfully submitted to " + s);
+            }
+        });
     }
 
     // <--[language]
@@ -396,27 +378,5 @@ public class DenizenCommandHandler {
         if (!paginator.sendPage(sender, args.getInteger(1, 1))) {
             throw new CommandException("The page " + args.getInteger(1, 1) + " does not exist.");
         }
-    }
-
-    @Command(
-            aliases = {"notable"}, usage = "add",
-            desc = "Adds a new notable to your current location", modifiers = {"add", "save"},
-            // Even though different arguments will be combined into one
-            // if they are delimited by quotes, their max number is checked
-            // before that, so it needs to be high
-            min = 2, max = 20, permission = "denizen.notable.basic")
-    public void addnotable(CommandContext args, CommandSender sender) throws CommandException {
-
-        NotableManager.saveAs(new LocationTag(((Player) sender).getLocation()), args.getString(1));
-        Messaging.send(sender, "Created new notable called " + (args.getString(1)));
-    }
-
-    @Command(
-            aliases = {"notable"}, usage = "list",
-            desc = "Lists all notable locations", modifiers = {"list"},
-            min = 1, max = 1, permission = "denizen.notable.basic")
-    public void listnotable(CommandContext args, CommandSender sender) throws CommandException {
-
-        Messaging.send(sender, NotableManager.getAllType(LocationTag.class).toString());
     }
 }

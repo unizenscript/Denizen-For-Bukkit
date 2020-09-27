@@ -68,13 +68,13 @@ public class ItemColor implements Property {
             if (mat == Material.POTION
                     || mat == Material.LINGERING_POTION
                     || mat == Material.SPLASH_POTION) {
-                PotionMeta pm = (PotionMeta) item.getItemStack().getItemMeta();
+                PotionMeta pm = (PotionMeta) item.getItemMeta();
                 if (!pm.hasColor()) {
                     return new ColorTag(Color.WHITE).getObjectAttribute(attribute.fulfill((1)));
                 }
                 return new ColorTag(pm.getColor()).getObjectAttribute(attribute.fulfill((1)));
             }
-            return new ColorTag(((LeatherArmorMeta) item.getItemStack().getItemMeta()).getColor()).getObjectAttribute(attribute.fulfill(1));
+            return new ColorTag(((LeatherArmorMeta) item.getItemMeta()).getColor()).getObjectAttribute(attribute.fulfill(1));
         }
 
         return null;
@@ -86,13 +86,13 @@ public class ItemColor implements Property {
         if (mat == Material.POTION
                 || mat == Material.LINGERING_POTION
                 || mat == Material.SPLASH_POTION) {
-            PotionMeta pm = (PotionMeta) item.getItemStack().getItemMeta();
+            PotionMeta pm = (PotionMeta) item.getItemMeta();
             if (!pm.hasColor()) {
                 return null;
             }
             return new ColorTag(pm.getColor()).identify();
         }
-        return new ColorTag(((LeatherArmorMeta) item.getItemStack().getItemMeta()).getColor()).identify();
+        return new ColorTag(((LeatherArmorMeta) item.getItemMeta()).getColor()).identify();
     }
 
     @Override
@@ -108,7 +108,7 @@ public class ItemColor implements Property {
         // @name color
         // @input ColorTag
         // @description
-        // Sets the leather armor item's dye color or the potion item's color in the format RED,GREEN,BLUE.
+        // Sets the leather armor item's dye color or the potion item's color.
         // @tags
         // <ItemTag.color>
         // -->
@@ -116,17 +116,15 @@ public class ItemColor implements Property {
                 || mechanism.matches("color")) && (mechanism.requireObject(ColorTag.class))) {
             ColorTag color = mechanism.valueAsType(ColorTag.class);
             Material mat = item.getItemStack().getType();
-            if (mat == Material.POTION
-                    || mat == Material.LINGERING_POTION
-                    || mat == Material.SPLASH_POTION) {
-                PotionMeta meta = (PotionMeta) item.getItemStack().getItemMeta();
+            if (mat == Material.POTION || mat == Material.LINGERING_POTION || mat == Material.SPLASH_POTION) {
+                PotionMeta meta = (PotionMeta) item.getItemMeta();
                 meta.setColor(color.getColor());
-                item.getItemStack().setItemMeta(meta);
+                item.setItemMeta(meta);
                 return;
             }
-            LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemStack().getItemMeta();
+            LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
             meta.setColor(color.getColor());
-            item.getItemStack().setItemMeta(meta);
+            item.setItemMeta(meta);
         }
 
     }

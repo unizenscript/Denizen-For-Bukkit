@@ -21,6 +21,8 @@ public class PlayerQuitsScriptEvent extends BukkitScriptEvent implements Listene
     //
     // @Regex ^on player (quit|quits)$
     //
+    // @Group Player
+    //
     // @Triggers when a player quit the server.
     //
     // @Context
@@ -55,7 +57,7 @@ public class PlayerQuitsScriptEvent extends BukkitScriptEvent implements Listene
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         if (determinationObj instanceof ElementTag) {
             String determination = determinationObj.toString();
-            if (CoreUtilities.toLowerCase(determination).equals("none")) {
+            if (CoreUtilities.equalsIgnoreCase(determination, "none")) {
                 event.setQuitMessage(null);
                 return true;
             }

@@ -3,8 +3,6 @@ package com.denizenscript.denizen.scripts.commands.world;
 import com.denizenscript.denizen.objects.CuboidTag;
 import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.interfaces.BlockData;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
@@ -28,12 +26,13 @@ public class CopyBlockCommand extends AbstractCommand {
         setName("copyblock");
         setSyntax("copyblock [<location>] [to:<location>] (remove_original)");
         setRequiredArguments(2, 3);
+        isProcedural = false;
     }
 
     // <--[command]
     // @Name CopyBlock
     // @Syntax copyblock [<location>/<cuboid>] (origin:<location>) [to:<location>] (remove_original) (delayed)
-    // @Required 1
+    // @Required 2
     // @Short Copies a block to another location, keeping metadata when possible.
     // @Group world
     //
@@ -60,7 +59,6 @@ public class CopyBlockCommand extends AbstractCommand {
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-
         for (Argument arg : scriptEntry.getProcessedArgs()) {
 
             if (!scriptEntry.hasObject("source")
@@ -99,11 +97,9 @@ public class CopyBlockCommand extends AbstractCommand {
         if (!scriptEntry.hasObject("source")) {
             throw new InvalidArgumentsException("Must specify a source location or cuboid.");
         }
-
         if (!scriptEntry.hasObject("destination")) {
             throw new InvalidArgumentsException("Must specify a destination location.");
         }
-
         // Set defaults
         if (scriptEntry.getObject("source") instanceof CuboidTag) {
             scriptEntry.defaultObject("origin", new LocationTag(((CuboidTag) scriptEntry.getObject("source")).pairs.get(0).low));

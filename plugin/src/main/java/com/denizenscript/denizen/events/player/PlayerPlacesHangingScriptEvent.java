@@ -14,13 +14,14 @@ import org.bukkit.event.hanging.HangingPlaceEvent;
 
 public class PlayerPlacesHangingScriptEvent extends BukkitScriptEvent implements Listener {
 
-    // TODO: de-collide with places block
     // <--[event]
     // @Events
     // player places hanging
     // player places <hanging>
     //
     // @Regex ^on player places [^\s]+$
+    //
+    // @Group Player
     //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
@@ -47,7 +48,13 @@ public class PlayerPlacesHangingScriptEvent extends BukkitScriptEvent implements
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("player places");
+        if (!path.eventLower.startsWith("player places")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(2))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

@@ -22,14 +22,15 @@ public class HurtCommand extends AbstractCommand {
     public HurtCommand() {
         setName("hurt");
         setSyntax("hurt (<#.#>) ({player}/<entity>|...) (cause:<cause>)");
-        setRequiredArguments(0, 3);
+        setRequiredArguments(0, 5);
+        isProcedural = false;
     }
 
     // <--[command]
     // @Name Hurt
     // @Syntax hurt (<#.#>) ({player}/<entity>|...) (cause:<cause>)
     // @Required 0
-    // @Maximum 3
+    // @Maximum 5
     // @Short Hurts the player or a list of entities.
     // @Group entity
     //
@@ -70,9 +71,7 @@ public class HurtCommand extends AbstractCommand {
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-
         for (Argument arg : scriptEntry.getProcessedArgs()) {
-
             if (!scriptEntry.hasObject("amount")
                     && (arg.matchesFloat()
                     || arg.matchesInteger())) {
@@ -99,11 +98,9 @@ public class HurtCommand extends AbstractCommand {
                 arg.reportUnhandled();
             }
         }
-
         if (!scriptEntry.hasObject("amount")) {
             scriptEntry.addObject("amount", new ElementTag(1.0d));
         }
-
         if (!scriptEntry.hasObject("entities")) {
             List<EntityTag> entities = new ArrayList<>();
             if (Utilities.getEntryPlayer(scriptEntry) != null) {
@@ -123,23 +120,18 @@ public class HurtCommand extends AbstractCommand {
     @SuppressWarnings("unchecked")
     @Override
     public void execute(ScriptEntry scriptEntry) {
-
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
         EntityTag source = scriptEntry.getObjectTag("source");
         ElementTag amountElement = scriptEntry.getElement("amount");
         ElementTag cause = scriptEntry.getElement("cause");
         ElementTag source_once = scriptEntry.getElement("source_once");
-
         if (scriptEntry.dbCallShouldDebug()) {
-
             Debug.report(scriptEntry, getName(), amountElement.debug()
                     + ArgumentHelper.debugList("entities", entities)
                     + (source_once == null ? "" : source_once.debug())
                     + (cause == null ? "" : cause.debug())
                     + (source == null ? "" : source.debug()));
-
         }
-
         double amount = amountElement.asDouble();
         for (EntityTag entity : entities) {
             if (entity.getLivingEntity() == null) {

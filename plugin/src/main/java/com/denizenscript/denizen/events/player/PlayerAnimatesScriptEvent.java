@@ -10,6 +10,7 @@ import com.denizenscript.denizencore.scripts.ScriptEntryData;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerAnimationEvent;
+import org.bukkit.event.player.PlayerAnimationType;
 
 public class PlayerAnimatesScriptEvent extends BukkitScriptEvent implements Listener {
 
@@ -18,6 +19,8 @@ public class PlayerAnimatesScriptEvent extends BukkitScriptEvent implements List
     // player animates (<animation>)
     //
     // @Regex ^on player animates [^\s]+$
+    //
+    // @Group Player
     //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
@@ -42,7 +45,13 @@ public class PlayerAnimatesScriptEvent extends BukkitScriptEvent implements List
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("player animates");
+        if (!path.eventLower.startsWith("player animates")) {
+            return false;
+        }
+        if (!couldMatchEnum(path.eventArgLowerAt(2), PlayerAnimationType.values())) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -51,10 +60,9 @@ public class PlayerAnimatesScriptEvent extends BukkitScriptEvent implements List
             return false;
         }
         String ani = path.eventArgLowerAt(2);
-        if (ani.length() > 0 && !ani.equals("in") && !ani.equalsIgnoreCase(animation)) {
+        if (ani.length() > 0 && !ani.equals("in") && !runGenericCheck(ani, animation)) {
             return false;
         }
-
         return super.matches(path);
     }
 

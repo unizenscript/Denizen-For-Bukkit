@@ -18,6 +18,7 @@ public class PermissionCommand extends AbstractCommand {
         setName("permission");
         setSyntax("permission [add/remove] [permission] (group:<name>) (<world>)");
         setRequiredArguments(2, 4);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -55,20 +56,17 @@ public class PermissionCommand extends AbstractCommand {
     //
     // @Usage
     // Use to remove a permissions node from the group 'Members' in the Creative world.
-    // - permission remove bukkit.version group:Members w@Creative
+    // - permission remove bukkit.version group:Members Creative
     // -->
 
     private enum Action {ADD, REMOVE}
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-
         if (Depends.permissions == null) {
             throw new InvalidArgumentsException("Permissions not linked - is Vault improperly installed, or is there no permissions plugin?");
         }
-
         for (Argument arg : scriptEntry.getProcessedArgs()) {
-
             if (!scriptEntry.hasObject("action")
                     && arg.matchesEnum(Action.values())) {
                 scriptEntry.addObject("action", arg.asElement());
@@ -84,43 +82,33 @@ public class PermissionCommand extends AbstractCommand {
             else if (!scriptEntry.hasObject("permission")) {
                 scriptEntry.addObject("permission", arg.asElement());
             }
-
         }
-
         if (!scriptEntry.hasObject("group") && (!Utilities.entryHasPlayer(scriptEntry) || !Utilities.getEntryPlayer(scriptEntry).isValid())) {
             throw new InvalidArgumentsException("Must have player context or a valid group!");
         }
-
         if (!scriptEntry.hasObject("action")) {
             throw new InvalidArgumentsException("Must specify a valid action!");
         }
-
         if (!scriptEntry.hasObject("permission")) {
             throw new InvalidArgumentsException("Must specify a permission!");
         }
-
     }
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-
         ElementTag action = scriptEntry.getElement("action");
         ElementTag permission = scriptEntry.getElement("permission");
         ElementTag group = scriptEntry.getElement("group");
         WorldTag world = scriptEntry.getObjectTag("world");
-
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), action.debug() + permission.debug()
                     + (group != null ? group.debug() : "") + (world != null ? world.debug() : ""));
         }
-
         World bukkitWorld = null;
         if (world != null) {
             bukkitWorld = world.getWorld();
         }
-
         OfflinePlayer player = Utilities.entryHasPlayer(scriptEntry) ? Utilities.getEntryPlayer(scriptEntry).getOfflinePlayer() : null;
-
         switch (Action.valueOf(action.asString().toUpperCase())) {
             case ADD:
                 if (group != null) {
@@ -139,7 +127,7 @@ public class PermissionCommand extends AbstractCommand {
                         Depends.permissions.playerAdd(bukkitWorld == null ? null : bukkitWorld.getName(), player, permission.asString());
                     }
                 }
-                return;
+                break;
             case REMOVE:
                 if (group != null) {
                     if (!Depends.permissions.groupHas(bukkitWorld, group.asString(), permission.asString())) {
@@ -157,7 +145,7 @@ public class PermissionCommand extends AbstractCommand {
                         Depends.permissions.playerRemove(bukkitWorld == null ? null : bukkitWorld.getName(), player, permission.asString());
                     }
                 }
-                return;
+                break;
         }
     }
 }

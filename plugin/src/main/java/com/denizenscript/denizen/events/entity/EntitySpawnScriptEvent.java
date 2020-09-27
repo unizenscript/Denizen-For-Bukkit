@@ -23,6 +23,8 @@ public class EntitySpawnScriptEvent extends BukkitScriptEvent implements Listene
     //
     // @Regex ^on [^\s]+ spawns( because [^\s]+)?$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -35,7 +37,7 @@ public class EntitySpawnScriptEvent extends BukkitScriptEvent implements Listene
     // <context.entity> returns the EntityTag that spawned.
     // <context.location> returns the location the entity will spawn at.
     // <context.reason> returns the reason the entity spawned.
-    // Reasons: <@link url https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/event/entity/CreatureSpawnEvent.SpawnReason.html>
+    // Reasons: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/event/entity/CreatureSpawnEvent.SpawnReason.html>
     //
     // -->
 
@@ -51,25 +53,30 @@ public class EntitySpawnScriptEvent extends BukkitScriptEvent implements Listene
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("spawns") && !path.eventLower.startsWith("item") && !path.eventLower.startsWith("spawner");
+        if (!path.eventArgLowerAt(1).equals("spawns")) {
+            return false;
+        }
+        if (path.eventLower.startsWith("item") || path.eventLower.startsWith("spawner") || path.eventLower.startsWith("npc")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean matches(ScriptPath path) {
-
         if (!tryEntity(entity, path.eventArgLowerAt(0))) {
             return false;
         }
-
         if (path.eventArgLowerAt(2).equals("because")
-                && !path.eventArgLowerAt(3).equalsIgnoreCase(reason.toString())) {
+                && !runGenericCheck(path.eventArgLowerAt(3), reason.toString())) {
             return false;
         }
-
         if (!runInCheck(path, location)) {
             return false;
         }
-
         return super.matches(path);
     }
 
@@ -108,5 +115,4 @@ public class EntitySpawnScriptEvent extends BukkitScriptEvent implements Listene
         fire(event);
         EntityTag.forgetEntity(entity);
     }
-
 }

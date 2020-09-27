@@ -25,6 +25,7 @@ public class FlagCommand extends AbstractCommand implements Listener {
         setName("flag");
         setSyntax("flag [player/npc/server/<entity>] [<name>([<#>])](:<action>)[:<value>] (duration:<value>)");
         setRequiredArguments(1, 3);
+        isProcedural = false;
     }
 
     // <--[command]
@@ -63,10 +64,10 @@ public class FlagCommand extends AbstractCommand implements Listener {
     // <server.flag[<flag>]>
     // <server.has_flag[<flag_name>]>
     // <server.list_flags[(regex:)<search>]>
-    // <server.list_online_players_flagged[<flag_name>]>
-    // <server.list_players_flagged[<flag_name>]>
-    // <server.list_spawned_npcs_flagged[<flag_name>]>
-    // <server.list_npcs_flagged[<flag_name>]>
+    // <server.online_players_flagged[<flag_name>]>
+    // <server.players_flagged[<flag_name>]>
+    // <server.spawned_npcs_flagged[<flag_name>]>
+    // <server.npcs_flagged[<flag_name>]>
     //
     // @Usage
     // Use to create or set a flag on a player.
@@ -85,7 +86,7 @@ public class FlagCommand extends AbstractCommand implements Listener {
     // - flag server cool_people:->:<[player]>
     //
     // @Usage
-    // Use to add multiple items as individual new values to a server flag.
+    // Use to add multiple items as individual new values to a server flag that is already a list.
     // - flag server cool_people:|:<[player]>|<[someplayer]>
     //
     // @Usage
@@ -149,7 +150,7 @@ public class FlagCommand extends AbstractCommand implements Listener {
             // as the name of the flag..
             else if (!scriptEntry.hasObject("flag_target")
                     && arg.startsWith("n@") && !arg.hasPrefix()) {
-                if (NPCTag.valueOf(arg.getValue()) == null) // TODO: Optimize
+                if (NPCTag.valueOf(arg.getValue(), CoreUtilities.basicContext) == null) // TODO: Optimize
                 {
                     throw new InvalidArgumentsException("Invalid NPC target.");
                 }
@@ -159,7 +160,7 @@ public class FlagCommand extends AbstractCommand implements Listener {
             }
             else if (!scriptEntry.hasObject("flag_target")
                     && arg.startsWith("p@") && !arg.hasPrefix()) {
-                if (PlayerTag.valueOf(arg.getValue()) == null) // TODO: Optimize
+                if (PlayerTag.valueOf(arg.getValue(), CoreUtilities.basicContext) == null) // TODO: Optimize
                 {
                     throw new InvalidArgumentsException("Invalid Player target.");
                 }
@@ -168,7 +169,7 @@ public class FlagCommand extends AbstractCommand implements Listener {
             }
             else if (!scriptEntry.hasObject("flag_target")
                     && !arg.hasPrefix()) {
-                if (EntityTag.valueOf(arg.getValue()) == null) // TODO: Optimize
+                if (EntityTag.valueOf(arg.getValue(), CoreUtilities.basicContext) == null) // TODO: Optimize
                 {
                     throw new InvalidArgumentsException("Invalid Entity target.");
                 }
@@ -291,7 +292,7 @@ public class FlagCommand extends AbstractCommand implements Listener {
             catch (Exception e) {
                 index = -1;
             }
-            name = ElementTag.valueOf(name.asString().split("\\[")[0]);
+            name = new ElementTag(name.asString().split("\\[")[0]);
         }
 
         // Send information to debugger

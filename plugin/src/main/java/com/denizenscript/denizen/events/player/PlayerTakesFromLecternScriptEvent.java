@@ -22,6 +22,8 @@ public class PlayerTakesFromLecternScriptEvent extends BukkitScriptEvent impleme
     //
     // @Regex ^on player takes [^\s]+ from lectern$
     //
+    // @Group Player
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -47,8 +49,13 @@ public class PlayerTakesFromLecternScriptEvent extends BukkitScriptEvent impleme
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("player takes")
-                && (path.eventArgLowerAt(4).equals("lectern"));
+        if (!path.eventLower.startsWith("player takes") || !path.eventArgLowerAt(3).equals("from") || !path.eventArgLowerAt(4).equals("lectern")) {
+            return false;
+        }
+        if (!couldMatchItem(path.eventArgLowerAt(2))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

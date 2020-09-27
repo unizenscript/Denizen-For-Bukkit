@@ -23,12 +23,14 @@ public class PlayerStatisticIncrementsScriptEvent extends BukkitScriptEvent impl
     //
     // @Regex ^on player ( [^\s]+ )increments$
     //
+    // @Group Player
+    //
     // @Cancellable true
     //
     // @Triggers when a player's statistics increment.
     //
     // @Context
-    // <context.statistic> returns the statistic that incremented. Statistic names: <@link url https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Statistic.html>
+    // <context.statistic> returns the statistic that incremented. Statistic names: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Statistic.html>
     // <context.previous_value> returns the old value of the statistic.
     // <context.new_value> returns the new value of the statistic.
     // <context.qualifier> returns the qualifier (EntityTag/MaterialTag) if any.
@@ -47,7 +49,15 @@ public class PlayerStatisticIncrementsScriptEvent extends BukkitScriptEvent impl
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("player statistic");
+        if (!path.eventLower.startsWith("player statistic")) {
+            return false;
+        }
+        if (!path.eventArgLowerAt(2).equals("increments")) {
+            if (!path.eventArgLowerAt(3).equals("increments") || !couldMatchEnum(path.eventArgLowerAt(2), Statistic.values())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

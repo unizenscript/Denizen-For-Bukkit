@@ -21,6 +21,8 @@ public class PlayerStandsOnScriptEvent extends BukkitScriptEvent implements List
     //
     // @Regex ^on player stands on [^\s]+$
     //
+    // @Group Player
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -45,7 +47,13 @@ public class PlayerStandsOnScriptEvent extends BukkitScriptEvent implements List
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventLower.startsWith("player stands on");
+        if (!path.eventLower.startsWith("player stands on")) {
+            return false;
+        }
+        if (!couldMatchBlock(path.eventArgLowerAt(3))) {
+            return false;
+        }
+        return true;
     }
 
     @Override

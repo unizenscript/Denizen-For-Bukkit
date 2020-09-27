@@ -18,6 +18,8 @@ public class ProjectileLaunchedScriptEvent extends BukkitScriptEvent implements 
     //
     // @Regex ^on [^\s]+ launched$
     //
+    // @Group Entity
+    //
     // @Switch in:<area> to only process the event if it occurred within a specified area.
     //
     // @Cancellable true
@@ -40,7 +42,13 @@ public class ProjectileLaunchedScriptEvent extends BukkitScriptEvent implements 
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        return path.eventArgLowerAt(1).equals("launched");
+        if (!path.eventArgLowerAt(1).equals("launched")) {
+            return false;
+        }
+        if (!couldMatchEntity(path.eventArgLowerAt(0))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
