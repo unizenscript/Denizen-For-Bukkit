@@ -1,15 +1,12 @@
 package com.denizenscript.denizen.tags.core;
 
-import com.denizenscript.denizen.events.core.NPCNavigationSmartEvent;
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.NPCTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.depends.Depends;
-import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.npc.traits.AssignmentTrait;
 import com.denizenscript.denizen.tags.BukkitTagContext;
-import com.denizenscript.denizencore.events.OldEventManager;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.tags.TagManager;
@@ -25,9 +22,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class NPCTagBase implements Listener {
@@ -43,7 +38,7 @@ public class NPCTagBase implements Listener {
         // If no input value is specified, returns the linked NPC.
         // -->
         if (Depends.citizens != null) {
-            Bukkit.getServer().getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
+            Bukkit.getServer().getPluginManager().registerEvents(this, Denizen.getInstance());
             TagManager.registerTagHandler("npc", (attribute) -> {
                 if (!attribute.hasContext(1)) {
                     NPCTag npc = ((BukkitTagContext) attribute.context).npc;
@@ -66,21 +61,6 @@ public class NPCTagBase implements Listener {
 
     public static Map<Integer, LocationTag> previousLocations = new HashMap<>();
 
-    // <--[event]
-    // @Events
-    // npc completes navigation
-    //
-    // @Regex ^on npc completes navigation$
-    //
-    // @Warning This event may fire very rapidly.
-    //
-    // @Triggers when an NPC finishes navigating.
-    //
-    // @Context
-    // None
-    //
-    // -->
-
     // <--[action]
     // @Actions
     // complete navigation
@@ -94,37 +74,15 @@ public class NPCTagBase implements Listener {
     // -->
     @EventHandler
     public void navComplete(NavigationCompleteEvent event) {
-
-        NPCTag npc = DenizenAPI.getDenizenNPC(event.getNPC());
-
-        // Do world script event 'On NPC Completes Navigation'
-        if (NPCNavigationSmartEvent.IsActive()) {
-            OldEventManager.doEvents(Arrays.asList
-                    ("npc completes navigation"), new BukkitScriptEntryData(null, npc), null);
-        }
-
         // Do the assignment script action
         if (!event.getNPC().hasTrait(AssignmentTrait.class)) {
             return;
         }
+        NPCTag npc = new NPCTag(event.getNPC());
+
         npc.action("complete navigation", null);
 
     }
-
-    // <--[event]
-    // @Events
-    // npc begins navigation
-    //
-    // @Regex ^on npc begins navigation$
-    //
-    // @Warning This event may fire very rapidly.
-    //
-    // @Triggers when an NPC begins navigating.
-    //
-    // @Context
-    // None
-    //
-    // -->
 
     // <--[action]
     // @Actions
@@ -139,19 +97,11 @@ public class NPCTagBase implements Listener {
     // -->
     @EventHandler
     public void navBegin(NavigationBeginEvent event) {
-        NPCTag npc = DenizenAPI.getDenizenNPC(event.getNPC());
-
-        // Do world script event 'On NPC Begins Navigation'
-        if (NPCNavigationSmartEvent.IsActive()) {
-            OldEventManager.doEvents(Arrays.asList
-                    ("npc begins navigation"), new BukkitScriptEntryData(null, npc), null);
-        }
-
         if (!event.getNPC().hasTrait(AssignmentTrait.class)) {
             return;
         }
+        NPCTag npc = new NPCTag(event.getNPC());
         npc.action("begin navigation", null);
-
         if (event.getNPC().getNavigator().getTargetType() == TargetType.ENTITY) {
             LivingEntity entity = (LivingEntity) event.getNPC().getNavigator().getEntityTarget().getTarget();
 
@@ -200,35 +150,13 @@ public class NPCTagBase implements Listener {
     // -->
     @EventHandler
     public void navCancel(NavigationCancelEvent event) {
-        NPCTag npc = DenizenAPI.getDenizenNPC(event.getNPC());
-
-        if (NPCNavigationSmartEvent.IsActive()) {
-            OldEventManager.doEvents(Arrays.asList
-                    ("npc cancels navigation"), new BukkitScriptEntryData(null, npc), null);
-        }
-
         if (!event.getNPC().hasTrait(AssignmentTrait.class)) {
             return;
         }
+        NPCTag npc = new NPCTag(event.getNPC());
         npc.action("cancel navigation", null);
         npc.action("cancel navigation due to " + event.getCancelReason().toString(), null);
     }
-
-    // <--[event]
-    // @Events
-    // npc stuck
-    //
-    // @Regex ^on npc stuck$
-    //
-    // @Triggers when an NPC's navigator is stuck.
-    //
-    // @Context
-    // <context.action> returns 'teleport' or 'none'
-    //
-    // @Determine
-    // "NONE" to do nothing.
-    // "TELEPORT" to teleport.
-    // -->
 
     // <--[action]
     // @Actions
@@ -246,31 +174,13 @@ public class NPCTagBase implements Listener {
     // -->
     @EventHandler
     public void navStuck(NavigationStuckEvent event) {
-
-        NPCTag npc = DenizenAPI.getDenizenNPC(event.getNPC());
-
-        Map<String, ObjectTag> context = new HashMap<>();
-
-        context.put("action", new ElementTag(event.getAction() == TeleportStuckAction.INSTANCE ? "teleport" : "none"));
-
-        // Do world script event 'On NPC stuck'
-        if (NPCNavigationSmartEvent.IsActive()) {
-            List<String> determinations = OldEventManager.doEvents(Arrays.asList
-                    ("npc stuck"), new BukkitScriptEntryData(null, npc), context);
-            for (String determination : determinations) {
-                if (determination.equalsIgnoreCase("none")) {
-                    event.setAction(null);
-                }
-                if (determination.equalsIgnoreCase("teleport")) {
-                    event.setAction(TeleportStuckAction.INSTANCE);
-                }
-            }
-        }
-
         // Do the assignment script action
         if (!event.getNPC().hasTrait(AssignmentTrait.class)) {
             return;
         }
+        NPCTag npc = new NPCTag(event.getNPC());
+        Map<String, ObjectTag> context = new HashMap<>();
+        context.put("action", new ElementTag(event.getAction() == TeleportStuckAction.INSTANCE ? "teleport" : "none"));
         String determination2 = npc.action("stuck", null, context);
         if (determination2.equalsIgnoreCase("none")) {
             event.setAction(null);

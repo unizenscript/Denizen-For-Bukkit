@@ -22,9 +22,7 @@ import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class WorldTag implements ObjectTag, Adjustable {
 
@@ -32,18 +30,11 @@ public class WorldTag implements ObjectTag, Adjustable {
     //   STATIC METHODS
     /////////////////
 
-    static Map<String, WorldTag> worlds = new HashMap<>();
-
     public static WorldTag mirrorBukkitWorld(World world) {
         if (world == null) {
             return null;
         }
-        if (worlds.containsKey(world.getName())) {
-            return worlds.get(world.getName());
-        }
-        else {
-            return new WorldTag(world);
-        }
+        return new WorldTag(world);
     }
 
     /////////////////////
@@ -92,12 +83,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         }
 
         if (returnable != null) {
-            if (worlds.containsKey(returnable.getName())) {
-                return worlds.get(returnable.getName());
-            }
-            else {
-                return new WorldTag(returnable);
-            }
+            return new WorldTag(returnable);
         }
         else if (announce) {
             Debug.echoError("Invalid World! '" + string
@@ -161,6 +147,11 @@ public class WorldTag implements ObjectTag, Adjustable {
         this(null, world);
     }
 
+    public WorldTag(String worldName) {
+        prefix = "World";
+        this.world_name = worldName;
+    }
+
     public WorldTag(String prefix, World world) {
         if (prefix == null) {
             this.prefix = "World";
@@ -169,9 +160,6 @@ public class WorldTag implements ObjectTag, Adjustable {
             this.prefix = prefix;
         }
         this.world_name = world.getName();
-        if (!worlds.containsKey(world.getName())) {
-            worlds.put(world.getName(), this);
-        }
     }
 
     @Override
@@ -253,7 +241,6 @@ public class WorldTag implements ObjectTag, Adjustable {
         // -->
         registerTag("living_entities", (attribute, object) -> {
             ArrayList<EntityTag> entities = new ArrayList<>();
-
             for (Entity entity : object.getLivingEntitiesForTag()) {
                 entities.add(new EntityTag(entity));
             }
@@ -269,7 +256,6 @@ public class WorldTag implements ObjectTag, Adjustable {
         // -->
         registerTag("players", (attribute, object) -> {
             ArrayList<PlayerTag> players = new ArrayList<>();
-
             for (Player player : object.getWorld().getPlayers()) {
                 if (!EntityTag.isNPC(player)) {
                     players.add(new PlayerTag(player));
@@ -287,9 +273,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // -->
         registerTag("spawned_npcs", (attribute, object) -> {
             ArrayList<NPCTag> npcs = new ArrayList<>();
-
             World thisWorld = object.getWorld();
-
             for (NPC npc : CitizensAPI.getNPCRegistry()) {
                 if (npc.isSpawned() && npc.getEntity().getLocation().getWorld().equals(thisWorld)) {
                     npcs.add(new NPCTag(npc));
@@ -307,9 +291,7 @@ public class WorldTag implements ObjectTag, Adjustable {
         // -->
         registerTag("npcs", (attribute, object) -> {
             ArrayList<NPCTag> npcs = new ArrayList<>();
-
             World thisWorld = object.getWorld();
-
             for (NPC npc : CitizensAPI.getNPCRegistry()) {
                 Location location = npc.getStoredLocation();
                 if (location != null) {
@@ -319,7 +301,6 @@ public class WorldTag implements ObjectTag, Adjustable {
                     }
                 }
             }
-
             return new ListTag(npcs);
         });
 
@@ -400,8 +381,8 @@ public class WorldTag implements ObjectTag, Adjustable {
         // @description
         // Returns the name of the world.
         // -->
-        registerTag("name", (attribute, object) -> {
-            return new ElementTag(object.getWorld().getName());
+        tagProcessor.registerTag("name", (attribute, object) -> {
+            return new ElementTag(object.world_name);
         });
 
         // <--[tag]
@@ -772,7 +753,13 @@ public class WorldTag implements ObjectTag, Adjustable {
     public static ObjectTagProcessor<WorldTag> tagProcessor = new ObjectTagProcessor<>();
 
     public static void registerTag(String name, TagRunnable.ObjectInterface<WorldTag> runnable, String... variants) {
-        tagProcessor.registerTag(name, runnable, variants);
+        tagProcessor.registerTag(name, (attribute, object) -> {
+            if (object.getWorld() == null) {
+                attribute.echoError("World '" + object.world_name + "' is unloaded, cannot process tag.");
+                return null;
+            }
+            return runnable.run(attribute, object);
+        }, variants);
     }
 
     @Override

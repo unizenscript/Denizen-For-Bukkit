@@ -1,6 +1,5 @@
 package com.denizenscript.denizen.npc.traits;
-
-import com.denizenscript.denizen.utilities.DenizenAPI;
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.nms.abstracts.ProfileEditor;
 import net.citizensnpcs.api.event.DespawnReason;
 import net.citizensnpcs.api.npc.NPC;
@@ -31,62 +30,62 @@ public class MirrorTrait extends Trait {
         return uuid;
     }
 
-    public static void respawn(NPC npc) {
-        Bukkit.getScheduler().scheduleSyncDelayedTask(DenizenAPI.getCurrentInstance(), () -> {
+    public void respawn() {
+        Bukkit.getScheduler().scheduleSyncDelayedTask(Denizen.getInstance(), () -> {
             if (npc.isSpawned()) {
                 Location loc = npc.getEntity().getLocation();
                 npc.despawn(DespawnReason.PENDING_RESPAWN);
-                Bukkit.getScheduler().scheduleSyncDelayedTask(DenizenAPI.getCurrentInstance(), () -> {
+                Bukkit.getScheduler().scheduleSyncDelayedTask(Denizen.getInstance(), () -> {
                     npc.spawn(loc);
                 });
             }
         });
     }
 
-    public static void mirrorOn(NPC npc) {
+    public void mirrorOn() {
         UUID uuid = getUUID(npc);
         if (!ProfileEditor.mirrorUUIDs.contains(uuid)) {
             ProfileEditor.mirrorUUIDs.add(uuid);
-            respawn(npc);
+            respawn();
         }
     }
 
-    public static void mirrorOff(NPC npc) {
+    public void mirrorOff() {
         UUID uuid = getUUID(npc);
         if (ProfileEditor.mirrorUUIDs.contains(uuid)) {
             ProfileEditor.mirrorUUIDs.remove(uuid);
-            respawn(npc);
+            respawn();
         }
     }
 
     public void enableMirror() {
         mirror = true;
-        mirrorOn(npc);
+        mirrorOn();
     }
 
     public void disableMirror() {
         mirror = false;
-        mirrorOff(npc);
+        mirrorOff();
     }
 
     @Override
     public void onSpawn() {
         if (mirror) {
-            mirrorOn(npc);
+            mirrorOn();
         }
     }
 
     @Override
     public void onRemove() {
         if (mirror) {
-            mirrorOff(npc);
+            mirrorOff();
         }
     }
 
     @Override
     public void onAttach() {
         if (mirror) {
-            mirrorOn(npc);
+            mirrorOn();
         }
     }
 }

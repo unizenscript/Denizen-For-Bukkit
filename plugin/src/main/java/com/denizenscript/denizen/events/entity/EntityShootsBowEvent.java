@@ -1,9 +1,9 @@
 package com.denizenscript.denizen.events.entity;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.utilities.Conversion;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.entity.Position;
 import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
@@ -11,6 +11,7 @@ import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
+import com.denizenscript.denizencore.utilities.CoreUtilities;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -33,7 +34,7 @@ public class EntityShootsBowEvent extends BukkitScriptEvent implements Listener 
     //
     // @Group Entity
     //
-    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Location true
     //
     // @Cancellable true
     //
@@ -44,11 +45,11 @@ public class EntityShootsBowEvent extends BukkitScriptEvent implements Listener 
     // <context.projectile> returns a EntityTag of the projectile.
     // <context.bow> returns the ItemTag of the bow used to shoot.
     // <context.force> returns the force of the shot.
-    // <context.item> returns an ItemTag of the shot projectile, if any (on Paper servers only).
+    // <context.item> returns an ItemTag of the shot projectile, if any.
     //
     // @Determine
     // ListTag(EntityTag) to change the projectile(s) being shot. (Note that in certain cases, determining an arrow may not be valid).
-    // "KEEP_ITEM" to keep the projectile item on shooting it (on Paper servers only).
+    // "KEEP_ITEM" to keep the projectile item on shooting it.
     //
     // @Player when the entity that shot the bow is a player.
     //
@@ -107,9 +108,25 @@ public class EntityShootsBowEvent extends BukkitScriptEvent implements Listener 
     @Override
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         String determination = determinationObj.toString();
+        if (determinationObj instanceof ElementTag && !isDefaultDetermination(determinationObj)) {
+            String lower = CoreUtilities.toLowerCase(determination);
+            if (lower.equals("keep_item")) {
+                event.setConsumeItem(false);
+                if (entity.isPlayer()) {
+                    final Player p = entity.getPlayer();
+                    Bukkit.getScheduler().scheduleSyncDelayedTask(Denizen.getInstance(), new Runnable() {
+                        @Override
+                        public void run() {
+                            p.updateInventory();
+                        }
+                    }, 1);
+                }
+                return true;
+            }
+        }
         if (Argument.valueOf(determination).matchesArgumentList(EntityTag.class)) {
             cancelled = true;
-
+            cancellationChanged();
             // Get the list of entities
             List<EntityTag> newProjectiles = ListTag.getListFor(determinationObj, getTagContext(path)).filter(EntityTag.class, path.container, true);
             // Go through all the entities, spawning/teleporting them
@@ -121,7 +138,6 @@ public class EntityShootsBowEvent extends BukkitScriptEvent implements Listener 
                     newProjectile.setShooter(entity);
                 }
             }
-
             // Mount the projectiles on top of each other
             Position.mount(Conversion.convertEntities(newProjectiles));
             // Get the last entity on the list, i.e. the one at the bottom
@@ -155,6 +171,9 @@ public class EntityShootsBowEvent extends BukkitScriptEvent implements Listener 
         else if (name.equals("projectile")) {
             return projectile;
         }
+        if (name.equals("item")) {
+            return new ItemTag(event.getConsumable());
+        }
         return super.getContext(name);
     }
 
@@ -162,7 +181,7 @@ public class EntityShootsBowEvent extends BukkitScriptEvent implements Listener 
     public void cancellationChanged() {
         if (cancelled && entity.isPlayer()) {
             final Player p = entity.getPlayer();
-            Bukkit.getScheduler().scheduleSyncDelayedTask(DenizenAPI.getCurrentInstance(), new Runnable() {
+            Bukkit.getScheduler().scheduleSyncDelayedTask(Denizen.getInstance(), new Runnable() {
                 @Override
                 public void run() {
                     p.updateInventory();

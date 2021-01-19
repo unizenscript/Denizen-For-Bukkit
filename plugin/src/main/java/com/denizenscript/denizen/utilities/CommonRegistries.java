@@ -5,6 +5,9 @@ import com.denizenscript.denizen.tags.core.*;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.depends.Depends;
 import com.denizenscript.denizencore.objects.ObjectFetcher;
+import com.denizenscript.denizencore.objects.ObjectTag;
+import com.denizenscript.denizencore.objects.core.ElementTag;
+import com.denizenscript.denizencore.utilities.CoreUtilities;
 
 public class CommonRegistries {
 
@@ -101,6 +104,46 @@ public class CommonRegistries {
         for (ObjectFetcher.ObjectType<?> objectType : ObjectFetcher.objectsByPrefix.values()) {
             debug.append(objectType.clazz.getSimpleName()).append(" as ").append(objectType.prefix).append(", ");
         }
+        CoreUtilities.registerTypeAsNoOtherTypeCode(BiomeTag.class, "b");
+        CoreUtilities.registerTypeAsNoOtherTypeCode(ChunkTag.class, "ch");
+        CoreUtilities.registerTypeAsNoOtherTypeCode(ColorTag.class, "co");
+        CoreUtilities.registerTypeAsNoOtherTypeCode(CuboidTag.class, "cu");
+        CoreUtilities.registerTypeAsNoOtherTypeCode(EllipsoidTag.class, "ellipsoid");
+        CoreUtilities.typeCheckers.put(EntityTag.class, new CoreUtilities.TypeComparisonRunnable() { // This is adapted 'no other type code' but for e@, p@, and n@
+            @Override
+            public boolean canBecome(ObjectTag inp) {
+                if (inp == null) {
+                    return false;
+                }
+                Class<? extends ObjectTag> inpType = inp.getObjectTagClass();
+                if (inpType == EntityTag.class || inpType == PlayerTag.class || inpType == NPCTag.class) {
+                    return true;
+                }
+                if (inpType == ElementTag.class) {
+                    String simple = inp.identifySimple();
+                    int atIndex = simple.indexOf('@');
+                    if (atIndex != -1) {
+                        String code = simple.substring(0, atIndex);
+                        if (!code.equals("e") && !code.equals("p") && !code.equals("n") && !code.equals("el")) {
+                            if (ObjectFetcher.objectsByPrefix.containsKey(code)) {
+                                return false;
+                            }
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
+        });
+        CoreUtilities.registerTypeAsNoOtherTypeCode(InventoryTag.class, "in");
+        CoreUtilities.registerTypeAsNoOtherTypeCode(ItemTag.class, "i");
+        CoreUtilities.registerTypeAsNoOtherTypeCode(LocationTag.class, "l");
+        CoreUtilities.registerTypeAsNoOtherTypeCode(MaterialTag.class, "m");
+        CoreUtilities.registerTypeAsNoOtherTypeCode(NPCTag.class, "n");
+        CoreUtilities.registerTypeAsNoOtherTypeCode(PlayerTag.class, "p");
+        CoreUtilities.registerTypeAsNoOtherTypeCode(PluginTag.class, "pl");
+        CoreUtilities.registerTypeAsNoOtherTypeCode(TradeTag.class, "trade");
+        CoreUtilities.registerTypeAsNoOtherTypeCode(WorldTag.class, "w");
         Debug.echoApproval("Loaded core object types: [" + debug.substring(0, debug.length() - 2) + "]");
     }
 }

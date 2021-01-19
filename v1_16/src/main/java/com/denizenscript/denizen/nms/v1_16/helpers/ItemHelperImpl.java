@@ -1,5 +1,7 @@
 package com.denizenscript.denizen.nms.v1_16.helpers;
 
+import com.denizenscript.denizen.objects.ItemTag;
+import com.denizenscript.denizen.utilities.FormattedTextHelper;
 import com.denizenscript.denizencore.utilities.ReflectionHelper;
 import com.denizenscript.denizen.nms.util.jnbt.*;
 import com.denizenscript.denizen.nms.util.jnbt.Tag;
@@ -11,17 +13,21 @@ import com.mojang.authlib.properties.Property;
 import com.denizenscript.denizen.nms.interfaces.ItemHelper;
 import com.denizenscript.denizen.nms.util.PlayerProfile;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
-import net.minecraft.server.v1_16_R2.*;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.chat.ComponentSerializer;
+import net.minecraft.server.v1_16_R3.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
-import org.bukkit.craftbukkit.v1_16_R2.CraftServer;
-import org.bukkit.craftbukkit.v1_16_R2.inventory.CraftInventoryPlayer;
-import org.bukkit.craftbukkit.v1_16_R2.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.v1_16_R2.util.CraftMagicNumbers;
-import org.bukkit.craftbukkit.v1_16_R2.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_16_R3.CraftServer;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftInventoryPlayer;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_16_R3.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_16_R3.util.CraftNamespacedKey;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.Recipe;
@@ -179,7 +185,7 @@ public class ItemHelperImpl extends ItemHelper {
 
     @Override
     public PlayerProfile getSkullSkin(ItemStack is) {
-        net.minecraft.server.v1_16_R2.ItemStack itemStack = CraftItemStack.asNMSCopy(is);
+        net.minecraft.server.v1_16_R3.ItemStack itemStack = CraftItemStack.asNMSCopy(is);
         if (itemStack.hasTag()) {
             NBTTagCompound tag = itemStack.getTag();
             if (tag.hasKeyOfType("SkullOwner", 10)) {
@@ -207,7 +213,7 @@ public class ItemHelperImpl extends ItemHelper {
                 gameProfile.getProperties().put("textures", new Property("textures", playerProfile.getTexture()));
             }
         }
-        net.minecraft.server.v1_16_R2.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
+        net.minecraft.server.v1_16_R3.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
         NBTTagCompound tag = nmsItemStack.hasTag() ? nmsItemStack.getTag() : new NBTTagCompound();
         tag.set("SkullOwner", GameProfileSerializer.serialize(new NBTTagCompound(), gameProfile));
         nmsItemStack.setTag(tag);
@@ -216,7 +222,7 @@ public class ItemHelperImpl extends ItemHelper {
 
     @Override
     public ItemStack addNbtData(ItemStack itemStack, String key, Tag value) {
-        net.minecraft.server.v1_16_R2.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
+        net.minecraft.server.v1_16_R3.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
         NBTTagCompound tag = nmsItemStack.hasTag() ? nmsItemStack.getTag() : new NBTTagCompound();
         CompoundTag compound = CompoundTagImpl.fromNMSTag(tag).createBuilder().put(key, value).build();
         nmsItemStack.setTag(((CompoundTagImpl) compound).toNMSTag());
@@ -225,7 +231,7 @@ public class ItemHelperImpl extends ItemHelper {
 
     @Override
     public CompoundTag getNbtData(ItemStack itemStack) {
-        net.minecraft.server.v1_16_R2.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
+        net.minecraft.server.v1_16_R3.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
         if (nmsItemStack != null && nmsItemStack.hasTag()) {
             return CompoundTagImpl.fromNMSTag(nmsItemStack.getTag());
         }
@@ -234,7 +240,7 @@ public class ItemHelperImpl extends ItemHelper {
 
     @Override
     public ItemStack setNbtData(ItemStack itemStack, CompoundTag compoundTag) {
-        net.minecraft.server.v1_16_R2.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
+        net.minecraft.server.v1_16_R3.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
         nmsItemStack.setTag(((CompoundTagImpl) compoundTag).toNMSTag());
         return CraftItemStack.asBukkitCopy(nmsItemStack);
     }
@@ -262,5 +268,73 @@ public class ItemHelperImpl extends ItemHelper {
     @Override
     public UUID convertNbtToUuid(IntArrayTag id) {
         return GameProfileSerializer.a(new NBTTagIntArray(id.getValue()));
+    }
+
+    @Override
+    public String getDisplayName(ItemTag item) {
+        if (!item.getItemMeta().hasDisplayName()) {
+            return null;
+        }
+        net.minecraft.server.v1_16_R3.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(item.getItemStack());
+        String jsonText = ((NBTTagCompound) nmsItemStack.getTag().get("display")).getString("Name");
+        BaseComponent[] nameComponent = ComponentSerializer.parse(jsonText);
+        return FormattedTextHelper.stringify(nameComponent, ChatColor.WHITE);
+    }
+
+    @Override
+    public List<String> getLore(ItemTag item) {
+        if (!item.getItemMeta().hasLore()) {
+            return null;
+        }
+        net.minecraft.server.v1_16_R3.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(item.getItemStack());
+        NBTTagList list = ((NBTTagCompound) nmsItemStack.getTag().get("display")).getList("Lore", 8);
+        List<String> outList = new ArrayList<>();
+        for (int i = 0; i < list.size(); i++) {
+            BaseComponent[] lineComponent = ComponentSerializer.parse(list.getString(i));
+            outList.add(FormattedTextHelper.stringify(lineComponent, ChatColor.WHITE));
+        }
+        return outList;
+    }
+
+    @Override
+    public void setDisplayName(ItemTag item, String name) {
+        net.minecraft.server.v1_16_R3.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(item.getItemStack());
+        NBTTagCompound tag = nmsItemStack.getOrCreateTag();
+        NBTTagCompound display = tag.getCompound("display");
+        if (!tag.hasKey("display")) {
+            tag.set("display", display);
+        }
+        if (name == null || name.isEmpty()) {
+            display.set("Name", null);
+            return;
+        }
+        BaseComponent[] components = FormattedTextHelper.parse(name, ChatColor.WHITE);
+        TextComponent actualComponent = new TextComponent();
+        for (BaseComponent component : components) {
+            actualComponent.addExtra(component);
+        }
+        display.set("Name", NBTTagString.a(ComponentSerializer.toString(actualComponent)));
+        item.setItemStack(CraftItemStack.asBukkitCopy(nmsItemStack));
+    }
+
+    @Override
+    public void setLore(ItemTag item, List<String> lore) {
+        net.minecraft.server.v1_16_R3.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(item.getItemStack());
+        NBTTagCompound tag = nmsItemStack.getOrCreateTag();
+        NBTTagCompound display = tag.getCompound("display");
+        if (!tag.hasKey("display")) {
+            tag.set("display", display);
+        }
+        if (lore == null || lore.isEmpty()) {
+            display.set("Lore", null);
+        }
+        else {
+            NBTTagList tagList = new NBTTagList();
+            for (String line : lore) {
+                tagList.add(NBTTagString.a(ComponentSerializer.toString(FormattedTextHelper.parse(line, ChatColor.WHITE))));
+            }
+            display.set("Lore", tagList);
+        }
+        item.setItemStack(CraftItemStack.asBukkitCopy(nmsItemStack));
     }
 }

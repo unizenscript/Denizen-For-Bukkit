@@ -16,6 +16,7 @@ import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.ScriptRegistry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 import com.denizenscript.denizencore.tags.TagManager;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 
 import java.util.Arrays;
@@ -68,7 +69,8 @@ public class ActionBarCommand extends AbstractCommand {
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
         for (Argument arg : ArgumentHelper.interpret(scriptEntry, scriptEntry.getOriginalArguments())) {
-            if (arg.matchesPrefix("format", "f")) {
+            if (!scriptEntry.hasObject("format")
+                    && arg.matchesPrefix("format", "f")) {
                 String formatStr = TagManager.tag(arg.getValue(), scriptEntry.getContext());
                 FormatScriptContainer format = ScriptRegistry.getScriptContainer(formatStr);
                 if (format == null) {
@@ -76,7 +78,8 @@ public class ActionBarCommand extends AbstractCommand {
                 }
                 scriptEntry.addObject("format", new ScriptTag(format));
             }
-            if (arg.matchesPrefix("targets", "target")) {
+            else if (!scriptEntry.hasObject("targets")
+                    && arg.matchesPrefix("targets", "target")) {
                 scriptEntry.addObject("targets", ListTag.getListFor(TagManager.tagObject(arg.getValue(), scriptEntry.getContext()), scriptEntry.getContext()).filter(PlayerTag.class, scriptEntry));
             }
             else if (!scriptEntry.hasObject("per_player")
@@ -84,7 +87,10 @@ public class ActionBarCommand extends AbstractCommand {
                 scriptEntry.addObject("per_player", new ElementTag(true));
             }
             else if (!scriptEntry.hasObject("text")) {
-                scriptEntry.addObject("text", new ElementTag(arg.raw_value));
+                scriptEntry.addObject("text", new ElementTag(arg.getRawValue()));
+            }
+            else {
+                arg.reportUnhandled();
             }
         }
         if (!scriptEntry.hasObject("text")) {
@@ -133,7 +139,7 @@ public class ActionBarCommand extends AbstractCommand {
                     context.player = player;
                     personalText = TagManager.tag(personalText, context);
                 }
-                player.getPlayerEntity().spigot().sendMessage(ChatMessageType.ACTION_BAR, FormattedTextHelper.parse(format != null ? format.getFormattedText(personalText, scriptEntry) : personalText));
+                player.getPlayerEntity().spigot().sendMessage(ChatMessageType.ACTION_BAR, FormattedTextHelper.parse(format != null ? format.getFormattedText(personalText, scriptEntry) : personalText, ChatColor.WHITE));
             }
             else {
                 Debug.echoError("Sent actionbar to non-existent player!?");

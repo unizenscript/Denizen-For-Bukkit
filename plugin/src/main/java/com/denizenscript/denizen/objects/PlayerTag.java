@@ -3,8 +3,8 @@ package com.denizenscript.denizen.objects;
 import com.denizenscript.denizen.nms.interfaces.AdvancementHelper;
 import com.denizenscript.denizen.nms.interfaces.EntityHelper;
 import com.denizenscript.denizen.objects.properties.entity.EntityHealth;
+import com.denizenscript.denizen.scripts.commands.player.DisguiseCommand;
 import com.denizenscript.denizen.scripts.commands.player.SidebarCommand;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.FormattedTextHelper;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.blocks.FakeBlock;
@@ -12,10 +12,12 @@ import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.depends.Depends;
 import com.denizenscript.denizen.utilities.entity.BossBarHelper;
 import com.denizenscript.denizen.utilities.entity.FakeEntity;
+import com.denizenscript.denizen.utilities.flags.PlayerFlagHandler;
 import com.denizenscript.denizen.utilities.packets.DenizenPacketHandler;
 import com.denizenscript.denizen.utilities.packets.ItemChangeMessage;
+import com.denizenscript.denizencore.flags.AbstractFlagTracker;
+import com.denizenscript.denizencore.flags.FlaggableObject;
 import com.denizenscript.denizencore.objects.*;
-import com.denizenscript.denizen.flags.FlagManager;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.abstracts.ImprovedOfflinePlayer;
 import com.denizenscript.denizen.nms.abstracts.Sidebar;
@@ -31,31 +33,23 @@ import com.denizenscript.denizencore.utilities.Deprecations;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.npc.NPCSelector;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import org.bukkit.*;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.advancement.AdvancementProgress;
-import org.bukkit.block.Block;
 import org.bukkit.block.banner.PatternType;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.map.MapView;
-import org.bukkit.util.BlockIterator;
+import org.bukkit.util.RayTraceResult;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.regex.Pattern;
+import java.util.*;
 
-public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
+public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject, FlaggableObject {
 
     // <--[language]
     // @name PlayerTag Objects
@@ -223,6 +217,16 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
     //   INSTANCE FIELDS/METHODS
     /////////////////
 
+    @Override
+    public AbstractFlagTracker getFlagTracker() {
+        return PlayerFlagHandler.getTrackerFor(getOfflinePlayer().getUniqueId());
+    }
+
+    @Override
+    public void reapplyTracker(AbstractFlagTracker tracker) {
+        // Nothing to do.
+    }
+
     OfflinePlayer offlinePlayer;
 
     public boolean isValid() {
@@ -266,6 +270,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         return offlinePlayer.getName();
     }
 
+    @Deprecated // TODO: Delete during flag rewrite
     public String getSaveName() {
         if (offlinePlayer == null) {
             return "00.UNKNOWN";
@@ -600,7 +605,22 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         return identify();
     }
 
+    @Override
+    public int hashCode() {
+        return getOfflinePlayer().getUniqueId().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof PlayerTag)) {
+            return false;
+        }
+        return getOfflinePlayer().getUniqueId().equals(((PlayerTag) other).getOfflinePlayer().getUniqueId());
+    }
+
     public static void registerTags() {
+
+        AbstractFlagTracker.registerFlagHandlers(tagProcessor);
 
         /////////////////////
         //   OFFLINE ATTRIBUTES
@@ -648,131 +668,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
                 return null;
             }
             return new ElementTag(messages.get(x - 1));
-        });
-
-        // <--[tag]
-        // @attribute <PlayerTag.flag[<flag_name>]>
-        // @returns Flag ListTag
-        // @description
-        // Returns the specified flag from the player.
-        // Works with offline players.
-        // -->
-        registerTag("flag", (attribute, object) -> {
-            if (!attribute.hasContext(1)) {
-                return null;
-            }
-            String flag_name = attribute.getContext(1);
-
-            // <--[tag]
-            // @attribute <PlayerTag.flag[<flag_name>].is_expired>
-            // @returns ElementTag(Boolean)
-            // @description
-            // returns true if the flag is expired or does not exist, false if it is not yet expired or has no expiration.
-            // Works with offline players.
-            // -->
-            if (attribute.startsWith("is_expired", 2) || attribute.startsWith("isexpired", 2)) {
-                attribute.fulfill(1);
-                return new ElementTag(!FlagManager.playerHasFlag(object, flag_name));
-            }
-            if (attribute.startsWith("size", 2) && !FlagManager.playerHasFlag(object, flag_name)) {
-                attribute.fulfill(1);
-                return new ElementTag(0);
-            }
-            if (FlagManager.playerHasFlag(object, flag_name)) {
-                FlagManager.Flag flag = DenizenAPI.getCurrentInstance().flagManager().getPlayerFlag(object, flag_name);
-
-                // <--[tag]
-                // @attribute <PlayerTag.flag[<flag_name>].expiration>
-                // @returns DurationTag
-                // @description
-                // Returns a DurationTag of the time remaining on the flag, if it has an expiration.
-                // Works with offline players.
-                // -->
-                if (attribute.startsWith("expiration", 2)) {
-                    attribute.fulfill(1);
-                    return flag.expiration();
-                }
-                if (flag.isList()) {
-                    return new ListTag(flag.toString(), true, flag.values());
-                }
-                return ObjectFetcher.pickObjectFor(flag.getFirst().asString());
-            }
-            return null;
-        });
-
-        // <--[tag]
-        // @attribute <PlayerTag.has_flag[<flag_name>]>
-        // @returns ElementTag(Boolean)
-        // @description
-        // Returns true if the Player has the specified flag, otherwise returns false.
-        // Works with offline players.
-        // -->
-        registerTag("has_flag", (attribute, object) -> {
-            if (!attribute.hasContext(1)) {
-                return null;
-            }
-            String flag_name = attribute.getContext(1);
-            return new ElementTag(FlagManager.playerHasFlag(object, flag_name));
-        });
-
-        // <--[tag]
-        // @attribute <PlayerTag.list_flags[(regex:)<search>]>
-        // @returns ListTag
-        // @description
-        // Returns a list of a player's flag names, with an optional search for names containing a certain pattern.
-        // Works with offline players.
-        // Note that this is exclusively for debug/testing reasons, and should never be used in a real script.
-        // -->
-        registerTag("list_flags", (attribute, object) -> {
-            FlagManager.listFlagsTagWarning.warn(attribute.context);
-            ListTag allFlags = new ListTag(DenizenAPI.getCurrentInstance().flagManager().listPlayerFlags(object));
-            ListTag searchFlags = null;
-            if (!allFlags.isEmpty() && attribute.hasContext(1)) {
-                searchFlags = new ListTag();
-                String search = attribute.getContext(1);
-                if (search.startsWith("regex:")) {
-                    try {
-                        Pattern pattern = Pattern.compile(search.substring(6), Pattern.CASE_INSENSITIVE);
-                        for (String flag : allFlags) {
-                            if (pattern.matcher(flag).matches()) {
-                                searchFlags.add(flag);
-                            }
-                        }
-                    }
-                    catch (Exception e) {
-                        Debug.echoError(e);
-                    }
-                }
-                else {
-                    search = CoreUtilities.toLowerCase(search);
-                    for (String flag : allFlags) {
-                        if (CoreUtilities.toLowerCase(flag).contains(search)) {
-                            searchFlags.add(flag);
-                        }
-                    }
-                }
-                DenizenAPI.getCurrentInstance().flagManager().shrinkPlayerFlags(object, searchFlags);
-            }
-            else {
-                DenizenAPI.getCurrentInstance().flagManager().shrinkPlayerFlags(object, allFlags);
-            }
-            return searchFlags == null ? allFlags
-                    : searchFlags;
-        });
-
-        registerTag("current_step", (attribute, object) -> {
-            Deprecations.playerStepTag.warn(attribute.context);
-            String outcome = "null";
-            if (attribute.hasContext(1)) {
-                try {
-                    outcome = DenizenAPI.getCurrentInstance().getSaves().getString("Players." + object.getName() + ".Scripts."
-                            + attribute.contextAsType(1, ScriptTag.class).getName() + ".Current Step");
-                }
-                catch (Exception e) {
-                    outcome = "null";
-                }
-            }
-            return new ElementTag(outcome);
         });
 
         /////////////////////
@@ -846,12 +741,12 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // or null if the player is not looking at an entity.
         // Optionally, specify a list of entities, entity types, or 'npc' to only count those targets.
         // -->
-
-        registerTag("target", (attribute, object) -> {
-            int range = 50;
+        registerOnlineOnlyTag("target", (attribute, object) -> {
+            double range = 50;
+            ListTag filterList = attribute.hasContext(1) ? attribute.contextAsType(1, ListTag.class) : null;
 
             // <--[tag]
-            // @attribute <PlayerTag.target[(<entity>|...)].within[(<#>)]>
+            // @attribute <PlayerTag.target[(<entity>|...)].within[(<#.#>)]>
             // @returns EntityTag
             // @description
             // Returns the living entity that the player is looking at within the specified range limit,
@@ -859,118 +754,47 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             // Optionally, specify a list of entities, entity types, or 'npc' to only count those targets.
             // -->
             if (attribute.startsWith("within", 2) && attribute.hasContext(2)) {
-                range = attribute.getIntContext(2);
+                range = attribute.getDoubleContext(2);
                 attribute.fulfill(1);
             }
-
-            List<Entity> entities = object.getPlayerEntity().getNearbyEntities(range, range, range);
-            ArrayList<LivingEntity> possibleTargets = new ArrayList<>();
-            if (!attribute.hasContext(1)) {
-                for (Entity entity : entities) {
-                    if (entity instanceof LivingEntity) {
-                        possibleTargets.add((LivingEntity) entity);
-                    }
+            Location eyeLoc = object.getEyeLocation();
+            RayTraceResult result = eyeLoc.getWorld().rayTrace(eyeLoc, eyeLoc.getDirection(), range, FluidCollisionMode.NEVER, true, 0.01, (e) -> {
+                if (e.getUniqueId().equals(object.getOfflinePlayer().getUniqueId())) {
+                    return false;
                 }
-            }
-            else {
-                ListTag list = ListTag.getListFor(attribute.getContextObject(1), attribute.context);
-                for (Entity entity : entities) {
-                    if (entity instanceof LivingEntity) {
-                        for (ObjectTag obj : list.objectForms) {
-                            boolean valid = false;
-                            EntityTag filterEntity = null;
-                            if (obj instanceof EntityTag) {
-                                filterEntity = (EntityTag) obj;
-                            }
-                            else if (CoreUtilities.equalsIgnoreCase(obj.toString(), "npc")) {
-                                valid = EntityTag.isCitizensNPC(entity);
-                            }
-                            else {
-                                filterEntity = EntityTag.getEntityFor(obj, attribute.context);
-                                if (filterEntity == null) {
-                                    Debug.echoError("Trying to filter 'player.target[...]' tag with invalid input: " + obj.toString());
-                                    continue;
-                                }
-                            }
-                            if (!valid && filterEntity != null) {
-                                if (filterEntity.isGeneric()) {
-                                    valid = filterEntity.getBukkitEntityType().equals(entity.getType());
-                                }
-                                else {
-                                    valid = filterEntity.getUUID().equals(entity.getUniqueId());
-                                }
-                            }
-                            if (valid) {
-                                possibleTargets.add((LivingEntity) entity);
-                                break;
-                            }
+                if (filterList != null) {
+                    EntityTag ent = new EntityTag(e);
+                    for (String val : filterList) {
+                        if (CoreUtilities.equalsIgnoreCase(val, "npc") && ent.isCitizensNPC()) {
+                            return true;
+                        }
+                        if (CoreUtilities.equalsIgnoreCase(val, e.getType().name())) {
+                            return true;
+                        }
+                        if (CoreUtilities.equalsIgnoreCase(val, ent.getEntityScript())) {
+                            return true;
+                        }
+                        EntityTag match = EntityTag.valueOf(val, CoreUtilities.noDebugContext);
+                        if (match.isUnique() && e.getUniqueId().equals(match.getUUID())) {
+                            return true;
                         }
                     }
+                    return false;
                 }
+                return true;
+            });
+            if (result.getHitEntity() == null) {
+                return null;
             }
-
-            try {
-                NMSHandler.getChunkHelper().changeChunkServerThread(object.getWorld());
-                // Find the valid target
-                BlockIterator bi;
-                try {
-                    bi = new BlockIterator(object.getPlayerEntity(), range);
-                }
-                catch (IllegalStateException e) {
-                    return null;
-                }
-                Block b;
-                Location l;
-                int bx, by, bz;
-                double ex, ey, ez;
-
-                // Loop through player's line of sight
-                while (bi.hasNext()) {
-                    b = bi.next();
-                    bx = b.getX();
-                    by = b.getY();
-                    bz = b.getZ();
-
-                    if (b.getType().isSolid()) {
-                        // Line of sight is broken
-                        break;
-                    }
-                    else {
-                        // Check for entities near this block in the line of sight
-                        for (LivingEntity possibleTarget : possibleTargets) {
-                            l = possibleTarget.getLocation();
-                            ex = l.getX();
-                            ey = l.getY();
-                            ez = l.getZ();
-
-                            if ((bx - .50 <= ex && ex <= bx + 1.50) &&
-                                    (bz - .50 <= ez && ez <= bz + 1.50) &&
-                                    (by - 1 <= ey && ey <= by + 2.5)) {
-                                // Entity is close enough, so return it
-                                return new EntityTag(possibleTarget).getDenizenObject();
-                            }
-                        }
-                    }
-                }
-            }
-            finally {
-                NMSHandler.getChunkHelper().restoreServerThread(object.getWorld());
-            }
-            return null;
+            return new EntityTag(result.getHitEntity());
         });
 
         /////////////////////
         //   IDENTIFICATION ATTRIBUTES
         /////////////////
 
-        // <--[tag]
-        // @attribute <PlayerTag.save_name>
-        // @returns ElementTag
-        // @description
-        // Returns the ID used to save the player in Denizen's saves.yml file.
-        // Works with offline players.
-        // -->
         registerTag("save_name", (attribute, object) -> {
+            Debug.echoError("player.save_name is bound to be removed very soon.");
             return new ElementTag(object.getSaveName());
         });
 
@@ -1892,10 +1716,11 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // <--[tag]
         // @attribute <PlayerTag.skin_blob>
         // @returns ElementTag
+        // @mechanism PlayerTag.skin_blob
         // @description
         // Returns the player's current skin blob.
         // In the format: "texture;signature" (two values separated by a semicolon).
-        // @mechanism PlayerTag.skin_blob
+        // See also <@link language Player Entity Skins (Skin Blobs)>.
         // -->
         registerOnlineOnlyTag("skin_blob", (attribute, object) -> {
             return new ElementTag(NMSHandler.getInstance().getProfileEditor().getPlayerSkinBlob(object.getPlayerEntity()));
@@ -1907,7 +1732,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @description
         // Returns the player's current skin blob, formatted for input to a Player Skull item.
         // In the format: "UUID|Texture|Name" (three values separated by pipes).
-        // See also <@link tag PlayerTag.skin_blob>.
+        // See also <@link language Player Entity Skins (Skin Blobs)>.
         // -->
         registerOnlineOnlyTag("skull_skin", (attribute, object) -> {
             String skin = NMSHandler.getInstance().getProfileEditor().getPlayerSkinBlob(object.getPlayerEntity());
@@ -1916,6 +1741,19 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             }
             int semicolon = skin.indexOf(';');
             return new ElementTag(object.getPlayerEntity().getUniqueId() + "|" + skin.substring(0, semicolon) + "|" + object.getName());
+        });
+
+        // <--[tag]
+        // @attribute <PlayerTag.skull_item>
+        // @returns ItemTag
+        // @description
+        // Returns a Player_Head item with the skin of the player.
+        // See also <@link language Player Entity Skins (Skin Blobs)>.
+        // -->
+        registerOnlineOnlyTag("skull_item", (attribute, object) -> {
+            ItemStack item = new ItemStack(Material.PLAYER_HEAD);
+            item = NMSHandler.getItemHelper().setSkullSkin(item, NMSHandler.getInstance().getPlayerProfile(object.getPlayerEntity()));
+            return new ItemTag(item);
         });
 
         // <--[tag]
@@ -2018,6 +1856,16 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         /////////////////
 
         // <--[tag]
+        // @attribute <PlayerTag.ip_address>
+        // @returns ElementTag
+        // @description
+        // Returns the player's IP address, without port or hostname.
+        // -->
+        registerOnlineOnlyTag("ip_address", (attribute, object) -> {
+            return new ElementTag(object.getPlayerEntity().getAddress().getAddress().toString());
+        });
+
+        // <--[tag]
         // @attribute <PlayerTag.ip>
         // @returns ElementTag
         // @description
@@ -2028,7 +1876,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             // @attribute <PlayerTag.ip.address_only>
             // @returns ElementTag
             // @description
-            // Returns the player's IP address.
+            // Returns the player's IP address with port (without triggering an rdns lookup).
             // -->
             if (attribute.startsWith("address_only", 2)) {
                 attribute.fulfill(1);
@@ -2040,7 +1888,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
             // @attribute <PlayerTag.ip.address>
             // @returns ElementTag
             // @description
-            // Returns the player's IP address.
+            // Returns the player's IP address with port (usually including an rdns host path).
             // -->
             if (attribute.startsWith("address", 2)) {
                 attribute.fulfill(1);
@@ -2218,11 +2066,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // Returns the name of the gamemode the player is currently set to.
         // -->
         registerOnlineOnlyTag("gamemode", (attribute, object) -> {
-            if (attribute.startsWith("id", 2)) {
-                Deprecations.playerGamemodeTag.warn(attribute.context);
-                attribute.fulfill(1);
-                return new ElementTag(object.getPlayerEntity().getGameMode().getValue());
-            }
             return new ElementTag(object.getPlayerEntity().getGameMode().name());
         });
 
@@ -2257,16 +2100,6 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         });
 
         // <--[tag]
-        // @attribute <PlayerTag.is_sleeping>
-        // @returns ElementTag(Boolean)
-        // @description
-        // Returns whether the player is currently sleeping.
-        // -->
-        registerOnlineOnlyTag("is_sleeping", (attribute, object) -> {
-            return new ElementTag(object.getPlayerEntity().isSleeping());
-        });
-
-        // <--[tag]
         // @attribute <PlayerTag.is_sneaking>
         // @returns ElementTag(Boolean)
         // @description
@@ -2279,6 +2112,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // <--[tag]
         // @attribute <PlayerTag.is_sprinting>
         // @returns ElementTag(Boolean)
+        // @mechanism PlayerTag.sprinting
         // @description
         // Returns whether the player is currently sprinting.
         // -->
@@ -2521,6 +2355,43 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
                 }
             }
             return list;
+        });
+
+        // <--[tag]
+        // @attribute <PlayerTag.disguise_to_self[(<player>)]>
+        // @returns EntityTag
+        // @group properties
+        // @description
+        // Returns the fake entity used to disguise the entity in the player's self-view (only relevant to players), either globally (if no context input given), or to the specified player.
+        // Relates to <@link command disguise>.
+        // -->
+        registerTag("disguise_to_self", (attribute, object) -> {
+            HashMap<UUID, DisguiseCommand.TrackedDisguise> map = DisguiseCommand.disguises.get(object.getOfflinePlayer().getUniqueId());
+            if (map == null) {
+                return null;
+            }
+            DisguiseCommand.TrackedDisguise disguise;
+            if (attribute.hasContext(1)) {
+                PlayerTag player = attribute.contextAsType(1, PlayerTag.class);
+                if (player == null) {
+                    attribute.echoError("Invalid player for is_disguised tag.");
+                    return null;
+                }
+                disguise = map.get(player.getOfflinePlayer().getUniqueId());
+                if (disguise == null) {
+                    disguise = map.get(null);
+                }
+            }
+            else {
+                disguise = map.get(null);
+            }
+            if (disguise == null) {
+                return null;
+            }
+            if (disguise.fakeToSelf == null) {
+                return null;
+            }
+            return disguise.fakeToSelf.entity;
         });
     }
 
@@ -3109,6 +2980,8 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @input EntityTag
         // @description
         // Shows the player a previously hidden entity.
+        // To show for everyone, use <@link mechanism EntityTag.show_to_players>.
+        // See also <@link mechanism PlayerTag.hide_entity>.
         // -->
         if (mechanism.matches("show_entity") && mechanism.requireObject(EntityTag.class)) {
             NMSHandler.getEntityHelper().unhideEntity(getPlayerEntity(), mechanism.valueAsType(EntityTag.class).getBukkitEntity());
@@ -3120,6 +2993,8 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @input EntityTag
         // @description
         // Hides an entity from the player.
+        // To hide from everyone, use <@link mechanism EntityTag.hide_from_players>.
+        // See also <@link mechanism PlayerTag.show_entity>.
         // -->
         if (mechanism.matches("hide_entity")) {
             if (!mechanism.getValue().asString().isEmpty()) {
@@ -3336,6 +3211,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @input EntityTag
         // @description
         // Forces the player to spectate from the entity's point of view.
+        // Note that in some cases you may want to force the player into the spectate gamemode prior to using this mechanism.
         // Note: They cannot cancel the spectating without a re-log -- you must make them spectate themselves to cancel the effect.
         // (i.e. - adjust <player> spectate:<player>)
         // -->
@@ -3586,7 +3462,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
 
         if (mechanism.matches("action_bar")) {
             Deprecations.playerActionBarMech.warn(mechanism.context);
-            getPlayerEntity().spigot().sendMessage(ChatMessageType.ACTION_BAR, FormattedTextHelper.parse(mechanism.getValue().asString()));
+            getPlayerEntity().spigot().sendMessage(ChatMessageType.ACTION_BAR, FormattedTextHelper.parse(mechanism.getValue().asString(), ChatColor.WHITE));
         }
 
         // <--[mechanism]
@@ -3625,6 +3501,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @input ElementTag
         // @description
         // Changes the skin of the player to the skin of the given player name.
+        // See also <@link language Player Entity Skins (Skin Blobs)>.
         // -->
         if (mechanism.matches("skin")) {
             String name = mechanism.getValue().asString();
@@ -3643,6 +3520,7 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // @description
         // Changes the skin of the player to the specified blob.
         // In the format: "texture;signature" (two values separated by a semicolon).
+        // See also <@link language Player Entity Skins (Skin Blobs)>.
         // @tags
         // <PlayerTag.skin_blob>
         // -->
@@ -3748,6 +3626,10 @@ public class PlayerTag implements ObjectTag, Adjustable, EntityFormObject {
         // Sends the player to the specified Bungee server.
         // -->
         if (mechanism.matches("send_to") && mechanism.hasValue()) {
+            if (!isOnline()) {
+                Debug.echoError("Cannot use send_to on offline player.");
+                return;
+            }
             Depends.bungeeSendPlayer(getPlayerEntity(), mechanism.getValue().asString());
         }
 

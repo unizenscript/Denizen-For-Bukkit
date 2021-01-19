@@ -1,6 +1,5 @@
 package com.denizenscript.denizen.objects.properties.item;
 
-import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.objects.ColorTag;
 import com.denizenscript.denizen.objects.ItemTag;
@@ -24,10 +23,10 @@ public class ItemPotion implements Property {
 
     public static boolean describes(ObjectTag item) {
         return item instanceof ItemTag
-                && (((ItemTag) item).getItemStack().getType() == Material.POTION
-                || ((ItemTag) item).getItemStack().getType() == Material.SPLASH_POTION
-                || ((ItemTag) item).getItemStack().getType() == Material.LINGERING_POTION
-                || ((ItemTag) item).getItemStack().getType() == Material.TIPPED_ARROW);
+                && (((ItemTag) item).getBukkitMaterial() == Material.POTION
+                || ((ItemTag) item).getBukkitMaterial() == Material.SPLASH_POTION
+                || ((ItemTag) item).getBukkitMaterial() == Material.LINGERING_POTION
+                || ((ItemTag) item).getBukkitMaterial() == Material.TIPPED_ARROW);
     }
 
     public static ItemPotion getFrom(ObjectTag _item) {
@@ -148,7 +147,7 @@ public class ItemPotion implements Property {
         if (attribute.startsWith("potion_base") && item.getItemMeta() instanceof PotionMeta) {
             PotionMeta meta = ((PotionMeta) item.getItemMeta());
             return new ElementTag(meta.getBasePotionData().getType().name() + "," + (meta.getBasePotionData().isUpgraded() ? 2 : 1)
-                    + "," + meta.getBasePotionData().isExtended() + "," + (item.getItemStack().getType() == Material.SPLASH_POTION)
+                    + "," + meta.getBasePotionData().isExtended() + "," + (item.getBukkitMaterial() == Material.SPLASH_POTION)
                     + (meta.hasColor() ? "," + new ColorTag(meta.getColor()).identify() : "")
                 ).getObjectAttribute(attribute.fulfill(1));
         }
@@ -203,7 +202,7 @@ public class ItemPotion implements Property {
                 // Returns whether the potion is a splash potion.
                 // -->
                 if (attribute.startsWith("is_splash")) {
-                    return new ElementTag(item.getItemStack().getType() == Material.SPLASH_POTION)
+                    return new ElementTag(item.getBukkitMaterial() == Material.SPLASH_POTION)
                             .getObjectAttribute(attribute.fulfill(1));
                 }
 
@@ -327,7 +326,7 @@ public class ItemPotion implements Property {
                 // In the format Effect,Level,Extended,Splash
                 // -->
                 return new ElementTag(meta.getBasePotionData().getType().name() + "," + (meta.getBasePotionData().isUpgraded() ? 2 : 1)
-                        + "," + meta.getBasePotionData().isExtended() + "," + (item.getItemStack().getType() == Material.SPLASH_POTION))
+                        + "," + meta.getBasePotionData().isExtended() + "," + (item.getBukkitMaterial() == Material.SPLASH_POTION))
                         .getObjectAttribute(attribute);
             }
         }
@@ -385,7 +384,7 @@ public class ItemPotion implements Property {
                     item.getItemStack().setDurability((short) mechanism.getValue().asInt());
                 }
                 else {
-                    Debug.echoError("Invalid effect format, use name,amplifier,extended,splash.");
+                    mechanism.echoError("Invalid effect format, use name,amplifier,extended,splash.");
                 }
             }
             else {
@@ -397,19 +396,19 @@ public class ItemPotion implements Property {
                     type = PotionType.valueOf(data[0].toUpperCase());
                 }
                 catch (Exception ex) {
-                    Debug.echoError("Invalid potion effect type '" + data[0] + "'");
+                    mechanism.echoError("Invalid potion effect type '" + data[0] + "'");
                     return;
                 }
                 if (!data1.isInt()) {
-                    Debug.echoError("Cannot apply effect '" + data[0] + "': '" + data[1] + "' is not a valid integer!");
+                    mechanism.echoError("Cannot apply effect '" + data[0] + "': '" + data[1] + "' is not a valid integer!");
                     return;
                 }
                 if (!data2.isBoolean()) {
-                    Debug.echoError("Cannot apply effect '" + data[0] + "': '" + data[2] + "' is not a valid boolean!");
+                    mechanism.echoError("Cannot apply effect '" + data[0] + "': '" + data[2] + "' is not a valid boolean!");
                     return;
                 }
                 if (!data3.isBoolean()) {
-                    Debug.echoError("Cannot apply effect '" + data[0] + "': '" + data[3] + "' is not a valid boolean!");
+                    mechanism.echoError("Cannot apply effect '" + data[0] + "': '" + data[3] + "' is not a valid boolean!");
                     return;
                 }
                 Potion pot = new Potion(type);

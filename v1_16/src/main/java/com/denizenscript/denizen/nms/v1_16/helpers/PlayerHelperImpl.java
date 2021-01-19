@@ -1,32 +1,38 @@
 package com.denizenscript.denizen.nms.v1_16.helpers;
 
+import com.denizenscript.denizen.Denizen;
+import com.denizenscript.denizen.nms.v1_16.Handler;
 import com.denizenscript.denizen.nms.v1_16.impl.ImprovedOfflinePlayerImpl;
 import com.denizenscript.denizen.nms.v1_16.impl.network.handlers.AbstractListenerPlayInImpl;
 import com.denizenscript.denizen.nms.v1_16.impl.network.handlers.DenizenNetworkManagerImpl;
 import com.denizenscript.denizen.objects.EntityTag;
+import com.denizenscript.denizen.objects.LocationTag;
+import com.denizenscript.denizen.objects.PlayerTag;
+import com.denizenscript.denizen.utilities.FormattedTextHelper;
+import com.denizenscript.denizen.utilities.entity.FakeEntity;
 import com.denizenscript.denizencore.objects.Mechanism;
 import com.mojang.authlib.GameProfile;
 import com.denizenscript.denizen.nms.abstracts.ImprovedOfflinePlayer;
 import com.denizenscript.denizen.nms.interfaces.PlayerHelper;
 import com.denizenscript.denizencore.utilities.ReflectionHelper;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
-import com.mojang.datafixers.util.Pair;
-import net.minecraft.server.v1_16_R2.*;
+import net.md_5.bungee.api.ChatColor;
+import net.minecraft.server.v1_16_R3.*;
 import org.bukkit.*;
 import org.bukkit.Chunk;
 import org.bukkit.SoundCategory;
-import org.bukkit.craftbukkit.v1_16_R2.CraftServer;
-import org.bukkit.craftbukkit.v1_16_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_16_R2.entity.CraftPlayer;
+import org.bukkit.boss.BossBar;
+import org.bukkit.craftbukkit.v1_16_R3.CraftServer;
+import org.bukkit.craftbukkit.v1_16_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_16_R3.boss.CraftBossBar;
+import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class PlayerHelperImpl extends PlayerHelper {
 
@@ -52,7 +58,7 @@ public class PlayerHelperImpl extends PlayerHelper {
     @Override
     public void stopSound(Player player, String sound, SoundCategory category) {
         MinecraftKey soundKey = sound == null ? null : new MinecraftKey(sound);
-        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(new PacketPlayOutStopSound(soundKey, net.minecraft.server.v1_16_R2.SoundCategory.valueOf(category.name())));
+        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(new PacketPlayOutStopSound(soundKey, net.minecraft.server.v1_16_R3.SoundCategory.valueOf(category.name())));
     }
 
     @Override
@@ -67,10 +73,15 @@ public class PlayerHelperImpl extends PlayerHelper {
         tracker.clear(nmsPlayer);
     }
 
+    public static class TrackerData {
+        public PlayerTag player;
+        public EntityTrackerEntry tracker;
+    }
+
     @Override
-    public Entity sendEntitySpawn(Player player, EntityType entityType, Location location, ArrayList<Mechanism> mechanisms, int customId, UUID customUUID) {
-        PlayerConnection conn = ((CraftPlayer) player).getHandle().playerConnection;
-        net.minecraft.server.v1_16_R2.Entity nmsEntity = ((CraftWorld) location.getWorld()).createEntity(location,  entityType.getEntityClass());
+    public FakeEntity sendEntitySpawn(List<PlayerTag> players, EntityType entityType, LocationTag location, ArrayList<Mechanism> mechanisms, int customId, UUID customUUID, boolean autoTrack) {
+        CraftWorld world = ((CraftWorld) location.getWorld());
+        net.minecraft.server.v1_16_R3.Entity nmsEntity = world.createEntity(location,  entityType.getEntityClass());
         if (customUUID != null) {
             nmsEntity.e(customId);
             nmsEntity.a_(customUUID);
@@ -79,36 +90,69 @@ public class PlayerHelperImpl extends PlayerHelper {
         for (Mechanism mechanism : mechanisms) {
             entity.safeAdjust(mechanism);
         }
-        if (nmsEntity instanceof EntityLiving) {
-            EntityLiving nmsLivingEntity = (EntityLiving) nmsEntity;
-            if (nmsEntity instanceof EntityPlayer) {
-                conn.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, (EntityPlayer) nmsEntity));
-                conn.sendPacket(new PacketPlayOutNamedEntitySpawn((EntityHuman) nmsEntity));
+        nmsEntity.dead = false;
+        FakeEntity fake = new FakeEntity(players, location, entity.getBukkitEntity().getEntityId());
+        fake.entity = new EntityTag(entity.getBukkitEntity());
+        fake.entity.isFake = true;
+        fake.entity.isFakeValid = true;
+        List<TrackerData> trackers = new ArrayList<>();
+        fake.triggerSpawnPacket = (player) -> {
+            EntityPlayer nmsPlayer = ((CraftPlayer) player.getPlayerEntity()).getHandle();
+            PlayerConnection conn = nmsPlayer.playerConnection;
+            final EntityTrackerEntry tracker = new EntityTrackerEntry(world.getHandle(), nmsEntity, 1, true, conn::sendPacket, Collections.singleton(nmsPlayer));
+            tracker.b(nmsPlayer);
+            final TrackerData data = new TrackerData();
+            data.player = player;
+            data.tracker = tracker;
+            trackers.add(data);
+            if (autoTrack) {
+                new BukkitRunnable() {
+                    boolean wasOnline = true;
+                    @Override
+                    public void run() {
+                        if (!fake.entity.isFakeValid) {
+                            cancel();
+                            return;
+                        }
+                        if (player.isOnline()) {
+                            if (!wasOnline) {
+                                tracker.b(((CraftPlayer) player.getPlayerEntity()).getHandle());
+                                wasOnline = true;
+                            }
+                            tracker.a();
+                        }
+                        else if (wasOnline) {
+                            wasOnline = false;
+                        }
+                    }
+                }.runTaskTimer(Denizen.getInstance(), 1, 1);
             }
-            else {
-                conn.sendPacket(new PacketPlayOutSpawnEntityLiving(nmsLivingEntity));
-            }
-            for (EnumItemSlot itemSlot : EnumItemSlot.values()) {
-                ItemStack nmsItemStack = nmsLivingEntity.getEquipment(itemSlot);
-                if (nmsItemStack != null && nmsItemStack.getItem() != Items.AIR) {
-                    Pair<EnumItemSlot, ItemStack> pair = new Pair<>(itemSlot, nmsItemStack);
-                    ArrayList<Pair<EnumItemSlot, net.minecraft.server.v1_16_R2.ItemStack>> pairList = new ArrayList<>();
-                    pairList.add(pair);
-                    conn.sendPacket(new PacketPlayOutEntityEquipment(nmsLivingEntity.getId(), pairList));
+        };
+        for (PlayerTag player : players) {
+            fake.triggerSpawnPacket.accept(player);
+        }
+        fake.triggerUpdatePacket = new Runnable() {
+            @Override
+            public void run() {
+                for (TrackerData tracker : trackers) {
+                    if (tracker.player.isOnline()) {
+                        tracker.tracker.a();
+                    }
                 }
             }
-        }
-        else if (nmsEntity instanceof EntityExperienceOrb) {
-            conn.sendPacket(new PacketPlayOutSpawnEntityExperienceOrb((EntityExperienceOrb) nmsEntity));
-        }
-        else if (nmsEntity instanceof EntityPainting) {
-            conn.sendPacket(new PacketPlayOutSpawnEntityPainting((EntityPainting) nmsEntity));
-        }
-        else {
-            conn.sendPacket(new PacketPlayOutSpawnEntity(nmsEntity));
-        }
-        conn.sendPacket(new PacketPlayOutEntityMetadata(nmsEntity.getId(), nmsEntity.getDataWatcher(), true));
-        return entity.getBukkitEntity();
+        };
+        fake.triggerDestroyPacket = new Runnable() {
+            @Override
+            public void run() {
+                for (TrackerData tracker : trackers) {
+                    if (tracker.player.isOnline()) {
+                        tracker.tracker.a(((CraftPlayer) tracker.player.getPlayerEntity()).getHandle());
+                    }
+                }
+                trackers.clear();
+            }
+        };
+        return fake;
     }
 
     @Override
@@ -160,7 +204,7 @@ public class PlayerHelperImpl extends PlayerHelper {
 
     @Override
     public float getMaxAttackCooldownTicks(Player player) {
-        return ((CraftPlayer) player).getHandle().eQ() + 3;
+        return ((CraftPlayer) player).getHandle().eR() + 3;
     }
 
     @Override
@@ -263,5 +307,11 @@ public class PlayerHelperImpl extends PlayerHelper {
     @Override
     public void setSkinLayers(Player player, byte flags) {
         ((CraftPlayer) player).getHandle().getDataWatcher().set(ENTITY_HUMAN_SKINLAYERS_DATAWATCHER, flags);
+    }
+
+    @Override
+    public void setBossBarTitle(BossBar bar, String title) {
+        ((CraftBossBar) bar).getHandle().title = Handler.componentToNMS(FormattedTextHelper.parse(title, ChatColor.WHITE));
+        ((CraftBossBar) bar).getHandle().sendUpdate(PacketPlayOutBoss.Action.UPDATE_NAME);
     }
 }

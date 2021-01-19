@@ -22,22 +22,23 @@ import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import dev.unizen.denizen.nms.v1_16.helpers.ArrowHelperImpl;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.hover.content.Content;
 import net.md_5.bungee.api.chat.hover.content.Item;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import net.md_5.bungee.chat.ComponentSerializer;
-import net.minecraft.server.v1_16_R2.*;
+import net.minecraft.server.v1_16_R3.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Biome;
-import org.bukkit.craftbukkit.v1_16_R2.CraftServer;
-import org.bukkit.craftbukkit.v1_16_R2.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_16_R2.inventory.CraftInventory;
-import org.bukkit.craftbukkit.v1_16_R2.inventory.CraftInventoryCustom;
-import org.bukkit.craftbukkit.v1_16_R2.util.CraftChatMessage;
-import org.bukkit.craftbukkit.v1_16_R2.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_16_R3.CraftServer;
+import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftInventory;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftInventoryCustom;
+import org.bukkit.craftbukkit.v1_16_R3.util.CraftChatMessage;
+import org.bukkit.craftbukkit.v1_16_R3.util.CraftMagicNumbers;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -82,7 +83,7 @@ public class Handler extends NMSHandler {
 
     @Override
     public boolean isCorrectMappingsCode() {
-        return ((CraftMagicNumbers) CraftMagicNumbers.INSTANCE).getMappingsVersion().equals("09f04031f41cb54f1077c6ac348cc220");
+        return ((CraftMagicNumbers) CraftMagicNumbers.INSTANCE).getMappingsVersion().equals("54e89c47309b53737f894f1bf1b0edbe");
     }
 
     @Override
@@ -233,7 +234,7 @@ public class Handler extends NMSHandler {
         if (contentObject instanceof Text) {
             Object value = ((Text) contentObject).getValue();
             if (value instanceof BaseComponent[]) {
-                return FormattedTextHelper.stringify((BaseComponent[]) value);
+                return FormattedTextHelper.stringify((BaseComponent[]) value, ChatColor.WHITE);
             }
             else {
                 return value.toString();
@@ -253,6 +254,11 @@ public class Handler extends NMSHandler {
         else {
             throw new UnsupportedOperationException();
         }
+    }
+
+    public static BaseComponent[] componentToSpigot(IChatMutableComponent nms) {
+        String json = IChatBaseComponent.ChatSerializer.a(nms);
+        return ComponentSerializer.parse(json);
     }
 
     public static IChatMutableComponent componentToNMS(BaseComponent[] spigot) {

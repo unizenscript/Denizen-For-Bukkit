@@ -42,7 +42,7 @@ public class EntityDamagedScriptEvent extends BukkitScriptEvent implements Liste
     //
     // @Group Entity
     //
-    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Location true
     //
     // @Switch with:<item> to only process the event when the item used to cause damage (in the damager's hand) is a specified item.
     //
@@ -76,7 +76,6 @@ public class EntityDamagedScriptEvent extends BukkitScriptEvent implements Liste
 
     public EntityTag entity;
     public ElementTag cause;
-    public ElementTag final_damage;
     public EntityTag damager;
     public EntityTag projectile;
     public ItemTag held;
@@ -85,7 +84,20 @@ public class EntityDamagedScriptEvent extends BukkitScriptEvent implements Liste
     @Override
     public boolean couldMatch(ScriptPath path) {
         String cmd = path.eventArgLowerAt(1);
-        if (!cmd.equals("damaged") && !cmd.equals("damages")) {
+        if (cmd.equals("damaged")) {
+            if (path.eventArgLowerAt(0).equals("vehicle")) {
+                return false;
+            }
+        }
+        else if (cmd.equals("damages")) {
+            if (!couldMatchEntity(path.eventArgLowerAt(2))) {
+                return false;
+            }
+            if (path.eventArgLowerAt(2).equals("vehicle")) {
+                return false;
+            }
+        }
+        else {
             return false;
         }
         if (!couldMatchEntity(path.eventArgLowerAt(0))) {
@@ -153,7 +165,7 @@ public class EntityDamagedScriptEvent extends BukkitScriptEvent implements Liste
             return new ElementTag(event.getDamage());
         }
         else if (name.equals("final_damage")) {
-            return final_damage;
+            return new ElementTag(event.getFinalDamage());
         }
         else if (name.equals("cause")) {
             return cause;
@@ -185,7 +197,6 @@ public class EntityDamagedScriptEvent extends BukkitScriptEvent implements Liste
     @EventHandler
     public void onEntityDamaged(EntityDamageEvent event) {
         entity = new EntityTag(event.getEntity());
-        final_damage = new ElementTag(event.getFinalDamage());
         cause = new ElementTag(CoreUtilities.toLowerCase(event.getCause().name()));
         damager = null;
         projectile = null;

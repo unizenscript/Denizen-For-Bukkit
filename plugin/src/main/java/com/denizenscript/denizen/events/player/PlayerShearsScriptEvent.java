@@ -1,7 +1,6 @@
 package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -25,7 +24,7 @@ public class PlayerShearsScriptEvent extends BukkitScriptEvent implements Listen
     //
     // @Group Player
     //
-    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Location true
     //
     // @Cancellable true
     //
@@ -84,7 +83,7 @@ public class PlayerShearsScriptEvent extends BukkitScriptEvent implements Listen
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(new PlayerTag(event.getPlayer()), null);
+        return new BukkitScriptEntryData(event.getPlayer());
     }
 
     @Override

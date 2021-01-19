@@ -35,7 +35,7 @@ public class EntityDeathScriptEvent extends BukkitScriptEvent implements Listene
     //
     // @Group Entity
     //
-    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Location true
     // @Switch by:<entity type> to only process the event if the killer is of a specified entity type.
     // @Switch cause:<cause> to only process the event if it was caused by a specific damage cause.
     //
@@ -145,7 +145,7 @@ public class EntityDeathScriptEvent extends BukkitScriptEvent implements Listene
         else if (Argument.valueOf(lower).matchesArgumentList(ItemTag.class)) {
             List<ItemStack> drops = event.getDrops();
             drops.clear();
-            for (ItemTag item : ListTag.getListFor(determinationObj, getTagContext(path)).filter(ItemTag.class, path.container, true)) {
+            for (ItemTag item : ListTag.getListFor(determinationObj, getTagContext(path)).filter(ItemTag.class, getTagContext(path), true)) {
                 if (item != null) {
                     drops.add(item.getItemStack());
                 }

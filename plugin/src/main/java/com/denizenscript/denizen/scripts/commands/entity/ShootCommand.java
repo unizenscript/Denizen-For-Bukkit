@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.scripts.commands.entity;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.utilities.Conversion;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.entity.Velocity;
 import com.denizenscript.denizen.utilities.debugging.Debug;
@@ -27,6 +27,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -42,7 +43,7 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
         setName("shoot");
         setSyntax("shoot [<entity>|...] (origin:<entity>/<location>) (destination:<location>) (height:<#.#>) (speed:<#.#>) (script:<name>) (def:<element>|...) (shooter:<entity>) (spread:<#.#>) (lead:<location>) (no_rotate)");
         setRequiredArguments(1, 11);
-        Bukkit.getServer().getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
+        Bukkit.getServer().getPluginManager().registerEvents(this, Denizen.getInstance());
         isProcedural = false;
     }
 
@@ -106,7 +107,7 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
                     scriptEntry.addObject("origin_location", arg.asType(LocationTag.class));
                 }
                 else {
-                    Debug.echoError("Ignoring unrecognized argument: " + arg.raw_value);
+                    Debug.echoError("Ignoring unrecognized argument: " + arg.getRawValue());
                 }
             }
             else if (!scriptEntry.hasObject("destination")
@@ -229,28 +230,18 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
         if (!no_rotate) {
             originLocation = new LocationTag(NMSHandler.getEntityHelper().faceLocation(originLocation, destination));
         }
-        // Go through all the entities, spawning/teleporting and rotating them
         for (EntityTag entity : entities) {
             if (!entity.isSpawned() || !no_rotate) {
                 entity.spawnAt(originLocation);
             }
-            // Only add to entityList after the entities have been
-            // spawned, otherwise you'll get something like "e@skeleton"
-            // instead of "e@57" on it
             entityList.addObject(entity);
-            if (!no_rotate) {
-                NMSHandler.getEntityHelper().faceLocation(entity.getBukkitEntity(), destination);
-            }
-            // If the current entity is a projectile, set its shooter
-            // when applicable
             if (entity.isProjectile() && (shooter != null || originEntity != null)) {
                 entity.setShooter(shooter != null ? shooter : originEntity);
-                // Also, watch for it hitting a target
-                arrows.put(entity.getUUID(), null);
+                if (script != null) {
+                    arrows.put(entity.getUUID(), null);
+                }
             }
         }
-        // Add entities to context so that the specific entities created/spawned
-        // can be fetched.
         scriptEntry.addObject("shot_entities", entityList);
         if (entityList.size() == 1) {
             scriptEntry.addObject("shot_entity", entityList.getObject(0));
@@ -318,11 +309,15 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
                 }
                 // Otherwise, if the entity is no longer traveling through
                 // the air, stop the task
-                else if (lastLocation != null && lastVelocity != null) {
-                    if (lastLocation.distanceSquared(lastEntity.getBukkitEntity().getLocation()) < 0.1
-                            && lastVelocity.distanceSquared(lastEntity.getBukkitEntity().getVelocity()) < 0.1) {
+                else if (lastLocation != null && lastVelocity != null && !(lastEntity.getBukkitEntity() instanceof Projectile)) {
+                    if (lastLocation.getWorld() != lastEntity.getBukkitEntity().getWorld()
+                            || (lastLocation.distanceSquared(lastEntity.getBukkitEntity().getLocation()) < 0.1
+                            && lastVelocity.distanceSquared(lastEntity.getBukkitEntity().getVelocity()) < 0.1)) {
                         flying = false;
                     }
+                }
+                if (!arrows.containsKey(lastEntity.getUUID()) || arrows.get(lastEntity.getUUID()) != null) {
+                    flying = false;
                 }
                 // Stop the task and run the script if conditions
                 // are met
@@ -362,23 +357,33 @@ public class ShootCommand extends AbstractCommand implements Listener, Holdable 
                 }
             }
         };
-        task.runTaskTimer(DenizenAPI.getCurrentInstance(), 1, 2);
+        if (script != null || !scriptEntry.shouldWaitFor()) {
+            task.runTaskTimer(Denizen.getInstance(), 1, 2);
+        }
+    }
+
+    @EventHandler
+    public void projectileHit(ProjectileHitEvent event) {
+        if (!arrows.containsKey(event.getEntity().getUniqueId())) {
+            return;
+        }
+        if (event.getHitEntity() != null) {
+            arrows.put(event.getEntity().getUniqueId(), new EntityTag(event.getHitEntity()));
+        }
+        else {
+            arrows.remove(event.getEntity().getUniqueId());
+        }
     }
 
     @EventHandler
     public void arrowDamage(EntityDamageByEntityEvent event) {
-        // Get the damager
         Entity arrow = event.getDamager();
-        // First, quickly confirm it's a projectile (relevant at all)
         if (!(arrow instanceof Projectile)) {
             return;
         }
-        // Second, more slowly check if we shot it
         if (!arrows.containsKey(arrow.getUniqueId())) {
             return;
         }
-        // Replace its entry with the hit entity.
-        arrows.remove(arrow.getUniqueId());
         arrows.put(arrow.getUniqueId(), new EntityTag(event.getEntity()));
     }
 }

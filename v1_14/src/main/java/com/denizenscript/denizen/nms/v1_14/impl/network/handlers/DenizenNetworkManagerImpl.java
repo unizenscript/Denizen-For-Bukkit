@@ -169,7 +169,11 @@ public class DenizenNetworkManagerImpl extends NetworkManager {
         PacketPlayOutEntityMetadata metadataPacket = (PacketPlayOutEntityMetadata) packet;
         try {
             int eid = ENTITY_METADATA_EID.getInt(metadataPacket);
-            String nameToApply = RenameCommand.getCustomNameFor(eid, player.getBukkitEntity());
+            Entity ent = player.world.getEntity(eid);
+            if (ent == null) {
+                return; // If it doesn't exist on-server, it's definitely not relevant, so move on
+            }
+            String nameToApply = RenameCommand.getCustomNameFor(ent.getUniqueID(), player.getBukkitEntity(), false);
             if (nameToApply == null) {
                 return;
             }
@@ -212,15 +216,15 @@ public class DenizenNetworkManagerImpl extends NetworkManager {
                         EntityAttachmentHelper.AttachmentData att = attMap.getAttachment(player.getUniqueID());
                         if (attMap.attached.isValid() && att != null) {
                             Packet pNew = (Packet) duplo(packet);
-                            ENTITY_ID_PACKENT.setInt(pNew, att.attached.getEntityId());
+                            ENTITY_ID_PACKENT.setInt(pNew, att.attached.getBukkitEntity().getEntityId());
                             if (att.positionalOffset != null && (packet instanceof PacketPlayOutEntity.PacketPlayOutRelEntityMove || packet instanceof PacketPlayOutEntity.PacketPlayOutRelEntityMoveLook)) {
                                 Vector goalPosition = att.fixedForOffset(new Vector(e.locX, e.locY, e.locZ), e.yaw, e.pitch);
-                                Vector oldPos = att.visiblePosition;
+                                Vector oldPos = att.visiblePositions.get(player.getUniqueID());
                                 if (oldPos == null) {
                                     oldPos = att.attached.getLocation().toVector();
                                 }
                                 Vector moveNeeded = goalPosition.clone().subtract(oldPos);
-                                att.visiblePosition = goalPosition.clone();
+                                att.visiblePositions.put(player.getUniqueID(), goalPosition.clone());
                                 int offX = (int) (moveNeeded.getX() * (32 * 128));
                                 int offY = (int) (moveNeeded.getY() * (32 * 128));
                                 int offZ = (int) (moveNeeded.getZ() * (32 * 128));
@@ -228,7 +232,7 @@ public class DenizenNetworkManagerImpl extends NetworkManager {
                                         || offY < Short.MIN_VALUE || offY > Short.MAX_VALUE
                                         || offZ < Short.MIN_VALUE || offZ > Short.MAX_VALUE) {
                                     PacketPlayOutEntityTeleport newTeleportPacket = new PacketPlayOutEntityTeleport(e);
-                                    ENTITY_ID_PACKTELENT.setInt(newTeleportPacket, att.attached.getEntityId());
+                                    ENTITY_ID_PACKTELENT.setInt(newTeleportPacket, att.attached.getBukkitEntity().getEntityId());
                                     POS_X_PACKTELENT.setDouble(newTeleportPacket, goalPosition.getX());
                                     POS_Y_PACKTELENT.setDouble(newTeleportPacket, goalPosition.getY());
                                     POS_Z_PACKTELENT.setDouble(newTeleportPacket, goalPosition.getZ());
@@ -261,7 +265,7 @@ public class DenizenNetworkManagerImpl extends NetworkManager {
                         EntityAttachmentHelper.AttachmentData att = attMap.getAttachment(player.getUniqueID());
                         if (attMap.attached.isValid() && att != null) {
                             Packet pNew = (Packet) duplo(packet);
-                            ENTITY_ID_PACKVELENT.setInt(pNew, att.attached.getEntityId());
+                            ENTITY_ID_PACKVELENT.setInt(pNew, att.attached.getBukkitEntity().getEntityId());
                             oldManager.sendPacket(pNew);
                         }
                     }
@@ -280,7 +284,7 @@ public class DenizenNetworkManagerImpl extends NetworkManager {
                         EntityAttachmentHelper.AttachmentData att = attMap.getAttachment(player.getUniqueID());
                         if (attMap.attached.isValid() && att != null) {
                             Packet pNew = (Packet) duplo(packet);
-                            ENTITY_ID_PACKTELENT.setInt(pNew, att.attached.getEntityId());
+                            ENTITY_ID_PACKTELENT.setInt(pNew, att.attached.getBukkitEntity().getEntityId());
                             Vector resultPos = new Vector(POS_X_PACKTELENT.getDouble(pNew), POS_Y_PACKTELENT.getDouble(pNew), POS_Z_PACKTELENT.getDouble(pNew));
                             if (att.positionalOffset != null) {
                                 Vector goalOffset = att.fixedForOffset(resultPos, e.yaw, e.pitch);
@@ -289,7 +293,7 @@ public class DenizenNetworkManagerImpl extends NetworkManager {
                                 POS_Z_PACKTELENT.setDouble(pNew, goalOffset.getZ());
                                 resultPos = goalOffset;
                             }
-                            att.visiblePosition = resultPos.clone();
+                            att.visiblePositions.put(player.getUniqueID(), resultPos.clone());
                             oldManager.sendPacket(pNew);
                         }
                     }

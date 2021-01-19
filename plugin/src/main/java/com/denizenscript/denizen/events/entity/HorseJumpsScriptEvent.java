@@ -21,7 +21,7 @@ public class HorseJumpsScriptEvent extends BukkitScriptEvent implements Listener
     //
     // @Group Entity
     //
-    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Location true
     //
     // @Cancellable true
     //
@@ -49,6 +49,9 @@ public class HorseJumpsScriptEvent extends BukkitScriptEvent implements Listener
     @Override
     public boolean couldMatch(ScriptPath path) {
         if (!path.eventLower.equals("horse jumps") && !path.eventLower.endsWith("jumps")) {
+            return false;
+        }
+        if (path.eventLower.startsWith("player")) {
             return false;
         }
         return true;

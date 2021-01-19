@@ -9,7 +9,6 @@ import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.KnowledgeBookMeta;
 
 import java.util.ArrayList;
@@ -18,7 +17,7 @@ import java.util.List;
 public class ItemKnowledgeBookRecipes implements Property {
 
     public static boolean describes(ObjectTag item) {
-        return item instanceof ItemTag && ((ItemTag) item).getItemStack().getType() == Material.KNOWLEDGE_BOOK;
+        return item instanceof ItemTag && ((ItemTag) item).getBukkitMaterial() == Material.KNOWLEDGE_BOOK;
     }
 
     public static ItemKnowledgeBookRecipes getFrom(ObjectTag _item) {
@@ -44,9 +43,8 @@ public class ItemKnowledgeBookRecipes implements Property {
 
     public ListTag recipeList() {
         ListTag output = new ListTag();
-        ItemStack itemStack = item.getItemStack();
-        if (itemStack.hasItemMeta() && itemStack.getItemMeta() instanceof KnowledgeBookMeta) {
-            for (NamespacedKey key : ((KnowledgeBookMeta) itemStack.getItemMeta()).getRecipes()) {
+        if (item.getItemMeta() instanceof KnowledgeBookMeta) {
+            for (NamespacedKey key : ((KnowledgeBookMeta) item.getItemMeta()).getRecipes()) {
                 output.add(key.toString());
             }
         }

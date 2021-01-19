@@ -1,8 +1,9 @@
 package com.denizenscript.denizen.events.server;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.Utilities;
+import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
@@ -35,10 +36,16 @@ public class ListPingScriptEvent extends BukkitScriptEvent implements Listener {
     // <context.max_players> returns the number of max players that will show.
     // <context.num_players> returns the number of online players that will show.
     // <context.address> returns the IP address requesting the list.
+    // <context.protocol_version> returns the protocol ID of the server's version (only on Paper).
+    // <context.version_name> returns the name of the server's version (only on Paper).
+    // <context.client_protocol_version> returns the client's protocol version ID (only on Paper).
     //
     // @Determine
     // ElementTag(Number) to change the max player amount that will show.
     // "ICON:" + ElementTag of a file path to an icon image, to change the icon that will display.
+    // "PROTOCOL_VERSION:" + ElementTag(Number) to change the protocol ID number of the server's version (only on Paper).
+    // "VERSION_NAME:" + ElementTag to change the server's version name (only on Paper).
+    // "EXCLUDE_PLAYERS:" + ListTag(PlayerTag) to exclude a set of players from showing in the player count or preview of online players (only on Paper).
     // ElementTag to change the MOTD that will show.
     //
     // -->
@@ -70,7 +77,8 @@ public class ListPingScriptEvent extends BukkitScriptEvent implements Listener {
     @Override
     public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
         String determination = determinationObj.toString();
-        if (determination.startsWith("icon:")) {
+        String determineLow = CoreUtilities.toLowerCase(determination);
+        if (determineLow.startsWith("icon:")) {
             String iconFile = determination.substring("icon:".length());
             CachedServerIcon icon = iconCache.get(iconFile);
             if (icon != null) {
@@ -93,12 +101,11 @@ public class ListPingScriptEvent extends BukkitScriptEvent implements Listener {
                 event.setServerIcon(icon);
             }
             return true;
-
         }
-        if (determination.length() > 0 && !determination.equalsIgnoreCase("none")) {
+        if (determination.length() > 0 && !determineLow.equalsIgnoreCase("none")) {
             List<String> values = CoreUtilities.split(determination, '|', 2);
-            if (new ElementTag(values.get(0)).isInt()) {
-                event.setMaxPlayers(new ElementTag(values.get(0)).asInt());
+            if (ArgumentHelper.matchesInteger(values.get(0))) {
+                event.setMaxPlayers(Integer.parseInt(values.get(0)));
                 if (values.size() == 2) {
                     event.setMotd(values.get(1));
                 }
@@ -130,12 +137,11 @@ public class ListPingScriptEvent extends BukkitScriptEvent implements Listener {
         return super.getContext(name);
     }
 
-    @EventHandler
-    public void onListPing(ServerListPingEvent event) {
+    public void syncFire(ServerListPingEvent event) {
         this.event = event;
         if (!Bukkit.isPrimaryThread()) {
             BukkitScriptEvent altEvent = (BukkitScriptEvent) clone();
-            Future future = Bukkit.getScheduler().callSyncMethod(DenizenAPI.getCurrentInstance(), () -> {
+            Future future = Bukkit.getScheduler().callSyncMethod(Denizen.getInstance(), () -> {
                 altEvent.fire();
                 return null;
             });
@@ -148,5 +154,13 @@ public class ListPingScriptEvent extends BukkitScriptEvent implements Listener {
             return;
         }
         fire(event);
+    }
+
+    public static class ListPingScriptEventSpigotImpl extends ListPingScriptEvent {
+
+        @EventHandler
+        public void onListPing(ServerListPingEvent event) {
+            syncFire(event);
+        }
     }
 }

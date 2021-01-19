@@ -1,8 +1,7 @@
 package com.denizenscript.denizen.utilities.entity;
-
-import com.denizenscript.denizen.utilities.DenizenAPI;
+import com.denizenscript.denizen.Denizen;
+import com.denizenscript.denizen.objects.EntityTag;
 import org.bukkit.Location;
-import org.bukkit.entity.Entity;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
@@ -16,7 +15,7 @@ public class EntityAttachmentHelper {
 
     public static class AttachmentData {
 
-        public Entity attached, to;
+        public EntityTag attached, to;
 
         public boolean offsetRelative;
 
@@ -24,7 +23,7 @@ public class EntityAttachmentHelper {
 
         public Location positionalOffset;
 
-        public Vector visiblePosition;
+        public HashMap<UUID, Vector> visiblePositions = new HashMap<>();
 
         public boolean syncServer;
 
@@ -47,7 +46,7 @@ public class EntityAttachmentHelper {
             if (checkTask != null) {
                 checkTask.cancel();
             }
-            checkTask = new BukkitRunnable() {
+            BukkitRunnable runnable = new BukkitRunnable() {
                 @Override
                 public void run() {
                     if (!attached.isValid() || !to.isValid()) {
@@ -67,7 +66,16 @@ public class EntityAttachmentHelper {
                         attached.teleport(goal);
                     }
                 }
-            }.runTaskTimer(DenizenAPI.getCurrentInstance(), 1, 1);
+            };
+            runnable.run();
+            checkTask = runnable.runTaskTimer(Denizen.getInstance(), 1, 1);
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    // Run a forcetele one second later just to guarantee sync for lagging clients
+                    visiblePositions.clear();
+                }
+            }.runTaskLater(Denizen.getInstance(), 20);
         }
 
         public void removeFrom(PlayerAttachMap map) {
@@ -89,22 +97,22 @@ public class EntityAttachmentHelper {
                 checkTask.cancel();
             }
             checkTask = null;
-            EntityAttachedToMap map = toEntityToData.get(to.getUniqueId());
+            EntityAttachedToMap map = toEntityToData.get(to.getUUID());
             if (map != null) {
-                PlayerAttachMap subMap = map.attachedToMap.get(attached.getUniqueId());
+                PlayerAttachMap subMap = map.attachedToMap.get(attached.getUUID());
                 removeFrom(subMap);
                 if (subMap.everyoneAttachment == null && subMap.playerToAttachment == null) {
-                    map.attachedToMap.remove(attached.getUniqueId());
+                    map.attachedToMap.remove(attached.getUUID());
                     if (map.attachedToMap.isEmpty()) {
-                        toEntityToData.remove(to.getUniqueId());
+                        toEntityToData.remove(to.getUUID());
                     }
                 }
             }
-            PlayerAttachMap attachMap = attachedEntityToData.get(attached.getUniqueId());
+            PlayerAttachMap attachMap = attachedEntityToData.get(attached.getUUID());
             if (attachMap != null) {
                 removeFrom(attachMap);
                 if (attachMap.everyoneAttachment == null && attachMap.playerToAttachment == null) {
-                    attachedEntityToData.remove(attached.getUniqueId());
+                    attachedEntityToData.remove(attached.getUUID());
                 }
             }
         }
@@ -112,7 +120,7 @@ public class EntityAttachmentHelper {
 
     public static class PlayerAttachMap {
 
-        public Entity attached;
+        public EntityTag attached;
 
         public AttachmentData everyoneAttachment;
 
@@ -205,12 +213,13 @@ public class EntityAttachmentHelper {
     }
 
     public static void registerAttachment(AttachmentData attachment) {
-        removeAttachment(attachment.attached.getUniqueId(), attachment.forPlayer);
-        PlayerAttachMap map = attachedEntityToData.get(attachment.attached.getUniqueId());
+        removeAttachment(attachment.attached.getUUID(), attachment.forPlayer);
+        attachment.startTask();
+        PlayerAttachMap map = attachedEntityToData.get(attachment.attached.getUUID());
         if (map == null) {
             map = new PlayerAttachMap();
             map.attached = attachment.attached;
-            attachedEntityToData.put(attachment.attached.getUniqueId(), map);
+            attachedEntityToData.put(attachment.attached.getUUID(), map);
         }
         if (attachment.forPlayer == null) {
             map.everyoneAttachment = attachment;
@@ -221,17 +230,16 @@ public class EntityAttachmentHelper {
             }
             map.playerToAttachment.put(attachment.forPlayer, attachment);
         }
-        EntityAttachedToMap toMap = toEntityToData.get(attachment.to.getUniqueId());
+        EntityAttachedToMap toMap = toEntityToData.get(attachment.to.getUUID());
         if (toMap == null) {
             toMap = new EntityAttachedToMap();
-            toEntityToData.put(attachment.to.getUniqueId(), toMap);
+            toEntityToData.put(attachment.to.getUUID(), toMap);
         }
-        toMap.attachedToMap.put(attachment.attached.getUniqueId(), map);
-        attachment.startTask();
+        toMap.attachedToMap.put(attachment.attached.getUUID(), map);
     }
 
-    public static void forceAttachMove(Entity attached, Entity to, Vector offset, boolean matchRotation) {
-        removeAttachment(attached.getUniqueId(), null);
+    public static void forceAttachMove(EntityTag attached, EntityTag to, Vector offset, boolean matchRotation) {
+        removeAttachment(attached.getUUID(), null);
         if (to == null) {
             return;
         }
@@ -252,7 +260,7 @@ public class EntityAttachmentHelper {
         if (data == null) {
             return false;
         }
-        if (data.to.getUniqueId().equals(player)) {
+        if (data.to.getUUID().equals(player)) {
             return false;
         }
         return true;

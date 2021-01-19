@@ -1,33 +1,22 @@
 package com.denizenscript.denizen.utilities.entity;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizencore.objects.core.DurationTag;
-import com.denizenscript.denizencore.objects.core.ListTag;
-import org.bukkit.entity.Entity;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class FakeEntity {
 
     public static class FakeEntityMap {
 
         public Map<Integer, FakeEntity> byId = new HashMap<>();
-
-        public FakeEntity getOrAdd(PlayerTag player, LocationTag location, int id) {
-            FakeEntity entity = byId.get(id);
-            if (entity != null) {
-                return entity;
-            }
-            entity = new FakeEntity(player, location, id);
-            byId.put(id, entity);
-            return entity;
-        }
 
         public void remove(FakeEntity entity) {
             byId.remove(entity.id);
@@ -45,39 +34,36 @@ public class FakeEntity {
         return map.byId.get(id);
     }
 
-    public PlayerTag player;
+    public List<PlayerTag> players;
     public int id;
     public EntityTag entity;
     public LocationTag location;
     public BukkitTask currentTask = null;
+    public Consumer<PlayerTag> triggerSpawnPacket;
+    public Runnable triggerUpdatePacket;
+    public Runnable triggerDestroyPacket;
+    public UUID overrideUUID;
 
-    private FakeEntity(PlayerTag player, LocationTag location, int id) {
-        this.player = player;
+    public FakeEntity(List<PlayerTag> player, LocationTag location, int id) {
+        this.players = player;
         this.location = location;
         this.id = id;
     }
 
-    public static ListTag showFakeEntityTo(List<PlayerTag> players, EntityTag typeToSpawn, LocationTag location, DurationTag duration) {
-        ListTag result = new ListTag();
+    public static FakeEntity showFakeEntityTo(List<PlayerTag> players, EntityTag typeToSpawn, LocationTag location, DurationTag duration) {
+        FakeEntity fakeEntity = NMSHandler.getPlayerHelper().sendEntitySpawn(players, typeToSpawn.getBukkitEntityType(), location, typeToSpawn.getWaitingMechanisms(), -1, null, true);
+        idsToEntities.put(fakeEntity.overrideUUID == null ? fakeEntity.entity.getUUID() : fakeEntity.overrideUUID, fakeEntity);
         for (PlayerTag player : players) {
-            if (!player.isOnline() || !player.isValid()) {
-                continue;
-            }
             UUID uuid = player.getPlayerEntity().getUniqueId();
             FakeEntity.FakeEntityMap playerEntities = playersToEntities.get(uuid);
             if (playerEntities == null) {
                 playerEntities = new FakeEntity.FakeEntityMap();
                 playersToEntities.put(uuid, playerEntities);
             }
-            Entity entity = NMSHandler.getPlayerHelper().sendEntitySpawn(player.getPlayerEntity(), typeToSpawn.getBukkitEntityType(), location, typeToSpawn.getWaitingMechanisms(), -1, null);
-            FakeEntity fakeEntity = playerEntities.getOrAdd(player, location, entity.getEntityId());
-            EntityTag entTag = new EntityTag(entity);
-            entTag.isFake = true;
-            fakeEntity.updateEntity(entTag, duration);
-            idsToEntities.put(entTag.getUUID(), fakeEntity);
-            result.addObject(entTag);
+            playerEntities.byId.put(fakeEntity.id, fakeEntity);
         }
-        return result;
+        fakeEntity.updateEntity(fakeEntity.entity, duration);
+        return fakeEntity;
     }
 
     public void cancelEntity() {
@@ -85,12 +71,22 @@ public class FakeEntity {
             currentTask.cancel();
             currentTask = null;
         }
-        idsToEntities.remove(entity.getUUID());
-        if (player.isOnline()) {
-            NMSHandler.getPlayerHelper().sendEntityDestroy(player.getPlayerEntity(), entity.getBukkitEntity());
+        idsToEntities.remove(overrideUUID == null ? entity.getUUID() : overrideUUID);
+        if (triggerDestroyPacket != null) {
+            triggerDestroyPacket.run();
         }
-        FakeEntity.FakeEntityMap mapping = playersToEntities.get(player.getOfflinePlayer().getUniqueId());
-        mapping.remove(this);
+        else {
+            for (PlayerTag player : players) {
+                if (player.isOnline()) {
+                    NMSHandler.getPlayerHelper().sendEntityDestroy(player.getPlayerEntity(), entity.getBukkitEntity());
+                }
+            }
+        }
+        for (PlayerTag player : players) {
+            FakeEntity.FakeEntityMap mapping = playersToEntities.get(player.getOfflinePlayer().getUniqueId());
+            mapping.remove(this);
+        }
+        entity.isFakeValid = false;
     }
 
     private void updateEntity(EntityTag entity, DurationTag duration) {
@@ -105,7 +101,7 @@ public class FakeEntity {
                     currentTask = null;
                     cancelEntity();
                 }
-            }.runTaskLater(DenizenAPI.getCurrentInstance(), duration.getTicks());
+            }.runTaskLater(Denizen.getInstance(), duration.getTicks());
         }
     }
 }

@@ -5,6 +5,10 @@ import com.denizenscript.denizen.scripts.containers.core.BookScriptContainer;
 import com.denizenscript.denizen.scripts.containers.core.ItemScriptContainer;
 import com.denizenscript.denizen.scripts.containers.core.ItemScriptHelper;
 import com.denizenscript.denizen.utilities.Utilities;
+import com.denizenscript.denizen.utilities.nbt.CustomNBT;
+import com.denizenscript.denizencore.flags.AbstractFlagTracker;
+import com.denizenscript.denizencore.flags.FlaggableObject;
+import com.denizenscript.denizencore.flags.MapTagFlagTracker;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizen.utilities.Settings;
@@ -42,7 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class ItemTag implements ObjectTag, Notable, Adjustable {
+public class ItemTag implements ObjectTag, Notable, Adjustable, FlaggableObject {
 
     // <--[language]
     // @name ItemTag Objects
@@ -220,29 +224,54 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
     //   INSTANCE FIELDS/METHODS
     /////////////////
 
+    @Override
+    public AbstractFlagTracker getFlagTracker() {
+        if (flagTrackerCache == null) {
+            String value = CustomNBT.getCustomNBT(getItemStack(), "flags", "Denizen");
+            if (value == null) {
+                return new MapTagFlagTracker();
+            }
+            flagTrackerCache = new MapTagFlagTracker(value, CoreUtilities.noDebugContext);
+        }
+        return flagTrackerCache;
+    }
+
+    @Override
+    public void reapplyTracker(AbstractFlagTracker tracker) {
+        setItemStack(CustomNBT.addCustomNBT(getItemStack(), "flags", tracker.toString(), "Denizen"));
+        flagTrackerCache = tracker;
+    }
+
     private ItemStack item;
 
-    public ItemMeta meta;
+    public ItemMeta metaCache;
+
+    public AbstractFlagTracker flagTrackerCache;
 
     public ItemStack getItemStack() {
         return item;
     }
 
     public ItemMeta getItemMeta() {
-        if (meta == null) {
-            meta = item.getItemMeta();
+        if (metaCache == null) {
+            metaCache = item.getItemMeta();
         }
-        return meta;
+        return metaCache;
     }
 
     public void setItemMeta(ItemMeta meta) {
-        this.meta = meta;
+        this.metaCache = meta;
         item.setItemMeta(meta);
     }
 
     public void setItemStack(ItemStack item) {
         this.item = item;
-        meta = null;
+        resetCache();
+    }
+
+    public void resetCache() {
+        metaCache = null;
+        flagTrackerCache = null;
     }
 
     // Compare item to item.
@@ -260,37 +289,23 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         if (item == null) {
             return -1;
         }
-
         int determination = 0;
         ItemStack compared = getItemStack();
-
-        // Will return -1 if these are not the same
-        // Material IDs
-        if (compared.getType().getId() != compared_to.getType().getId()) {
+        if (compared.getType() != compared_to.getType()) {
             return -1;
         }
-
-        // If compared_to has item meta, and compared does not, return -1
         if (compared_to.hasItemMeta()) {
             if (!compared.hasItemMeta()) {
                 return -1;
             }
-
-            // If compared_to has a display name, and compared does not, return -1
-            if (compared_to.getItemMeta().hasDisplayName()) {
-                if (!compared.getItemMeta().hasDisplayName()) {
+            ItemMeta thisMeta = getItemMeta();
+            ItemMeta comparedItemMeta = compared_to.getItemMeta();
+            if (comparedItemMeta.hasDisplayName()) {
+                if (!thisMeta.hasDisplayName()) {
                     return -1;
                 }
-
-                // If compared_to's display name does not at least start with compared's item name,
-                // return -1.
-                if (compared_to.getItemMeta().getDisplayName().toUpperCase()
-                        .startsWith(compared.getItemMeta().getDisplayName().toUpperCase())) {
-
-                    // If the compared item has a longer display name than compared_to,
-                    // it is similar, but modified. Perhaps 'engraved' or something?
-                    if (compared.getItemMeta().getDisplayName().length() >
-                            compared_to.getItemMeta().getDisplayName().length()) {
+                if (comparedItemMeta.getDisplayName().toUpperCase().startsWith(thisMeta.getDisplayName().toUpperCase())) {
+                    if (thisMeta.getDisplayName().length() > comparedItemMeta.getDisplayName().length()) {
                         determination++;
                     }
                 }
@@ -298,57 +313,38 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
                     return -1;
                 }
             }
-
-            // If compared_to has lore, and compared does not, return -1
-            if (compared_to.getItemMeta().hasLore()) {
-                if (!compared.getItemMeta().hasLore()) {
+            if (comparedItemMeta.hasLore()) {
+                if (!thisMeta.hasLore()) {
                     return -1;
                 }
-
-                // If compared doesn't have a piece of lore contained in compared_to, return -1
-                for (String lore : compared_to.getItemMeta().getLore()) {
-                    if (!compared.getItemMeta().getLore().contains(lore)) {
+                for (String lore : comparedItemMeta.getLore()) {
+                    if (!thisMeta.getLore().contains(lore)) {
                         return -1;
                     }
                 }
-
-                // If the compared item has more lore than compared to, it is similar, but modified.
-                // Still qualifies for a match, but it seems the item may be a 'better' item, so increase
-                // the determination.
-                if (compared.getItemMeta().getLore().size() > compared_to.getItemMeta().getLore().size()) {
+                if (thisMeta.getLore().size() > comparedItemMeta.getLore().size()) {
                     determination++;
                 }
             }
-
-            if (!compared_to.getItemMeta().getEnchants().isEmpty()) {
-                if (compared.getItemMeta().getEnchants().isEmpty()) {
+            if (!comparedItemMeta.getEnchants().isEmpty()) {
+                if (thisMeta.getEnchants().isEmpty()) {
                     return -1;
                 }
-
-                for (Map.Entry<Enchantment, Integer> enchant : compared_to.getItemMeta().getEnchants().entrySet()) {
-                    if (!compared.getItemMeta().getEnchants().containsKey(enchant.getKey())
-                            || compared.getItemMeta().getEnchants().get(enchant.getKey()) < enchant.getValue()) {
+                for (Map.Entry<Enchantment, Integer> enchant : comparedItemMeta.getEnchants().entrySet()) {
+                    if (!thisMeta.getEnchants().containsKey(enchant.getKey()) || thisMeta.getEnchants().get(enchant.getKey()) < enchant.getValue()) {
                         return -1;
                     }
                 }
-
-                if (compared.getItemMeta().getEnchants().size() > compared_to.getItemMeta().getEnchants().size()) {
+                if (thisMeta.getEnchants().size() > comparedItemMeta.getEnchants().size()) {
+                    determination++;
+                }
+            }
+            if (isRepairable()) {
+                if (((Damageable) thisMeta).getDamage() < ((Damageable) comparedItemMeta).getDamage()) {
                     determination++;
                 }
             }
         }
-
-        if (isRepairable()) {
-            if (compared.getDurability() < compared_to.getDurability()) {
-                determination++;
-            }
-        }
-        else
-            // Check data
-            if (getItemStack().getData().getData() != item.getData().getData()) {
-                return -1;
-            }
-
         return determination;
     }
 
@@ -380,20 +376,22 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
             setItemStack(NMSHandler.getItemHelper().addNbtData(getItemStack(), "Denizen Item Script", new StringTag(script.getHashID())));
         }
         else {
-            ItemMeta meta = item.getItemMeta();
-            List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
+            List<String> lore = getItemMeta().hasLore() ? NMSHandler.getItemHelper().getLore(this) : new ArrayList<>();
             lore.add(0, script.getHashID());
-            meta.setLore(lore);
-            item.setItemMeta(meta);
+            NMSHandler.getItemHelper().setLore(this, lore);
         }
     }
 
+    public Material getBukkitMaterial() {
+        return getItemStack().getType();
+    }
+
     public MaterialTag getMaterial() {
-        return new MaterialTag(getItemStack().getType());
+        return new MaterialTag(getBukkitMaterial());
     }
 
     public String getMaterialName() {
-        return CoreUtilities.toLowerCase(getItemStack().getType().name());
+        return CoreUtilities.toLowerCase(getBukkitMaterial().name());
     }
 
     public void setAmount(int value) {
@@ -520,6 +518,8 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
 
     public static void registerTags() {
 
+        AbstractFlagTracker.registerFlagHandlers(tagProcessor);
+
         // <--[tag]
         // @attribute <ItemTag.with[<mechanism>=<value>;...]>
         // @returns ItemTag
@@ -565,6 +565,7 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
         // If this returns true, it will enable access to:
         // <@link mechanism ItemTag.durability>,
         // <@link tag ItemTag.max_durability>, and <@link tag ItemTag.durability>.
+        // Note that due to odd design choices in Spigot, this is effectively true for all items, even though the durability value of most items is locked at zero.
         // -->
         registerTag("repairable", (attribute, object) -> {
             return new ElementTag(ItemDurability.describes(object));
@@ -654,7 +655,7 @@ public class ItemTag implements ObjectTag, Notable, Adjustable {
                 return object;
             }
             if (object.getItemMeta() instanceof BlockStateMeta) {
-                if (object.getItemStack().getType() == Material.SHIELD) {
+                if (object.getBukkitMaterial() == Material.SHIELD) {
                     MaterialTag material = new MaterialTag(Material.SHIELD);
                     material.setModernData(new ModernBlockData(((BlockStateMeta) object.getItemMeta()).getBlockState()));
                     return material;

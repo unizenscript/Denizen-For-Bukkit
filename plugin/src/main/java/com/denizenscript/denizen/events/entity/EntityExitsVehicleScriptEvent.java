@@ -7,7 +7,7 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.vehicle.VehicleExitEvent;
+import org.spigotmc.event.entity.EntityDismountEvent;
 
 public class EntityExitsVehicleScriptEvent extends BukkitScriptEvent implements Listener {
 
@@ -22,19 +22,19 @@ public class EntityExitsVehicleScriptEvent extends BukkitScriptEvent implements 
     //
     // @Group Entity
     //
-    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Location true
     //
     // @Cancellable true
     //
-    // @Triggers when an entity exits a vehicle.
+    // @Triggers when an entity dismounts from another entity.
     //
     // @Context
-    // <context.vehicle> returns the EntityTag of the vehicle.
+    // <context.vehicle> returns the EntityTag of the mount vehicle.
     // <context.entity> returns the EntityTag of the exiting entity.
     //
-    // @Player when the entity that exits the vehicle is a player.
+    // @Player when the entity that dismounts the vehicle is a player.
     //
-    // @NPC when the entity that exists the vehicle is an NPC.
+    // @NPC when the entity that dismounts the vehicle is an NPC.
     //
     // -->
 
@@ -45,7 +45,7 @@ public class EntityExitsVehicleScriptEvent extends BukkitScriptEvent implements 
     public static EntityExitsVehicleScriptEvent instance;
     public EntityTag vehicle;
     public EntityTag entity;
-    public VehicleExitEvent event;
+    public EntityDismountEvent event;
 
     @Override
     public boolean couldMatch(ScriptPath path) {
@@ -55,7 +55,7 @@ public class EntityExitsVehicleScriptEvent extends BukkitScriptEvent implements 
         if (!couldMatchEntity(path.eventArgLowerAt(0))) {
             return false;
         }
-        if (!couldMatchVehicle(path.eventArgLowerAt(2))) {
+        if (!couldMatchEntity(path.eventArgLowerAt(2))) {
             return false;
         }
         return true;
@@ -63,8 +63,10 @@ public class EntityExitsVehicleScriptEvent extends BukkitScriptEvent implements 
 
     @Override
     public boolean matches(ScriptPath path) {
-        if (!tryEntity(entity, path.eventArgLowerAt(0))
-                || !tryEntity(vehicle, path.eventArgLowerAt(2))) {
+        if (!tryEntity(entity, path.eventArgLowerAt(0))) {
+            return false;
+        }
+        if (!path.eventArgLowerAt(2).equals("vehicle") && !tryEntity(vehicle, path.eventArgLowerAt(2))) {
             return false;
         }
         if (!runInCheck(path, vehicle.getLocation())) {
@@ -95,9 +97,9 @@ public class EntityExitsVehicleScriptEvent extends BukkitScriptEvent implements 
     }
 
     @EventHandler
-    public void onEntityExitsVehicle(VehicleExitEvent event) {
-        vehicle = new EntityTag(event.getVehicle());
-        entity = new EntityTag(event.getExited());
+    public void onEntityExitsVehicle(EntityDismountEvent event) {
+        vehicle = new EntityTag(event.getDismounted());
+        entity = new EntityTag(event.getEntity());
         this.event = event;
         fire(event);
     }

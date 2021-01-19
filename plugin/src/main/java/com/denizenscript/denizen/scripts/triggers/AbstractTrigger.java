@@ -1,16 +1,16 @@
 package com.denizenscript.denizen.scripts.triggers;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizen.scripts.containers.core.InteractScriptContainer;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.objects.NPCTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizencore.events.OldEventManager;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
+import com.denizenscript.denizencore.scripts.queues.ContextSource;
 import com.denizenscript.denizencore.scripts.queues.ScriptQueue;
 import com.denizenscript.denizencore.scripts.queues.core.InstantQueue;
 import com.denizenscript.denizencore.scripts.queues.core.TimedQueue;
@@ -26,7 +26,7 @@ public abstract class AbstractTrigger {
     public AbstractTrigger as(String triggerName) {
         this.name = triggerName.toUpperCase();
         // Register command with Registry
-        DenizenAPI.getCurrentInstance().getTriggerRegistry().register(triggerName, this);
+        Denizen.getInstance().getTriggerRegistry().register(triggerName, this);
         onEnable();
         return this;
     }
@@ -103,9 +103,9 @@ public abstract class AbstractTrigger {
         queue.addEntries(entries);
         // Add context
         if (context != null) {
-            OldEventManager.OldEventContextSource oecs = new OldEventManager.OldEventContextSource();
-            oecs.contexts = context;
-            queue.setContextSource(oecs);
+            ContextSource.SimpleMap src = new ContextSource.SimpleMap();
+            src.contexts = context;
+            queue.setContextSource(src);
         }
         if (!npc.getTriggerTrait().properly_set.get(name)) {
             if (missetWarning.testShouldWarn()) {

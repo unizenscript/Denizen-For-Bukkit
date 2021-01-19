@@ -1,9 +1,9 @@
 package com.denizenscript.denizen.nms.interfaces;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.nms.util.BoundingBox;
 import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
 import com.denizenscript.denizen.objects.LocationTag;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -89,7 +89,7 @@ public abstract class EntityHelper {
             for (UUID id : hiddenByDefaultPlayers) {
                 Entity pTarget = Bukkit.getEntity(id);
                 if (pTarget instanceof Player) {
-                    event.getPlayer().hidePlayer(DenizenAPI.getCurrentInstance(), (Player) pTarget);
+                    event.getPlayer().hidePlayer(Denizen.getInstance(), (Player) pTarget);
                 }
             }
             final Player pl = event.getPlayer();
@@ -357,7 +357,7 @@ public abstract class EntityHelper {
      * @param yaw The original yaw.
      * @return The normalized yaw.
      */
-    public float normalizeYaw(float yaw) {
+    public static float normalizeYaw(float yaw) {
         yaw = yaw % 360;
         if (yaw < 0) {
             yaw += 360.0;
@@ -435,6 +435,8 @@ public abstract class EntityHelper {
         }
     }
 
+    public abstract void snapPositionTo(Entity entity, Vector vector);
+
     public abstract void move(Entity entity, Vector vector);
 
     public abstract void teleport(Entity entity, Vector vector);
@@ -458,4 +460,28 @@ public abstract class EntityHelper {
     public abstract void makeItemDisplayOnly(Item entity);
 
     // Unizen end
+
+    public void setTicksLived(Entity entity, int ticks) {
+        entity.setTicksLived(ticks);
+    }
+
+    public int getShulkerPeek(Entity entity) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setShulkerPeek(Entity entity, int peek) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setHeadAngle(Entity entity, float angle) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setGhastAttacking(Entity entity, boolean attacking) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setEndermanAngry(Entity entity, boolean angry) {
+        throw new UnsupportedOperationException();
+    }
 }

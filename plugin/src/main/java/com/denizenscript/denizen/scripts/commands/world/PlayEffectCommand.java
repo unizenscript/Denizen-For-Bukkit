@@ -151,10 +151,13 @@ public class PlayEffectCommand extends AbstractCommand {
                     && arg.matchesPrefix("special_data")) {
                 scriptEntry.addObject("special_data", arg.asElement());
             }
-            else if (!scriptEntry.hasObject("qty")
+            else if (!scriptEntry.hasObject("quantity")
                     && arg.matchesInteger()
                     && arg.matchesPrefix("qty", "q", "quantity")) {
-                scriptEntry.addObject("qty", arg.asElement());
+                if (arg.matchesPrefix("q", "qty")) {
+                    Deprecations.qtyTags.warn(scriptEntry);
+                }
+                scriptEntry.addObject("quantity", arg.asElement());
             }
             else if (!scriptEntry.hasObject("offset")
                     && arg.matchesFloat()
@@ -184,7 +187,7 @@ public class PlayEffectCommand extends AbstractCommand {
         scriptEntry.defaultObject("location", Utilities.entryDefaultLocation(scriptEntry, false));
         scriptEntry.defaultObject("data", new ElementTag(0));
         scriptEntry.defaultObject("radius", new ElementTag(15));
-        scriptEntry.defaultObject("qty", new ElementTag(1));
+        scriptEntry.defaultObject("quantity", new ElementTag(1));
         scriptEntry.defaultObject("offset", new LocationTag(null, 0.5, 0.5, 0.5));
         if (!scriptEntry.hasObject("effect") &&
                 !scriptEntry.hasObject("particleeffect") &&
@@ -205,7 +208,7 @@ public class PlayEffectCommand extends AbstractCommand {
         ItemTag iconcrack = scriptEntry.getObjectTag("iconcrack");
         ElementTag radius = scriptEntry.getElement("radius");
         ElementTag data = scriptEntry.getElement("data");
-        ElementTag qty = scriptEntry.getElement("qty");
+        ElementTag quantity = scriptEntry.getElement("quantity");
         ElementTag no_offset = scriptEntry.getElement("no_offset");
         boolean should_offset = no_offset == null || !no_offset.asBoolean();
         LocationTag offset = scriptEntry.getObjectTag("offset");
@@ -219,7 +222,7 @@ public class PlayEffectCommand extends AbstractCommand {
                     (targets != null ? ArgumentHelper.debugObj("targets", targets.toString()) : "") +
                     radius.debug() +
                     data.debug() +
-                    qty.debug() +
+                    quantity.debug() +
                     offset.debug() +
                     (special_data != null ? special_data.debug() : "") +
                     (velocity != null ? velocity.debug() : "") +
@@ -232,7 +235,7 @@ public class PlayEffectCommand extends AbstractCommand {
             }
             // Play the Bukkit effect the number of times specified
             if (effect != null) {
-                for (int n = 0; n < qty.asInt(); n++) {
+                for (int n = 0; n < quantity.asInt(); n++) {
                     if (targets != null) {
                         for (PlayerTag player : targets) {
                             if (player.isValid() && player.isOnline()) {
@@ -263,50 +266,50 @@ public class PlayEffectCommand extends AbstractCommand {
                         }
                     }
                 }
-                for (Player player : players) {
-                    Class clazz = particleEffect.neededData();
-                    Object dataObject = null;
-                    if (clazz != null) {
-                        if (special_data == null) {
-                            Debug.echoError(scriptEntry.getResidingQueue(), "Missing required special data for particle: " + particleEffect.getName());
-                        }
-                        else if (clazz == org.bukkit.Particle.DustOptions.class) {
-                            ListTag dataList = ListTag.valueOf(special_data.asString(), scriptEntry.getContext());
-                            if (dataList.size() != 2) {
-                                Debug.echoError(scriptEntry.getResidingQueue(), "DustOptions special_data must have 2 list entries for particle: " + particleEffect.getName());
-                            }
-                            else {
-                                float size = Float.parseFloat(dataList.get(0));
-                                ColorTag color = ColorTag.valueOf(dataList.get(1), scriptEntry.context);
-                                dataObject = new org.bukkit.Particle.DustOptions(color.getColor(), size);
-                            }
-                        }
-                        else if (clazz == BlockData.class) {
-                            MaterialTag blockMaterial = MaterialTag.valueOf(special_data.asString(), scriptEntry.getContext());
-                            dataObject = blockMaterial.getModernData().data;
-                        }
-                        else if (clazz == ItemStack.class) {
-                            ItemTag itemType = ItemTag.valueOf(special_data.asString(), scriptEntry.getContext());
-                            dataObject = itemType.getItemStack();
+                Class clazz = particleEffect.neededData();
+                Object dataObject = null;
+                if (clazz != null) {
+                    if (special_data == null) {
+                        Debug.echoError(scriptEntry.getResidingQueue(), "Missing required special data for particle: " + particleEffect.getName());
+                    }
+                    else if (clazz == org.bukkit.Particle.DustOptions.class) {
+                        ListTag dataList = ListTag.valueOf(special_data.asString(), scriptEntry.getContext());
+                        if (dataList.size() != 2) {
+                            Debug.echoError(scriptEntry.getResidingQueue(), "DustOptions special_data must have 2 list entries for particle: " + particleEffect.getName());
                         }
                         else {
-                            Debug.echoError(scriptEntry.getResidingQueue(), "Unknown particle data type: " + clazz.getCanonicalName() + " for particle: " + particleEffect.getName());
+                            float size = Float.parseFloat(dataList.get(0));
+                            ColorTag color = ColorTag.valueOf(dataList.get(1), scriptEntry.context);
+                            dataObject = new org.bukkit.Particle.DustOptions(color.getColor(), size);
                         }
                     }
-                    if (velocity == null) {
-                        particleEffect.playFor(player, location, qty.asInt(), offset.toVector(), data.asFloat(), dataObject);
+                    else if (clazz == BlockData.class) {
+                        MaterialTag blockMaterial = MaterialTag.valueOf(special_data.asString(), scriptEntry.getContext());
+                        dataObject = blockMaterial.getModernData().data;
+                    }
+                    else if (clazz == ItemStack.class) {
+                        ItemTag itemType = ItemTag.valueOf(special_data.asString(), scriptEntry.getContext());
+                        dataObject = itemType.getItemStack();
                     }
                     else {
-                        float osX = (float) offset.getX();
-                        float osY = (float) offset.getY();
-                        float osZ = (float) offset.getZ();
-                        int quantity = qty.asInt();
+                        Debug.echoError(scriptEntry.getResidingQueue(), "Unknown particle data type: " + clazz.getCanonicalName() + " for particle: " + particleEffect.getName());
+                    }
+                }
+                else if (special_data != null) {
+                    Debug.echoError("Particles of type '" + particleEffect.getName() + "' cannot take special_data as input.");
+                }
+                Random random = CoreUtilities.getRandom();
+                int quantityInt = quantity.asInt();
+                for (Player player : players) {
+                    if (velocity == null) {
+                        particleEffect.playFor(player, location, quantityInt, offset.toVector(), data.asDouble(), dataObject);
+                    }
+                    else {
                         Vector velocityVector = velocity.toVector();
-                        Random random = CoreUtilities.getRandom();
-                        for (int i = 0; i < quantity; i++) {
-                            LocationTag singleLocation = location.clone().add(random.nextDouble() * osX - osX * 0.5,
-                                    random.nextDouble() * osY - osY * 0.5,
-                                    random.nextDouble() * osZ - osZ * 0.5);
+                        for (int i = 0; i < quantityInt; i++) {
+                            LocationTag singleLocation = location.clone().add((random.nextDouble() - 0.5) * offset.getX(),
+                                    (random.nextDouble() - 0.5) * offset.getY(),
+                                    (random.nextDouble() - 0.5) * offset.getZ());
                             particleEffect.playFor(player, singleLocation, 0, velocityVector, 1f, dataObject);
                         }
                     }
@@ -330,12 +333,11 @@ public class PlayEffectCommand extends AbstractCommand {
                         }
                     }
                 }
-
                 if (iconcrack != null) {
                     ItemStack itemStack = iconcrack.getItemStack();
                     Particle particle = NMSHandler.getParticleHelper().getParticle("ITEM_CRACK");
                     for (Player player : players) {
-                        particle.playFor(player, location, qty.asInt(), offset.toVector(), data.asFloat(), itemStack);
+                        particle.playFor(player, location, quantity.asInt(), offset.toVector(), data.asFloat(), itemStack);
                     }
                 }
             }

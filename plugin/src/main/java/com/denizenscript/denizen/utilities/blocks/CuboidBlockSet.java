@@ -1,10 +1,10 @@
 package com.denizenscript.denizen.utilities.blocks;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.objects.CuboidTag;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizen.scripts.commands.world.SchematicCommand;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -35,7 +35,7 @@ public class CuboidBlockSet implements BlockSet {
         }
     }
 
-    public void buildDelayed(CuboidTag cuboid, Location center, Runnable runme) {
+    public void buildDelayed(CuboidTag cuboid, Location center, Runnable runme, long maxDelayMs) {
         Location low = cuboid.pairs.get(0).low;
         Location high = cuboid.pairs.get(0).high;
         x_width = (int) ((high.getX() - low.getX()) + 1);
@@ -57,7 +57,7 @@ public class CuboidBlockSet implements BlockSet {
                     long x = (index - y - z) / ((long) (y_length * z_height));
                     blocks[index] = new FullBlockData(low.clone().add(x, y, z).getBlock());
                     index++;
-                    if (System.currentTimeMillis() - start > 50) {
+                    if (System.currentTimeMillis() - start > maxDelayMs) {
                         SchematicCommand.noPhys = false;
                         return;
                     }
@@ -68,7 +68,7 @@ public class CuboidBlockSet implements BlockSet {
                 cancel();
 
             }
-        }.runTaskTimer(DenizenAPI.getCurrentInstance(), 1, 1);
+        }.runTaskTimer(Denizen.getInstance(), 1, 1);
     }
 
     public FullBlockData[] blocks = null;
@@ -100,6 +100,9 @@ public class CuboidBlockSet implements BlockSet {
         if (input.noAir && block.data.getMaterial() == Material.AIR) {
             return;
         }
+        if (block.data.getMaterial() == Material.STRUCTURE_VOID) {
+            return;
+        }
         int finalY = input.centerLocation.getBlockY() + y - center_y;
         if (finalY < 0 || finalY > 255) {
             return;
@@ -117,7 +120,7 @@ public class CuboidBlockSet implements BlockSet {
     }
 
     @Override
-    public void setBlocksDelayed(final Runnable runme, final InputParams input) {
+    public void setBlocksDelayed(final Runnable runme, final InputParams input, long maxDelayMs) {
         final long goal = (long) (x_width * y_length * z_height);
         new BukkitRunnable() {
             int index = 0;
@@ -131,7 +134,7 @@ public class CuboidBlockSet implements BlockSet {
                     int x = (index - y - z) / (y_length * z_height);
                     setBlockSingle(blocks[index], x, y, z, input);
                     index++;
-                    if (System.currentTimeMillis() - start > 50) {
+                    if (System.currentTimeMillis() - start > maxDelayMs) {
                         SchematicCommand.noPhys = false;
                         return;
                     }
@@ -143,7 +146,7 @@ public class CuboidBlockSet implements BlockSet {
                 cancel();
 
             }
-        }.runTaskTimer(DenizenAPI.getCurrentInstance(), 1, 1);
+        }.runTaskTimer(Denizen.getInstance(), 1, 1);
     }
 
     @Override

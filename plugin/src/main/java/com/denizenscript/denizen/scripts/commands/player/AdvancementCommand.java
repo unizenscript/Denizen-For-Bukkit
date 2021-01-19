@@ -1,6 +1,5 @@
 package com.denizenscript.denizen.scripts.commands.player;
-
-import com.denizenscript.denizen.utilities.DenizenAPI;
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.interfaces.AdvancementHelper;
@@ -58,7 +57,7 @@ public class AdvancementCommand extends AbstractCommand {
     // The hidden argument sets whether the advancement should be hidden until it is completed.
     // The x and y arguments are offsets based on the size of an advancement icon in the menu. They are required for custom tabs to look reasonable.
     //
-    // WARNING: Failure to re-create advancements on every server start may result in loss of data.
+    // WARNING: Failure to re-create advancements on every server start may result in loss of data - use <@link event server prestart>.
     //
     // @Tags
     // <PlayerTag.has_advancement[<advancement>]>
@@ -81,9 +80,7 @@ public class AdvancementCommand extends AbstractCommand {
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-
         for (Argument arg : scriptEntry.getProcessedArgs()) {
-
             if (!scriptEntry.hasObject("id")
                     && arg.matchesPrefix("id")) {
                 scriptEntry.addObject("id", arg.asElement());
@@ -161,11 +158,9 @@ public class AdvancementCommand extends AbstractCommand {
                 arg.reportUnhandled();
             }
         }
-
         if (!scriptEntry.hasObject("id")) {
             throw new InvalidArgumentsException("Must specify an ID!");
         }
-
         scriptEntry.defaultObject("icon", new ItemTag(Material.AIR));
         scriptEntry.defaultObject("title", new ElementTag(""));
         scriptEntry.defaultObject("description", new ElementTag(""));
@@ -182,7 +177,6 @@ public class AdvancementCommand extends AbstractCommand {
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-
         ElementTag id = scriptEntry.getElement("id");
         ElementTag parent = scriptEntry.getElement("parent");
         ElementTag delete = scriptEntry.getElement("delete");
@@ -198,7 +192,6 @@ public class AdvancementCommand extends AbstractCommand {
         ElementTag hidden = scriptEntry.getElement("hidden");
         ElementTag x = scriptEntry.getElement("x");
         ElementTag y = scriptEntry.getElement("y");
-
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, name, id.debug() + (parent != null ? parent.debug() : "")
                     + (delete != null ? delete.debug() : "") + (grant != null ? grant.debug() : "")
@@ -207,18 +200,15 @@ public class AdvancementCommand extends AbstractCommand {
                     + (background != null ? background.debug() : "")
                     + frame.debug() + toast.debug() + announce.debug() + hidden.debug() + x.debug() + y.debug());
         }
-
         final AdvancementHelper advancementHelper = NMSHandler.getAdvancementHelper();
-
-        NamespacedKey key = new NamespacedKey(DenizenAPI.getCurrentInstance(), id.asString());
-
+        NamespacedKey key = new NamespacedKey(Denizen.getInstance(), id.asString());
         if (delete == null && grant == null && revoke == null) {
             NamespacedKey parentKey = null;
             NamespacedKey backgroundKey = null;
             if (parent != null) {
                 List<String> split = CoreUtilities.split(parent.asString(), ':', 2);
                 if (split.size() == 1) {
-                    parentKey = new NamespacedKey(DenizenAPI.getCurrentInstance(), split.get(0));
+                    parentKey = new NamespacedKey(Denizen.getInstance(), split.get(0));
                 }
                 else {
                     parentKey = new NamespacedKey(CoreUtilities.toLowerCase(split.get(0)), CoreUtilities.toLowerCase(split.get(1)));
@@ -233,12 +223,10 @@ public class AdvancementCommand extends AbstractCommand {
                     backgroundKey = new NamespacedKey(CoreUtilities.toLowerCase(backgroundSplit.get(0)), CoreUtilities.toLowerCase(backgroundSplit.get(1)));
                 }
             }
-
             final Advancement advancement = new Advancement(false, key, parentKey,
                     icon.getItemStack(), title.asString(), description.asString(),
                     backgroundKey, Advancement.Frame.valueOf(frame.asString().toUpperCase()),
                     toast.asBoolean(), announce.asBoolean(), hidden.asBoolean(), x.asFloat(), y.asFloat());
-
             advancementHelper.register(advancement);
             customRegistered.put(key, advancement);
         }

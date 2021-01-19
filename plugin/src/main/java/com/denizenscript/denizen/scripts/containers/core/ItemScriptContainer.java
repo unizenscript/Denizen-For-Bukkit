@@ -1,24 +1,27 @@
 package com.denizenscript.denizen.scripts.containers.core;
 
+import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.utilities.Utilities;
+import com.denizenscript.denizencore.flags.AbstractFlagTracker;
+import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.tags.TagContext;
+import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.nbt.LeatherColorer;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.Mechanism;
-import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.core.ScriptTag;
-import com.denizenscript.denizencore.scripts.ScriptBuilder;
 import com.denizenscript.denizencore.scripts.ScriptRegistry;
 import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
 import com.denizenscript.denizencore.tags.TagManager;
 import com.denizenscript.denizencore.utilities.Deprecations;
 import com.denizenscript.denizencore.utilities.YamlConfiguration;
 import com.denizenscript.denizencore.utilities.text.StringHolder;
+import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,6 +78,12 @@ public class ItemScriptContainer extends ScriptContainer {
     //   - enchantment_name:level
     //   - ...
     //
+    //   # You can specify flags to be added to the item.
+    //   flags:
+    //     # Each line within the flags section should be a flag name as a key, and the flag value as the value.
+    //     # You can use lists or maps here the way you would expect them to work.
+    //     my_flag: my_value
+    //
     //   # You can optionally add crafting recipes for your item script.
     //   # Note that recipes won't show in the recipe book when you add a new item script, until you either reconnect or use the "resend_recipes" mechanism.
     //   # | Most item scripts should exclude this key, unless you're specifically building craftable items.
@@ -102,6 +111,8 @@ public class ItemScriptContainer extends ScriptContainer {
     //           # For an empty slot, use "air".
     //           # By default, items require an exact match. For a material-based match, use the format "material:MaterialNameHere" like "material:stick".
     //           # To make multiple different items match for any slot, just separate them with slashes, like "stick/stone". To match multiple materials, use "material:a/b/c".
+    //           # You can also make a dynamic matcher using '*', like "material:*_log" to match any log block or 'test_*' to match any item script that has name starting with 'test_'.
+    //           # Note that to require multiple of an item as an input, the only option is to use multiple slots. A single slot cannot require a quantity of items, as that is not part of the minecraft recipe system.
     //           # | All recipes must include this key!
     //           input:
     //           - ItemTag|ItemTag|ItemTag
@@ -151,7 +162,6 @@ public class ItemScriptContainer extends ScriptContainer {
     //
     // -->
 
-    public boolean bound = false;
     String hash = "";
 
     public ItemScriptContainer(YamlConfiguration configurationSection, String scriptContainerName) {
@@ -219,42 +229,30 @@ public class ItemScriptContainer extends ScriptContainer {
             if (contains("mechanisms")) {
                 YamlConfiguration mechs = getConfigurationSection("mechanisms");
                 for (StringHolder key : mechs.getKeys(false)) {
-                    String val;
-                    if (mechs.isList(key.str)) {
-                        ListTag list = new ListTag();
-                        for (String listVal : mechs.getStringList(key.str)) {
-                            list.add(ScriptBuilder.stripLinePrefix(TagManager.tag(listVal, context)));
-                        }
-                        val = list.identify();
-                    }
-                    else {
-                        val = TagManager.tag(mechs.getString(key.str), context);
-                    }
-                    stack.safeAdjust(new Mechanism(new ElementTag(key.low), new ElementTag(val), context));
+                    ObjectTag obj = CoreUtilities.objectToTagForm(mechs.get(key.low), context, true, true);
+                    stack.safeAdjust(new Mechanism(new ElementTag(key.low), new ElementTag(obj.toString()), context));
                 }
             }
             // Set Display Name
             if (contains("display name")) {
-                ItemMeta meta = stack.getItemMeta();
                 String displayName = TagManager.tag(getString("display name"), context);
-                meta.setDisplayName(displayName);
-                stack.setItemMeta(meta);
+                NMSHandler.getItemHelper().setDisplayName(stack, displayName);
             }
             // Set if the object is bound to the player
             if (contains("bound")) {
                 Deprecations.boundWarning.warn(context);
-                bound = Boolean.valueOf(TagManager.tag(getString("bound"), context));
             }
             // Set Lore
             if (contains("lore")) {
-                ItemMeta meta = stack.getItemMeta();
-                List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
+                List<String> lore = NMSHandler.getItemHelper().getLore(stack);
+                if (lore == null) {
+                    lore = new ArrayList<>();
+                }
                 for (String line : getStringList("lore")) {
                     line = TagManager.tag(line, context);
                     lore.add(line);
                 }
-                meta.setLore(lore);
-                stack.setItemMeta(meta);
+                NMSHandler.getItemHelper().setLore(stack, lore);
             }
             // Set Durability
             if (contains("durability")) {
@@ -264,7 +262,6 @@ public class ItemScriptContainer extends ScriptContainer {
             // Set Enchantments
             if (contains("enchantments")) {
                 for (String enchantment : getStringList("enchantments")) {
-
                     enchantment = TagManager.tag(enchantment, context);
                     try {
                         // Build enchantment context
@@ -279,7 +276,15 @@ public class ItemScriptContainer extends ScriptContainer {
                         }
                         // Add enchantment
                         Enchantment ench = Utilities.getEnchantmentByName(enchantment);
-                        stack.getItemStack().addUnsafeEnchantment(ench, level);
+                        if (stack.getBukkitMaterial() == Material.ENCHANTED_BOOK) {
+                            EnchantmentStorageMeta meta = (EnchantmentStorageMeta) stack.getItemMeta();
+                            meta.addStoredEnchant(ench, level, true);
+                            stack.setItemMeta(meta);
+                        }
+                        else {
+                            stack.getItemStack().addUnsafeEnchantment(ench, level);
+                            stack.resetCache();
+                        }
                     }
                     catch (Exception ex) {
                         Debug.echoError("While constructing '" + getName() + "', encountered error: '" + enchantment + "' is an invalid enchantment: " + ex.getClass().getName() + ": " + ex.getMessage());
@@ -298,6 +303,14 @@ public class ItemScriptContainer extends ScriptContainer {
             if (contains("book")) {
                 BookScriptContainer book = ScriptRegistry.getScriptContainer(TagManager.tag(getString("book"), context).replace("s@", ""));
                 stack = book.writeBookTo(stack, context);
+            }
+            if (contains("flags")) {
+                YamlConfiguration flagSection = getConfigurationSection("flags");
+                AbstractFlagTracker tracker = stack.getFlagTracker();
+                for (StringHolder key : flagSection.getKeys(false)) {
+                    tracker.setFlag(key.str, CoreUtilities.objectToTagForm(flagSection.get(key.str), context, true, true), null);
+                }
+                stack.reapplyTracker(tracker);
             }
             stack.setItemScript(this);
         }

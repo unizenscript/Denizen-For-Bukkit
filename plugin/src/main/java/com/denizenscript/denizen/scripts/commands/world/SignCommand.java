@@ -13,6 +13,7 @@ import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
@@ -42,7 +43,7 @@ public class SignCommand extends AbstractCommand {
     // Specify 'automatic' as a type to use whatever sign type and direction is already placed there.
     // If there is not already a sign there, defaults to a sign_post.
     //
-    // Optionally specify a material to use. If not specified, will use an oak sign.
+    // Optionally specify a material to use. If not specified, will use an oak sign (unless the block is already a sign, and 'type' is 'automatic').
     //
     // @Tags
     // <LocationTag.sign_contents>
@@ -65,7 +66,6 @@ public class SignCommand extends AbstractCommand {
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
-
         for (Argument arg : scriptEntry.getProcessedArgs()) {
             if (!scriptEntry.hasObject("type")
                     && arg.matchesEnum(Type.values())) {
@@ -91,19 +91,17 @@ public class SignCommand extends AbstractCommand {
                 arg.reportUnhandled();
             }
         }
-
         if (!scriptEntry.hasObject("location")) {
             throw new InvalidArgumentsException("Must specify a Sign location!");
         }
         if (!scriptEntry.hasObject("text")) {
             throw new InvalidArgumentsException("Must specify sign text!");
         }
-
         scriptEntry.defaultObject("type", new ElementTag(Type.AUTOMATIC.name()));
     }
 
     public void setWallSign(Block sign, BlockFace bf, MaterialTag material) {
-        sign.setType(material == null ? MaterialCompat.WALL_SIGN : material.getMaterial(), false);
+        sign.setType(material == null ? Material.OAK_WALL_SIGN : material.getMaterial(), false);
         MaterialTag signMaterial = new MaterialTag(sign);
         MaterialDirectional.getFrom(signMaterial).setFacing(bf);
         signMaterial.getModernData().setToBlock(sign);
@@ -116,7 +114,6 @@ public class SignCommand extends AbstractCommand {
         ListTag text = scriptEntry.getObjectTag("text");
         LocationTag location = scriptEntry.getObjectTag("location");
         MaterialTag material = scriptEntry.getObjectTag("material");
-
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), typeElement.debug()
                     + location.debug()
@@ -124,7 +121,6 @@ public class SignCommand extends AbstractCommand {
                     + (material == null ? "" : material.debug())
                     + text.debug());
         }
-
         Type type = Type.valueOf(typeElement.asString().toUpperCase());
         Block sign = location.getBlock();
         if (type != Type.AUTOMATIC
@@ -140,7 +136,7 @@ public class SignCommand extends AbstractCommand {
                 setWallSign(sign, bf, material);
             }
             else {
-                sign.setType(material == null ? MaterialCompat.SIGN : material.getMaterial(), false);
+                sign.setType(material == null ? Material.OAK_SIGN : material.getMaterial(), false);
                 if (direction != null) {
                     Utilities.setSignRotation(sign.getState(), direction);
                 }
@@ -148,7 +144,7 @@ public class SignCommand extends AbstractCommand {
         }
         else if (!MaterialCompat.isAnySign(sign.getType())) {
             if (sign.getRelative(BlockFace.DOWN).getType().isSolid()) {
-                sign.setType(material == null ? MaterialCompat.SIGN : material.getMaterial(), false);
+                sign.setType(material == null ? Material.OAK_SIGN : material.getMaterial(), false);
             }
             else {
                 BlockFace bf = Utilities.chooseSignRotation(sign);
@@ -156,7 +152,6 @@ public class SignCommand extends AbstractCommand {
             }
         }
         BlockState signState = sign.getState();
-
         Utilities.setSignLines((Sign) signState, text.toArray(new String[4]));
     }
 }

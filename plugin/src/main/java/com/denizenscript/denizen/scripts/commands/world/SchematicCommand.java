@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.scripts.commands.world;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.blocks.*;
 import com.denizenscript.denizen.utilities.debugging.Debug;
@@ -20,7 +20,6 @@ import com.denizenscript.denizencore.tags.Attribute;
 import com.denizenscript.denizencore.tags.ReplaceableTagEvent;
 import com.denizenscript.denizencore.tags.TagManager;
 import com.denizenscript.denizencore.tags.TagRunnable;
-import com.denizenscript.denizencore.utilities.Deprecations;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -40,26 +39,26 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
 
     public SchematicCommand() {
         setName("schematic");
-        setSyntax("schematic [create/load/unload/rotate (angle:<#>)/paste (fake_to:<player>|... fake_duration:<duration>)/save/flip_x/flip_y/flip_z) (noair) (mask:<material>|...)] [name:<name>] (filename:<name>) (<location>) (<cuboid>) (delayed)");
-        setRequiredArguments(2, 10);
+        setSyntax("schematic [create/load/unload/rotate (angle:<#>)/paste (fake_to:<player>|... fake_duration:<duration>)/save/flip_x/flip_y/flip_z) (noair) (mask:<material>|...)] [name:<name>] (filename:<name>) (<location>) (<cuboid>) (delayed) (max_delayed_ms:<#>)");
+        setRequiredArguments(2, 11);
         TagManager.registerTagHandler(new TagRunnable.RootForm() {
             @Override
             public void run(ReplaceableTagEvent event) {
                 schematicTags(event);
             }
-        }, "schematic", "schem");
+        }, "schematic");
         schematics = new HashMap<>();
         noPhys = false;
-        Bukkit.getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
+        Bukkit.getPluginManager().registerEvents(this, Denizen.getInstance());
         isProcedural = false;
     }
 
     // <--[command]
     // @Name Schematic
-    // @Syntax schematic [create/load/unload/rotate (angle:<#>)/paste (fake_to:<player>|... fake_duration:<duration>)/save/flip_x/flip_y/flip_z) (noair) (mask:<material>|...)] [name:<name>] (filename:<name>) (<location>) (<cuboid>) (delayed)
+    // @Syntax schematic [create/load/unload/rotate (angle:<#>)/paste (fake_to:<player>|... fake_duration:<duration>)/save/flip_x/flip_y/flip_z) (noair) (mask:<material>|...)] [name:<name>] (filename:<name>) (<location>) (<cuboid>) (delayed) (max_delayed_ms:<#>)
     // @Group World
     // @Required 2
-    // @Maximum 10
+    // @Maximum 11
     // @Short Creates, loads, pastes, and saves schematics (Sets of blocks).
     //
     // @Description
@@ -78,6 +77,7 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
     // The "delayed" option makes the command non-instant. This is recommended for large schematics.
     // For 'save', 'load', and 'rotate', this processes async to prevent server lockup.
     // For 'paste' and 'create', this delays how many blocks can be processed at once, spread over many ticks.
+    // Optionally, specify 'max_delayed_ms' to control how many milliseconds the 'delayed' set can run for in any given tick (defaults to 50) (for create/paste only).
     //
     // The "load" option by default will load '.schem' files. If no '.schem' file is available, will attempt to load a legacy '.schematic' file instead.
     //
@@ -144,7 +144,7 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
         for (Argument arg : scriptEntry.getProcessedArgs()) {
             if (!scriptEntry.hasObject("type")
                     && arg.matchesEnum(Type.values())) {
-                scriptEntry.addObject("type", new ElementTag(arg.raw_value.toUpperCase()));
+                scriptEntry.addObject("type", new ElementTag(arg.getRawValue().toUpperCase()));
             }
             else if (!scriptEntry.hasObject("name")
                     && arg.matchesPrefix("name")) {
@@ -158,6 +158,11 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
                     && arg.matchesPrefix("angle")
                     && arg.matchesInteger()) {
                 scriptEntry.addObject("angle", arg.asElement());
+            }
+            else if (!scriptEntry.hasObject("max_delay_ms")
+                    && arg.matchesPrefix("max_delay_ms")
+                    && arg.matchesInteger()) {
+                scriptEntry.addObject("max_delay_ms", arg.asElement());
             }
             else if (!scriptEntry.hasObject("delayed")
                     && arg.matches("delayed")) {
@@ -197,6 +202,7 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
         if (scriptEntry.shouldWaitFor()) {
             scriptEntry.addObject("delayed", new ElementTag("true"));
         }
+        scriptEntry.defaultObject("max_delay_ms", new ElementTag(50));
         if (!scriptEntry.hasObject("type")) {
             throw new InvalidArgumentsException("Missing type argument!");
         }
@@ -213,6 +219,7 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
         ElementTag filename = scriptEntry.getElement("filename");
         ElementTag noair = scriptEntry.getElement("noair");
         ElementTag delayed = scriptEntry.getElement("delayed");
+        ElementTag maxDelayMs = scriptEntry.getElement("max_delay_ms");
         LocationTag location = scriptEntry.getObjectTag("location");
         List<MaterialTag> mask = (List<MaterialTag>) scriptEntry.getObject("mask");
         List<PlayerTag> fakeTo = (List<PlayerTag>) scriptEntry.getObject("fake_to");
@@ -226,7 +233,7 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
                     + (cuboid != null ? cuboid.debug() : "")
                     + (angle != null ? angle.debug() : "")
                     + (noair != null ? noair.debug() : "")
-                    + (delayed != null ? delayed.debug() : "")
+                    + (delayed != null ? delayed.debug() + maxDelayMs.debug() : "")
                     + (mask != null ? ArgumentHelper.debugList("mask", mask) : "")
                     + (fakeTo != null ? ArgumentHelper.debugList("fake_to", fakeTo) : "")
                     + (fakeDuration != null ? fakeDuration.debug() : ""));
@@ -257,7 +264,7 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
                         set.buildDelayed(cuboid, location, () -> {
                             schematics.put(name.asString().toUpperCase(), set);
                             scriptEntry.setFinished(true);
-                        });
+                        }, maxDelayMs.asLong());
                     }
                     else {
                         scriptEntry.setFinished(true);
@@ -268,9 +275,9 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
                 catch (Exception ex) {
                     Debug.echoError(scriptEntry.getResidingQueue(), "Error creating schematic object " + name.asString() + ".");
                     Debug.echoError(scriptEntry.getResidingQueue(), ex);
+                    scriptEntry.setFinished(true);
                     return;
                 }
-                scriptEntry.setFinished(true);
                 break;
             }
             case LOAD: {
@@ -306,7 +313,7 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
                             scriptEntry.setFinished(true);
                         };
                         if (delayed != null && delayed.asBoolean()) {
-                            Bukkit.getScheduler().runTask(DenizenAPI.getCurrentInstance(), storeSchem);
+                            Bukkit.getScheduler().runTask(Denizen.getInstance(), storeSchem);
                         }
                         else {
                             storeSchem.run();
@@ -318,7 +325,7 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
                             Debug.echoError(scriptEntry.getResidingQueue(), ex);
                         };
                         if (delayed != null && delayed.asBoolean()) {
-                            Bukkit.getScheduler().runTask(DenizenAPI.getCurrentInstance(), showError);
+                            Bukkit.getScheduler().runTask(Denizen.getInstance(), showError);
                         }
                         else {
                             showError.run();
@@ -328,7 +335,7 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
                     }
                 };
                 if (delayed != null && delayed.asBoolean()) {
-                    Bukkit.getScheduler().runTaskAsynchronously(DenizenAPI.getCurrentInstance(), loadRunnable);
+                    Bukkit.getScheduler().runTaskAsynchronously(Denizen.getInstance(), loadRunnable);
                 }
                 else {
                     loadRunnable.run();
@@ -369,10 +376,10 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
                         ang -= 90;
                         schematics.get(name.asString().toUpperCase()).rotateOne();
                     }
-                    Bukkit.getScheduler().runTask(DenizenAPI.getCurrentInstance(), () -> scriptEntry.setFinished(true));
+                    Bukkit.getScheduler().runTask(Denizen.getInstance(), () -> scriptEntry.setFinished(true));
                 };
                 if (delayed != null && delayed.asBoolean()) {
-                    Bukkit.getScheduler().runTaskAsynchronously(DenizenAPI.getCurrentInstance(), rotateRunnable);
+                    Bukkit.getScheduler().runTaskAsynchronously(Denizen.getInstance(), rotateRunnable);
                 }
                 else {
                     scriptEntry.setFinished(true);
@@ -442,7 +449,7 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
                             public void run() {
                                 scriptEntry.setFinished(true);
                             }
-                        }, input);
+                        }, input, maxDelayMs.asLong());
                     }
                     else {
                         scriptEntry.setFinished(true);
@@ -478,10 +485,10 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
                         SpongeSchematicHelper.saveToSpongeStream(set, fs);
                         fs.flush();
                         fs.close();
-                        Bukkit.getScheduler().runTask(DenizenAPI.getCurrentInstance(), () -> scriptEntry.setFinished(true));
+                        Bukkit.getScheduler().runTask(Denizen.getInstance(), () -> scriptEntry.setFinished(true));
                     }
                     catch (Exception ex) {
-                        Bukkit.getScheduler().runTask(DenizenAPI.getCurrentInstance(), () -> {
+                        Bukkit.getScheduler().runTask(Denizen.getInstance(), () -> {
                             Debug.echoError(scriptEntry.getResidingQueue(), "Error saving schematic file " + fname + ".");
                             Debug.echoError(scriptEntry.getResidingQueue(), ex);
                         });
@@ -490,7 +497,7 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
                     }
                 };
                 if (delayed != null && delayed.asBoolean()) {
-                    Bukkit.getScheduler().runTaskAsynchronously(DenizenAPI.getCurrentInstance(), saveRunnable);
+                    Bukkit.getScheduler().runTaskAsynchronously(Denizen.getInstance(), saveRunnable);
                 }
                 else {
                     scriptEntry.setFinished(true);
@@ -502,11 +509,8 @@ public class SchematicCommand extends AbstractCommand implements Holdable, Liste
     }
 
     public void schematicTags(ReplaceableTagEvent event) {
-        if (!event.matches("schematic", "schem")) {
+        if (!event.matches("schematic")) {
             return;
-        }
-        if (event.matches("schem")) {
-            Deprecations.schematicShorthand.warn(event.getContext());
         }
         String id = event.hasNameContext() ? event.getNameContext().toUpperCase() : null;
         Attribute attribute = event.getAttributes().fulfill(1);

@@ -21,7 +21,7 @@ public class ItemRawNBT implements Property {
 
     public static boolean describes(ObjectTag item) {
         // All items can have raw NBT
-        return item instanceof ItemTag && ((ItemTag) item).getItemStack().getType() != Material.AIR;
+        return item instanceof ItemTag && ((ItemTag) item).getBukkitMaterial() != Material.AIR;
     }
 
     public static ItemRawNBT getFrom(ObjectTag _item) {
@@ -50,7 +50,7 @@ public class ItemRawNBT implements Property {
     static {
         String[] defaultNbtKeysRaw = new String[] {
                 // Denizen
-                "Denizen Item Script", "Denizen NBT",
+                "Denizen Item Script", "Denizen NBT", "Denizen",
                 // General
                 "Damage", "Unbreakable", "CanDestroy", "CustomModelData",
                 // Display data
@@ -72,9 +72,9 @@ public class ItemRawNBT implements Property {
                 // Firework specific
                 "Explosion", "Fireworks",
                 // Armor stand specific
-                "EntityTag",
+                // "EntityTag", // Temporarily sent through as raw due to lack of API coverage
                 // Bucket specific
-                "BucketVariantTag",
+                //"BucketVariantTag", // Temporarily sent through as raw due to lack of property coverage
                 // Map specific
                 "map", "map_scale_direction", "Decorations",
                 // Stew specific
@@ -90,6 +90,15 @@ public class ItemRawNBT implements Property {
         MapTag result = getFullNBTMap();
         for (StringHolder key : defaultNbtKeys) {
             result.map.remove(key);
+        }
+        if (item.getBukkitMaterial() == Material.ITEM_FRAME) {
+            MapTag entityMap = (MapTag) result.getObject("EntityTag");
+            if (entityMap != null) {
+                entityMap.putObject("Invisible", null);
+                if (entityMap.map.isEmpty()) {
+                    result.putObject("EntityTag", null);
+                }
+            }
         }
         return result;
     }
@@ -345,7 +354,7 @@ public class ItemRawNBT implements Property {
                     }
                 }
                 catch (Exception ex) {
-                    Debug.echoError("Raw_Nbt input failed for root key '" + entry.getKey().str + "'.");
+                    mechanism.echoError("Raw_Nbt input failed for root key '" + entry.getKey().str + "'.");
                     Debug.echoError(ex);
                     return;
                 }

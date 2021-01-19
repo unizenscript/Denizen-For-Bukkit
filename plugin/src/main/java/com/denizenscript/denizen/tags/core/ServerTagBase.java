@@ -1,14 +1,12 @@
 package com.denizenscript.denizen.tags.core;
 
 import com.denizenscript.denizen.events.BukkitScriptEvent;
-import com.denizenscript.denizen.flags.FlagManager;
 import com.denizenscript.denizen.objects.*;
 import com.denizenscript.denizen.objects.notable.NotableManager;
 import com.denizenscript.denizen.scripts.commands.item.DisplayItemCommand;
 import com.denizenscript.denizen.scripts.commands.server.BossBarCommand;
 import com.denizenscript.denizen.scripts.containers.core.AssignmentScriptContainer;
 import com.denizenscript.denizen.scripts.containers.core.CommandScriptHelper;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.ScoreboardHelper;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
@@ -20,12 +18,7 @@ import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.npc.traits.AssignmentTrait;
-import com.denizenscript.denizencore.objects.core.DurationTag;
-import com.denizenscript.denizencore.objects.core.ElementTag;
-import com.denizenscript.denizencore.objects.core.ListTag;
-import com.denizenscript.denizencore.objects.core.ScriptTag;
-import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
-import com.denizenscript.denizencore.scripts.commands.CommandRegistry;
+import com.denizenscript.denizencore.objects.core.*;
 import com.denizenscript.denizencore.scripts.commands.core.SQLCommand;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizencore.DenizenCore;
@@ -72,7 +65,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
 
 public class ServerTagBase {
 
@@ -467,74 +459,36 @@ public class ServerTagBase {
             return;
         }
 
-        // <--[tag]
-        // @attribute <server.has_flag[<flag_name>]>
-        // @returns ElementTag(Boolean)
-        // @description
-        // Returns true if the server has the specified flag, otherwise returns false.
-        // -->
+        // Documented in AbstractFlagTracker
         if (attribute.startsWith("has_flag")) {
-            String flag_name;
-            if (attribute.hasContext(1)) {
-                flag_name = attribute.getContext(1);
-            }
-            else {
-                return;
-            }
-            event.setReplacedObject(new ElementTag(FlagManager.serverHasFlag(flag_name)).getObjectAttribute(attribute.fulfill(1)));
+            event.setReplacedObject(Denizen.getInstance().serverFlagMap.doHasFlagTag(attribute)
+                    .getObjectAttribute(attribute.fulfill(1)));
             return;
         }
-
-        // <--[tag]
-        // @attribute <server.flag[<name>]>
-        // @returns Flag ListTag
-        // @description
-        // Returns the specified flag from the server.
-        // -->
-        if (attribute.startsWith("flag") && attribute.hasContext(1)) {
-            String flag_name = attribute.getContext(1);
-            attribute.fulfill(1);
-
-            // <--[tag]
-            // @attribute <server.flag[<flag_name>].is_expired>
-            // @returns ElementTag(Boolean)
-            // @description
-            // returns true if the flag is expired or does not exist, false if it is not yet expired or has no expiration.
-            // -->
-            if (attribute.startsWith("is_expired")
-                    || attribute.startsWith("isexpired")) {
-                event.setReplacedObject(new ElementTag(!FlagManager.serverHasFlag(flag_name))
+        if (attribute.startsWith("flag_expiration")) {
+            TimeTag exp = Denizen.getInstance().serverFlagMap.doFlagExpirationTag(attribute);
+            if (exp != null) {
+                event.setReplacedObject(exp
                         .getObjectAttribute(attribute.fulfill(1)));
-                return;
             }
-            if (attribute.startsWith("size") && !FlagManager.serverHasFlag(flag_name)) {
-                event.setReplacedObject(new ElementTag(0).getObjectAttribute(attribute.fulfill(1)));
-                return;
+            return;
+        }
+        if (attribute.startsWith("flag")) {
+            ObjectTag flag = Denizen.getInstance().serverFlagMap.doFlagTag(attribute);
+            if (flag != null) {
+                event.setReplacedObject(flag
+                        .getObjectAttribute(attribute.fulfill(1)));
             }
-            if (FlagManager.serverHasFlag(flag_name)) {
-                FlagManager.Flag flag = DenizenAPI.getCurrentInstance().flagManager()
-                        .getGlobalFlag(flag_name);
-
-                // <--[tag]
-                // @attribute <server.flag[<flag_name>].expiration>
-                // @returns DurationTag
-                // @description
-                // Returns a DurationTag of the time remaining on the flag, if it has an expiration.
-                // Works with offline players.
-                // -->
-                if (attribute.startsWith("expiration")) {
-                    event.setReplacedObject(flag.expiration().getObjectAttribute(attribute.fulfill(1)));
-                    return;
-                }
-                if (flag.isList()) {
-                    event.setReplacedObject(new ListTag(flag.toString(), true, flag.values())
-                            .getObjectAttribute(attribute));
-                }
-                else {
-                    event.setReplacedObject(ObjectFetcher.pickObjectFor(flag.getFirst().asString())
-                            .getObjectAttribute(attribute));
-                }
-            }
+            return;
+        }
+        if (attribute.startsWith("list_flags")) {
+            event.setReplacedObject(Denizen.getInstance().serverFlagMap.doListFlagsTag(attribute)
+                    .getObjectAttribute(attribute.fulfill(1)));
+            return;
+        }
+        if (attribute.startsWith("flag_map")) {
+            event.setReplacedObject(Denizen.getInstance().serverFlagMap.doFlagMapTag(attribute)
+                    .getObjectAttribute(attribute.fulfill(1)));
             return;
         }
 
@@ -563,6 +517,24 @@ public class ServerTagBase {
         if (attribute.startsWith("commands") || attribute.startsWith("list_commands")) {
             listDeprecateWarn(attribute);
             ListTag list = new ListTag(CommandScriptHelper.knownCommands.keySet());
+            event.setReplacedObject(list.getObjectAttribute(attribute.fulfill(1)));
+            return;
+        }
+
+        // <--[tag]
+        // @attribute <server.art_types>
+        // @returns ListTag
+        // @description
+        // Returns a list of all known art types.
+        // Generally used with <@link tag EntityTag.painting> and <@link mechanism EntityTag.painting>.
+        // This is only their Bukkit enum names, as seen at <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Art.html>.
+        // -->
+        if (attribute.startsWith("art_types")) {
+            listDeprecateWarn(attribute);
+            ListTag list = new ListTag();
+            for (Art art : Art.values()) {
+                list.add(art.name());
+            }
             event.setReplacedObject(list.getObjectAttribute(attribute.fulfill(1)));
             return;
         }
@@ -947,50 +919,6 @@ public class ServerTagBase {
         }
 
         // <--[tag]
-        // @attribute <server.list_flags[(regex:)<search>]>
-        // @returns ListTag
-        // @description
-        // Returns a list of the server's flag names, with an optional search for names containing a certain pattern.
-        // Note that this is exclusively for debug/testing reasons, and should never be used in a real script.
-        // -->
-        if (attribute.startsWith("list_flags")) {
-            FlagManager.listFlagsTagWarning.warn(attribute.context);
-            ListTag allFlags = new ListTag(DenizenAPI.getCurrentInstance().flagManager().listGlobalFlags());
-            ListTag searchFlags = null;
-            if (!allFlags.isEmpty() && attribute.hasContext(1)) {
-                searchFlags = new ListTag();
-                String search = attribute.getContext(1);
-                if (search.startsWith("regex:")) {
-                    try {
-                        Pattern pattern = Pattern.compile(search.substring(6), Pattern.CASE_INSENSITIVE);
-                        for (String flag : allFlags) {
-                            if (pattern.matcher(flag).matches()) {
-                                searchFlags.add(flag);
-                            }
-                        }
-                    }
-                    catch (Exception e) {
-                        Debug.echoError(e);
-                    }
-                }
-                else {
-                    search = CoreUtilities.toLowerCase(search);
-                    for (String flag : allFlags) {
-                        if (CoreUtilities.toLowerCase(flag).contains(search)) {
-                            searchFlags.add(flag);
-                        }
-                    }
-                }
-                DenizenAPI.getCurrentInstance().flagManager().shrinkGlobalFlags(searchFlags);
-            }
-            else {
-                DenizenAPI.getCurrentInstance().flagManager().shrinkGlobalFlags(allFlags);
-            }
-            event.setReplacedObject(searchFlags == null ? allFlags.getObjectAttribute(attribute.fulfill(1))
-                    : searchFlags.getObjectAttribute(attribute.fulfill(1)));
-        }
-
-        // <--[tag]
         // @attribute <server.notables[<type>]>
         // @returns ListTag
         // @description
@@ -1074,12 +1002,17 @@ public class ServerTagBase {
         }
 
         // <--[tag]
-        // @attribute <server.start_time>
-        // @returns DurationTag
+        // @attribute <server.started_time>
+        // @returns TimeTag
         // @description
-        // Returns the time the server started as a duration time.
+        // Returns the time the server started.
         // -->
+        if (attribute.startsWith("started_time")) {
+            event.setReplacedObject(new TimeTag(Denizen.startTime)
+                    .getObjectAttribute(attribute.fulfill(1)));
+        }
         if (attribute.startsWith("start_time")) {
+            Deprecations.timeTagRewrite.warn(attribute.context);
             event.setReplacedObject(new DurationTag(Denizen.startTime / 50)
                     .getObjectAttribute(attribute.fulfill(1)));
         }
@@ -1093,7 +1026,7 @@ public class ServerTagBase {
         // This may be limited below the actual drive capacity by operating system settings.
         // -->
         if (attribute.startsWith("disk_free")) {
-            File folder = DenizenAPI.getCurrentInstance().getDataFolder();
+            File folder = Denizen.getInstance().getDataFolder();
             event.setReplacedObject(new ElementTag(folder.getUsableSpace())
                     .getObjectAttribute(attribute.fulfill(1)));
         }
@@ -1106,7 +1039,7 @@ public class ServerTagBase {
         // This counts only the drive the server folder is on, not any other drives.
         // -->
         if (attribute.startsWith("disk_total")) {
-            File folder = DenizenAPI.getCurrentInstance().getDataFolder();
+            File folder = Denizen.getInstance().getDataFolder();
             event.setReplacedObject(new ElementTag(folder.getTotalSpace())
                     .getObjectAttribute(attribute.fulfill(1)));
         }
@@ -1121,7 +1054,7 @@ public class ServerTagBase {
         // as this tag will not include space "used" by operating system settings that simply deny the server write access.
         // -->
         if (attribute.startsWith("disk_usage")) {
-            File folder = DenizenAPI.getCurrentInstance().getDataFolder();
+            File folder = Denizen.getInstance().getDataFolder();
             event.setReplacedObject(new ElementTag(folder.getTotalSpace() - folder.getFreeSpace())
                     .getObjectAttribute(attribute.fulfill(1)));
         }
@@ -1281,7 +1214,7 @@ public class ServerTagBase {
         // Returns true if the specified file exists. The starting path is /plugins/Denizen.
         // -->
         if (attribute.startsWith("has_file") && attribute.hasContext(1)) {
-            File f = new File(DenizenAPI.getCurrentInstance().getDataFolder(), attribute.getContext(1));
+            File f = new File(Denizen.getInstance().getDataFolder(), attribute.getContext(1));
             try {
                 if (!Utilities.canReadFile(f)) {
                     attribute.echoError("Invalid path specified. Invalid paths have been denied by the server administrator.");
@@ -1303,7 +1236,7 @@ public class ServerTagBase {
         // Returns a list of all files in the specified directory. The starting path is /plugins/Denizen.
         // -->
         if (attribute.startsWith("list_files") && attribute.hasContext(1)) {
-            File folder = new File(DenizenAPI.getCurrentInstance().getDataFolder(), attribute.getContext(1));
+            File folder = new File(Denizen.getInstance().getDataFolder(), attribute.getContext(1));
             try {
                 if (!Utilities.canReadFile(folder)) {
                     attribute.echoError("Invalid path specified. Invalid paths have been denied by the server administrator.");
@@ -1363,7 +1296,7 @@ public class ServerTagBase {
         // Returns the version of Denizen currently being used.
         // -->
         if (attribute.startsWith("denizen_version")) {
-            event.setReplacedObject(new ElementTag(DenizenAPI.getCurrentInstance().getDescription().getVersion())
+            event.setReplacedObject(new ElementTag(Denizen.getInstance().getDescription().getVersion())
                     .getObjectAttribute(attribute.fulfill(1)));
             return;
         }
@@ -1614,7 +1547,6 @@ public class ServerTagBase {
                     matchPlayer = entry.getValue();
                 }
             }
-
             if (matchPlayer != null) {
                 event.setReplacedObject(new PlayerTag(matchPlayer).getObjectAttribute(attribute.fulfill(1)));
             }
@@ -1638,8 +1570,8 @@ public class ServerTagBase {
             else {
                 ListTag npcs = new ListTag();
                 for (NPC npc : CitizensAPI.getNPCRegistry()) {
-                    if (npc.hasTrait(AssignmentTrait.class) && npc.getTrait(AssignmentTrait.class).hasAssignment()
-                            && CoreUtilities.equalsIgnoreCase(npc.getTrait(AssignmentTrait.class).getAssignment().getName(), script.getName())) {
+                    if (npc.hasTrait(AssignmentTrait.class) && npc.getOrAddTrait(AssignmentTrait.class).hasAssignment()
+                            && CoreUtilities.equalsIgnoreCase(npc.getOrAddTrait(AssignmentTrait.class).getAssignment().getName(), script.getName())) {
                         npcs.addObject(new NPCTag(npc));
                     }
                 }
@@ -1660,8 +1592,9 @@ public class ServerTagBase {
             String flag = attribute.getContext(1);
             ListTag players = new ListTag();
             for (Player player : Bukkit.getOnlinePlayers()) {
-                if (DenizenAPI.getCurrentInstance().flagManager().getPlayerFlag(new PlayerTag(player), flag).size() > 0) {
-                    players.addObject(new PlayerTag(player));
+                PlayerTag plTag = new PlayerTag(player);
+                if (plTag.getFlagTracker().hasFlag(flag)) {
+                    players.addObject(plTag);
                 }
             }
             event.setReplacedObject(players.getObjectAttribute(attribute.fulfill(1)));
@@ -1680,8 +1613,9 @@ public class ServerTagBase {
             String flag = attribute.getContext(1);
             ListTag players = new ListTag();
             for (Map.Entry<String, UUID> entry : PlayerTag.getAllPlayers().entrySet()) {
-                if (FlagManager.playerHasFlag(new PlayerTag(entry.getValue()), flag)) {
-                    players.addObject(new PlayerTag(entry.getValue()));
+                PlayerTag plTag = new PlayerTag(entry.getValue());
+                if (plTag.getFlagTracker().hasFlag(flag)) {
+                    players.addObject(plTag);
                 }
             }
             event.setReplacedObject(players.getObjectAttribute(attribute.fulfill(1)));
@@ -1701,7 +1635,7 @@ public class ServerTagBase {
             ListTag npcs = new ListTag();
             for (NPC npc : CitizensAPI.getNPCRegistry()) {
                 NPCTag dNpc = new NPCTag(npc);
-                if (dNpc.isSpawned() && FlagManager.npcHasFlag(dNpc, flag)) {
+                if (dNpc.isSpawned() && dNpc.hasFlag(flag)) {
                     npcs.addObject(dNpc);
                 }
             }
@@ -1722,7 +1656,7 @@ public class ServerTagBase {
             ListTag npcs = new ListTag();
             for (NPC npc : CitizensAPI.getNPCRegistry()) {
                 NPCTag dNpc = new NPCTag(npc);
-                if (FlagManager.npcHasFlag(dNpc, flag)) {
+                if (dNpc.hasFlag(flag)) {
                     npcs.addObject(dNpc);
                 }
             }
@@ -2145,7 +2079,7 @@ public class ServerTagBase {
             else {
                 ScriptEvent scriptEvent = ScriptEvent.eventLookup.get(CoreUtilities.toLowerCase(eventName));
                 if (scriptEvent instanceof Listener) {
-                    Plugin plugin = DenizenAPI.getCurrentInstance();
+                    Plugin plugin = Denizen.getInstance();
                     for (Class eventClass : plugin.getPluginLoader()
                             .createRegisteredListeners((Listener) scriptEvent, plugin).keySet()) {
                         ListTag result = getHandlerPluginList(eventClass);
@@ -2258,7 +2192,7 @@ public class ServerTagBase {
                 Debug.echoError("File deletion disabled by administrator.");
                 return;
             }
-            File file = new File(DenizenAPI.getCurrentInstance().getDataFolder(), mechanism.getValue().asString());
+            File file = new File(Denizen.getInstance().getDataFolder(), mechanism.getValue().asString());
             if (!Utilities.canWriteToFile(file)) {
                 Debug.echoError("Cannot delete that file (unsafe path).");
                 return;
@@ -2315,7 +2249,7 @@ public class ServerTagBase {
         // -->
         if (mechanism.matches("reset_recipes")) {
             Bukkit.resetRecipes();
-            DenizenAPI.getCurrentInstance().itemScriptHelper.rebuildRecipes();
+            Denizen.getInstance().itemScriptHelper.rebuildRecipes();
         }
 
         // <--[mechanism]
@@ -2375,7 +2309,7 @@ public class ServerTagBase {
         // Immediately saves the Denizen saves files.
         // -->
         if (mechanism.matches("save")) {
-            DenizenAPI.getCurrentInstance().saveSaves();
+            Denizen.getInstance().saveSaves(true);
         }
 
         // <--[mechanism]

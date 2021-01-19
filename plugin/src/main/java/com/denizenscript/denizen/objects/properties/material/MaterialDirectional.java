@@ -265,7 +265,7 @@ public class MaterialDirectional implements Property {
                 setFacing(BlockFace.valueOf(mechanism.getValue().asString().toUpperCase()));
             }
             else {
-                Debug.echoError("MaterialTag.Direction mechanism has bad input: directional value '" + mechanism.getValue().asString() + "' is invalid.");
+                mechanism.echoError("MaterialTag.Direction mechanism has bad input: directional value '" + mechanism.getValue().asString() + "' is invalid.");
             }
         }
     }

@@ -1,6 +1,6 @@
 package com.denizenscript.denizen.npc.traits;
 
-import com.denizenscript.denizen.utilities.DenizenAPI;
+import com.denizenscript.denizen.objects.NPCTag;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.interfaces.FishingHelper;
@@ -9,14 +9,15 @@ import net.citizensnpcs.api.persistence.Persist;
 import net.citizensnpcs.api.trait.Trait;
 import net.citizensnpcs.util.PlayerAnimation;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.util.Vector;
-
-import java.util.ArrayList;
 
 public class FishingTrait extends Trait {
 
@@ -28,9 +29,6 @@ public class FishingTrait extends Trait {
     @Persist("fishing spot")
     private Location fishingLocation = null;
 
-    ArrayList<Location> available = new ArrayList<>();
-
-    Location fishingSpot = null;
     FishHook fishHook = null;
     Item fish = null;
 
@@ -56,14 +54,12 @@ public class FishingTrait extends Trait {
         if (!fishing) {
             return;
         }
-
-        if (reelCount == 400) {
+        if (reelCount >= 400) {
             reel();
             reelCount = 0;
             castCount = 325;
         }
-
-        if (castCount == 400) {
+        if (castCount >= 400) {
             cast();
             castCount = 0;
         }
@@ -88,7 +84,7 @@ public class FishingTrait extends Trait {
      * @param location the location to fish at
      */
     public void startFishing(Location location) {
-        DenizenAPI.getDenizenNPC(npc).action("start fishing", null);
+        new NPCTag(npc).action("start fishing", null);
         fishingLocation = location.clone();
         cast();
         fishing = true;
@@ -109,7 +105,7 @@ public class FishingTrait extends Trait {
      * Makes the stop fishing.
      */
     public void stopFishing() {
-        DenizenAPI.getDenizenNPC(npc).action("stop fishing", null);
+        new NPCTag(npc).action("stop fishing", null);
         reel();
         reelCount = 100;
         castCount = 0;
@@ -117,14 +113,42 @@ public class FishingTrait extends Trait {
         fishing = false;
     }
 
-    /**
-     * Makes the NPC fish in the nearest water
-     * <p/>
-     * TODO Needs logic for handling that.
-     */
+    public boolean scanForFishSpot(Location near, boolean horizontal) {
+        Block block = near.getBlock();
+        if (block.getType() == Material.WATER) {
+            fishingLocation = near.clone();
+            return true;
+        }
+        else if (block.getRelative(BlockFace.DOWN).getType() == Material.WATER) {
+            fishingLocation = near.clone().add(0, -1, 0);
+            return true;
+        }
+        else if (block.getRelative(BlockFace.DOWN).getRelative(BlockFace.DOWN).getType() == Material.WATER) {
+            fishingLocation = near.clone().add(0, -2, 0);
+            return true;
+        }
+        if (horizontal) {
+            return scanForFishSpot(near.clone().add(1, 0, 0), false)
+                    || scanForFishSpot(near.clone().add(-1, 0, 0), false)
+                    || scanForFishSpot(near.clone().add(0, 0, 1), false)
+                    || scanForFishSpot(near.clone().add(0, 0, -1), false);
+        }
+        return false;
+    }
+
     public void startFishing() {
         fishing = true;
-        fishingLocation = npc.getEntity().getLocation();
+        Location search = npc.getEntity().getLocation().clone();
+        Vector direction = npc.getEntity().getLocation().getDirection().clone();
+        if (direction.getY() > -0.1) {
+            direction.setY(-0.1);
+        }
+        for (int i = 0; i < 10; i++) {
+            search.add(direction.clone());
+            if (scanForFishSpot(search, true)) {
+                break;
+            }
+        }
     }
 
     // <--[action]
@@ -138,16 +162,13 @@ public class FishingTrait extends Trait {
     //
     // -->
     private void cast() {
-        DenizenAPI.getDenizenNPC(npc).action("cast fishing rod", null);
-
+        new NPCTag(npc).action("cast fishing rod", null);
         if (fishingLocation == null) {
             Debug.echoError("Fishing location not found!");
             return;
         }
-
         double v = 34;
         double g = 20;
-
         Location from = npc.getEntity().getLocation();
         from = from.add(0, .33, 0);
         Location to = fishingLocation;
@@ -162,11 +183,9 @@ public class FishingTrait extends Trait {
         Vector victor = to.clone().subtract(from).toVector();
         double dist = Math.sqrt(Math.pow(victor.getX(), 2) + Math.pow(victor.getZ(), 2));
         elev = victor.getY();
-
         if (dist == 0) {
             return;
         }
-
         Double launchAngle = launchAngle(from, to, v, elev, g);
         if (launchAngle == null) {
             return;
@@ -182,7 +201,6 @@ public class FishingTrait extends Trait {
             fishHook = NMSHandler.getFishingHelper().spawnHook(from, (Player) npc.getEntity());
             fishHook.setShooter((ProjectileSource) npc.getEntity());
             fishHook.setVelocity(victor);
-
             PlayerAnimation.ARM_SWING.play((Player) npc.getEntity());
         }
     }
@@ -198,15 +216,12 @@ public class FishingTrait extends Trait {
     //
     // -->
     private void reel() {
-        DenizenAPI.getDenizenNPC(npc).action("reel in fishing rod", null);
-
+        new NPCTag(npc).action("reel in fishing rod", null);
         int chance = (int) (Math.random() * 100);
-
         if (fishHook != null && fishHook.isValid()) {
             fishHook.remove();
             fishHook = null;
         }
-
         if (catchPercent > chance && fishHook != null && catchType != FishingHelper.CatchType.NONE) {
             try {
                 fish.remove();
@@ -225,31 +240,15 @@ public class FishingTrait extends Trait {
                 double d9 = 0.1D;
                 fish.setVelocity(new Vector(d5 * d9, d6 * d9 + Math.sqrt(d8) * 0.08D, d7 * d9));
             }
-            DenizenAPI.getDenizenNPC(npc).action("catch fish", null);
+            new NPCTag(npc).action("catch fish", null);
         }
-
         if (npc.getEntity() instanceof Player) {
             PlayerAnimation.ARM_SWING.play((Player) npc.getEntity());
         }
     }
 
-    /**
-     * Checks if the NPC is currently fishing
-     *
-     * @return boolean
-     */
     public boolean isFishing() {
         return fishing;
-    }
-
-    /**
-     * Gets the location the NPC is casting to
-     * Returns null if the NPC isn't fishing
-     *
-     * @return Location
-     */
-    public Location getFishingLocation() {
-        return fishingLocation;
     }
 
     public FishingTrait() {

@@ -1,12 +1,14 @@
 package com.denizenscript.denizen.nms.v1_16.impl.entities;
 
 import com.denizenscript.denizen.nms.interfaces.ItemProjectile;
-import org.bukkit.craftbukkit.v1_16_R2.CraftServer;
-import org.bukkit.craftbukkit.v1_16_R2.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_16_R2.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_16_R3.CraftServer;
+import org.bukkit.craftbukkit.v1_16_R3.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftItemStack;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.projectiles.ProjectileSource;
+
+import java.util.UUID;
 
 public class CraftItemProjectileImpl extends CraftEntity implements ItemProjectile {
 
@@ -44,6 +46,26 @@ public class CraftItemProjectileImpl extends CraftEntity implements ItemProjecti
     @Override
     public void setPickupDelay(int i) {
         // Do nothing
+    }
+
+    @Override
+    public void setOwner(UUID uuid) {
+        // Do nothing
+    }
+
+    @Override
+    public UUID getOwner() {
+        return null;
+    }
+
+    @Override
+    public void setThrower(UUID uuid) {
+        // Do nothing
+    }
+
+    @Override
+    public UUID getThrower() {
+        return null;
     }
 
     @Override

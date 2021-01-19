@@ -1,17 +1,18 @@
 package com.denizenscript.denizen.objects;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.npc.traits.*;
 import com.denizenscript.denizen.scripts.commands.npc.EngageCommand;
 import com.denizenscript.denizen.scripts.containers.core.InteractScriptContainer;
 import com.denizenscript.denizen.scripts.containers.core.InteractScriptHelper;
 import com.denizenscript.denizen.scripts.triggers.AbstractTrigger;
-import com.denizenscript.denizen.utilities.DenizenAPI;
+import com.denizenscript.denizencore.flags.AbstractFlagTracker;
+import com.denizenscript.denizencore.flags.FlaggableObject;
 import com.denizenscript.denizencore.tags.ObjectTagProcessor;
 import com.denizenscript.denizencore.tags.TagRunnable;
 import com.denizenscript.denizencore.utilities.Deprecations;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import com.denizenscript.denizencore.objects.*;
-import com.denizenscript.denizen.flags.FlagManager;
 import com.denizenscript.denizen.npc.DenizenNPCHelper;
 import com.denizenscript.denizen.tags.core.NPCTagBase;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -31,13 +32,11 @@ import net.citizensnpcs.api.trait.trait.Equipment;
 import net.citizensnpcs.api.trait.trait.Owner;
 import net.citizensnpcs.npc.ai.NPCHolder;
 import net.citizensnpcs.npc.skin.SkinnableEntity;
-import net.citizensnpcs.trait.Anchors;
-import net.citizensnpcs.trait.LookClose;
-import net.citizensnpcs.trait.Poses;
-import net.citizensnpcs.trait.SkinTrait;
+import net.citizensnpcs.trait.*;
 import net.citizensnpcs.trait.waypoint.*;
 import net.citizensnpcs.util.Anchor;
 import net.citizensnpcs.util.Pose;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -49,9 +48,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
-public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFormObject {
+public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFormObject, FlaggableObject {
 
     // <--[language]
     // @name NPCTag Objects
@@ -136,6 +134,24 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
 
     public boolean isValid() {
         return npc != null && npc.getOwningRegistry().getById(npc.getId()) != null;
+    }
+
+    @Override
+    public AbstractFlagTracker getFlagTracker() {
+        return npc.getOrAddTrait(DenizenFlagsTrait.class).fullFlagData;
+    }
+
+    public boolean hasFlag(String flag) {
+        DenizenFlagsTrait flagTrait = npc.getTraitNullable(DenizenFlagsTrait.class);
+        if (flagTrait == null) {
+            return false;
+        }
+        return flagTrait.fullFlagData.hasFlag(flag);
+    }
+
+    @Override
+    public void reapplyTracker(AbstractFlagTracker tracker) {
+        // Nothing to do.
     }
 
     public NPC npc;
@@ -282,80 +298,49 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
     }
 
     public String getOwner() {
-        if (getCitizen().getTrait(Owner.class).getOwnerId() == null) {
-            return getCitizen().getTrait(Owner.class).getOwner();
+        Owner trait = getCitizen().getOrAddTrait(Owner.class);
+        if (trait.getOwnerId() == null) {
+            return trait.getOwner();
         }
-        return getCitizen().getTrait(Owner.class).getOwnerId().toString();
+        return trait.getOwnerId().toString();
     }
 
     public AssignmentTrait getAssignmentTrait() {
-        NPC npc = getCitizen();
-        if (!npc.hasTrait(AssignmentTrait.class)) {
-            npc.addTrait(AssignmentTrait.class);
-        }
-        return npc.getTrait(AssignmentTrait.class);
+        return getCitizen().getOrAddTrait(AssignmentTrait.class);
     }
 
     public Equipment getEquipmentTrait() {
-        NPC npc = getCitizen();
-        if (!npc.hasTrait(Equipment.class)) {
-            npc.addTrait(Equipment.class);
-        }
-        return npc.getTrait(Equipment.class);
+        return getCitizen().getOrAddTrait(Equipment.class);
     }
 
     public NicknameTrait getNicknameTrait() {
-        NPC npc = getCitizen();
-        if (!npc.hasTrait(NicknameTrait.class)) {
-            npc.addTrait(NicknameTrait.class);
-        }
-        return npc.getTrait(NicknameTrait.class);
+        return getCitizen().getOrAddTrait(NicknameTrait.class);
     }
 
     public FishingTrait getFishingTrait() {
-        NPC npc = getCitizen();
-        if (!npc.hasTrait(FishingTrait.class)) {
-            npc.addTrait(FishingTrait.class);
-        }
-        return npc.getTrait(FishingTrait.class);
+        return getCitizen().getOrAddTrait(FishingTrait.class);
     }
 
     public net.citizensnpcs.api.trait.trait.Inventory getInventoryTrait() {
-        NPC npc = getCitizen();
-        if (!npc.hasTrait(net.citizensnpcs.api.trait.trait.Inventory.class)) {
-            npc.addTrait(net.citizensnpcs.api.trait.trait.Inventory.class);
-        }
-        return npc.getTrait(net.citizensnpcs.api.trait.trait.Inventory.class);
+        return getCitizen().getOrAddTrait(net.citizensnpcs.api.trait.trait.Inventory.class);
     }
 
     public PushableTrait getPushableTrait() {
-        NPC npc = getCitizen();
-        if (!npc.hasTrait(PushableTrait.class)) {
-            npc.addTrait(PushableTrait.class);
-        }
-        return npc.getTrait(PushableTrait.class);
+        return getCitizen().getOrAddTrait(PushableTrait.class);
     }
 
     public LookClose getLookCloseTrait() {
-        NPC npc = getCitizen();
-        if (!npc.hasTrait(LookClose.class)) {
-            npc.addTrait(LookClose.class);
-        }
-        return npc.getTrait(LookClose.class);
+        return getCitizen().getOrAddTrait(LookClose.class);
     }
 
     public TriggerTrait getTriggerTrait() {
-        NPC npc = getCitizen();
-        if (!npc.hasTrait(TriggerTrait.class)) {
-            npc.addTrait(TriggerTrait.class);
-        }
-        return npc.getTrait(TriggerTrait.class);
+        return getCitizen().getOrAddTrait(TriggerTrait.class);
     }
 
     public String action(String actionName, PlayerTag player, Map<String, ObjectTag> context) {
         if (getCitizen() != null) {
             if (getCitizen().hasTrait(AssignmentTrait.class)) {
-                return DenizenAPI.getCurrentInstance().getNPCHelper().getActionHandler().doAction(actionName, this, player, getAssignmentTrait().getAssignment(), context);
+                return Denizen.getInstance().getNPCHelper().getActionHandler().doAction(actionName, this, player, getAssignmentTrait().getAssignment(), context);
             }
         }
         return "none";
@@ -430,6 +415,8 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
 
     public static void registerTags() {
 
+        AbstractFlagTracker.registerFlagHandlers(tagProcessor);
+
         // Defined in EntityTag
         registerTag("is_npc", (attribute, object) -> {
             return new ElementTag(true);
@@ -471,7 +458,29 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // -->
         registerTag("has_nickname", (attribute, object) -> {
             NPC citizen = object.getCitizen();
-            return new ElementTag(citizen.hasTrait(NicknameTrait.class) && citizen.getTrait(NicknameTrait.class).hasNickname());
+            return new ElementTag(citizen.hasTrait(NicknameTrait.class) && citizen.getOrAddTrait(NicknameTrait.class).hasNickname());
+        });
+
+        // <--[tag]
+        // @attribute <NPCTag.is_sitting>
+        // @returns ElementTag(Boolean)
+        // @description
+        // Returns true if the NPC is sitting. Relates to <@link command sit>.
+        // -->
+        registerTag("is_sitting", (attribute, object) -> {
+            NPC citizen = object.getCitizen();
+            return new ElementTag(citizen.hasTrait(SittingTrait.class) && citizen.getOrAddTrait(SittingTrait.class).isSitting());
+        });
+
+        // <--[tag]
+        // @attribute <NPCTag.is_sleeping>
+        // @returns ElementTag(Boolean)
+        // @description
+        // Returns true if the NPC is sleeping. Relates to <@link command sleep>.
+        // -->
+        registerTag("is_sleeping", (attribute, object) -> {
+            NPC citizen = object.getCitizen();
+            return new ElementTag(citizen.hasTrait(SleepingTrait.class) && citizen.getOrAddTrait(SleepingTrait.class).isSleeping());
         });
 
         // <--[tag]
@@ -481,7 +490,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // Returns the NPC's display name, as set by the Nickname trait (or the default NPC name).
         // -->
         registerTag("nickname", (attribute, object) -> {
-            return new ElementTag(object.getCitizen().hasTrait(NicknameTrait.class) ? object.getCitizen().getTrait(NicknameTrait.class)
+            return new ElementTag(object.getCitizen().hasTrait(NicknameTrait.class) ? object.getCitizen().getOrAddTrait(NicknameTrait.class)
                     .getNickname() : object.getName());
         });
 
@@ -490,7 +499,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
             if (attribute.startsWith("nickname", 2)) {
                 Deprecations.npcNicknameTag.warn(attribute.context);
                 attribute.fulfill(1);
-                return new ElementTag(object.getCitizen().hasTrait(NicknameTrait.class) ? object.getCitizen().getTrait(NicknameTrait.class)
+                return new ElementTag(object.getCitizen().hasTrait(NicknameTrait.class) ? object.getCitizen().getOrAddTrait(NicknameTrait.class)
                         .getNickname() : object.getName());
             }
             return new ElementTag(object.getName());
@@ -549,7 +558,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
             if (!object.getCitizen().hasTrait(TriggerTrait.class)) {
                 return new ElementTag(false);
             }
-            TriggerTrait trait = object.getCitizen().getTrait(TriggerTrait.class);
+            TriggerTrait trait = object.getCitizen().getOrAddTrait(TriggerTrait.class);
             return new ElementTag(trait.hasTrigger(attribute.getContext(1)));
         });
 
@@ -560,7 +569,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // Returns whether the NPC has anchors assigned.
         // -->
         registerTag("has_anchors", (attribute, object) -> {
-            return (new ElementTag(object.getCitizen().getTrait(Anchors.class).getAnchors().size() > 0));
+            return (new ElementTag(object.getCitizen().getOrAddTrait(Anchors.class).getAnchors().size() > 0));
         });
 
         // <--[tag]
@@ -571,7 +580,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // -->
         registerTag("list_anchors", (attribute, object) -> {
             ListTag list = new ListTag();
-            for (Anchor anchor : object.getCitizen().getTrait(Anchors.class).getAnchors()) {
+            for (Anchor anchor : object.getCitizen().getOrAddTrait(Anchors.class).getAnchors()) {
                 list.add(anchor.getName());
             }
             return list;
@@ -584,7 +593,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // Returns the location associated with the specified anchor, or null if it doesn't exist.
         // -->
         registerTag("anchor", (attribute, object) -> {
-            Anchors trait = object.getCitizen().getTrait(Anchors.class);
+            Anchors trait = object.getCitizen().getOrAddTrait(Anchors.class);
             if (attribute.hasContext(1)) {
                 Anchor anchor = trait.getAnchor(attribute.getContext(1));
                     if (anchor != null) {
@@ -611,111 +620,6 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         }, "anchors");
 
         // <--[tag]
-        // @attribute <NPCTag.has_flag[<flag_name>]>
-        // @returns ElementTag(Boolean)
-        // @description
-        // Returns true if the NPC has the specified flag, otherwise returns false.
-        // -->
-        registerTag("has_flag", (attribute, object) -> {
-            String flag_name;
-            if (attribute.hasContext(1)) {
-                flag_name = attribute.getContext(1);
-            }
-            else {
-                return null;
-            }
-            return new ElementTag(FlagManager.npcHasFlag(object, flag_name));
-        });
-
-        // <--[tag]
-        // @attribute <NPCTag.flag[<flag_name>]>
-        // @returns Flag ListTag
-        // @description
-        // Returns the specified flag from the NPC.
-        // -->
-        registerTag("flag", (attribute, object) -> {
-            if (!attribute.hasContext(1)) {
-                return null;
-            }
-            String flag_name = attribute.getContext(1);
-
-            // <--[tag]
-            // @attribute <NPCTag.flag[<flag_name>].is_expired>
-            // @returns ElementTag(Boolean)
-            // @description
-            // returns true if the flag is expired or does not exist, false if it is not yet expired or has no expiration.
-            // -->
-            if (attribute.startsWith("is_expired", 2) || attribute.startsWith("isexpired", 22)) {
-                attribute.fulfill(1);
-                return new ElementTag(!FlagManager.npcHasFlag(object, flag_name));
-            }
-            if (attribute.startsWith("size", 2) && !FlagManager.npcHasFlag(object, flag_name)) {
-                attribute.fulfill(1);
-                return new ElementTag(0);
-            }
-            if (FlagManager.npcHasFlag(object, flag_name)) {
-                FlagManager.Flag flag = DenizenAPI.getCurrentInstance().flagManager()
-                        .getNPCFlag(object.getId(), flag_name);
-
-                // <--[tag]
-                // @attribute <NPCTag.flag[<flag_name>].expiration>
-                // @returns DurationTag
-                // @description
-                // Returns a DurationTag of the time remaining on the flag, if it has an expiration.
-                // -->
-                if (attribute.startsWith("expiration", 2)) {
-                    attribute.fulfill(1);
-                    return flag.expiration();
-                }
-                if (flag.isList()) {
-                    return new ListTag(flag.toString(), true, flag.values());
-                }
-                return ObjectFetcher.pickObjectFor(flag.getFirst().asString());
-            }
-            return null;
-        });
-
-        // <--[tag]
-        // @attribute <NPCTag.list_flags[(regex:)<search>]>
-        // @returns ListTag
-        // @description
-        // Returns a list of an NPC's flag names, with an optional search for names containing a certain pattern.
-        // Note that this is exclusively for debug/testing reasons, and should never be used in a real script.
-        // -->
-        registerTag("list_flags", (attribute, object) -> {
-            FlagManager.listFlagsTagWarning.warn(attribute.context);
-            ListTag allFlags = new ListTag(DenizenAPI.getCurrentInstance().flagManager().listNPCFlags(object.getId()));
-            ListTag searchFlags = null;
-            if (!allFlags.isEmpty() && attribute.hasContext(1)) {
-                searchFlags = new ListTag();
-                String search = attribute.getContext(1);
-                if (search.startsWith("regex:")) {
-                    try {
-                        Pattern pattern = Pattern.compile(search.substring(6), Pattern.CASE_INSENSITIVE);
-                        for (String flag : allFlags) {
-                            if (pattern.matcher(flag).matches()) {
-                                searchFlags.add(flag);
-                            }
-                        }
-                    }
-                    catch (Exception e) {
-                        Debug.echoError(e);
-                    }
-                }
-                else {
-                    search = CoreUtilities.toLowerCase(search);
-                    for (String flag : allFlags) {
-                        if (CoreUtilities.toLowerCase(flag).contains(search)) {
-                            searchFlags.add(flag);
-                        }
-                    }
-                }
-            }
-            return searchFlags == null ? allFlags
-                    : searchFlags;
-        });
-
-        // <--[tag]
         // @attribute <NPCTag.constant[<constant_name>]>
         // @returns ElementTag
         // @description
@@ -724,8 +628,8 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         registerTag("constant", (attribute, object) -> {
             if (attribute.hasContext(1)) {
                 if (object.getCitizen().hasTrait(ConstantsTrait.class)
-                        && object.getCitizen().getTrait(ConstantsTrait.class).getConstant(attribute.getContext(1)) != null) {
-                    return new ElementTag(object.getCitizen().getTrait(ConstantsTrait.class)
+                        && object.getCitizen().getOrAddTrait(ConstantsTrait.class).getConstant(attribute.getContext(1)) != null) {
+                    return new ElementTag(object.getCitizen().getOrAddTrait(ConstantsTrait.class)
                             .getConstant(attribute.getContext(1)));
                 }
                 else {
@@ -743,7 +647,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // -->
         registerTag("has_pose", (attribute, object) -> {
             if (attribute.hasContext(1)) {
-                return new ElementTag(object.getCitizen().getTrait(Poses.class).hasPose(attribute.getContext(1)));
+                return new ElementTag(object.getCitizen().getOrAddTrait(Poses.class).hasPose(attribute.getContext(1)));
             }
             else {
                 return null;
@@ -759,13 +663,58 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // -->
         registerTag("pose", (attribute, object) -> {
             if (attribute.hasContext(1)) {
-                Pose pose = object.getCitizen().getTrait(Poses.class).getPose(attribute.getContext(1));
+                Pose pose = object.getCitizen().getOrAddTrait(Poses.class).getPose(attribute.getContext(1));
                 return new LocationTag(org.bukkit.Bukkit.getWorlds().get(0), 0, 0, 0, pose.getYaw(), pose.getPitch());
             }
             else {
                 return null;
             }
         }, "get_pose");
+
+        // <--[tag]
+        // @attribute <NPCTag.hologram_lines>
+        // @returns ListTag
+        // @mechanism NPCTag.hologram_lines
+        // @description
+        // Returns the list of hologram lines attached to an NPC.
+        // -->
+        registerTag("hologram_lines", (attribute, object) -> {
+            if (!object.getCitizen().hasTrait(HologramTrait.class)) {
+                return null;
+            }
+            HologramTrait hologram = object.getCitizen().getTraitNullable(HologramTrait.class);
+            return new ListTag(hologram.getLines());
+        });
+
+        // <--[tag]
+        // @attribute <NPCTag.hologram_direction>
+        // @returns ElementTag
+        // @mechanism NPCTag.hologram_direction
+        // @description
+        // Returns the direction of an NPC's hologram as "BOTTOM_UP" or "TOP_DOWN".
+        // -->
+        registerTag("hologram_direction", (attribute, object) -> {
+            if (!object.getCitizen().hasTrait(HologramTrait.class)) {
+                return null;
+            }
+            HologramTrait hologram = object.getCitizen().getTraitNullable(HologramTrait.class);
+            return new ElementTag(hologram.getDirection().name());
+        });
+
+        // <--[tag]
+        // @attribute <NPCTag.hologram_line_height>
+        // @returns ElementTag(Decimal)
+        // @mechanism NPCTag.hologram_line_height
+        // @description
+        // Returns the line height for an NPC's hologram. Can be -1, indicating a default value should be used.
+        // -->
+        registerTag("hologram_line_height", (attribute, object) -> {
+            if (!object.getCitizen().hasTrait(HologramTrait.class)) {
+                return null;
+            }
+            HologramTrait hologram = object.getCitizen().getTraitNullable(HologramTrait.class);
+            return new ElementTag(hologram.getLineHeight());
+        });
 
         // <--[tag]
         // @attribute <NPCTag.is_sneaking>
@@ -841,7 +790,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // Returns whether the NPC has a custom skin.
         // -->
         registerTag("has_skin", (attribute, object) -> {
-            return new ElementTag(object.getCitizen().hasTrait(SkinTrait.class) && object.getCitizen().getTrait(SkinTrait.class).getSkinName() != null);
+            return new ElementTag(object.getCitizen().hasTrait(SkinTrait.class) && object.getCitizen().getOrAddTrait(SkinTrait.class).getSkinName() != null);
         });
 
         // <--[tag]
@@ -851,10 +800,11 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // @description
         // Returns the NPC's custom skin blob, if any.
         // In the format: "texture;signature" (two values separated by a semicolon).
+        // See also <@link language Player Entity Skins (Skin Blobs)>.
         // -->
         registerTag("skin_blob", (attribute, object) -> {
             if (object.getCitizen().hasTrait(SkinTrait.class)) {
-                SkinTrait skin = object.getCitizen().getTrait(SkinTrait.class);
+                SkinTrait skin = object.getCitizen().getOrAddTrait(SkinTrait.class);
                 String tex = skin.getTexture();
                 String sign = "";
                 if (skin.getSignature() != null) {
@@ -871,13 +821,13 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // @description
         // Returns the NPC's current skin blob, formatted for input to a Player Skull item.
         // In the format: "UUID|Texture" (two values separated by pipes).
-        // See also <@link tag NPCTag.skin_blob>.
+        // See also <@link language Player Entity Skins (Skin Blobs)>.
         // -->
         registerTag("skull_skin", (attribute, object) -> {
             if (!object.getCitizen().hasTrait(SkinTrait.class)) {
                 return null;
             }
-            SkinTrait skin = object.getCitizen().getTrait(SkinTrait.class);
+            SkinTrait skin = object.getCitizen().getOrAddTrait(SkinTrait.class);
             return new ElementTag(skin.getSkinName() + "|" + skin.getTexture());
         });
 
@@ -890,7 +840,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // -->
         registerTag("skin", (attribute, object) -> {
             if (object.getCitizen().hasTrait(SkinTrait.class)) {
-                return new ElementTag(object.getCitizen().getTrait(SkinTrait.class).getSkinName());
+                return new ElementTag(object.getCitizen().getOrAddTrait(SkinTrait.class).getSkinName());
             }
             return null;
         });
@@ -937,7 +887,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
             if (citizen.hasTrait(LookClose.class)) {
                 // There is no method to check if the NPC has LookClose enabled...
                 // LookClose.toString() returns "LookClose{" + enabled + "}"
-                String lookclose = citizen.getTrait(LookClose.class).toString();
+                String lookclose = citizen.getOrAddTrait(LookClose.class).toString();
                 lookclose = lookclose.substring(10, lookclose.length() - 1);
                 return new ElementTag(Boolean.valueOf(lookclose));
             }
@@ -963,7 +913,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // -->
         registerTag("has_script", (attribute, object) -> {
             NPC citizen = object.getCitizen();
-            return new ElementTag(citizen.hasTrait(AssignmentTrait.class) && citizen.getTrait(AssignmentTrait.class).hasAssignment());
+            return new ElementTag(citizen.hasTrait(AssignmentTrait.class) && citizen.getOrAddTrait(AssignmentTrait.class).hasAssignment());
         });
 
         // <--[tag]
@@ -974,11 +924,11 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // -->
         registerTag("script", (attribute, object) -> {
             NPC citizen = object.getCitizen();
-            if (!citizen.hasTrait(AssignmentTrait.class) || !citizen.getTrait(AssignmentTrait.class).hasAssignment()) {
+            if (!citizen.hasTrait(AssignmentTrait.class) || !citizen.getOrAddTrait(AssignmentTrait.class).hasAssignment()) {
                 return null;
             }
             else {
-                return new ScriptTag(citizen.getTrait(AssignmentTrait.class).getAssignment().getName());
+                return new ScriptTag(citizen.getOrAddTrait(AssignmentTrait.class).getAssignment().getName());
             }
         });
 
@@ -1210,6 +1160,51 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
 
         // <--[mechanism]
         // @object NPCTag
+        // @name hologram_lines
+        // @input ListTag
+        // @description
+        // Sets the NPC's hologram line list.
+        // @tags
+        // <NPCTag.hologram_lines>
+        // -->
+        if (mechanism.matches("hologram_lines") && mechanism.requireObject(ListTag.class)) {
+            HologramTrait hologram = getCitizen().getOrAddTrait(HologramTrait.class);
+            hologram.clear();
+            for (String str : mechanism.valueAsType(ListTag.class)) {
+                hologram.addLine(str);
+            }
+        }
+
+        // <--[mechanism]
+        // @object NPCTag
+        // @name hologram_direction
+        // @input ElementTag
+        // @description
+        // Sets the NPC's hologram direction, as either BOTTOM_UP or TOP_DOWN.
+        // @tags
+        // <NPCTag.hologram_direction>
+        // -->
+        if (mechanism.matches("hologram_direction") && mechanism.requireEnum(false, HologramTrait.HologramDirection.values())) {
+            HologramTrait hologram = getCitizen().getOrAddTrait(HologramTrait.class);
+            hologram.setDirection(HologramTrait.HologramDirection.valueOf(mechanism.getValue().asString().toUpperCase()));
+        }
+
+        // <--[mechanism]
+        // @object NPCTag
+        // @name hologram_line_height
+        // @input ElementTag(Decimal)
+        // @description
+        // Sets the NPC's hologram line height. Can be -1 to indicate a default value.
+        // @tags
+        // <NPCTag.hologram_line_height>
+        // -->
+        if (mechanism.matches("hologram_line_height") && mechanism.requireDouble()) {
+            HologramTrait hologram = getCitizen().getOrAddTrait(HologramTrait.class);
+            hologram.setLineHeight(mechanism.getValue().asDouble());
+        }
+
+        // <--[mechanism]
+        // @object NPCTag
         // @name set_nickname
         // @input ElementTag
         // @description
@@ -1271,10 +1266,10 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // -->
         if (mechanism.matches("owner")) {
             if (PlayerTag.matches(mechanism.getValue().asString())) {
-                getCitizen().getTrait(Owner.class).setOwner(mechanism.valueAsType(PlayerTag.class).getPlayerEntity());
+                getCitizen().getOrAddTrait(Owner.class).setOwner(mechanism.valueAsType(PlayerTag.class).getPlayerEntity());
             }
             else {
-                getCitizen().getTrait(Owner.class).setOwner(mechanism.getValue().asString());
+                getCitizen().getOrAddTrait(Owner.class).setOwner(mechanism.getValue().asString());
             }
         }
 
@@ -1285,13 +1280,14 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // @description
         // Sets the skin blob of an NPC, in the form of "texture;signature;name".
         // Call with no value to clear the custom skin value.
+        // See also <@link language Player Entity Skins (Skin Blobs)>.
         // @tags
         // <NPCTag.skin>
         // -->
         if (mechanism.matches("skin_blob")) {
             if (!mechanism.hasValue()) {
                 if (getCitizen().hasTrait(SkinTrait.class)) {
-                    getCitizen().getTrait(SkinTrait.class).clearTexture();
+                    getCitizen().getOrAddTrait(SkinTrait.class).clearTexture();
                     if (getCitizen().isSpawned()) {
                         getCitizen().despawn(DespawnReason.PENDING_RESPAWN);
                         getCitizen().spawn(getCitizen().getStoredLocation());
@@ -1299,7 +1295,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
                 }
             }
             else {
-                SkinTrait skinTrait = getCitizen().getTrait(SkinTrait.class);
+                SkinTrait skinTrait = getCitizen().getOrAddTrait(SkinTrait.class);
                 String[] dat = mechanism.getValue().asString().split(";");
                 if (dat.length < 2) {
                     Debug.echoError("Invalid skin_blob input. Must specify texture;signature;name in full.");
@@ -1319,17 +1315,18 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // @description
         // Sets the skin of an NPC by name.
         // Call with no value to clear the custom skin value.
+        // See also <@link language Player Entity Skins (Skin Blobs)>.
         // @tags
         // <NPCTag.skin>
         // -->
         if (mechanism.matches("skin")) {
             if (!mechanism.hasValue()) {
                 if (getCitizen().hasTrait(SkinTrait.class)) {
-                    getCitizen().getTrait(SkinTrait.class).clearTexture();
+                    getCitizen().getOrAddTrait(SkinTrait.class).clearTexture();
                 }
             }
             else {
-                SkinTrait skinTrait = getCitizen().getTrait(SkinTrait.class);
+                SkinTrait skinTrait = getCitizen().getOrAddTrait(SkinTrait.class);
                 skinTrait.setSkinName(mechanism.getValue().asString());
             }
             if (getCitizen().isSpawned()) {
@@ -1418,16 +1415,8 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
             getCitizen().getNavigator().getDefaultParameters().speedModifier(mechanism.getValue().asFloat());
         }
 
-        // <--[mechanism]
-        // @object NPCTag
-        // @name despawn
-        // @input None
-        // @description
-        // Despawns the NPC.
-        // @tags
-        // <NPCTag.is_spawned>
-        // -->
         if (mechanism.matches("despawn")) {
+            Deprecations.npcDespawnMech.warn(mechanism.context);
             getCitizen().despawn(DespawnReason.PLUGIN);
         }
 
@@ -1444,12 +1433,12 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
             if (!getCitizen().hasTrait(SneakingTrait.class)) {
                 getCitizen().addTrait(SneakingTrait.class);
             }
-            SneakingTrait trait = getCitizen().getTrait(SneakingTrait.class);
+            SneakingTrait trait = getCitizen().getOrAddTrait(SneakingTrait.class);
             if (trait.isSneaking() && !mechanism.getValue().asBoolean()) {
-                trait.sneak();
+                trait.stand();
             }
             else if (!trait.isSneaking() && mechanism.getValue().asBoolean()) {
-                trait.stand();
+                trait.sneak();
             }
         }
 
@@ -1538,6 +1527,19 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
 
         // <--[mechanism]
         // @object NPCTag
+        // @name glow_color
+        // @input ElementTag
+        // @description
+        // Sets the color the NPC will glow with, when it's glowing. Input must be from <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/ChatColor.html>.
+        // @tags
+        // TODO
+        // -->
+        if (mechanism.matches("glow_color") && mechanism.requireEnum(false, ChatColor.values())) {
+            getCitizen().getOrAddTrait(ScoreboardTrait.class).setColor(ChatColor.valueOf(mechanism.getValue().asString().toUpperCase()));
+        }
+
+        // <--[mechanism]
+        // @object NPCTag
         // @name clear_waypoints
         // @input None
         // @description
@@ -1546,10 +1548,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // TODO
         // -->
         if (mechanism.matches("clear_waypoints")) {
-            if (!getCitizen().hasTrait(Waypoints.class)) {
-                getCitizen().addTrait(Waypoints.class);
-            }
-            Waypoints wp = getCitizen().getTrait(Waypoints.class);
+            Waypoints wp = getCitizen().getOrAddTrait(Waypoints.class);
             if ((wp.getCurrentProvider() instanceof WaypointProvider.EnumerableWaypointProvider)) {
                 ((List<Waypoint>) ((WaypointProvider.EnumerableWaypointProvider) wp.getCurrentProvider()).waypoints()).clear();
             }
@@ -1572,10 +1571,7 @@ public class NPCTag implements ObjectTag, Adjustable, InventoryHolder, EntityFor
         // TODO
         // -->
         if (mechanism.matches("add_waypoint") && mechanism.requireObject(LocationTag.class)) {
-            if (!getCitizen().hasTrait(Waypoints.class)) {
-                getCitizen().addTrait(Waypoints.class);
-            }
-            Waypoints wp = getCitizen().getTrait(Waypoints.class);
+            Waypoints wp = getCitizen().getOrAddTrait(Waypoints.class);
             if ((wp.getCurrentProvider() instanceof WaypointProvider.EnumerableWaypointProvider)) {
                 ((List<Waypoint>) ((WaypointProvider.EnumerableWaypointProvider) wp.getCurrentProvider()).waypoints())
                         .add(new Waypoint(mechanism.valueAsType(LocationTag.class)));

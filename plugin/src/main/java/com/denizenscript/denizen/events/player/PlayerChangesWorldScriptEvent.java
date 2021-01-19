@@ -1,7 +1,6 @@
 package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.objects.WorldTag;
 import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
@@ -18,11 +17,11 @@ public class PlayerChangesWorldScriptEvent extends BukkitScriptEvent implements 
     // @Events
     // player changes world (from <world>) (to <world>)
     //
-    // @Regex ^on player world( from [^\s]+)?( to [^\s]+)?$
+    // @Regex ^on player changes world( from [^\s]+)?( to [^\s]+)?$
     //
     // @Group Player
     //
-    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Location true
     //
     // @Triggers when a player moves to a different world.
     //
@@ -75,7 +74,7 @@ public class PlayerChangesWorldScriptEvent extends BukkitScriptEvent implements 
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(new PlayerTag(event.getPlayer()), null);
+        return new BukkitScriptEntryData(event.getPlayer());
     }
 
     @Override

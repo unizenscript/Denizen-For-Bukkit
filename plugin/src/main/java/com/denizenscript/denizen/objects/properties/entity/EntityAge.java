@@ -1,6 +1,5 @@
 package com.denizenscript.denizen.objects.properties.entity;
 
-import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.Mechanism;
@@ -63,7 +62,7 @@ public class EntityAge implements Property {
             if (!ageable_npc.hasTrait(Age.class)) {
                 ageable_npc.addTrait(Age.class);
             }
-            ageable_npc.getTrait(Age.class).setAge(bool ? -24000 : 0);
+            ageable_npc.getOrAddTrait(Age.class).setAge(bool ? -24000 : 0);
         }
         else {
             if (ageable.getBukkitEntity() instanceof Zombie) {
@@ -81,7 +80,7 @@ public class EntityAge implements Property {
     public void setAge(int val) {
         if (ageable.isCitizensNPC()) {
             NPC ageable_npc = ageable.getDenizenNPC().getCitizen();
-            ageable_npc.getTrait(Age.class).setAge(val);
+            ageable_npc.getOrAddTrait(Age.class).setAge(val);
         }
         else {
             if (ageable.getBukkitEntity() instanceof Zombie) {
@@ -211,7 +210,7 @@ public class EntityAge implements Property {
         if (mechanism.matches("age")) {
             ListTag list = mechanism.valueAsType(ListTag.class);
             if (list.isEmpty()) {
-                Debug.echoError("Missing value for 'age' mechanism!");
+                mechanism.echoError("Missing value for 'age' mechanism!");
                 return;
             }
             if (list.get(0).equalsIgnoreCase("baby")) {

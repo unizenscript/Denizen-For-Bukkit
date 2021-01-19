@@ -9,8 +9,8 @@ import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizen.utilities.TextWidthHelper;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.objects.properties.PropertyParser;
+import com.denizenscript.denizencore.utilities.AsciiMatcher;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
-import com.denizenscript.denizencore.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -52,6 +52,26 @@ public class BukkitElementProperties implements Property {
     static char textComponentSecret = net.md_5.bungee.api.ChatColor.COLOR_CHAR;
 
     ElementTag element;
+
+    public static AsciiMatcher HEX_MATCHER = new AsciiMatcher("abcdefABCDEF0123456789");
+
+    public static String replaceEssentialsHexColors(char prefix, String input) {
+        int hex = input.indexOf(prefix + "#");
+        while (hex != -1 && hex < input.length() + 8) {
+            StringBuilder converted = new StringBuilder(10);
+            converted.append(ChatColor.COLOR_CHAR).append("x");
+            for (int i = 0; i < 6; i++) {
+                char c = input.charAt(hex + 2 + i);
+                if (!HEX_MATCHER.isMatch(c)) {
+                    return input;
+                }
+                converted.append(ChatColor.COLOR_CHAR).append(c);
+            }
+            input = input.substring(0, hex) + converted.toString() + input.substring(hex + 8);
+            hex = input.indexOf(prefix + "#", hex + 2);
+        }
+        return input;
+    }
 
     public static void registerTags() {
 
@@ -212,7 +232,7 @@ public class BukkitElementProperties implements Property {
             }
             FormatScriptContainer format = ScriptRegistry.getScriptContainer(attribute.getContext(1));
             if (format == null) {
-                Debug.echoError("Could not find format script matching '" + attribute.getContext(1) + "'");
+                attribute.echoError("Could not find format script matching '" + attribute.getContext(1) + "'");
                 return null;
             }
             else {
@@ -290,7 +310,7 @@ public class BukkitElementProperties implements Property {
         // Returns the element with all color encoding stripped.
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("strip_color", (attribute, object) -> {
-            return new ElementTag(ChatColor.stripColor(object.asString()));
+            return new ElementTag(FormattedTextHelper.parse(object.asString(), ChatColor.WHITE)[0].toPlainText());
         });
 
         // <--[tag]
@@ -306,7 +326,9 @@ public class BukkitElementProperties implements Property {
             if (attribute.hasContext(1)) {
                 prefix = attribute.getContext(1).charAt(0);
             }
-            return new ElementTag(ChatColor.translateAlternateColorCodes(prefix, object.asString()));
+            String parsed = ChatColor.translateAlternateColorCodes(prefix, object.asString());
+            parsed = replaceEssentialsHexColors(prefix, parsed);
+            return new ElementTag(parsed);
         });
 
         // <--[tag]
@@ -362,7 +384,7 @@ public class BukkitElementProperties implements Property {
         // Inverts <@link tag ElementTag.from_raw_json>.
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("to_raw_json", (attribute, object) -> {
-            return new ElementTag(ComponentSerializer.toString(FormattedTextHelper.parse(object.asString())));
+            return new ElementTag(ComponentSerializer.toString(FormattedTextHelper.parse(object.asString(), ChatColor.WHITE)));
         });
 
         // <--[tag]
@@ -374,7 +396,7 @@ public class BukkitElementProperties implements Property {
         // Inverts <@link tag ElementTag.to_raw_json>.
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("from_raw_json", (attribute, object) -> {
-            return new ElementTag(FormattedTextHelper.stringify(ComponentSerializer.parse(object.asString())));
+            return new ElementTag(FormattedTextHelper.stringify(ComponentSerializer.parse(object.asString()), ChatColor.WHITE));
         });
 
         // <--[tag]
@@ -711,7 +733,7 @@ public class BukkitElementProperties implements Property {
         // @group text manipulation
         // @description
         // Makes the input text colored by the input color. Equivalent to "<COLOR><ELEMENT_HERE><COLOR.end_format>"
-        // Color can be a color name, color code, hex, or ColorTag... that is: ".color[gold]", ".color[6]", ".color[#AABB00]", and ".color[co@128,64,0]" are all valid.
+        // Color can be a color name, color code, hex, or ColorTag... that is: ".color[gold]", ".color[6]", and ".color[#AABB00]" are all valid.
         // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
         // -->
         PropertyParser.<BukkitElementProperties>registerTag("color", (attribute, object) -> {

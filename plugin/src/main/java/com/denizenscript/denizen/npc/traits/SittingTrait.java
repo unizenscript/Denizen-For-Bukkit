@@ -1,6 +1,7 @@
 package com.denizenscript.denizen.npc.traits;
 
-import com.denizenscript.denizen.utilities.DenizenAPI;
+import com.denizenscript.denizen.Denizen;
+import com.denizenscript.denizen.objects.NPCTag;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.entity.DenizenEntityType;
 import com.denizenscript.denizen.nms.interfaces.FakeArrow;
@@ -57,7 +58,7 @@ public class SittingTrait extends Trait implements Listener {
             return;
         }
         if (npc.getEntity().getVehicle() != null) {
-            npc.getEntity().getVehicle().setPassenger(null);
+            npc.getEntity().getVehicle().eject();
         }
     }
 
@@ -80,7 +81,7 @@ public class SittingTrait extends Trait implements Listener {
             return;
         }
 
-        DenizenAPI.getDenizenNPC(npc).action("sit", null);
+        new NPCTag(npc).action("sit", null);
 
         sit(npc.getEntity().getLocation());
     }
@@ -93,29 +94,30 @@ public class SittingTrait extends Trait implements Listener {
             DenizenEntityType.getByName("FAKE_ARROW").spawnNewEntity(npc.getEntity().getLocation(),
                     new ArrayList<>(), null).setPassenger(npc.getEntity());
         }
-        //eh.getDataWatcher().watch(0, (byte) 0x04);
         sitting = true;
     }
 
     private void standInternal() {
         if (npc.getEntity() instanceof Player) {
             PlayerAnimation.STOP_SITTING.play((Player) npc.getEntity());
+            if (chairLocation != null) {
+                npc.teleport(chairLocation.clone().add(0, 0.5, 0), PlayerTeleportEvent.TeleportCause.PLUGIN);
+            }
         }
         else {
             Entity vehicle = npc.getEntity().getVehicle();
             npc.despawn();
             npc.spawn(npc.getStoredLocation().clone().add(0, 0.5, 0));
             if (vehicle != null && vehicle.isValid()) {
-                vehicle.setPassenger(null);
+                vehicle.eject();
                 vehicle.remove();
             }
         }
-        //eh.getDataWatcher().watch(0, (byte) 0x00);
         sitting = false;
     }
 
     public void sitInternal(Location location) {
-        DenizenAPI.getDenizenNPC(npc).action("sit", null);
+        new NPCTag(npc).action("sit", null);
 
         /*
          * Teleport NPC to the location before
@@ -132,7 +134,7 @@ public class SittingTrait extends Trait implements Listener {
      * @param location where to sit
      */
     public void sit(Location location) {
-        sitInternal(location.clone().add(0, 0.5, 0));
+        sitInternal(location.clone());
         chairLocation = location.clone();
     }
 
@@ -151,7 +153,7 @@ public class SittingTrait extends Trait implements Listener {
      * Makes the NPC stand
      */
     public void stand() {
-        DenizenAPI.getDenizenNPC(npc).action("stand", null);
+        new NPCTag(npc).action("stand", null);
 
         standInternal();
         standInternal();
@@ -196,7 +198,7 @@ public class SittingTrait extends Trait implements Listener {
     public void arrowDismount(final VehicleExitEvent event) {
         // TODO: Move elsewhere so not multi-firing?
         if (event.getVehicle() instanceof FakeArrow) {
-            Bukkit.getScheduler().runTaskLater(DenizenAPI.getCurrentInstance(), new Runnable() {
+            Bukkit.getScheduler().runTaskLater(Denizen.getInstance(), new Runnable() {
                 @Override
                 public void run() {
                     if (event.getVehicle().isValid()) {

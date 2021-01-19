@@ -21,6 +21,7 @@ import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import dev.unizen.denizen.nms.v1_14.helpers.ArrowHelperImpl;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.minecraft.server.v1_14_R1.Entity;
 import net.minecraft.server.v1_14_R1.IInventory;
@@ -222,6 +223,6 @@ public class Handler extends NMSHandler {
 
     @Override
     public String stringForHover(HoverEvent hover) {
-        return FormattedTextHelper.stringify(hover.getValue());
+        return FormattedTextHelper.stringify(hover.getValue(), ChatColor.WHITE);
     }
 }

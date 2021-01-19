@@ -1,5 +1,6 @@
 package com.denizenscript.denizen.nms.v1_16.impl.network.handlers;
 
+import com.denizenscript.denizen.nms.abstracts.BlockLight;
 import com.denizenscript.denizen.nms.interfaces.EntityHelper;
 import com.denizenscript.denizen.nms.v1_16.Handler;
 import com.denizenscript.denizen.nms.v1_16.impl.ProfileEditorImpl;
@@ -8,7 +9,9 @@ import com.denizenscript.denizen.nms.v1_16.impl.blocks.BlockLightImpl;
 import com.denizenscript.denizen.nms.v1_16.impl.entities.EntityFakePlayerImpl;
 import com.denizenscript.denizen.nms.interfaces.packets.PacketOutSpawnEntity;
 import com.denizenscript.denizen.objects.LocationTag;
+import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.scripts.commands.entity.RenameCommand;
+import com.denizenscript.denizen.scripts.commands.player.DisguiseCommand;
 import com.denizenscript.denizen.utilities.FormattedTextHelper;
 import com.denizenscript.denizen.utilities.blocks.ChunkCoordinate;
 import com.denizenscript.denizen.utilities.blocks.FakeBlock;
@@ -21,21 +24,20 @@ import io.netty.util.concurrent.GenericFutureListener;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizencore.utilities.ReflectionHelper;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
-import net.minecraft.server.v1_16_R2.*;
+import net.md_5.bungee.api.ChatColor;
+import net.minecraft.server.v1_16_R3.*;
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_16_R2.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_16_R2.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_16_R3.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
-import javax.crypto.SecretKey;
+import javax.crypto.Cipher;
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.net.SocketAddress;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class DenizenNetworkManagerImpl extends NetworkManager {
 
@@ -112,6 +114,9 @@ public class DenizenNetworkManagerImpl extends NetworkManager {
     public static Field ENTITY_ID_PACKENT = ReflectionHelper.getFields(PacketPlayOutEntity.class).get("a");
     public static Field ENTITY_ID_PACKVELENT = ReflectionHelper.getFields(PacketPlayOutEntityVelocity.class).get("a");
     public static Field ENTITY_ID_PACKTELENT = ReflectionHelper.getFields(PacketPlayOutEntityTeleport.class).get("a");
+    public static Field ENTITY_ID_NAMEDENTSPAWN = ReflectionHelper.getFields(PacketPlayOutNamedEntitySpawn.class).get("a");
+    public static Field ENTITY_ID_SPAWNENT = ReflectionHelper.getFields(PacketPlayOutSpawnEntity.class).get("a");
+    public static Field ENTITY_ID_SPAWNENTLIVING = ReflectionHelper.getFields(PacketPlayOutSpawnEntityLiving.class).get("a");
     public static Field POS_X_PACKTELENT = ReflectionHelper.getFields(PacketPlayOutEntityTeleport.class).get("b");
     public static Field POS_Y_PACKTELENT = ReflectionHelper.getFields(PacketPlayOutEntityTeleport.class).get("c");
     public static Field POS_Z_PACKTELENT = ReflectionHelper.getFields(PacketPlayOutEntityTeleport.class).get("d");
@@ -171,46 +176,312 @@ public class DenizenNetworkManagerImpl extends NetworkManager {
             || processHiddenEntitiesForPacket(packet)
             || processPacketHandlerForPacket(packet)
             || processMirrorForPacket(packet)
+            || processDisguiseForPacket(packet, genericfuturelistener)
+            || processCustomNameForPacket(packet, genericfuturelistener)
             || processShowFakeForPacket(packet, genericfuturelistener)) {
             return;
         }
-        processMirrorForPacket(packet);
         processBlockLightForPacket(packet);
-        processCustomNameForPacket(packet);
         oldManager.sendPacket(packet, genericfuturelistener);
     }
 
-    public void processCustomNameForPacket(Packet<?> packet) {
-        if (!(packet instanceof PacketPlayOutEntityMetadata)) {
-            return;
+    private boolean antiDuplicate = false;
+
+    public boolean processDisguiseForPacket(Packet<?> packet, GenericFutureListener<? extends Future<? super Void>> genericfuturelistener) {
+        if (DisguiseCommand.disguises.isEmpty() || antiDuplicate) {
+            return false;
         }
-        if (!RenameCommand.hasAnyDynamicRenames()) {
-            return;
-        }
-        PacketPlayOutEntityMetadata metadataPacket = (PacketPlayOutEntityMetadata) packet;
         try {
-            int eid = ENTITY_METADATA_EID.getInt(metadataPacket);
-            String nameToApply = RenameCommand.getCustomNameFor(eid, player.getBukkitEntity());
-            if (nameToApply == null) {
-                return;
+            if (packet instanceof PacketPlayOutEntityMetadata) {
+                PacketPlayOutEntityMetadata metadataPacket = (PacketPlayOutEntityMetadata) packet;
+                int eid = ENTITY_METADATA_EID.getInt(metadataPacket);
+                Entity ent = player.world.getEntity(eid);
+                if (ent == null) {
+                    return false;
+                }
+                HashMap<UUID, DisguiseCommand.TrackedDisguise> playerMap = DisguiseCommand.disguises.get(ent.getUniqueID());
+                if (playerMap == null) {
+                    return false;
+                }
+                DisguiseCommand.TrackedDisguise disguise = playerMap.get(player.getUniqueID());
+                if (disguise == null) {
+                    disguise = playerMap.get(null);
+                    if (disguise == null) {
+                        return false;
+                    }
+                }
+                if (ent.getId() == player.getId()) {
+                    if (!disguise.shouldFake) {
+                        return false;
+                    }
+                    List<DataWatcher.Item<?>> data = (List<DataWatcher.Item<?>>) ENTITY_METADATA_LIST.get(metadataPacket);
+                    for (DataWatcher.Item item : data) {
+                        DataWatcherObject<?> watcherObject = item.a();
+                        int watcherId = watcherObject.a();
+                        if (watcherId == 0) { // Entity flags
+                            PacketPlayOutEntityMetadata altPacket = new PacketPlayOutEntityMetadata();
+                            copyPacket(metadataPacket, altPacket);
+                            data = new ArrayList<>(data);
+                            ENTITY_METADATA_LIST.set(altPacket, data);
+                            data.remove(item);
+                            byte flags = (byte) item.b();
+                            flags |= 0x20; // Invisible flag
+                            data.add(new DataWatcher.Item(watcherObject, flags));
+                            PacketPlayOutEntityMetadata updatedPacket = getModifiedMetadataFor(altPacket);
+                            oldManager.sendPacket(updatedPacket == null ? altPacket : updatedPacket, genericfuturelistener);
+                            return true;
+                        }
+                    }
+                }
+                else {
+                    PacketPlayOutEntityMetadata altPacket = new PacketPlayOutEntityMetadata(ent.getId(), ((CraftEntity) disguise.toOthers.entity.entity).getHandle().getDataWatcher(), true);
+                    oldManager.sendPacket(altPacket, genericfuturelistener);
+                    return true;
+                }
+                return false;
             }
-            List<DataWatcher.Item<?>> data = (List<DataWatcher.Item<?>>) ENTITY_METADATA_LIST.get(metadataPacket);
-            for (DataWatcher.Item item : data) {
-                DataWatcherObject<?> watcherObject = item.a();
-                int watcherId = watcherObject.a();
-                if (watcherId == 2) { // 2: Custom name metadata
-                    Optional<IChatBaseComponent> name = Optional.of(Handler.componentToNMS(FormattedTextHelper.parse(nameToApply)));
-                    item.a(name);
+            int ider = -1;
+            if (packet instanceof PacketPlayOutNamedEntitySpawn) {
+                ider = ENTITY_ID_NAMEDENTSPAWN.getInt(packet);
+            }
+            else if (packet instanceof PacketPlayOutSpawnEntity) {
+                ider = ENTITY_ID_SPAWNENT.getInt(packet);
+            }
+            else if (packet instanceof PacketPlayOutSpawnEntityLiving) {
+                ider = ENTITY_ID_SPAWNENTLIVING.getInt(packet);
+            }
+            if (ider != -1) {
+                Entity e = player.getWorld().getEntity(ider);
+                if (e == null) {
+                    return false;
                 }
-                else if (watcherId == 3) { // 3: custom name visible metadata
-                    item.a(true);
+                HashMap<UUID, DisguiseCommand.TrackedDisguise> playerMap = DisguiseCommand.disguises.get(e.getUniqueID());
+                if (playerMap == null) {
+                    return false;
                 }
+                DisguiseCommand.TrackedDisguise disguise = playerMap.get(player.getUniqueID());
+                if (disguise == null) {
+                    disguise = playerMap.get(null);
+                    if (disguise == null) {
+                        return false;
+                    }
+                }
+                antiDuplicate = true;
+                disguise.sendTo(Collections.singletonList(new PlayerTag(player.getBukkitEntity())));
+                antiDuplicate = false;
+                return true;
             }
         }
         catch (Throwable ex) {
+            antiDuplicate = false;
             Debug.echoError(ex);
         }
+        return false;
     }
+
+    public PacketPlayOutEntityMetadata getModifiedMetadataFor(PacketPlayOutEntityMetadata metadataPacket) {
+        if (!RenameCommand.hasAnyDynamicRenames()) {
+            return null;
+        }
+        try {
+            int eid = ENTITY_METADATA_EID.getInt(metadataPacket);
+            Entity ent = player.world.getEntity(eid);
+            if (ent == null) {
+                return null; // If it doesn't exist on-server, it's definitely not relevant, so move on
+            }
+            String nameToApply = RenameCommand.getCustomNameFor(ent.getUniqueID(), player.getBukkitEntity(), false);
+            if (nameToApply == null) {
+                return null;
+            }
+            List<DataWatcher.Item<?>> data = new ArrayList<>((List<DataWatcher.Item<?>>) ENTITY_METADATA_LIST.get(metadataPacket));
+            boolean any = false;
+            for (int i = 0; i < data.size(); i++) {
+                DataWatcher.Item<?> item = data.get(i);
+                DataWatcherObject<?> watcherObject = item.a();
+                int watcherId = watcherObject.a();
+                if (watcherId == 2) { // 2: Custom name metadata
+                    Optional<IChatBaseComponent> name = Optional.of(Handler.componentToNMS(FormattedTextHelper.parse(nameToApply, ChatColor.WHITE)));
+                    data.set(i, new DataWatcher.Item(watcherObject, name));
+                    any = true;
+                }
+                else if (watcherId == 3) { // 3: custom name visible metadata
+                    data.set(i, new DataWatcher.Item(watcherObject, true));
+                    any = true;
+                }
+            }
+            if (!any) {
+                return null;
+            }
+            PacketPlayOutEntityMetadata altPacket = new PacketPlayOutEntityMetadata();
+            copyPacket(metadataPacket, altPacket);
+            ENTITY_METADATA_LIST.set(altPacket, data);
+            return altPacket;
+        }
+        catch (Throwable ex) {
+            Debug.echoError(ex);
+            return null;
+        }
+    }
+
+    public boolean processCustomNameForPacket(Packet<?> packet, GenericFutureListener<? extends Future<? super Void>> genericfuturelistener) {
+        if (!(packet instanceof PacketPlayOutEntityMetadata)) {
+            return false;
+        }
+        if (!RenameCommand.hasAnyDynamicRenames()) {
+            return false;
+        }
+        PacketPlayOutEntityMetadata metadataPacket = (PacketPlayOutEntityMetadata) packet;
+        try {
+            PacketPlayOutEntityMetadata altPacket = getModifiedMetadataFor(metadataPacket);
+            if (altPacket == null) {
+                return false;
+            }
+            oldManager.sendPacket(altPacket, genericfuturelistener);
+            return true;
+        }
+        catch (Throwable ex) {
+            Debug.echoError(ex);
+            return false;
+        }
+    }
+
+    public void tryProcessMovePacketForAttach(Packet<?> packet, Entity e) throws IllegalAccessException {
+        EntityAttachmentHelper.EntityAttachedToMap attList = EntityAttachmentHelper.toEntityToData.get(e.getUniqueID());
+        if (attList != null) {
+            for (EntityAttachmentHelper.PlayerAttachMap attMap : attList.attachedToMap.values()) {
+                EntityAttachmentHelper.AttachmentData att = attMap.getAttachment(player.getUniqueID());
+                if (attMap.attached.isValid() && att != null) {
+                    Packet pNew = (Packet) duplo(packet);
+                    ENTITY_ID_PACKENT.setInt(pNew, att.attached.getBukkitEntity().getEntityId());
+                    if (att.positionalOffset != null && (packet instanceof PacketPlayOutEntity.PacketPlayOutRelEntityMove || packet instanceof PacketPlayOutEntity.PacketPlayOutRelEntityMoveLook)) {
+                        boolean isRotate = packet instanceof PacketPlayOutEntity.PacketPlayOutRelEntityMoveLook;
+                        byte yaw, pitch;
+                        if (att.noRotate) {
+                            Entity attachedEntity = ((CraftEntity) att.attached.getBukkitEntity()).getHandle();
+                            yaw = EntityAttachmentHelper.compressAngle(attachedEntity.yaw);
+                            pitch = EntityAttachmentHelper.compressAngle(attachedEntity.pitch);
+                        }
+                        else if (isRotate) {
+                            yaw = YAW_PACKENT.getByte(packet);
+                            pitch = PITCH_PACKENT.getByte(packet);
+                        }
+                        else {
+                            yaw = EntityAttachmentHelper.compressAngle(e.yaw);
+                            pitch = EntityAttachmentHelper.compressAngle(e.pitch);
+                        }
+                        if (isRotate) {
+                            yaw = EntityAttachmentHelper.adaptedCompressedAngle(yaw, att.positionalOffset.getYaw());
+                            pitch = EntityAttachmentHelper.adaptedCompressedAngle(pitch, att.positionalOffset.getPitch());
+                        }
+                        Vector goalPosition = att.fixedForOffset(new Vector(e.locX(), e.locY(), e.locZ()), e.yaw, e.pitch);
+                        Vector oldPos = att.visiblePositions.get(player.getUniqueID());
+                        boolean forceTele = false;
+                        if (oldPos == null) {
+                            oldPos = att.attached.getLocation().toVector();
+                            forceTele = true;
+                        }
+                        Vector moveNeeded = goalPosition.clone().subtract(oldPos);
+                        att.visiblePositions.put(player.getUniqueID(), goalPosition.clone());
+                        int offX = (int) (moveNeeded.getX() * (32 * 128));
+                        int offY = (int) (moveNeeded.getY() * (32 * 128));
+                        int offZ = (int) (moveNeeded.getZ() * (32 * 128));
+                        if (forceTele || offX < Short.MIN_VALUE || offX > Short.MAX_VALUE
+                                || offY < Short.MIN_VALUE || offY > Short.MAX_VALUE
+                                || offZ < Short.MIN_VALUE || offZ > Short.MAX_VALUE) {
+                            PacketPlayOutEntityTeleport newTeleportPacket = new PacketPlayOutEntityTeleport(e);
+                            ENTITY_ID_PACKTELENT.setInt(newTeleportPacket, att.attached.getBukkitEntity().getEntityId());
+                            POS_X_PACKTELENT.setDouble(newTeleportPacket, goalPosition.getX());
+                            POS_Y_PACKTELENT.setDouble(newTeleportPacket, goalPosition.getY());
+                            POS_Z_PACKTELENT.setDouble(newTeleportPacket, goalPosition.getZ());
+                            YAW_PACKTELENT.setByte(newTeleportPacket, yaw);
+                            PITCH_PACKTELENT.setByte(newTeleportPacket, pitch);
+                            oldManager.sendPacket(newTeleportPacket);
+                        }
+                        else {
+                            POS_X_PACKENT.setShort(pNew, (short) MathHelper.clamp(offX, Short.MIN_VALUE, Short.MAX_VALUE));
+                            POS_Y_PACKENT.setShort(pNew, (short) MathHelper.clamp(offY, Short.MIN_VALUE, Short.MAX_VALUE));
+                            POS_Z_PACKENT.setShort(pNew, (short) MathHelper.clamp(offZ, Short.MIN_VALUE, Short.MAX_VALUE));
+                            if (isRotate) {
+                                YAW_PACKENT.setByte(pNew, yaw);
+                                PITCH_PACKENT.setByte(pNew, pitch);
+                            }
+                            oldManager.sendPacket(pNew);
+                        }
+                    }
+                    else {
+                        oldManager.sendPacket(pNew);
+                    }
+                }
+            }
+        }
+        if (e.passengers != null && !e.passengers.isEmpty()) {
+            for (Entity ent : e.passengers) {
+                tryProcessMovePacketForAttach(packet, ent);
+            }
+        }
+    }
+
+    public void tryProcessVelocityPacketForAttach(Packet<?> packet, Entity e) throws IllegalAccessException {
+        EntityAttachmentHelper.EntityAttachedToMap attList = EntityAttachmentHelper.toEntityToData.get(e.getUniqueID());
+        if (attList != null) {
+            for (EntityAttachmentHelper.PlayerAttachMap attMap : attList.attachedToMap.values()) {
+                EntityAttachmentHelper.AttachmentData att = attMap.getAttachment(player.getUniqueID());
+                if (attMap.attached.isValid() && att != null) {
+                    Packet pNew = (Packet) duplo(packet);
+                    ENTITY_ID_PACKVELENT.setInt(pNew, att.attached.getBukkitEntity().getEntityId());
+                    oldManager.sendPacket(pNew);
+                }
+            }
+        }
+        if (e.passengers != null && !e.passengers.isEmpty()) {
+            for (Entity ent : e.passengers) {
+                tryProcessVelocityPacketForAttach(packet, ent);
+            }
+        }
+    }
+
+    public void tryProcessTeleportPacketForAttach(Packet<?> packet, Entity e, Vector relative) throws IllegalAccessException {
+        EntityAttachmentHelper.EntityAttachedToMap attList = EntityAttachmentHelper.toEntityToData.get(e.getUniqueID());
+        if (attList != null) {
+            for (EntityAttachmentHelper.PlayerAttachMap attMap : attList.attachedToMap.values()) {
+                EntityAttachmentHelper.AttachmentData att = attMap.getAttachment(player.getUniqueID());
+                if (attMap.attached.isValid() && att != null) {
+                    Packet pNew = (Packet) duplo(packet);
+                    ENTITY_ID_PACKTELENT.setInt(pNew, att.attached.getBukkitEntity().getEntityId());
+                    Vector resultPos = new Vector(POS_X_PACKTELENT.getDouble(pNew), POS_Y_PACKTELENT.getDouble(pNew), POS_Z_PACKTELENT.getDouble(pNew)).add(relative);
+                    if (att.positionalOffset != null) {
+                        resultPos = att.fixedForOffset(resultPos, e.yaw, e.pitch);
+                        byte yaw, pitch;
+                        if (att.noRotate) {
+                            Entity attachedEntity = ((CraftEntity) att.attached.getBukkitEntity()).getHandle();
+                            yaw = EntityAttachmentHelper.compressAngle(attachedEntity.yaw);
+                            pitch = EntityAttachmentHelper.compressAngle(attachedEntity.pitch);
+                        }
+                        else {
+                            yaw = YAW_PACKTELENT.getByte(packet);
+                            pitch = PITCH_PACKTELENT.getByte(packet);
+                        }
+                        yaw = EntityAttachmentHelper.adaptedCompressedAngle(yaw, att.positionalOffset.getYaw());
+                        pitch = EntityAttachmentHelper.adaptedCompressedAngle(pitch, att.positionalOffset.getPitch());
+                        POS_X_PACKTELENT.setDouble(pNew, resultPos.getX());
+                        POS_Y_PACKTELENT.setDouble(pNew, resultPos.getY());
+                        POS_Z_PACKTELENT.setDouble(pNew, resultPos.getZ());
+                        YAW_PACKTELENT.setByte(pNew, yaw);
+                        PITCH_PACKTELENT.setByte(pNew, pitch);
+                    }
+                    att.visiblePositions.put(player.getUniqueID(), resultPos.clone());
+                    oldManager.sendPacket(pNew);
+                }
+            }
+        }
+        if (e.passengers != null && !e.passengers.isEmpty()) {
+            for (Entity ent : e.passengers) {
+                tryProcessTeleportPacketForAttach(packet, ent, new Vector(ent.locX() - e.locX(), ent.locY() - e.locY(), ent.locZ() - e.locZ()));
+            }
+        }
+    }
+
+    public static Vector VECTOR_ZERO = new Vector(0, 0, 0);
 
     public boolean processAttachToForPacket(Packet<?> packet) {
         if (EntityAttachmentHelper.toEntityToData.isEmpty()) {
@@ -223,72 +494,7 @@ public class DenizenNetworkManagerImpl extends NetworkManager {
                 if (e == null) {
                     return false;
                 }
-                EntityAttachmentHelper.EntityAttachedToMap attList = EntityAttachmentHelper.toEntityToData.get(e.getUniqueID());
-                if (attList != null) {
-                    for (EntityAttachmentHelper.PlayerAttachMap attMap : attList.attachedToMap.values()) {
-                        EntityAttachmentHelper.AttachmentData att = attMap.getAttachment(player.getUniqueID());
-                        if (attMap.attached.isValid() && att != null) {
-                            Packet pNew = (Packet) duplo(packet);
-                            ENTITY_ID_PACKENT.setInt(pNew, att.attached.getEntityId());
-                            if (att.positionalOffset != null && (packet instanceof PacketPlayOutEntity.PacketPlayOutRelEntityMove || packet instanceof PacketPlayOutEntity.PacketPlayOutRelEntityMoveLook)) {
-                                boolean isRotate = packet instanceof PacketPlayOutEntity.PacketPlayOutRelEntityMoveLook;
-                                byte yaw, pitch;
-                                if (att.noRotate) {
-                                    Entity attachedEntity = ((CraftEntity) att.attached).getHandle();
-                                    yaw = EntityAttachmentHelper.compressAngle(attachedEntity.yaw);
-                                    pitch = EntityAttachmentHelper.compressAngle(attachedEntity.pitch);
-                                }
-                                else if (isRotate) {
-                                    yaw = YAW_PACKENT.getByte(packet);
-                                    pitch = PITCH_PACKENT.getByte(packet);
-                                }
-                                else {
-                                    yaw = EntityAttachmentHelper.compressAngle(e.yaw);
-                                    pitch = EntityAttachmentHelper.compressAngle(e.pitch);
-                                }
-                                if (isRotate) {
-                                    yaw = EntityAttachmentHelper.adaptedCompressedAngle(yaw, att.positionalOffset.getYaw());
-                                    pitch = EntityAttachmentHelper.adaptedCompressedAngle(pitch, att.positionalOffset.getPitch());
-                                }
-                                Vector goalPosition = att.fixedForOffset(new Vector(e.locX(), e.locY(), e.locZ()), e.yaw, e.pitch);
-                                Vector oldPos = att.visiblePosition;
-                                if (oldPos == null) {
-                                    oldPos = att.attached.getLocation().toVector();
-                                }
-                                Vector moveNeeded = goalPosition.clone().subtract(oldPos);
-                                att.visiblePosition = goalPosition.clone();
-                                int offX = (int) (moveNeeded.getX() * (32 * 128));
-                                int offY = (int) (moveNeeded.getY() * (32 * 128));
-                                int offZ = (int) (moveNeeded.getZ() * (32 * 128));
-                                if (offX < Short.MIN_VALUE || offX > Short.MAX_VALUE
-                                        || offY < Short.MIN_VALUE || offY > Short.MAX_VALUE
-                                        || offZ < Short.MIN_VALUE || offZ > Short.MAX_VALUE) {
-                                    PacketPlayOutEntityTeleport newTeleportPacket = new PacketPlayOutEntityTeleport(e);
-                                    ENTITY_ID_PACKTELENT.setInt(newTeleportPacket, att.attached.getEntityId());
-                                    POS_X_PACKTELENT.setDouble(newTeleportPacket, goalPosition.getX());
-                                    POS_Y_PACKTELENT.setDouble(newTeleportPacket, goalPosition.getY());
-                                    POS_Z_PACKTELENT.setDouble(newTeleportPacket, goalPosition.getZ());
-                                    YAW_PACKTELENT.setByte(newTeleportPacket, yaw);
-                                    PITCH_PACKTELENT.setByte(newTeleportPacket, pitch);
-                                    oldManager.sendPacket(newTeleportPacket);
-                                }
-                                else {
-                                    POS_X_PACKENT.setShort(pNew, (short) MathHelper.clamp(offX, Short.MIN_VALUE, Short.MAX_VALUE));
-                                    POS_Y_PACKENT.setShort(pNew, (short) MathHelper.clamp(offY, Short.MIN_VALUE, Short.MAX_VALUE));
-                                    POS_Z_PACKENT.setShort(pNew, (short) MathHelper.clamp(offZ, Short.MIN_VALUE, Short.MAX_VALUE));
-                                    if (isRotate) {
-                                        YAW_PACKENT.setByte(pNew, yaw);
-                                        PITCH_PACKENT.setByte(pNew, pitch);
-                                    }
-                                    oldManager.sendPacket(pNew);
-                                }
-                            }
-                            else {
-                                oldManager.sendPacket(pNew);
-                            }
-                        }
-                    }
-                }
+                tryProcessMovePacketForAttach(packet, e);
                 return EntityAttachmentHelper.denyOriginalPacketSend(player.getUniqueID(), e.getUniqueID());
             }
             else if (packet instanceof PacketPlayOutEntityVelocity) {
@@ -297,17 +503,7 @@ public class DenizenNetworkManagerImpl extends NetworkManager {
                 if (e == null) {
                     return false;
                 }
-                EntityAttachmentHelper.EntityAttachedToMap attList = EntityAttachmentHelper.toEntityToData.get(e.getUniqueID());
-                if (attList != null) {
-                    for (EntityAttachmentHelper.PlayerAttachMap attMap : attList.attachedToMap.values()) {
-                        EntityAttachmentHelper.AttachmentData att = attMap.getAttachment(player.getUniqueID());
-                        if (attMap.attached.isValid() && att != null) {
-                            Packet pNew = (Packet) duplo(packet);
-                            ENTITY_ID_PACKVELENT.setInt(pNew, att.attached.getEntityId());
-                            oldManager.sendPacket(pNew);
-                        }
-                    }
-                }
+                tryProcessVelocityPacketForAttach(packet, e);
                 return EntityAttachmentHelper.denyOriginalPacketSend(player.getUniqueID(), e.getUniqueID());
             }
             else if (packet instanceof PacketPlayOutEntityTeleport) {
@@ -316,39 +512,7 @@ public class DenizenNetworkManagerImpl extends NetworkManager {
                 if (e == null) {
                     return false;
                 }
-                EntityAttachmentHelper.EntityAttachedToMap attList = EntityAttachmentHelper.toEntityToData.get(e.getUniqueID());
-                if (attList != null) {
-                    for (EntityAttachmentHelper.PlayerAttachMap attMap : attList.attachedToMap.values()) {
-                        EntityAttachmentHelper.AttachmentData att = attMap.getAttachment(player.getUniqueID());
-                        if (attMap.attached.isValid() && att != null) {
-                            Packet pNew = (Packet) duplo(packet);
-                            ENTITY_ID_PACKTELENT.setInt(pNew, att.attached.getEntityId());
-                            Vector resultPos = new Vector(POS_X_PACKTELENT.getDouble(pNew), POS_Y_PACKTELENT.getDouble(pNew), POS_Z_PACKTELENT.getDouble(pNew));
-                            if (att.positionalOffset != null) {
-                                resultPos = att.fixedForOffset(resultPos, e.yaw, e.pitch);
-                                byte yaw, pitch;
-                                if (att.noRotate) {
-                                    Entity attachedEntity = ((CraftEntity) att.attached).getHandle();
-                                    yaw = EntityAttachmentHelper.compressAngle(attachedEntity.yaw);
-                                    pitch = EntityAttachmentHelper.compressAngle(attachedEntity.pitch);
-                                }
-                                else {
-                                    yaw = YAW_PACKTELENT.getByte(packet);
-                                    pitch = PITCH_PACKTELENT.getByte(packet);
-                                }
-                                yaw = EntityAttachmentHelper.adaptedCompressedAngle(yaw, att.positionalOffset.getYaw());
-                                pitch = EntityAttachmentHelper.adaptedCompressedAngle(pitch, att.positionalOffset.getPitch());
-                                POS_X_PACKTELENT.setDouble(pNew, resultPos.getX());
-                                POS_Y_PACKTELENT.setDouble(pNew, resultPos.getY());
-                                POS_Z_PACKTELENT.setDouble(pNew, resultPos.getZ());
-                                YAW_PACKTELENT.setByte(pNew, yaw);
-                                PITCH_PACKTELENT.setByte(pNew, pitch);
-                            }
-                            att.visiblePosition = resultPos.clone();
-                            oldManager.sendPacket(pNew);
-                        }
-                    }
-                }
+                tryProcessTeleportPacketForAttach(packet, e, VECTOR_ZERO);
                 return EntityAttachmentHelper.denyOriginalPacketSend(player.getUniqueID(), e.getUniqueID());
             }
         }
@@ -379,22 +543,20 @@ public class DenizenNetworkManagerImpl extends NetworkManager {
                 }
                 processFakePlayerSpawn(entity);
             }
+            int ider = -1;
             if (packet instanceof PacketPlayOutEntity) {
-                int ider = ENTITY_ID_PACKENT.getInt(packet);
-                Entity e = player.getWorld().getEntity(ider);
-                if (isHidden(e)) {
-                    return true;
-                }
+                ider = ENTITY_ID_PACKENT.getInt(packet);
+            }
+            else if (packet instanceof PacketPlayOutEntityMetadata) {
+                ider = ENTITY_METADATA_EID.getInt(packet);
             }
             else if (packet instanceof PacketPlayOutEntityVelocity) {
-                int ider = ENTITY_ID_PACKVELENT.getInt(packet);
-                Entity e = player.getWorld().getEntity(ider);
-                if (isHidden(e)) {
-                    return true;
-                }
+                ider = ENTITY_ID_PACKVELENT.getInt(packet);
             }
             else if (packet instanceof PacketPlayOutEntityTeleport) {
-                int ider = ENTITY_ID_PACKTELENT.getInt(packet);
+                ider = ENTITY_ID_PACKTELENT.getInt(packet);
+            }
+            if (ider != -1) {
                 Entity e = player.getWorld().getEntity(ider);
                 if (isHidden(e)) {
                     return true;
@@ -419,25 +581,28 @@ public class DenizenNetworkManagerImpl extends NetworkManager {
     public boolean processMirrorForPacket(Packet<?> packet) {
         if (packet instanceof PacketPlayOutPlayerInfo) {
             PacketPlayOutPlayerInfo playerInfo = (PacketPlayOutPlayerInfo) packet;
-            if (!ProfileEditorImpl.handleMirrorProfiles(playerInfo, this)) {
+            ProfileEditorImpl.updatePlayerProfiles(playerInfo);
+            if (!ProfileEditorImpl.handleAlteredProfiles(playerInfo, this)) {
                 return true;
             }
-            ProfileEditorImpl.updatePlayerProfiles(playerInfo);
         }
         return false;
     }
 
     public boolean processPacketHandlerForPacket(Packet<?> packet) {
-        if (packet instanceof PacketPlayOutChat) {
+        if (packet instanceof PacketPlayOutChat && packetHandler.shouldInterceptChatPacket()) {
             return packetHandler.sendPacket(player.getBukkitEntity(), new PacketOutChatImpl((PacketPlayOutChat) packet));
         }
-        else if (packet instanceof PacketPlayOutEntityMetadata) {
+        else if (packet instanceof PacketPlayOutEntityMetadata && packetHandler.shouldInterceptMetadata()) {
             return packetHandler.sendPacket(player.getBukkitEntity(), new PacketOutEntityMetadataImpl((PacketPlayOutEntityMetadata) packet));
         }
         return false;
     }
 
     public boolean processShowFakeForPacket(Packet<?> packet, GenericFutureListener<? extends Future<? super Void>> genericfuturelistener) {
+        if (FakeBlock.blocks.isEmpty()) {
+            return false;
+        }
         try {
             if (packet instanceof PacketPlayOutMapChunk) {
                 FakeBlock.FakeBlockMap map = FakeBlock.blocks.get(player.getUniqueID());
@@ -520,6 +685,9 @@ public class DenizenNetworkManagerImpl extends NetworkManager {
     }
 
     public void processBlockLightForPacket(Packet<?> packet) {
+        if (BlockLight.lightsByChunk.isEmpty()) {
+            return;
+        }
         if (packet instanceof PacketPlayOutLightUpdate) {
             BlockLightImpl.checkIfLightsBrokenByPacket((PacketPlayOutLightUpdate) packet, player.world);
         }
@@ -549,8 +717,8 @@ public class DenizenNetworkManagerImpl extends NetworkManager {
     }
 
     @Override
-    public void a(SecretKey secretkey) {
-        oldManager.a(secretkey);
+    public void a(Cipher cipher, Cipher cipher1) {
+        oldManager.a(cipher, cipher1);
     }
 
     @Override

@@ -11,7 +11,6 @@ import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.Deprecations;
-import com.denizenscript.denizencore.utilities.debugging.Debug;
 import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.UUID;
@@ -62,6 +61,7 @@ public class ItemSkullskin implements Property {
         // Returns the UUID of the player whose skin a skull item uses.
         // Note: Item must be a 'player_head' with a skin.
         // In format: UUID|Texture|Name.
+        // See also <@link language Player Entity Skins (Skin Blobs)>.
         // -->
         if (attribute.startsWith("skull_skin")) {
             String skin = getPropertyString();
@@ -80,6 +80,7 @@ public class ItemSkullskin implements Property {
         // Returns the UUID of the player whose skin a skull item uses.
         // Note: Item must be a 'player_head' with a skin.
         // In format: UUID|Texture|Name.
+        // See also <@link language Player Entity Skins (Skin Blobs)>.
         // -->
         if (attribute.startsWith("skin")) {
             String skin = getPropertyString();
@@ -93,7 +94,7 @@ public class ItemSkullskin implements Property {
                 return new ElementTag(CoreUtilities.split(skin, '|').get(0)).getObjectAttribute(attribute);
             }
             else {
-                Debug.echoError("This skull item does not have a skin set!");
+                attribute.echoError("This skull item does not have a skin set!");
             }
         }
 
@@ -144,6 +145,7 @@ public class ItemSkullskin implements Property {
         // The first ElementTag is a UUID.
         // Optionally, use the second ElementTag for the skin texture cache.
         // Optionally, use the third ElementTag for a player name.
+        // See also <@link language Player Entity Skins (Skin Blobs)>.
         // @tags
         // <ItemTag.skull_skin>
         // <ItemTag.skin>

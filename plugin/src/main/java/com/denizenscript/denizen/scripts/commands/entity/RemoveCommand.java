@@ -5,6 +5,7 @@ import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.entity.DenizenEntityType;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.WorldTag;
+import com.denizenscript.denizen.utilities.entity.FakeEntity;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizencore.objects.ArgumentHelper;
@@ -78,17 +79,26 @@ public class RemoveCommand extends AbstractCommand {
         scriptEntry.defaultObject("world", Utilities.entryDefaultWorld(scriptEntry, false));
     }
 
+    public static boolean alwaysWarnOnMassRemove = false;
+
     @SuppressWarnings("unchecked")
     @Override
     public void execute(final ScriptEntry scriptEntry) {
         List<EntityTag> entities = (List<EntityTag>) scriptEntry.getObject("entities");
         WorldTag world = scriptEntry.getObjectTag("world");
         if (scriptEntry.dbCallShouldDebug()) {
-            Debug.report(scriptEntry, getName(), ArgumentHelper.debugList("entities", entities));
+            Debug.report(scriptEntry, getName(), (world == null ? "" : world.debug())
+                    + ArgumentHelper.debugList("entities", entities));
         }
         for (EntityTag entity : entities) {
             if (!entity.isGeneric()) {
-                if (entity.isCitizensNPC()) {
+                if (entity.isFake) {
+                    FakeEntity fakeEnt = FakeEntity.idsToEntities.get(entity.getUUID());
+                    if (fakeEnt != null) {
+                        fakeEnt.cancelEntity();
+                    }
+                }
+                else if (entity.isCitizensNPC()) {
                     entity.getDenizenNPC().getCitizen().destroy();
                 }
                 else {
@@ -96,10 +106,20 @@ public class RemoveCommand extends AbstractCommand {
                 }
             }
             else {
+                if (entity.getUUID() != null) {
+                    Debug.echoError("Tried to remove already-removed entity.");
+                    return;
+                }
+                int removed = 0;
                 for (Entity worldEntity : world.getEntities()) {
                     if (entity.getEntityType().equals(DenizenEntityType.getByEntity(worldEntity))) {
                         worldEntity.remove();
+                        removed++;
                     }
+                }
+                Debug.echoDebug(scriptEntry, "Removed " + removed + " entities from the world.");
+                if (alwaysWarnOnMassRemove) {
+                    Debug.echoError("Remove command 'Always warn on mass delete' is enabled - mass removal of '" + entity.getEntityType() + "' performed, removing " + removed + " entities.");
                 }
             }
         }

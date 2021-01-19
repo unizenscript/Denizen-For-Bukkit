@@ -1,10 +1,9 @@
 package com.denizenscript.denizen.scripts.commands.server;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.scripts.containers.core.FormatScriptContainer;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.FormattedTextHelper;
 import com.denizenscript.denizen.utilities.debugging.Debug;
-import com.denizenscript.denizen.flags.FlagManager;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
 import com.denizenscript.denizencore.objects.Argument;
@@ -13,6 +12,7 @@ import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.ScriptRegistry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -101,7 +101,7 @@ public class AnnounceCommand extends AbstractCommand {
                 scriptEntry.addObject("format", format);
             }
             else if (!scriptEntry.hasObject("text")) {
-                scriptEntry.addObject("text", new ElementTag(arg.raw_value));
+                scriptEntry.addObject("text", new ElementTag(arg.getRawValue()));
             }
 
         }
@@ -137,19 +137,20 @@ public class AnnounceCommand extends AbstractCommand {
 
         // Use Bukkit to broadcast the message to everybody in the server.
         if (type == AnnounceType.ALL) {
-            DenizenAPI.getCurrentInstance().getServer().spigot().broadcast(FormattedTextHelper.parse(message));
+            Denizen.getInstance().getServer().spigot().broadcast(FormattedTextHelper.parse(message, ChatColor.WHITE));
         }
         else if (type == AnnounceType.TO_OPS) {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (player.isOp()) {
-                    player.spigot().sendMessage(FormattedTextHelper.parse(message));
+                    player.spigot().sendMessage(FormattedTextHelper.parse(message, ChatColor.WHITE));
                 }
             }
         }
         else if (type == AnnounceType.TO_FLAGGED) {
             for (Player player : Bukkit.getOnlinePlayers()) {
-                if (FlagManager.playerHasFlag(PlayerTag.mirrorBukkitPlayer(player), flag.asString())) {
-                    player.spigot().sendMessage(FormattedTextHelper.parse(message));
+                PlayerTag plTag = new PlayerTag(player);
+                if (plTag.getFlagTracker().hasFlag(flag.asString())) {
+                    player.spigot().sendMessage(FormattedTextHelper.parse(message, ChatColor.WHITE));
                 }
             }
         }

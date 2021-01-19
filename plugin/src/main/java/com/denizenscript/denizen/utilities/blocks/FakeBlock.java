@@ -1,9 +1,9 @@
 package com.denizenscript.denizen.utilities.blocks;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.objects.MaterialTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizencore.objects.core.DurationTag;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -131,12 +131,11 @@ public class FakeBlock {
             currentTask.cancel();
         }
         this.material = material;
-        if (!player.hasChunkLoaded(location.getChunk())) {
-            return;
-        }
-        material.getModernData().sendFakeChangeTo(player.getPlayerEntity(), location);
-        if (material.getMaterial().name().endsWith("_BANNER")) { // Banners are weird
-            location.getWorld().refreshChunk(chunkCoord.x, chunkCoord.z);
+        if (player.hasChunkLoaded(location.getChunk())) {
+            material.getModernData().sendFakeChangeTo(player.getPlayerEntity(), location);
+            if (material.getMaterial().name().endsWith("_BANNER")) { // Banners are weird
+                location.getWorld().refreshChunk(chunkCoord.x, chunkCoord.z);
+            }
         }
         if (duration != null && duration.getTicks() > 0) {
             currentTask = new BukkitRunnable() {
@@ -145,7 +144,7 @@ public class FakeBlock {
                     currentTask = null;
                     cancelBlock();
                 }
-            }.runTaskLater(DenizenAPI.getCurrentInstance(), duration.getTicks());
+            }.runTaskLater(Denizen.getInstance(), duration.getTicks());
         }
     }
 }

@@ -6,10 +6,13 @@ import com.denizenscript.denizen.objects.properties.material.MaterialHalf;
 import com.denizenscript.denizen.objects.properties.material.MaterialSwitchFace;
 import com.denizenscript.denizen.objects.properties.material.MaterialPersistent;
 import com.denizenscript.denizen.scripts.commands.world.SwitchCommand;
+import com.denizenscript.denizen.utilities.flags.DataPersistenceFlagTracker;
 import com.denizenscript.denizen.utilities.world.PathFinder;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.entity.DenizenEntityType;
+import com.denizenscript.denizencore.flags.AbstractFlagTracker;
+import com.denizenscript.denizencore.flags.FlaggableObject;
 import com.denizenscript.denizencore.objects.*;
 import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizen.nms.NMSHandler;
@@ -44,13 +47,14 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.BlockIterator;
+import org.bukkit.util.NumberConversions;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import java.util.*;
 import java.util.Comparator;
 
-public class LocationTag extends org.bukkit.Location implements ObjectTag, Notable, Adjustable {
+public class LocationTag extends org.bukkit.Location implements ObjectTag, Notable, Adjustable, FlaggableObject {
 
     // <--[language]
     // @name LocationTag Objects
@@ -73,11 +77,14 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
     public String backupWorld;
 
     public String getWorldName() {
+        if (backupWorld != null) {
+            return backupWorld;
+        }
         World w = super.getWorld();
         if (w != null) {
             return w.getName();
         }
-        return backupWorld;
+        return null;
     }
 
     @Override
@@ -117,28 +124,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
     }
 
     public static String getSaved(LocationTag location) {
-        for (LocationTag saved : NotableManager.getAllType(LocationTag.class)) {
-            if (saved.getX() != location.getX()) {
-                continue;
-            }
-            if (saved.getY() != location.getY()) {
-                continue;
-            }
-            if (saved.getZ() != location.getZ()) {
-                continue;
-            }
-            if (saved.getYaw() != location.getYaw()) {
-                continue;
-            }
-            if (saved.getPitch() != location.getPitch()) {
-                continue;
-            }
-            if ((saved.getWorldName() == null && location.getWorldName() == null)
-                    || (saved.getWorldName() != null && location.getWorldName() != null && saved.getWorldName().equals(location.getWorldName()))) {
-                return NotableManager.getSavedId(saved);
-            }
-        }
-        return null;
+        return NotableManager.getSavedId(location);
     }
 
     public void forget() {
@@ -269,12 +255,13 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // x,y,z,pitch,yaw
         {
             try {
+                float pitch = Float.valueOf(split.get(3));
+                float yaw = Float.valueOf(split.get(4));
                 return new LocationTag((World) null,
                         Double.valueOf(split.get(0)),
                         Double.valueOf(split.get(1)),
                         Double.valueOf(split.get(2)),
-                        Float.valueOf(split.get(3)),
-                        Float.valueOf(split.get(4)));
+                        yaw, pitch);
             }
             catch (Exception e) {
                 if (context == null || context.showErrors()) {
@@ -293,23 +280,13 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 if (worldName.startsWith("w@")) {
                     worldName = worldName.substring("w@".length());
                 }
-                World world = Bukkit.getWorld(worldName);
-                if (world != null) {
-                    return new LocationTag(world,
-                            Double.valueOf(split.get(0)),
-                            Double.valueOf(split.get(1)),
-                            Double.valueOf(split.get(2)),
-                            Float.valueOf(split.get(3)),
-                            Float.valueOf(split.get(4)));
-                }
-                LocationTag output = new LocationTag((World) null,
+                float pitch = Float.valueOf(split.get(3));
+                float yaw = Float.valueOf(split.get(4));
+                return new LocationTag(worldName,
                         Double.valueOf(split.get(0)),
                         Double.valueOf(split.get(1)),
                         Double.valueOf(split.get(2)),
-                        Float.valueOf(split.get(3)),
-                        Float.valueOf(split.get(4)));
-                output.backupWorld = worldName;
-                return output;
+                        yaw, pitch);
             }
             catch (Exception e) {
                 if (context == null || context.showErrors()) {
@@ -356,19 +333,15 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
      * @param location the Bukkit Location to reference
      */
     public LocationTag(Location location) {
-        // Just save the yaw and pitch as they are; don't check if they are
-        // higher than 0, because Minecraft yaws are weird and can have
-        // negative values
-        super(location.getWorld(), location.getX(), location.getY(), location.getZ(),
-                location.getYaw(), location.getPitch());
+        this(location.getWorld(), location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
     }
 
     public LocationTag(Vector vector) {
-        super(null, vector.getX(), vector.getY(), vector.getZ());
+        this((World) null, vector.getX(), vector.getY(), vector.getZ(), 0, 0);
     }
 
     public LocationTag(World world, Vector vector) {
-        super(world, vector.getX(), vector.getY(), vector.getZ());
+        this(world, vector.getX(), vector.getY(), vector.getZ(), 0, 0);
     }
 
     public LocationTag(World world, double x, double y) {
@@ -386,7 +359,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
      * @param z     z-coordinate of the location
      */
     public LocationTag(World world, double x, double y, double z) {
-        super(world, x, y, z);
+        this(world, x, y, z, 0, 0);
     }
 
     public LocationTag(double x, double y, double z, String worldName) {
@@ -394,12 +367,15 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         backupWorld = worldName;
     }
 
-    public LocationTag(World world, double x, double y, double z, float pitch, float yaw) {
-        super(world, x, y, z, yaw, pitch);
+    public LocationTag(World world, double x, double y, double z, float yaw, float pitch) {
+        super(world, x, y, z, EntityHelper.normalizeYaw(yaw), pitch);
+        if (world != null) {
+            backupWorld = world.getName();
+        }
     }
 
-    public LocationTag(String worldName, double x, double y, double z, float pitch, float yaw) {
-        super(worldName == null ? null : Bukkit.getWorld(worldName), x, y, z, yaw, pitch);
+    public LocationTag(String worldName, double x, double y, double z, float yaw, float pitch) {
+        super(worldName == null ? null : Bukkit.getWorld(worldName), x, y, z, EntityHelper.normalizeYaw(yaw), pitch);
         backupWorld = worldName;
     }
 
@@ -571,8 +547,22 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         return new LocationTag(getWorld(), getBlockX(), getBlockY(), getBlockZ());
     }
 
+    @Override
+    public AbstractFlagTracker getFlagTracker() {
+        if (!NMSHandler.getVersion().isAtLeast(NMSVersion.v1_16)) {
+            Debug.echoError("Location flags are only available in 1.16+");
+            return null;
+        }
+        return new DataPersistenceFlagTracker(getChunk(), "flag_tracker_" + getBlockX() + "_" + getBlockY() + "_" + getBlockZ() + "_");
+    }
+
+    @Override
+    public void reapplyTracker(AbstractFlagTracker tracker) {
+        // Nothing to do.
+    }
+
     /**
-     * Indicates whether this location is forced to identify as a notable or not.
+     * Indicates whether this location is forced to identify as not-a-note or not.
      */
     private boolean raw = false;
 
@@ -607,6 +597,10 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
     public LocationTag multiply(double input) {
         super.multiply(input);
         return this;
+    }
+
+    public double distanceSquaredNoWorld(Location loc2) {
+        return NumberConversions.square(getX() - loc2.getX()) + NumberConversions.square(getY() - loc2.getY()) + NumberConversions.square(getZ() - loc2.getZ());
     }
 
     public boolean hasInventory() {
@@ -698,6 +692,43 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         return -1;
     }
 
+    public static class FloodFiller {
+
+        public Set<LocationTag> result;
+
+        public int iterationLimit;
+
+        public AreaContainmentObject areaLimit;
+
+        public HashSet<Material> requiredMaterials;
+
+        public void run(LocationTag start, AreaContainmentObject area) {
+            iterationLimit = Settings.blockTagsMaxBlocks();
+            areaLimit = area;
+            result = new HashSet<>();
+            flood(start.getBlockLocation());
+        }
+
+        public void flood(LocationTag loc) {
+            if (iterationLimit-- <= 0 || result.contains(loc) || !areaLimit.doesContainLocation(loc)) {
+                return;
+            }
+            if (!loc.isChunkLoaded()) {
+                return;
+            }
+            if (!requiredMaterials.contains(loc.getBlock().getType())) {
+                return;
+            }
+            result.add(loc);
+            flood(loc.clone().add(-1, 0, 0));
+            flood(loc.clone().add(1, 0, 0));
+            flood(loc.clone().add(0, 0, -1));
+            flood(loc.clone().add(0, 0, 1));
+            flood(loc.clone().add(0, -1, 0));
+            flood(loc.clone().add(0, 1, 0));
+        }
+    }
+
     public int compare(Location loc1, Location loc2) {
         if (loc1 == null || loc2 == null || loc1.equals(loc2)) {
             return 0;
@@ -727,9 +758,11 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 && !CoreUtilities.equalsIgnoreCase(getWorldName(), other.getWorldName()))) {
             return false;
         }
-        return Math.floor(getX()) == Math.floor(other.getX())
-                && Math.floor(getY()) == Math.floor(other.getY())
-                && Math.floor(getZ()) == Math.floor(other.getZ());
+        return getX() == other.getX()
+                && getY() == other.getY()
+                && getZ() == other.getZ()
+                && getYaw() == other.getYaw()
+                && getPitch() == other.getPitch();
     }
 
     String prefix = "Location";
@@ -752,8 +785,9 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
     @Override
     public String debuggable() {
-        if (isUnique()) {
-            return "<Y>" + getSaved(this) + "<GR> (" + identifyRaw().replace(",", "<G>,<GR> ") + "<GR>)";
+        String saved = getSaved(this);
+        if (saved != null) {
+            return "<Y>" + saved + "<GR> (" + identifyRaw().replace(",", "<G>,<GR> ") + "<GR>)";
         }
         else {
             return "<Y>" + identifyRaw().replace(",", "<G>,<Y> ");
@@ -767,18 +801,21 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
 
     @Override
     public String identify() {
-        if (!raw && isUnique()) {
-            return "l@" + getSaved(this);
-        }
-        else {
+        if (raw) {
             return identifyRaw();
         }
+        String saved = getSaved(this);
+        if (saved != null) {
+            return "l@" + saved;
+        }
+        return identifyRaw();
     }
 
     @Override
     public String identifySimple() {
-        if (isUnique()) {
-            return "l@" + getSaved(this);
+        String saved = getSaved(this);
+        if (saved != null) {
+            return saved;
         }
         else if (getWorldName() == null) {
             return "l@" + getBlockX() + "," + getBlockY() + (!is2D ? "," + getBlockZ() : "");
@@ -809,6 +846,8 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
     }
 
     public static void registerTags() {
+
+        AbstractFlagTracker.registerFlagHandlers(tagProcessor);
 
         /////////////////////
         //   BLOCK ATTRIBUTES
@@ -1036,6 +1075,39 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // -->
         registerTag("center", (attribute, object) -> {
             return new LocationTag(object.getWorld(), object.getBlockX() + 0.5, object.getBlockY() + 0.5, object.getBlockZ() + 0.5);
+        });
+
+        // <--[tag]
+        // @attribute <LocationTag.random_offset[<limit>]>
+        // @returns LocationTag
+        // @description
+        // Returns a copy of this location, with the X/Y/Z offset by a random decimal value up to a given limit.
+        // The limit can either be an X,Y,Z location vector like [3,1,3] or a single value like [3] (which is equivalent to [3,3,3]).
+        // For example, for a location at 0,100,0, ".random_offset[1,2,3]" can return any decimal location within the cuboid from -1,98,-3 to 1,102,3.
+        // -->
+        registerTag("random_offset", (attribute, object) -> {
+            if (!attribute.hasContext(1)) {
+                attribute.echoError("LocationTag.random_offset[...] must have an input.");
+                return null;
+            }
+            Vector offsetLimit;
+            if (ArgumentHelper.matchesDouble(attribute.getContext(1))) {
+                double val = attribute.getDoubleContext(1);
+                offsetLimit = new Vector(val, val, val);
+            }
+            else {
+                LocationTag val = attribute.contextAsType(1, LocationTag.class);
+                if (val == null) {
+                    return null;
+                }
+                offsetLimit = val.toVector();
+            }
+            offsetLimit.setX(offsetLimit.getX() * (CoreUtilities.getRandom().nextDouble() * 2 - 1));
+            offsetLimit.setY(offsetLimit.getY() * (CoreUtilities.getRandom().nextDouble() * 2 - 1));
+            offsetLimit.setZ(offsetLimit.getZ() * (CoreUtilities.getRandom().nextDouble() * 2 - 1));
+            LocationTag output = object.clone();
+            output.add(offsetLimit);
+            return output;
         });
 
         // <--[tag]
@@ -1467,8 +1539,8 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // Optionally, specify a maximum range to find the location from (defaults to 200).
         // -->
         registerTag("precise_impact_normal", (attribute, object) -> {
-            int range = attribute.getIntContext(1);
-            if (range < 1) {
+            double range = attribute.getDoubleContext(1);
+            if (range <= 0) {
                 range = 200;
             }
             RayTraceResult traced = object.getWorld().rayTraceBlocks(object, object.getDirection(), range);
@@ -1486,8 +1558,8 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // Optionally, specify a maximum range to find the location from (defaults to 200).
         // -->
         registerTag("precise_cursor_on_block", (attribute, object) -> {
-            int range = attribute.getIntContext(1);
-            if (range < 1) {
+            double range = attribute.getDoubleContext(1);
+            if (range <= 0) {
                 range = 200;
             }
             RayTraceResult traced = object.getWorld().rayTraceBlocks(object, object.getDirection(), range);
@@ -1505,8 +1577,8 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // Optionally, specify a maximum range to find the location from (defaults to 200).
         // -->
         registerTag("precise_cursor_on", (attribute, object) -> {
-            int range = attribute.getIntContext(1);
-            if (range < 1) {
+            double range = attribute.getDoubleContext(1);
+            if (range <= 0) {
                 range = 200;
             }
             RayTraceResult traced = object.getWorld().rayTraceBlocks(object, object.getDirection(), range);
@@ -1524,8 +1596,8 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // Optionally, specify a maximum range to find the entity from (defaults to 100).
         // -->
         registerTag("precise_target", (attribute, object) -> {
-            int range = attribute.getIntContext(1);
-            if (range < 1) {
+            double range = attribute.getDoubleContext(1);
+            if (range <= 0) {
                 range = 100;
             }
             RayTraceResult result;
@@ -1543,10 +1615,10 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 for (String str : attribute.contextAsType(1, ListTag.class)) {
                     types.add(EntityTag.valueOf(str, attribute.context).getBukkitEntityType());
                 }
-                result = object.getWorld().rayTraceEntities(object, object.getDirection(), range, (e) -> types.contains(e.getType()));
+                result = object.getWorld().rayTrace(object, object.getDirection(), range, FluidCollisionMode.NEVER, true, 0, (e) -> types.contains(e.getType()));
             }
             else {
-                result = object.getWorld().rayTraceEntities(object, object.getDirection(), range);
+                result = object.getWorld().rayTrace(object, object.getDirection(), range, FluidCollisionMode.NEVER, true, 0, null);
             }
             if (result != null && result.getHitEntity() != null) {
                 return new EntityTag(result.getHitEntity());
@@ -1562,11 +1634,30 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // Optionally, specify a maximum range to find the entity from (defaults to 100).
         // -->
         registerTag("precise_target_position", (attribute, object) -> {
-            int range = attribute.getIntContext(1);
-            if (range < 1) {
+            double range = attribute.getDoubleContext(1);
+            if (range <= 0) {
                 range = 100;
             }
-            RayTraceResult result = object.getWorld().rayTraceEntities(object, object.getDirection(), range);
+            RayTraceResult result;
+            // <--[tag]
+            // @attribute <LocationTag.precise_target_position[(<range>)].type[<entity_type>|...]>
+            // @returns LocationTag
+            // @description
+            // Returns the precise location this location is pointing at, when tracing against entities.
+            // Optionally, specify a maximum range to find the entity from (defaults to 100).
+            // Accepts a list of types to trace against (types not listed will be ignored).
+            // -->
+            if (attribute.startsWith("type", 2) && attribute.hasContext(2)) {
+                attribute.fulfill(1);
+                Set<EntityType> types = new HashSet<>();
+                for (String str : attribute.contextAsType(1, ListTag.class)) {
+                    types.add(EntityTag.valueOf(str, attribute.context).getBukkitEntityType());
+                }
+                result = object.getWorld().rayTrace(object, object.getDirection(), range, FluidCollisionMode.NEVER, true, 0, (e) -> types.contains(e.getType()));
+            }
+            else {
+                result = object.getWorld().rayTrace(object, object.getDirection(), range, FluidCollisionMode.NEVER, true, 0, null);
+            }
             if (result != null) {
                 return new LocationTag(object.getWorld(), result.getHitPosition());
             }
@@ -1695,7 +1786,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 // -->
                 if (attribute.startsWith("yaw", 2)) {
                     attribute.fulfill(1);
-                    return new ElementTag(entityHelper.normalizeYaw(entityHelper.getYaw
+                    return new ElementTag(EntityHelper.normalizeYaw(entityHelper.getYaw
                             (target.toVector().subtract(object.toVector())
                                     .normalize())));
                 }
@@ -1856,7 +1947,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             // -->
             if (attribute.startsWith("simple", 2)) {
                 attribute.fulfill(1);
-                float yaw = NMSHandler.getEntityHelper().normalizeYaw(object.getYaw());
+                float yaw = EntityHelper.normalizeYaw(object.getYaw());
                 if (yaw < 45) {
                     return new ElementTag("South");
                 }
@@ -1884,7 +1975,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 attribute.fulfill(1);
                 return new ElementTag(object.getYaw());
             }
-            return new ElementTag(NMSHandler.getEntityHelper().normalizeYaw(object.getYaw()));
+            return new ElementTag(EntityHelper.normalizeYaw(object.getYaw()));
         });
 
         // <--[tag]
@@ -1957,6 +2048,80 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         //   ENTITY AND BLOCK LIST ATTRIBUTES
         /////////////////
 
+        // <--[tag]
+        // @attribute <LocationTag.flood_fill[<limit>]>
+        // @returns ListTag(LocationTag)
+        // @description
+        // Returns the set of all blocks, starting at the given location,
+        // that can be directly reached in a way that only travels through blocks of the same type as the starting block.
+        // For example, if starting at an air block inside an enclosed building, this will return all air blocks inside the building (but none outside, and no non-air blocks).
+        // As another example, if starting on a block of iron_ore in the ground, this will find all other blocks of iron ore that are part of the same vein.
+        // This will not travel diagonally, only the 6 cardinal directions (N/E/S/W/Up/Down).
+        // As this is potentially infinite should there be any opening however small, a limit must be given.
+        // The limit value can be: a CuboidTag, an EllipsoidTag, or an ElementTag(Decimal) to use as a radius.
+        // Note that the returned list will not be in any particular order.
+        // -->
+        registerTag("flood_fill", (attribute, object) -> {
+            if (!attribute.hasContext(1)) {
+                return null;
+            }
+            AreaContainmentObject area = CuboidTag.valueOf(attribute.getContext(1), CoreUtilities.noDebugContext);
+            if (area == null) {
+                area = EllipsoidTag.valueOf(attribute.getContext(1), CoreUtilities.noDebugContext);
+            }
+            if (area == null) {
+                double radius = attribute.getDoubleContext(1);
+                if (radius <= 0) {
+                    return null;
+                }
+                area = new EllipsoidTag(object.clone(), new LocationTag(object.getWorld(), radius, radius, radius));
+            }
+            FloodFiller flooder = new FloodFiller();
+            NMSHandler.getChunkHelper().changeChunkServerThread(object.getWorld());
+            try {
+                if (object.getWorld() == null) {
+                    if (!attribute.hasAlternative()) {
+                        Debug.echoError("LocationTag trying to read block, but cannot because no world is specified.");
+                    }
+                    return null;
+                }
+                if (!object.isChunkLoaded()) {
+                    if (!attribute.hasAlternative()) {
+                        Debug.echoError("LocationTag trying to read block, but cannot because the chunk is unloaded. Use the 'chunkload' command to ensure the chunk is loaded.");
+                    }
+                    return null;
+                }
+                flooder.requiredMaterials = new HashSet<>();
+
+                // <--[tag]
+                // @attribute <LocationTag.flood_fill[<limit>].types[<material>|...]>
+                // @returns ListTag(LocationTag)
+                // @description
+                // Returns the set of all blocks, starting at the given location,
+                // that can be directly reached in a way that only travels through blocks of the specified material type(s).
+                // This will not travel diagonally, only the 6 cardinal directions (N/E/S/W/Up/Down).
+                // As this is potentially infinite for some block types (like air, stone, etc.) should there be any opening however small, a limit must be given.
+                // The limit value can be: a CuboidTag, an EllipsoidTag, or an ElementTag(Decimal) to use as a radius.
+                // Note that the returned list will not be in any particular order.
+                // The result will be an empty list if the block at the start location is not one of the input materials.
+                // -->
+                if (attribute.startsWith("types", 2) && attribute.hasContext(2)) {
+                    for (MaterialTag material : attribute.contextAsType(2, ListTag.class).filter(MaterialTag.class, attribute.context)) {
+                        flooder.requiredMaterials.add(material.getMaterial());
+                    }
+                    attribute.fulfill(1);
+                }
+                else {
+                    flooder.requiredMaterials.add(object.getBlock().getType());
+                }
+                flooder.run(object, area);
+            }
+            finally {
+                NMSHandler.getChunkHelper().restoreServerThread(object.getWorld());
+            }
+            return new ListTag((Collection<LocationTag>) flooder.result);
+        });
+
         registerTag("find", (attribute, object) -> {
             if (!attribute.startsWith("within", 3) || !attribute.hasContext(3)) {
                 return null;
@@ -1985,7 +2150,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 int index = 0;
 
                 attribute.fulfill(2);
-                Location tstart = object.getBlockForTag(attribute).getLocation();
+                Location tstart = object.getBlockLocation();
                 double tstartY = tstart.getY();
                 int radiusInt = (int) radius;
 
@@ -2063,7 +2228,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                                 LocationTag l = new LocationTag(blockLoc.clone().add(x, y, z));
                                 if (!materials.isEmpty()) {
                                     for (MaterialTag material : materials) {
-                                        if (material.matchesBlock(l.getBlockForTag(attribute))) {
+                                        if (material.getMaterial() == l.getBlockTypeForTag(attribute)) {
                                             if (new LocationTag(l.clone().add(0, 1, 0)).getBlockTypeForTag(attribute) == Material.AIR
                                                     && new LocationTag(l.clone().add(0, 2, 0)).getBlockTypeForTag(attribute) == Material.AIR
                                                     && l.getBlockTypeForTag(attribute) != Material.AIR) {
@@ -2752,6 +2917,20 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         });
 
         // <--[tag]
+        // @attribute <LocationTag.to_ellipsoid[<size>]>
+        // @returns EllipsoidTag
+        // @description
+        // Returns an ellipsoid centered at this location with the specified size.
+        // -->
+        registerTag("to_ellipsoid", (attribute, object) -> {
+            if (!attribute.hasContext(1)) {
+                attribute.echoError("to_ellipsoid[...] tag must have input.");
+                return null;
+            }
+            return new EllipsoidTag(object.clone(), attribute.getContextObject(1).asType(LocationTag.class, attribute.context));
+        });
+
+        // <--[tag]
         // @attribute <LocationTag.to_cuboid[<location>]>
         // @returns CuboidTag
         // @description
@@ -3120,7 +3299,10 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
             Block b = object.getBlockForTag(attribute);
             MaterialTag material = new MaterialTag(b);
             if (MaterialHalf.describes(material)) {
-                return new LocationTag(object.clone().add(MaterialHalf.getFrom(material).getRelativeBlockVector()));
+                Vector vec = MaterialHalf.getFrom(material).getRelativeBlockVector();
+                if (vec != null) {
+                    return new LocationTag(object.clone().add(vec));
+                }
             }
             if (!attribute.hasAlternative()) {
                 Debug.echoError("Block of type " + object.getBlockTypeForTag(attribute).name() + " isn't supported by other_block.");
@@ -3196,6 +3378,40 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         });
 
         // Unizen end
+
+        // @attribute <LocationTag.jukebox_record>
+        // @returns ItemTag
+        // @mechanism LocationTag.jukebox_record
+        // @description
+        // Returns the record item currently inside the jukebox.
+        // If there's no record, will return air.
+        // -->
+        registerTag("jukebox_record", (attribute, object) -> {
+            BlockState state = object.getBlockStateForTag(attribute);
+            if (!(state instanceof Jukebox)) {
+                attribute.echoError("'jukebox_record' tag is only valid for jukebox blocks.");
+                return null;
+            }
+
+            return new ItemTag(((Jukebox) state).getRecord());
+        });
+
+        // <--[tag]
+        // @attribute <LocationTag.jukebox_is_playing>
+        // @returns ElementTag
+        // @mechanism LocationTag.jukebox_play
+        // @description
+        // Returns whether the jukebox is currently playing a song.
+        // -->
+        registerTag("jukebox_is_playing", (attribute, object) -> {
+            BlockState state = object.getBlockStateForTag(attribute);
+            if (!(state instanceof Jukebox)) {
+                attribute.echoError("'jukebox_is_playing' tag is only valid for jukebox blocks.");
+                return null;
+            }
+
+            return new ElementTag(((Jukebox) state).isPlaying());
+        });
     }
 
     public static ObjectTagProcessor<LocationTag> tagProcessor = new ObjectTagProcessor<>();
@@ -3306,7 +3522,7 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         // @description
         // Sets the contents of a sign block.
         // Note that this takes an escaped list.
-        // See <@link language Escape Tags>.
+        // See <@link language Escaping System>.
         // @tags
         // <LocationTag.sign_contents>
         // -->
@@ -3756,7 +3972,6 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
                 ((BrewingStand) state).setBrewingTime(mechanism.valueAsType(DurationTag.class).getTicksAsInt());
                 state.update();
             }
-        }
 
         // <--[mechanism]
         // @object LocationTag
@@ -3776,6 +3991,61 @@ public class LocationTag extends org.bukkit.Location implements ObjectTag, Notab
         }
 
         // Unizen end
+
+        // <--[mechanism]
+        // @object LocationTag
+        // @name jukebox_record
+        // @input ItemTag
+        // @description
+        // Sets the record item played by a jukebox. Give no input to set the jukebox to empty.
+        // See also <@link mechanism LocationTag.jukebox_play>.
+        // @tags
+        // <LocationTag.jukebox_record>
+        // -->
+        if (mechanism.matches("jukebox_record")) {
+            BlockState state = getBlockState();
+            if (state instanceof Jukebox) {
+                if (mechanism.hasValue() && mechanism.requireObject(ItemTag.class)) {
+                    ((Jukebox) state).setRecord(mechanism.valueAsType(ItemTag.class).getItemStack());
+                }
+                else {
+                    ((Jukebox) state).setRecord(null);
+                }
+                state.update();
+            }
+            else {
+                Debug.echoError("'jukebox_record' mechanism can only be called on a jukebox block.");
+            }
+        }
+
+        // @name jukebox_play
+        // @input ElementTag(Boolean)
+        // @description
+        // If 'true', starts playing the record inside. If 'false', stops playing any song.
+        // See also <@link mechanism LocationTag.jukebox_record>.
+        // @tags
+        // <LocationTag.jukebox_is_playing>
+        // -->
+        if (mechanism.matches("jukebox_play") && mechanism.requireBoolean()) {
+            BlockState state = getBlockState();
+            if (state instanceof Jukebox) {
+                if (mechanism.getValue().asBoolean()) {
+                    Material mat = ((Jukebox) state).getRecord().getType();
+                    if (mat == Material.AIR) {
+                        Debug.echoError("'jukebox_play' cannot play nothing.");
+                        return;
+                    }
+                    ((Jukebox) state).setPlaying(mat);
+                }
+                else {
+                    ((Jukebox) state).stopPlaying();
+                }
+                state.update();
+            }
+            else {
+                Debug.echoError("'jukebox_play' mechanism can only be called on a jukebox block.");
+            }
+        }
 
         CoreUtilities.autoPropertyMechanism(this, mechanism);
     }

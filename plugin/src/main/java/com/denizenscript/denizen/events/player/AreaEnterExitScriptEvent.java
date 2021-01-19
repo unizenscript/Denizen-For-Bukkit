@@ -70,7 +70,7 @@ public class AreaEnterExitScriptEvent extends BukkitScriptEvent implements Liste
         if (path.eventArgLowerAt(2).equals("biome") || exactMatchesEnum(path.eventArgLowerAt(2), Biome.values())) {
             return false;
         }
-        if (exactMatchesVehicle(path.eventArgLowerAt(2))) {
+        if (exactMatchEntity(path.eventArgLowerAt(2))) {
             return false;
         }
         if (path.eventArgLowerAt(2).equals("bed") || path.eventArgLowerAt(2).equals("portal")) {
@@ -171,7 +171,7 @@ public class AreaEnterExitScriptEvent extends BukkitScriptEvent implements Liste
         super.init();
         doTrackAll = false;
         boolean needsMatchers = false;
-        List<String> exacts = new ArrayList<>();
+        HashSet<String> exacts = new HashSet<>();
         List<MatchHelper> matchList = new ArrayList<>();
         for (ScriptPath path : eventPaths) {
             String area = path.eventArgLowerAt(2);
@@ -240,10 +240,6 @@ public class AreaEnterExitScriptEvent extends BukkitScriptEvent implements Liste
         if (containedNow == wasContained) {
             return;
         }
-        if (inAreas == null) {
-            inAreas = new HashSet<>();
-            playersInArea.put(player.getUniqueId(), inAreas);
-        }
         if (containedNow) {
             inAreas.add(obj.getNoteName());
         }
@@ -262,6 +258,10 @@ public class AreaEnterExitScriptEvent extends BukkitScriptEvent implements Liste
             return;
         }
         HashSet<String> inAreas = playersInArea.get(player.getUniqueId());
+        if (inAreas == null) {
+            inAreas = new HashSet<>();
+            playersInArea.put(player.getUniqueId(), inAreas);
+        }
         if (doTrackAll || matchers != null) {
             for (CuboidTag cuboid : NotableManager.getAllType(CuboidTag.class)) {
                 if (anyMatch(cuboid.noteName)) {

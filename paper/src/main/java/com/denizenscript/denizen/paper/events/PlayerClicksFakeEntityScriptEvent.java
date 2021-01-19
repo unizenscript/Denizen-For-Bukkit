@@ -1,7 +1,6 @@
 package com.denizenscript.denizen.paper.events;
 
 import com.denizenscript.denizen.events.BukkitScriptEvent;
-import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.utilities.entity.FakeEntity;
 import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizencore.events.ScriptEvent;
@@ -21,7 +20,7 @@ public class PlayerClicksFakeEntityScriptEvent extends BukkitScriptEvent impleme
     //
     // @Regex ^on player ([^\s]+ )?clicks fake entity$
     //
-    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Location true
     //
     // @Plugin Paper
     //
@@ -72,7 +71,7 @@ public class PlayerClicksFakeEntityScriptEvent extends BukkitScriptEvent impleme
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(new PlayerTag(event.getPlayer()), null);
+        return new BukkitScriptEntryData(event.getPlayer());
     }
 
     @Override

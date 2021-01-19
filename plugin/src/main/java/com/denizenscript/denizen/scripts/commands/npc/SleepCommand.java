@@ -36,7 +36,7 @@ public class SleepCommand extends AbstractCommand {
     // Use <@link command Stand> to make the NPC wake back up.
     //
     // @Tags
-    // None
+    // <NPCTag.is_sleeping>
     //
     // @Usage
     // Make the linked NPC sleep at the player's cursor location.
@@ -76,7 +76,7 @@ public class SleepCommand extends AbstractCommand {
                     + (location != null ? location.debug() : ""));
         }
 
-        SleepingTrait trait = npc.getCitizen().getTrait(SleepingTrait.class);
+        SleepingTrait trait = npc.getCitizen().getOrAddTrait(SleepingTrait.class);
         if (location != null) {
             trait.toSleep(location);
         }

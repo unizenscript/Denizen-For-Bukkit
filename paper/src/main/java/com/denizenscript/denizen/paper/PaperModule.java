@@ -18,17 +18,17 @@ public class PaperModule {
         // Events
         ScriptEvent.registerScriptEvent(new EntityKnocksbackEntityScriptEvent());
         ScriptEvent.registerScriptEvent(new EntityPathfindScriptEvent());
-        ScriptEvent.registerScriptEvent(new EntityShootsBowPaperScriptEventImpl());
         ScriptEvent.registerScriptEvent(new ExperienceOrbMergeScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerAbsorbsExperienceScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerBeaconEffectScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerClicksFakeEntityScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerEquipsArmorScriptEvent());
-        ScriptEvent.registerScriptEvent(new PlayerJumpsPaperScriptEventImpl());
+        ScriptEvent.registerScriptEvent(new PlayerJumpsScriptEventPaperImpl());
         ScriptEvent.registerScriptEvent(new PlayerSpectatesEntityScriptEvent());
         ScriptEvent.registerScriptEvent(new PlayerStopsSpectatingScriptEvent());
         ScriptEvent.registerScriptEvent(new PreEntitySpawnScriptEvent());
         ScriptEvent.registerScriptEvent(new ProjectileCollideScriptEvent());
+        ScriptEvent.registerScriptEvent(new ServerListPingScriptEventPaperImpl());
         ScriptEvent.registerScriptEvent(new TNTPrimesScriptEvent());
         ScriptEvent.registerScriptEvent(new UnknownCommandScriptEvent());
 

@@ -38,6 +38,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.BookMeta;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
 
@@ -995,6 +996,22 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
         return qty;
     }
 
+    public int countByFlag(String flag) {
+        if (inventory == null) {
+            return 0;
+        }
+        int qty = 0;
+        for (ItemStack invStack : inventory) {
+            if (invStack != null) {
+                ItemTag item = new ItemTag(invStack);
+                if (item.getFlagTracker().hasFlag(flag)) {
+                    qty += invStack.getAmount();
+                }
+            }
+        }
+        return qty;
+    }
+
     public int countByScriptName(String scriptName) {
         if (inventory == null) {
             return 0;
@@ -1377,15 +1394,17 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
                 int found_items = 0;
                 if (strict) {
                     for (ItemStack item : object.getContents()) {
-                        if (item != null && item.getType() == Material.WRITTEN_BOOK
-                                && ((BookMeta) item.getItemMeta()).getTitle().equalsIgnoreCase(search_string)) {
+                        if (item == null || !item.hasItemMeta()) {
+                            continue;
+                        }
+                        ItemMeta meta = item.getItemMeta();
+                        if (item.getType() == Material.WRITTEN_BOOK && ((BookMeta) meta).getTitle().equalsIgnoreCase(search_string)) {
                             found_items += item.getAmount();
                             if (found_items >= qty) {
                                 break;
                             }
                         }
-                        else if (item != null && item.hasItemMeta() && item.getItemMeta().hasDisplayName() &&
-                                item.getItemMeta().getDisplayName().equalsIgnoreCase(search_string)) {
+                        else if (meta.hasDisplayName() && meta.getDisplayName().equalsIgnoreCase(search_string)) {
                             found_items += item.getAmount();
                             if (found_items >= qty) {
                                 break;
@@ -1395,17 +1414,17 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
                 }
                 else {
                     for (ItemStack item : object.getContents()) {
-                        if (item != null && item.getType() == Material.WRITTEN_BOOK
-                                && CoreUtilities.toLowerCase(((BookMeta) item.getItemMeta()).getTitle())
-                                .contains(CoreUtilities.toLowerCase(search_string))) {
+                        if (item == null || !item.hasItemMeta()) {
+                            continue;
+                        }
+                        ItemMeta meta = item.getItemMeta();
+                        if (item.getType() == Material.WRITTEN_BOOK && CoreUtilities.toLowerCase(((BookMeta) meta).getTitle()).contains(CoreUtilities.toLowerCase(search_string))) {
                             found_items += item.getAmount();
                             if (found_items >= qty) {
                                 break;
                             }
                         }
-                        else if (item != null && item.hasItemMeta() && item.getItemMeta().hasDisplayName() &&
-                                CoreUtilities.toLowerCase(item.getItemMeta().getDisplayName())
-                                        .contains(CoreUtilities.toLowerCase(search_string))) {
+                        else if (meta.hasDisplayName() && CoreUtilities.toLowerCase(meta.getDisplayName()).contains(CoreUtilities.toLowerCase(search_string))) {
                             found_items += item.getAmount();
                             if (found_items >= qty) {
                                 break;
@@ -1459,8 +1478,12 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
                 if (strict) {
                     strict_items:
                     for (ItemStack item : object.getContents()) {
-                        if (item != null && item.hasItemMeta() && item.getItemMeta().hasLore()) {
-                            List<String> item_lore = item.getItemMeta().getLore();
+                        if (item == null || !item.hasItemMeta()) {
+                            continue;
+                        }
+                        ItemMeta meta = item.getItemMeta();
+                        if (meta.hasLore()) {
+                            List<String> item_lore = meta.getLore();
                             if (lore.size() != item_lore.size()) {
                                 continue;
                             }
@@ -1478,8 +1501,12 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
                 }
                 else {
                     for (ItemStack item : object.getContents()) {
-                        if (item != null && item.hasItemMeta() && item.getItemMeta().hasLore()) {
-                            List<String> item_lore = item.getItemMeta().getLore();
+                        if (item == null || !item.hasItemMeta()) {
+                            continue;
+                        }
+                        ItemMeta meta = item.getItemMeta();
+                        if (meta.hasLore()) {
+                            List<String> item_lore = meta.getLore();
                             int loreCount = 0;
                             lines:
                             for (String line : lore) {
@@ -1548,24 +1575,54 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
                 return new ElementTag(found_items >= qty);
             }
             // <--[tag]
-            // @attribute <InventoryTag.contains.nbt[<key>]>
+            // @attribute <InventoryTag.contains.flagged[<flag_name>|...]>
             // @returns ElementTag(Boolean)
             // @description
-            // Returns whether the inventory contains an item with the specified key.
+            // Returns whether the inventory contains an item with the specified flag(s) set.
             // -->
+            if (attribute.startsWith("flagged", 2)) {
+                if (!attribute.hasContext(2)) {
+                    return null;
+                }
+                ListTag scrNameList = attribute.contextAsType(2, ListTag.class);
+                String[] flags = scrNameList.toArray(new String[0]);
+                int qty = 1;
+
+                // <--[tag]
+                // @attribute <InventoryTag.contains.flagged[<flag_name>|...].quantity[<#>]>
+                // @returns ElementTag(Boolean)
+                // @description
+                // Returns whether the inventory contains a certain quantity of an item with the specified flag(s) set.
+                // -->
+                if (attribute.startsWith("quantity", 3) && attribute.hasContext(3)) {
+                    qty = attribute.getIntContext(3);
+                    attribute.fulfill(1);
+                }
+                int found_items = 0;
+                for (ItemStack item : object.getContents()) {
+                    if (item != null) {
+                        ItemTag itemTag = new ItemTag(item);
+                        for (String flag : flags) {
+                            if (itemTag.getFlagTracker().hasFlag(flag)) {
+                                found_items += item.getAmount();
+                                break;
+                            }
+                        }
+                        if (found_items >= qty) {
+                            break;
+                        }
+                    }
+                }
+                attribute.fulfill(1);
+                return new ElementTag(found_items >= qty);
+            }
             if (attribute.startsWith("nbt", 2)) {
+                Deprecations.itemNbt.warn(attribute.context);
                 if (!attribute.hasContext(2)) {
                     return null;
                 }
                 String keyName = attribute.getContext(2);
                 int qty = 1;
-
-                // <--[tag]
-                // @attribute <InventoryTag.contains.nbt[<key>].quantity[<#>]>
-                // @returns ElementTag(Boolean)
-                // @description
-                // Returns whether the inventory contains a certain quantity of an item with the specified key.
-                // -->
                 if ((attribute.startsWith("quantity", 3) || attribute.startsWith("qty", 3)) && attribute.hasContext(3)) {
                     if (attribute.startsWith("qty", 3)) {
                         Deprecations.qtyTags.warn(attribute.context);
@@ -1877,6 +1934,20 @@ public class InventoryTag implements ObjectTag, Notable, Adjustable {
                 String scriptName = attribute.getContext(2);
                 attribute.fulfill(1);
                 return new ElementTag(object.countByScriptName(scriptName));
+            }
+            // <--[tag]
+            // @attribute <InventoryTag.quantity.flagged[<flag_name>]>
+            // @returns ElementTag(Number)
+            // @description
+            // Returns the combined quantity of itemstacks that have the specified flag set.
+            // -->
+            if (attribute.startsWith("flagged", 2)) {
+                if (!attribute.hasContext(2)) {
+                    return null;
+                }
+                String flag = attribute.getContext(2);
+                attribute.fulfill(1);
+                return new ElementTag(object.countByFlag(flag));
             }
 
             // <--[tag]

@@ -14,8 +14,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 public class ItemHidden implements Property {
 
     public static boolean describes(ObjectTag item) {
-        // All items can have flags
-        return item instanceof ItemTag && ((ItemTag) item).getItemStack().getType() != Material.AIR;
+        // All items can have hides
+        return item instanceof ItemTag && ((ItemTag) item).getBukkitMaterial() != Material.AIR;
     }
 
     public static ItemHidden getFrom(ObjectTag _item) {

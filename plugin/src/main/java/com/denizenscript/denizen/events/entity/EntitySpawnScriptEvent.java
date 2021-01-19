@@ -11,6 +11,8 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.EntitySpawnEvent;
+import org.bukkit.event.entity.SpawnerSpawnEvent;
 
 public class EntitySpawnScriptEvent extends BukkitScriptEvent implements Listener {
 
@@ -25,19 +27,19 @@ public class EntitySpawnScriptEvent extends BukkitScriptEvent implements Listene
     //
     // @Group Entity
     //
-    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Location true
     //
     // @Cancellable true
     //
     // @Warning This event may fire very rapidly.
     //
-    // @Triggers when a mob spawns. Note that this is specifically for mobs, not any non-mob entity type.
+    // @Triggers when an entity spawns.
     //
     // @Context
     // <context.entity> returns the EntityTag that spawned.
     // <context.location> returns the location the entity will spawn at.
-    // <context.reason> returns the reason the entity spawned.
-    // Reasons: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/event/entity/CreatureSpawnEvent.SpawnReason.html>
+    // <context.reason> returns the reason the entity spawned, can be ENTITY_SPAWN or any of: <@link url https://hub.spigotmc.org/javadocs/spigot/org/bukkit/event/entity/CreatureSpawnEvent.SpawnReason.html>
+    // <context.spawner_location> returns the location of the mob spawner, when reason is SPAWNER.
     //
     // -->
 
@@ -49,7 +51,7 @@ public class EntitySpawnScriptEvent extends BukkitScriptEvent implements Listene
     public EntityTag entity;
     public LocationTag location;
     public ElementTag reason;
-    public CreatureSpawnEvent event;
+    public EntitySpawnEvent event;
 
     @Override
     public boolean couldMatch(ScriptPath path) {
@@ -101,15 +103,30 @@ public class EntitySpawnScriptEvent extends BukkitScriptEvent implements Listene
         else if (name.equals("reason")) {
             return reason;
         }
+        else if (name.equals("spawner_location") && event instanceof SpawnerSpawnEvent) {
+            return new LocationTag(((SpawnerSpawnEvent) event).getSpawner().getLocation());
+        }
         return super.getContext(name);
     }
 
     @EventHandler
-    public void onCreatureSpawn(CreatureSpawnEvent event) {
+    public void onEntitySpawn(EntitySpawnEvent event) {
         Entity entity = event.getEntity();
         this.entity = new EntityTag(entity);
         location = new LocationTag(event.getLocation());
-        reason = new ElementTag(event.getSpawnReason().name());
+        if (event instanceof CreatureSpawnEvent) {
+            CreatureSpawnEvent.SpawnReason creatureReason = ((CreatureSpawnEvent) event).getSpawnReason();
+            if (creatureReason == CreatureSpawnEvent.SpawnReason.SPAWNER) {
+                return; // Let the SpawnerSpawnEvent happen and handle it instead
+            }
+            reason = new ElementTag(creatureReason.name());
+        }
+        else if (event instanceof SpawnerSpawnEvent) {
+            reason = new ElementTag("SPAWNER");
+        }
+        else {
+            reason = new ElementTag("ENTITY_SPAWN");
+        }
         this.event = event;
         EntityTag.rememberEntity(entity);
         fire(event);

@@ -2,7 +2,6 @@ package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.LocationTag;
-import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.objects.notable.NotableManager;
 import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
@@ -25,7 +24,7 @@ public class PlayerWalksOverScriptEvent extends BukkitScriptEvent implements Lis
     //
     // @Group Player
     //
-    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Location true
     //
     // @Cancellable true
     //
@@ -68,7 +67,7 @@ public class PlayerWalksOverScriptEvent extends BukkitScriptEvent implements Lis
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(new PlayerTag(event.getPlayer()), null);
+        return new BukkitScriptEntryData(event.getPlayer());
     }
 
     @Override

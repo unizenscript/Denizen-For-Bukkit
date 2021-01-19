@@ -1,8 +1,8 @@
 package com.denizenscript.denizen.npc.traits;
 
 import com.denizenscript.denizen.events.bukkit.ScriptReloadEvent;
+import com.denizenscript.denizen.objects.NPCTag;
 import com.denizenscript.denizen.tags.BukkitTagContext;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizencore.scripts.ScriptRegistry;
 import com.denizenscript.denizencore.tags.TagManager;
@@ -48,11 +48,11 @@ public class ConstantsTrait extends Trait {
         if (constants.containsKey(CoreUtilities.toLowerCase(name))) // TODO: shouldDebug
         {
             return TagManager.tag(constants.get(CoreUtilities.toLowerCase(name)),
-                    new BukkitTagContext(null, DenizenAPI.getDenizenNPC(npc), null, true, null));
+                    new BukkitTagContext(null, new NPCTag(npc), null, true, null));
         }
         else if (getAssignmentConstants().containsKey(CoreUtilities.toLowerCase(name))) {
             return TagManager.tag(assignmentConstants.get(CoreUtilities.toLowerCase(name)),
-                    new BukkitTagContext(null, DenizenAPI.getDenizenNPC(npc), null, true, null));
+                    new BukkitTagContext(null, new NPCTag(npc), null, true, null));
         }
         return null;
     }
@@ -117,9 +117,9 @@ public class ConstantsTrait extends Trait {
 
     public Map<String, String> getAssignmentConstants() {
         // Check to make sure NPC has an assignment
-        if (npc.hasTrait(AssignmentTrait.class) && npc.getTrait(AssignmentTrait.class).hasAssignment()) {
+        if (npc.hasTrait(AssignmentTrait.class) && npc.getOrAddTrait(AssignmentTrait.class).hasAssignment()) {
             // Check to make sure assignment hasn't changed.. if it has, the assignmentConstants map will be rebuilt
-            if (assignment != null && assignment.equalsIgnoreCase(npc.getTrait(AssignmentTrait.class).getAssignment().getName())) {
+            if (assignment != null && assignment.equalsIgnoreCase(npc.getOrAddTrait(AssignmentTrait.class).getAssignment().getName())) {
                 return assignmentConstants;
             }
             else {
@@ -131,13 +131,13 @@ public class ConstantsTrait extends Trait {
 
     public Map<String, String> rebuildAssignmentConstants() {
         // Builds a map of constants inherited from the NPCs current Assignment
-        if (!npc.hasTrait(AssignmentTrait.class) || !npc.getTrait(AssignmentTrait.class).hasAssignment()) {
+        if (!npc.hasTrait(AssignmentTrait.class) || !npc.getOrAddTrait(AssignmentTrait.class).hasAssignment()) {
             assignmentConstants.clear();
             return assignmentConstants;
         }
 
-        if (npc.getTrait(AssignmentTrait.class).getAssignment() != null) {
-            assignment = npc.getTrait(AssignmentTrait.class).getAssignment().getName();
+        if (npc.getOrAddTrait(AssignmentTrait.class).getAssignment() != null) {
+            assignment = npc.getOrAddTrait(AssignmentTrait.class).getAssignment().getName();
             assignmentConstants.clear();
         }
         else {
@@ -155,7 +155,7 @@ public class ConstantsTrait extends Trait {
             }
         }
         catch (NullPointerException e) {
-            Debug.echoError("Constants in assignment script '" + npc.getTrait(AssignmentTrait.class)
+            Debug.echoError("Constants in assignment script '" + npc.getOrAddTrait(AssignmentTrait.class)
                     .getAssignment().getName() + "' improperly defined, no constants will be set.");
         }
 
@@ -181,7 +181,7 @@ public class ConstantsTrait extends Trait {
         }
         paginator.addLine("");
 
-        if (npc.hasTrait(AssignmentTrait.class) && npc.getTrait(AssignmentTrait.class).hasAssignment()) {
+        if (npc.hasTrait(AssignmentTrait.class) && npc.getOrAddTrait(AssignmentTrait.class).hasAssignment()) {
             getAssignmentConstants();
             // List constants inherited from an Assignment.
             paginator.addLine("<e>Constants for assignment '" + assignment.toUpperCase() + "':");

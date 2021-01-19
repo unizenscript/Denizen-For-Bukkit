@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.scripts.commands.entity;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.utilities.Conversion;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.entity.Position;
@@ -93,7 +93,7 @@ public class PushCommand extends AbstractCommand implements Holdable {
                     scriptEntry.addObject("origin_location", arg.asType(LocationTag.class));
                 }
                 else {
-                    Debug.echoError("Ignoring unrecognized argument: " + arg.raw_value);
+                    Debug.echoError("Ignoring unrecognized argument: " + arg.getRawValue());
                 }
             }
             else if (!scriptEntry.hasObject("destination")
@@ -283,7 +283,7 @@ public class PushCommand extends AbstractCommand implements Holdable {
                 }
             }
         };
-        task.runTaskTimer(DenizenAPI.getCurrentInstance(), 0, prec);
+        task.runTaskTimer(Denizen.getInstance(), 0, prec);
     }
 
     public static boolean isSafeBlock(Location loc) {

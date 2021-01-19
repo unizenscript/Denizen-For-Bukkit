@@ -1,21 +1,26 @@
 package com.denizenscript.denizen.utilities.implementation;
 
 import com.denizenscript.denizen.Denizen;
+import com.denizenscript.denizen.objects.notable.NotableManager;
 import com.denizenscript.denizen.utilities.Settings;
 import com.denizenscript.denizen.events.bukkit.ScriptReloadEvent;
-import com.denizenscript.denizen.flags.FlagManager;
 import com.denizenscript.denizen.objects.*;
 import com.denizenscript.denizen.scripts.containers.core.*;
 import com.denizenscript.denizen.tags.BukkitTagContext;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.debugging.DebugSubmit;
 import com.denizenscript.denizen.utilities.depends.Depends;
 import com.denizenscript.denizen.nms.NMSHandler;
+import com.denizenscript.denizen.utilities.maps.DenizenMapManager;
 import com.denizenscript.denizencore.DenizenImplementation;
+import com.denizenscript.denizencore.flags.AbstractFlagTracker;
+import com.denizenscript.denizencore.flags.FlaggableObject;
 import com.denizenscript.denizencore.objects.Argument;
+import com.denizenscript.denizencore.objects.ObjectFetcher;
+import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
+import com.denizenscript.denizencore.objects.notable.Notable;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
 import com.denizenscript.denizencore.scripts.containers.ScriptContainer;
@@ -42,7 +47,7 @@ public class DenizenCoreImplementation implements DenizenImplementation {
         File file;
         // Get the script directory
         if (Settings.useDefaultScriptPath()) {
-            file = new File(DenizenAPI.getCurrentInstance().getDataFolder() + File.separator + "scripts");
+            file = new File(Denizen.getInstance().getDataFolder() + File.separator + "scripts");
         }
         else {
             file = new File(Settings.getAlternateScriptPath().replace("/", File.separator));
@@ -120,6 +125,8 @@ public class DenizenCoreImplementation implements DenizenImplementation {
         if (Depends.vault != null) {
             EconomyScriptContainer.cleanup();
         }
+        // Give map image downloads a new chance
+        DenizenMapManager.failedUrls.clear();
     }
 
     @Override
@@ -181,7 +188,7 @@ public class DenizenCoreImplementation implements DenizenImplementation {
     // Denizen tracks a "linked player" and a "linked NPC" in queues and the commands within.
     // Many commands automatically operate on the linked player/NPC or by default or exclusively
     // (for example, "give" defaults to giving items to the linked player but that can be changed with the "to" argument,
-    // "assign" exclusively changes the assignment of the linked NPC, and that cannot be changed except by the global NPC argument).
+    // "assignment" exclusively changes the assignment of the linked NPC, and that cannot be changed except by the global NPC argument).
     //
     // When the player argument is used, it sets the linked player for the specific command it's on.
     // This is only useful for commands that default to operating on the linked player.
@@ -246,31 +253,8 @@ public class DenizenCoreImplementation implements DenizenImplementation {
     }
 
     @Override
-    public ListTag valueOfFlagListTag(String string) {
-        FlagManager.Flag flag = DenizenAPI.getCurrentInstance().getFlag(string);
-        if (flag == null) {
-            return null;
-        }
-        return new ListTag(flag.toString(), true, flag.values());
-    }
-
-    @Override
-    public boolean matchesFlagListTag(String arg) {
-        boolean flag = false;
-        if (arg.startsWith("fl")) {
-            if (arg.indexOf('[') == 2) {
-                int cb = arg.indexOf(']');
-                if (cb > 4 && arg.indexOf('@') == (cb + 1)) {
-                    String owner = arg.substring(3, cb);
-                    flag = arg.substring(cb + 2).length() > 0 && (PlayerTag.matches(owner)
-                            || (Depends.citizens != null && NPCTag.matches(owner)));
-                }
-            }
-            else if (arg.indexOf('@') == 2) {
-                flag = arg.substring(3).length() > 0;
-            }
-        }
-        return flag;
+    public AbstractFlagTracker getServerFlags() {
+        return Denizen.getInstance().serverFlagMap;
     }
 
     @Override
@@ -472,7 +456,7 @@ public class DenizenCoreImplementation implements DenizenImplementation {
 
     @Override
     public File getDataFolder() {
-        return DenizenAPI.getCurrentInstance().getDataFolder();
+        return Denizen.getInstance().getDataFolder();
     }
 
     @Override
@@ -516,6 +500,27 @@ public class DenizenCoreImplementation implements DenizenImplementation {
                 }
             }
         };
-        task.runTaskTimer(DenizenAPI.getCurrentInstance(), 0, 5);
+        task.runTaskTimer(Denizen.getInstance(), 0, 5);
+    }
+
+    @Override
+    public FlaggableObject simpleWordToFlaggable(String word, ScriptEntry entry) {
+        if (CoreUtilities.equalsIgnoreCase(word, "player")) {
+            return Utilities.getEntryPlayer(entry);
+        }
+        if (CoreUtilities.equalsIgnoreCase(word, "npc")) {
+            return Utilities.getEntryNPC(entry);
+        }
+        if (!word.contains("@")) {
+            Notable noted = NotableManager.getSavedObject(word);
+            if (noted instanceof LocationTag) {
+                return (LocationTag) noted;
+            }
+        }
+        ObjectTag obj = ObjectFetcher.pickObjectFor(word, entry.context);
+        if (obj instanceof FlaggableObject) {
+            return (FlaggableObject) obj;
+        }
+        return null;
     }
 }

@@ -70,7 +70,7 @@ public class EntityGravity implements Property {
         if (attribute.startsWith("gravity")) {
             if (dentity.isCitizensNPC()) {
                 boolean gravityBlocked = dentity.getDenizenNPC().getCitizen().hasTrait(Gravity.class)
-                        && !dentity.getDenizenNPC().getCitizen().getTrait(Gravity.class).hasGravity();
+                        && !dentity.getDenizenNPC().getCitizen().getOrAddTrait(Gravity.class).hasGravity();
                 return new ElementTag(!gravityBlocked);
             }
             return new ElementTag(dentity.getBukkitEntity().hasGravity())
@@ -89,12 +89,13 @@ public class EntityGravity implements Property {
         // @input ElementTag(Boolean)
         // @description
         // Changes the gravity state of an entity.
+        // When set false (no gravity), side effects may also occur, eg all movement entirely being blocked.
         // @tags
         // <EntityTag.gravity>
         // -->
         if (mechanism.matches("gravity") && mechanism.requireBoolean()) {
             if (dentity.isCitizensNPC()) {
-                dentity.getDenizenNPC().getCitizen().getTrait(Gravity.class).gravitate(!mechanism.getValue().asBoolean());
+                dentity.getDenizenNPC().getCitizen().getOrAddTrait(Gravity.class).gravitate(!mechanism.getValue().asBoolean());
             }
             else {
                 dentity.getBukkitEntity().setGravity(mechanism.getValue().asBoolean());

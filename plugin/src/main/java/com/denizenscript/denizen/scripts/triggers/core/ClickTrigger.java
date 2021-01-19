@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.scripts.triggers.core;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.scripts.containers.core.InteractScriptContainer;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.npc.traits.TriggerTrait;
 import com.denizenscript.denizen.objects.ItemTag;
@@ -68,7 +68,7 @@ public class ClickTrigger extends AbstractTrigger implements Listener {
 
         // The rest of the methods beyond this point require a NPCTag object, which can easily be
         // obtained if a valid NPC object is available:
-        NPCTag npc = DenizenAPI.getDenizenNPC(event.getNPC());
+        NPCTag npc = new NPCTag(event.getNPC());
 
         // Now, check if the 'click trigger' specifically is enabled. 'name' is inherited from the
         // super AbstractTrigger and contains the name of the trigger that was use in registration.
@@ -156,6 +156,6 @@ public class ClickTrigger extends AbstractTrigger implements Listener {
 
     @Override
     public void onEnable() {
-        Bukkit.getServer().getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
+        Bukkit.getServer().getPluginManager().registerEvents(this, Denizen.getInstance());
     }
 }

@@ -5,12 +5,13 @@ import com.denizenscript.denizencore.utilities.ReflectionHelper;
 import com.denizenscript.denizen.nms.v1_16.Handler;
 import com.denizenscript.denizen.utilities.FormattedTextHelper;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.chat.ComponentSerializer;
-import net.minecraft.server.v1_16_R2.ChatMessageType;
-import net.minecraft.server.v1_16_R2.IChatBaseComponent;
-import net.minecraft.server.v1_16_R2.PacketPlayOutChat;
+import net.minecraft.server.v1_16_R3.ChatMessageType;
+import net.minecraft.server.v1_16_R3.IChatBaseComponent;
+import net.minecraft.server.v1_16_R3.PacketPlayOutChat;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -74,7 +75,7 @@ public class PacketOutChatImpl implements PacketOutChat {
     public void setMessage(String message) {
         try {
             if (!bungee) {
-                MESSAGE.set(internal, Handler.componentToNMS(FormattedTextHelper.parse(message)));
+                MESSAGE.set(internal, Handler.componentToNMS(FormattedTextHelper.parse(message, ChatColor.WHITE)));
             }
             else {
                 internal.components = new BaseComponent[]{new TextComponent(message)};

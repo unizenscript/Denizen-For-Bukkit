@@ -4,7 +4,6 @@ import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.depends.Depends;
 import com.denizenscript.denizen.utilities.inventory.SlotHelper;
-import com.denizenscript.denizen.utilities.nbt.CustomNBT;
 import com.denizenscript.denizen.objects.InventoryTag;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
@@ -14,6 +13,7 @@ import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
+import com.denizenscript.denizencore.utilities.Deprecations;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
@@ -72,6 +72,9 @@ public class GiveCommand extends AbstractCommand {
             if (!scriptEntry.hasObject("quantity")
                     && arg.matchesPrefix("q", "qty", "quantity")
                     && arg.matchesFloat()) {
+                if (arg.matchesPrefix("q", "qty")) {
+                    Deprecations.qtyTags.warn(scriptEntry);
+                }
                 scriptEntry.addObject("quantity", arg.asElement());
                 scriptEntry.addObject("set_quantity", new ElementTag(true));
             }
@@ -83,19 +86,15 @@ public class GiveCommand extends AbstractCommand {
                     && arg.matches("xp", "exp", "experience")) {
                 scriptEntry.addObject("type", Type.EXP);
             }
-            else if (!scriptEntry.hasObject("engrave")
-                    && arg.matches("engrave")) {
-                scriptEntry.addObject("engrave", new ElementTag(true));
-            }
             else if (!scriptEntry.hasObject("unlimit_stack_size")
                     && arg.matches("unlimit_stack_size")) {
                 scriptEntry.addObject("unlimit_stack_size", new ElementTag(true));
             }
             else if (!scriptEntry.hasObject("items")
                     && !scriptEntry.hasObject("type")
-                    && (arg.matchesArgumentList(ItemTag.class) || arg.startsWith("item:"))) {
-                scriptEntry.addObject("items", ListTag.valueOf(arg.raw_value.startsWith("item:") ?
-                        arg.raw_value.substring("item:".length()) : arg.raw_value, scriptEntry.getContext()).filter(ItemTag.class, scriptEntry));
+                    && (arg.matchesArgumentList(ItemTag.class))) {
+                scriptEntry.addObject("items", ListTag.valueOf(arg.getRawValue().startsWith("item:") ?
+                        arg.getRawValue().substring("item:".length()) : arg.getRawValue(), scriptEntry.getContext()).filter(ItemTag.class, scriptEntry));
             }
             else if (!scriptEntry.hasObject("inventory")
                     && arg.matchesPrefix("t", "to")
@@ -111,7 +110,6 @@ public class GiveCommand extends AbstractCommand {
             }
         }
         scriptEntry.defaultObject("type", Type.ITEM)
-                .defaultObject("engrave", new ElementTag(false))
                 .defaultObject("unlimit_stack_size", new ElementTag(false))
                 .defaultObject("quantity", new ElementTag(1))
                 .defaultObject("slot", new ElementTag(1));
@@ -129,7 +127,6 @@ public class GiveCommand extends AbstractCommand {
 
     @Override
     public void execute(ScriptEntry scriptEntry) {
-        ElementTag engrave = scriptEntry.getElement("engrave");
         ElementTag unlimit_stack_size = scriptEntry.getElement("unlimit_stack_size");
         InventoryTag inventory = scriptEntry.getObjectTag("inventory");
         ElementTag quantity = scriptEntry.getElement("quantity");
@@ -145,7 +142,6 @@ public class GiveCommand extends AbstractCommand {
                     ArgumentHelper.debugObj("Type", type.name())
                             + (inventory != null ? inventory.debug() : "")
                             + quantity.debug()
-                            + engrave.debug()
                             + unlimit_stack_size.debug()
                             + (items != null ? ArgumentHelper.debugObj("Items", items) : "")
                             + slot.debug());
@@ -173,10 +169,6 @@ public class GiveCommand extends AbstractCommand {
                     }
                     if (set_quantity) {
                         is.setAmount(quantity.asInt());
-                    }
-                    // TODO: Should engrave be kept?
-                    if (engrave.asBoolean()) {
-                        is = CustomNBT.addCustomNBT(item.getItemStack(), "owner", Utilities.getEntryPlayer(scriptEntry).getName(), CustomNBT.KEY_DENIZEN);
                     }
                     int slotId = SlotHelper.nameToIndex(slot.asString());
                     if (slotId == -1) {

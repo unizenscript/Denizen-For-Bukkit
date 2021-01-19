@@ -1,10 +1,10 @@
 package com.denizenscript.denizen.events.player;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.InventoryTag;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.objects.PlayerTag;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ListTag;
@@ -29,7 +29,9 @@ public class PlayerDragsInInvScriptEvent extends BukkitScriptEvent implements Li
     //
     // @Group Player
     //
-    // @Switch in_area:<area> to only process the event if it occurred within a specified area.
+    // @Switch in_area:<area> replaces the default 'in:<area>' for this event.
+    //
+    // @Location true
     //
     // @Cancellable true
     //
@@ -132,7 +134,7 @@ public class PlayerDragsInInvScriptEvent extends BukkitScriptEvent implements Li
                         ((Player) holder).updateInventory();
                     }
                 }
-            }.runTaskLater(DenizenAPI.getCurrentInstance(), 1);
+            }.runTaskLater(Denizen.getInstance(), 1);
         }
         super.cancellationChanged();
     }

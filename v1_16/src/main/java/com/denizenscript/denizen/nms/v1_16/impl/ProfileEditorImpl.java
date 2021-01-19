@@ -1,8 +1,11 @@
 package com.denizenscript.denizen.nms.v1_16.impl;
 
 import com.denizenscript.denizen.nms.abstracts.ProfileEditor;
+import com.denizenscript.denizen.nms.v1_16.Handler;
 import com.denizenscript.denizen.nms.v1_16.helpers.PacketHelperImpl;
 import com.denizenscript.denizen.nms.v1_16.impl.network.handlers.DenizenNetworkManagerImpl;
+import com.denizenscript.denizen.scripts.commands.entity.RenameCommand;
+import com.denizenscript.denizen.utilities.FormattedTextHelper;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.denizenscript.denizen.nms.NMSHandler;
@@ -10,13 +13,15 @@ import com.denizenscript.denizen.nms.util.PlayerProfile;
 import com.denizenscript.denizencore.utilities.ReflectionHelper;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
-import net.minecraft.server.v1_16_R2.*;
+import net.md_5.bungee.api.ChatColor;
+import net.minecraft.server.v1_16_R3.*;
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_16_R2.CraftServer;
-import org.bukkit.craftbukkit.v1_16_R2.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_16_R3.CraftServer;
+import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.List;
@@ -46,8 +51,7 @@ public class ProfileEditorImpl extends ProfileEditor {
                     }
                     else {
                         if (isSkinChanging) {
-                            ((CraftServer) Bukkit.getServer()).getHandle().moveToWorld(
-                                    entityPlayer, (WorldServer) entityPlayer.world, true, player.getLocation(), false);
+                            ((CraftServer) Bukkit.getServer()).getHandle().moveToWorld(entityPlayer, (WorldServer) entityPlayer.world, true, player.getLocation(), false);
                         }
                         player.updateInventory();
                     }
@@ -56,12 +60,12 @@ public class ProfileEditorImpl extends ProfileEditor {
         }.runTaskLater(NMSHandler.getJavaPlugin(), 5);
     }
 
-    public static boolean handleMirrorProfiles(PacketPlayOutPlayerInfo packet, DenizenNetworkManagerImpl manager) {
-        if (ProfileEditor.mirrorUUIDs.isEmpty()) {
+    public static boolean handleAlteredProfiles(PacketPlayOutPlayerInfo packet, DenizenNetworkManagerImpl manager) {
+        if (ProfileEditor.mirrorUUIDs.isEmpty() && !RenameCommand.hasAnyDynamicRenames()) {
             return true;
         }
         PacketPlayOutPlayerInfo.EnumPlayerInfoAction action = ReflectionHelper.getFieldValue(PacketPlayOutPlayerInfo.class, "a", packet);
-        if (action != PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER) {
+        if (action != PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER && action != PacketPlayOutPlayerInfo.EnumPlayerInfoAction.UPDATE_DISPLAY_NAME) {
             return true;
         }
         List dataList = ReflectionHelper.getFieldValue(PacketPlayOutPlayerInfo.class, "b", packet);
@@ -72,7 +76,7 @@ public class ProfileEditorImpl extends ProfileEditor {
             boolean any = false;
             for (Object data : dataList) {
                 GameProfile gameProfile = (GameProfile) playerInfoData_gameProfile.get(data);
-                if (ProfileEditor.mirrorUUIDs.contains(gameProfile.getId())) {
+                if (ProfileEditor.mirrorUUIDs.contains(gameProfile.getId()) || RenameCommand.customNames.containsKey(gameProfile.getId())) {
                     any = true;
                 }
             }
@@ -82,19 +86,26 @@ public class ProfileEditorImpl extends ProfileEditor {
             GameProfile ownProfile = manager.player.getProfile();
             for (Object data : dataList) {
                 GameProfile gameProfile = (GameProfile) playerInfoData_gameProfile.get(data);
-                if (!ProfileEditor.mirrorUUIDs.contains(gameProfile.getId())) {
-                    PacketPlayOutPlayerInfo newPacket = new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER);
+                if (!ProfileEditor.mirrorUUIDs.contains(gameProfile.getId()) && !RenameCommand.customNames.containsKey(gameProfile.getId())) {
+                    PacketPlayOutPlayerInfo newPacket = new PacketPlayOutPlayerInfo(action);
                     List newPacketDataList = ReflectionHelper.getFieldValue(PacketPlayOutPlayerInfo.class, "b", newPacket);
                     newPacketDataList.add(data);
                     manager.oldManager.sendPacket(newPacket);
                 }
                 else {
-                    PacketPlayOutPlayerInfo newPacket = new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER);
+                    String rename = RenameCommand.getCustomNameFor(gameProfile.getId(), manager.player.getBukkitEntity(), false);
+                    PacketPlayOutPlayerInfo newPacket = new PacketPlayOutPlayerInfo(action);
                     List newPacketDataList = ReflectionHelper.getFieldValue(PacketPlayOutPlayerInfo.class, "b", newPacket);
-                    GameProfile patchedProfile = new GameProfile(gameProfile.getId(), gameProfile.getName());
-                    patchedProfile.getProperties().putAll(ownProfile.getProperties());
-                    Object newData = playerInfoData_construct.newInstance(newPacket, patchedProfile,
-                            playerInfoData_latency.getInt(data), playerInfoData_gamemode.get(data), playerInfoData_displayName.get(data));
+                    GameProfile patchedProfile = new GameProfile(gameProfile.getId(), rename != null ? (rename.length() > 16 ? rename.substring(0, 16) : rename) : gameProfile.getName());
+                    if (ProfileEditor.mirrorUUIDs.contains(gameProfile.getId())) {
+                        patchedProfile.getProperties().putAll(ownProfile.getProperties());
+                    }
+                    else {
+                        patchedProfile.getProperties().putAll(gameProfile.getProperties());
+                    }
+                    String listRename = RenameCommand.getCustomNameFor(gameProfile.getId(), manager.player.getBukkitEntity(), true);
+                    IChatBaseComponent displayName = listRename != null ? Handler.componentToNMS(FormattedTextHelper.parse(listRename, ChatColor.WHITE)) : (IChatBaseComponent) playerInfoData_displayName.get(data);
+                    Object newData = playerInfoData_construct.newInstance(newPacket, patchedProfile, playerInfoData_latency.getInt(data), playerInfoData_gamemode.get(data), displayName);
                     newPacketDataList.add(newData);
                     manager.oldManager.sendPacket(newPacket);
                 }
@@ -118,11 +129,11 @@ public class ProfileEditorImpl extends ProfileEditor {
                 for (Object data : dataList) {
                     GameProfile gameProfile = (GameProfile) playerInfoData_gameProfile.get(data);
                     if (fakeProfiles.containsKey(gameProfile.getId())) {
-                        playerInfoData_gameProfile.set(data, getGameProfile(fakeProfiles.get(gameProfile.getId())));
+                        playerInfoData_gameProfile_Setter.invoke(data, getGameProfile(fakeProfiles.get(gameProfile.getId())));
                     }
                 }
             }
-            catch (Exception e) {
+            catch (Throwable e) {
                 Debug.echoError(e);
             }
         }
@@ -130,8 +141,7 @@ public class ProfileEditorImpl extends ProfileEditor {
 
     private static GameProfile getGameProfile(PlayerProfile playerProfile) {
         GameProfile gameProfile = new GameProfile(playerProfile.getUniqueId(), playerProfile.getName());
-        gameProfile.getProperties().put("textures",
-                new Property("textures", playerProfile.getTexture(), playerProfile.getTextureSignature()));
+        gameProfile.getProperties().put("textures", new Property("textures", playerProfile.getTexture(), playerProfile.getTextureSignature()));
         return gameProfile;
     }
 
@@ -141,6 +151,8 @@ public class ProfileEditorImpl extends ProfileEditor {
             playerInfoData_gamemode,
             playerInfoData_gameProfile,
             playerInfoData_displayName;
+
+    public static final MethodHandle playerInfoData_gameProfile_Setter;
 
     public static final Constructor playerInfoData_construct;
 
@@ -175,5 +187,6 @@ public class ProfileEditorImpl extends ProfileEditor {
         playerInfoData_gameProfile = pidGameProfile;
         playerInfoData_displayName = pidDisplayName;
         playerInfoData_construct = pidConstruct;
+        playerInfoData_gameProfile_Setter = ReflectionHelper.getFinalSetter(pid, "d");
     }
 }

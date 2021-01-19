@@ -2,13 +2,14 @@ package com.denizenscript.denizen.nms.v1_16.impl.blocks;
 
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.abstracts.BlockLight;
+import com.denizenscript.denizen.utilities.blocks.ChunkCoordinate;
 import com.denizenscript.denizencore.utilities.ReflectionHelper;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
-import net.minecraft.server.v1_16_R2.*;
+import net.minecraft.server.v1_16_R3.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_16_R2.CraftChunk;
-import org.bukkit.craftbukkit.v1_16_R2.block.CraftBlock;
+import org.bukkit.craftbukkit.v1_16_R3.CraftChunk;
+import org.bukkit.craftbukkit.v1_16_R3.block.CraftBlock;
 import org.bukkit.util.Vector;
 
 import java.lang.invoke.MethodHandle;
@@ -100,7 +101,7 @@ public class BlockLightImpl extends BlockLight {
                 for (Vector vec : RELATIVE_CHUNKS) {
                     IChunkAccess other = world.getChunkAt(chunkX + vec.getBlockX(), chunkZ + vec.getBlockZ(), ChunkStatus.FULL, false);
                     if (other instanceof Chunk) {
-                        List<BlockLight> lights = lightsByChunk.get(((Chunk) other).bukkitChunk);
+                        List<BlockLight> lights = lightsByChunk.get(new ChunkCoordinate(((Chunk) other).bukkitChunk));
                         if (lights != null) {
                             any = true;
                             for (BlockLight light : lights) {
@@ -133,7 +134,7 @@ public class BlockLightImpl extends BlockLight {
                 if (!(chk instanceof Chunk)) {
                     return;
                 }
-                List<BlockLight> lights = lightsByChunk.get(((Chunk) chk).bukkitChunk);
+                List<BlockLight> lights = lightsByChunk.get(new ChunkCoordinate(((Chunk) chk).bukkitChunk));
                 if (lights == null) {
                     return;
                 }

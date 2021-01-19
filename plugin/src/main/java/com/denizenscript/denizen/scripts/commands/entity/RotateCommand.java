@@ -1,6 +1,6 @@
 package com.denizenscript.denizen.scripts.commands.entity;
-
-import com.denizenscript.denizen.utilities.DenizenAPI;
+import com.denizenscript.denizen.Denizen;
+import com.denizenscript.denizen.nms.interfaces.EntityHelper;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.nms.NMSHandler;
@@ -159,7 +159,7 @@ public class RotateCommand extends AbstractCommand implements Holdable {
                     for (EntityTag entity : entities) {
                         if (entity.isSpawned() && rotatingEntities.contains(entity.getUUID())) {
                             NMSHandler.getEntityHelper().rotate(entity.getBukkitEntity(),
-                                    NMSHandler.getEntityHelper().normalizeYaw(entity.getLocation().getYaw() + yaw.asFloat()),
+                                    EntityHelper.normalizeYaw(entity.getLocation().getYaw() + yaw.asFloat()),
                                     entity.getLocation().getPitch() + pitch.asFloat());
                         }
                         else {
@@ -181,6 +181,6 @@ public class RotateCommand extends AbstractCommand implements Holdable {
                 }
             }
         };
-        task.runTaskTimer(DenizenAPI.getCurrentInstance(), 0, frequency.getTicks());
+        task.runTaskTimer(Denizen.getInstance(), 0, frequency.getTicks());
     }
 }

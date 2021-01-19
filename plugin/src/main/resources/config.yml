@@ -126,6 +126,11 @@ Commands:
         # This is mostly to clean up saves, but could potentially be abused.
         # Set to 'false' if you're worried about security.
         Allow file deletion: true
+  Remove:
+        # If set to true, the 'remove' command will always show a warning if it's removing all entities of a type from the world.
+        # This is usually an intentional action, but can happen by mistake.
+        # If entities are disappearing in groups unexpectedly, enable this config option to verify whether the 'remove' command is the source.
+        Always warn on mass delete: false
   Restart:
         # Whether scripts are allowed to stop or restart your server.
         # This is usually only done intentionally, and quite identifiable if done on accident,
@@ -182,6 +187,16 @@ Tags:
   Chat history:
     # How many player messages will be stored for each player (<player.chat_history>, etc.)
     Max messages: 10
+
+Saves:
+  # How long (in seconds) before the offline player flag cache times out.
+  # Set to -1 to keep offline player flags loaded perpetually, or to 0 to never cache.
+  Offline player cache timeout: 300
+  # When set to 'true', player data will be loaded offthread during the login sequence, to avoid adding load to the server while players join.
+  Load async on login: true
+  # When set to 'true', all automatic flag cleanups will be skipped.
+  # This might save some processing time on servers that rarely use flag expirations, but otherwise should be left as 'false'.
+  Skip flag cleaning: false
 
 Packets:
   # Whether to allow Denizen to intercept packets from and to player clients.

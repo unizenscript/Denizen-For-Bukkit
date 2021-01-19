@@ -1,8 +1,8 @@
 package com.denizenscript.denizen.scripts.triggers.core;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.scripts.containers.core.InteractScriptContainer;
 import com.denizenscript.denizen.scripts.containers.core.InteractScriptHelper;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.Settings;
@@ -15,6 +15,7 @@ import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.ArgumentHelper;
 import com.denizenscript.denizencore.objects.ObjectTag;
+import com.denizenscript.denizencore.objects.core.ScriptTag;
 import com.denizenscript.denizencore.scripts.commands.queue.DetermineCommand;
 import com.denizenscript.denizencore.tags.TagManager;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
@@ -78,8 +79,10 @@ public class ChatTrigger extends AbstractTrigger implements Listener {
     //   trigger: /*/
     //   # Add this line to hide the "[Player -> NPC]: hi" initial trigger message.
     //   hide trigger message: true
+    //   # Add this line to show the player chat message in the normal chat.
+    //   show as normal chat: true
     //   script:
-    //   # If you hide the trigger message, you might want to fill that spot with something else.
+    //   # If you hide the trigger message but not show as normal chat, you might want to fill that spot with something else.
     //   - narrate "[Player -> NPC]: I don't know how to type the right thing"
     //   - wait 1
     //   - chat "Well type 'keyword' or any number!"
@@ -89,7 +92,7 @@ public class ChatTrigger extends AbstractTrigger implements Listener {
 
     @Override
     public void onEnable() {
-        Bukkit.getServer().getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
+        Bukkit.getServer().getPluginManager().registerEvents(this, Denizen.getInstance());
     }
 
     // Technically defined in TriggerTrait, but placing here instead.
@@ -131,9 +134,9 @@ public class ChatTrigger extends AbstractTrigger implements Listener {
             return new ChatContext(false);
         }
         if (HyperDebug) {
-            Debug.log("enabled? " + npc.getCitizen().getTrait(TriggerTrait.class).isEnabled(name));
+            Debug.log("enabled? " + npc.getCitizen().getOrAddTrait(TriggerTrait.class).isEnabled(name));
         }
-        if (!npc.getCitizen().getTrait(TriggerTrait.class).isEnabled(name)) {
+        if (!npc.getCitizen().getOrAddTrait(TriggerTrait.class).isEnabled(name)) {
             return new ChatContext(false);
         }
 
@@ -300,7 +303,6 @@ public class ChatTrigger extends AbstractTrigger implements Listener {
                             // matches don't exist
                             regexId = entry.getKey();
                             regexMessage = triggerText.replace(matcher.group(), m.group());
-                            Debug.log("entry value: " + triggerText + "  keyword: " + keyword + "  m.group: " + m.group() + "  matcher.group: " + matcher.group());
                             context.put("keyword", new ElementTag(m.group()));
                             if (replace != null) {
                                 regexMessage = replace;
@@ -344,24 +346,25 @@ public class ChatTrigger extends AbstractTrigger implements Listener {
         }
 
         // If there was a match, the id of the match should have been returned.
+        String showNormalChat = script.getString("STEPS." + step + ".CHAT TRIGGER." + id + ".SHOW AS NORMAL CHAT", "false");
         if (id != null) {
             String hideTriggerMessage = script.getString("STEPS." + step + ".CHAT TRIGGER." + id + ".HIDE TRIGGER MESSAGE", "false");
             if (!hideTriggerMessage.equalsIgnoreCase("true")) {
-                Utilities.talkToNPC(replacementText, denizenPlayer, npc, Settings.chatToNpcOverhearingRange());
+                Utilities.talkToNPC(replacementText, denizenPlayer, npc, Settings.chatToNpcOverhearingRange(), new ScriptTag(script));
             }
             parse(npc, denizenPlayer, script, id, context);
             if (HyperDebug) {
                 Debug.log("chat to NPC");
             }
-            return new ChatContext(true);
+            return new ChatContext(!showNormalChat.equalsIgnoreCase("true"));
         }
         else {
             if (!Settings.chatGloballyIfFailedChatTriggers()) {
-                Utilities.talkToNPC(message, denizenPlayer, npc, Settings.chatToNpcOverhearingRange());
+                Utilities.talkToNPC(message, denizenPlayer, npc, Settings.chatToNpcOverhearingRange(), new ScriptTag(script));
                 if (HyperDebug) {
                     Debug.log("Chat globally");
                 }
-                return new ChatContext(true);
+                return new ChatContext(!showNormalChat.equalsIgnoreCase("true"));
             }
             // No matching chat triggers, and the config.yml says we
             // should just ignore the interaction...
@@ -398,7 +401,7 @@ public class ChatTrigger extends AbstractTrigger implements Listener {
             }
         });
 
-        Bukkit.getScheduler().runTask(DenizenAPI.getCurrentInstance(), futureTask);
+        Bukkit.getScheduler().runTask(Denizen.getInstance(), futureTask);
 
         try {
             ChatContext context = futureTask.get();

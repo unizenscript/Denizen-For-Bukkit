@@ -21,14 +21,14 @@ public class EntityDespawnScriptEvent extends BukkitScriptEvent {
     //
     // @Warning this event fires very rapidly.
     //
-    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Location true
     // @Switch cause:<cause> to only process the event when it came from a specified cause.
     //
     // @Triggers when an entity despawns permanently from the world. May fire repeatedly for one entity.
     //
     // @Context
     // <context.entity> returns the entity that despawned.
-    // <context.cause> returns the reason the entity despawned. Can be: DEATH, CHUNK_UNLOAD, or OTHER
+    // <context.cause> returns the reason the entity despawned. Can be: DEATH, CHUNK_UNLOAD, CITIZENS, or OTHER
     //
     // @NPC when the entity that despawned is an NPC.
     //

@@ -1,7 +1,6 @@
 package com.denizenscript.denizen.events.player;
 
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -18,18 +17,18 @@ public class PlayerAnimatesScriptEvent extends BukkitScriptEvent implements List
     // @Events
     // player animates (<animation>)
     //
-    // @Regex ^on player animates [^\s]+$
+    // @Regex ^on player animates( [^\s]+)?$
     //
     // @Group Player
     //
-    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Location true
     //
     // @Cancellable true
     //
     // @Triggers when a player performs an animation.
     //
     // @Context
-    // <context.animation> returns the name of the animation.
+    // <context.animation> returns the name of the animation, from <@link url https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/event/player/PlayerAnimationType.html>.
     //
     // @Player Always.
     //
@@ -48,7 +47,7 @@ public class PlayerAnimatesScriptEvent extends BukkitScriptEvent implements List
         if (!path.eventLower.startsWith("player animates")) {
             return false;
         }
-        if (!couldMatchEnum(path.eventArgLowerAt(2), PlayerAnimationType.values())) {
+        if (!path.eventArgLowerAt(2).isEmpty() && !couldMatchEnum(path.eventArgLowerAt(2), PlayerAnimationType.values())) {
             return false;
         }
         return true;
@@ -73,7 +72,7 @@ public class PlayerAnimatesScriptEvent extends BukkitScriptEvent implements List
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(new PlayerTag(event.getPlayer()), null);
+        return new BukkitScriptEntryData(event.getPlayer());
     }
 
     @Override

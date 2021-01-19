@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.npc.traits;
 
 import com.denizenscript.denizen.events.bukkit.ExhaustedNPCEvent;
-import com.denizenscript.denizen.utilities.DenizenAPI;
+import com.denizenscript.denizen.objects.NPCTag;
 import net.citizensnpcs.api.ai.event.NavigationBeginEvent;
 import net.citizensnpcs.api.ai.event.NavigationCancelEvent;
 import net.citizensnpcs.api.ai.event.NavigationCompleteEvent;
@@ -82,7 +82,7 @@ public class HungerTrait extends Trait implements Listener {
                 // If still exhausted, cancel navigation and fire 'On Exhausted:' action
                 if (!e.isCancelled()) {
                     npc.getNavigator().cancelNavigation();
-                    DenizenAPI.getDenizenNPC(npc).action("exhausted", null);
+                    new NPCTag(npc).action("exhausted", null);
 
                     // No need to progress any further.
                     return;

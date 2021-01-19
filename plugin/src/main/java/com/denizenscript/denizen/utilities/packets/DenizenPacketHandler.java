@@ -1,5 +1,6 @@
 package com.denizenscript.denizen.utilities.packets;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.events.player.PlayerHoldsShieldEvent;
 import com.denizenscript.denizen.utilities.implementation.DenizenCoreImplementation;
 import com.denizenscript.denizen.nms.interfaces.packets.*;
@@ -11,7 +12,6 @@ import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.scripts.commands.player.GlowCommand;
 import com.denizenscript.denizen.scripts.commands.server.ExecuteCommand;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -28,7 +28,7 @@ public class DenizenPacketHandler {
     public static HashSet<UUID> forceNoclip = new HashSet<>();
 
     public void receivePacket(final Player player, final PacketInResourcePackStatus resourcePackStatus) {
-        Bukkit.getScheduler().runTask(DenizenAPI.getCurrentInstance(), new Runnable() {
+        Bukkit.getScheduler().runTask(Denizen.getInstance(), new Runnable() {
             @Override
             public void run() {
                 ResourcePackStatusScriptEvent event = ResourcePackStatusScriptEvent.instance;
@@ -41,7 +41,7 @@ public class DenizenPacketHandler {
 
     public boolean receivePacket(final Player player, final PacketInSteerVehicle steerVehicle) {
         if (PlayerSteersEntityScriptEvent.instance.enabled) {
-            Future<Boolean> future = Bukkit.getScheduler().callSyncMethod(DenizenAPI.getCurrentInstance(),
+            Future<Boolean> future = Bukkit.getScheduler().callSyncMethod(Denizen.getInstance(),
                     new Callable<Boolean>() {
                         @Override
                         public Boolean call() throws Exception {
@@ -76,7 +76,7 @@ public class DenizenPacketHandler {
 
     public void receivePlacePacket(final Player player) {
         if (isHoldingShield(player)) {
-            Bukkit.getScheduler().runTask(DenizenAPI.getCurrentInstance(), () -> {
+            Bukkit.getScheduler().runTask(Denizen.getInstance(), () -> {
                 PlayerHoldsShieldEvent.signalDidRaise(player);
             });
         }
@@ -84,10 +84,14 @@ public class DenizenPacketHandler {
 
     public void receiveDigPacket(final Player player) {
         if (isHoldingShield(player)) {
-            Bukkit.getScheduler().runTask(DenizenAPI.getCurrentInstance(), () -> {
+            Bukkit.getScheduler().runTask(Denizen.getInstance(), () -> {
                 PlayerHoldsShieldEvent.signalDidLower(player);
             });
         }
+    }
+
+    public boolean shouldInterceptChatPacket() {
+        return !ExecuteCommand.silencedPlayers.isEmpty() || PlayerReceivesMessageScriptEvent.instance.loaded;
     }
 
     public boolean sendPacket(final Player player, final PacketOutChat chat) {
@@ -124,7 +128,7 @@ public class DenizenPacketHandler {
                 }
                 else {
                     FutureTask<Boolean> futureTask = new FutureTask<>(eventCall);
-                    Bukkit.getScheduler().runTask(DenizenAPI.getCurrentInstance(), futureTask);
+                    Bukkit.getScheduler().runTask(Denizen.getInstance(), futureTask);
                     return futureTask.get();
                 }
             }
@@ -134,6 +138,10 @@ public class DenizenPacketHandler {
             }
         }
         return false;
+    }
+
+    public boolean shouldInterceptMetadata() {
+        return !GlowCommand.glowViewers.isEmpty();
     }
 
     public boolean sendPacket(Player player, PacketOutEntityMetadata entityMetadata) {

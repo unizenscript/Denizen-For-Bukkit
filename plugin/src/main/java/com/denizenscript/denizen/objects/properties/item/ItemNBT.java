@@ -1,8 +1,5 @@
 package com.denizenscript.denizen.objects.properties.item;
 
-import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.util.jnbt.*;
-import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.nbt.CustomNBT;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -12,7 +9,7 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
 import com.denizenscript.denizencore.tags.core.EscapeTagBase;
-import com.denizenscript.denizencore.utilities.CoreUtilities;
+import com.denizenscript.denizencore.utilities.Deprecations;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
@@ -250,23 +247,18 @@ public class ItemNBT implements Property {
         // @returns ElementTag(Boolean)
         // @mechanism ItemTag.nbt
         // @group properties
+        // @deprecated Use has_flag[...] instead.
         // @description
-        // Returns whether this item has the specified Denizen NBT key.
+        // Deprecated: use <@link tag FlaggableObject.has_flag> instead.
         // -->
         if (attribute.startsWith("has_nbt")) {
+            //Deprecations.itemNbt.warn(attribute.context);
             return new ElementTag(CustomNBT.hasCustomNBT(item.getItemStack(), attribute.getContext(1), CustomNBT.KEY_DENIZEN))
                     .getObjectAttribute(attribute.fulfill(1));
         }
 
-        // <--[tag]
-        // @attribute <ItemTag.nbt_keys>
-        // @returns ListTag
-        // @mechanism ItemTag.nbt
-        // @group properties
-        // @description
-        // Returns all of this item's Denizen NBT keys as a ListTag.
-        // -->
         if (attribute.startsWith("nbt_keys")) {
+            //Deprecations.itemNbt.warn(attribute.context);
             return new ListTag(CustomNBT.listNBT(item.getItemStack(), CustomNBT.KEY_DENIZEN))
                     .getObjectAttribute(attribute.fulfill(1));
         }
@@ -276,12 +268,12 @@ public class ItemNBT implements Property {
         // @returns ElementTag
         // @mechanism ItemTag.nbt
         // @group properties
+        // @deprecated Use flag[...] instead.
         // @description
-        // Returns the value of this item's Denizen NBT key as an ElementTag as best it can.
-        // If no key is specified, returns the full list of NBT key/value pairs (valid for input to nbt mechanism).
-        // See also <@link language Escape Tags>.
+        // Deprecated: use <@link tag FlaggableObject.flag> instead.
         // -->
         if (attribute.matches("nbt")) {
+            //Deprecations.itemNbt.warn(attribute.context);
             if (!attribute.hasContext(1)) {
                 ListTag list = getNBTDataList();
                 if (list == null) {
@@ -334,16 +326,17 @@ public class ItemNBT implements Property {
         // @object ItemTag
         // @name remove_nbt
         // @input ListTag
+        // @deprecated Use 'flag' instead.
         // @description
-        // Removes the Denizen NBT keys specified, or all Denizen NBT if no value is given.
+        // Deprecated: use <@link mechanism ItemTag.flag> instead.
         // @tags
-        // <ItemTag.has_nbt[<key>]>
-        // <ItemTag.nbt_keys>
-        // <ItemTag.nbt[<key>]>
+        // <ItemTag.nbt>
+        // <ItemTag.has_nbt>
         // -->
         if (mechanism.matches("remove_nbt")) {
+            //Deprecations.itemNbt.warn(mechanism.context);
             if (item.getMaterial().getMaterial() == Material.AIR) {
-                Debug.echoError("Cannot apply NBT to AIR!");
+                mechanism.echoError("Cannot apply NBT to AIR!");
                 return;
             }
             ItemStack itemStack = item.getItemStack();
@@ -364,17 +357,17 @@ public class ItemNBT implements Property {
         // @object ItemTag
         // @name nbt
         // @input ListTag
+        // @deprecated Use 'flag' instead.
         // @description
-        // Adds Denizen NBT to this item in the format key/value|key/value...
-        // See also <@link language Escape Tags>.
+        // Deprecated: use <@link mechanism ItemTag.flag> instead.
         // @tags
-        // <ItemTag.has_nbt[<key>]>
-        // <ItemTag.nbt_keys>
-        // <ItemTag.nbt[<key>]>
+        // <ItemTag.nbt>
+        // <ItemTag.has_nbt>
         // -->
         if (mechanism.matches("nbt")) {
+            //Deprecations.itemNbt.warn(mechanism.context);
             if (item.getMaterial().getMaterial() == Material.AIR) {
-                Debug.echoError("Cannot apply NBT to AIR!");
+                mechanism.echoError("Cannot apply NBT to AIR!");
                 return;
             }
             ListTag list = mechanism.valueAsType(ListTag.class);

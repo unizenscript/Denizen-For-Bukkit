@@ -1,7 +1,7 @@
 package com.denizenscript.denizen.scripts.triggers.core;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.scripts.containers.core.InteractScriptContainer;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.npc.traits.TriggerTrait;
 import com.denizenscript.denizen.objects.NPCTag;
@@ -88,11 +88,11 @@ public class ProximityTrigger extends AbstractTrigger implements Listener {
 
     @Override
     public void onEnable() {
-        Bukkit.getServer().getPluginManager().registerEvents(this, DenizenAPI.getCurrentInstance());
+        Bukkit.getServer().getPluginManager().registerEvents(this, Denizen.getInstance());
 
         final ProximityTrigger trigger = this;
 
-        taskID = Bukkit.getScheduler().scheduleSyncRepeatingTask(DenizenAPI.getCurrentInstance(), new Runnable() {
+        taskID = Bukkit.getScheduler().scheduleSyncRepeatingTask(Denizen.getInstance(), new Runnable() {
             @Override
             public void run() {
 
@@ -108,7 +108,7 @@ public class ProximityTrigger extends AbstractTrigger implements Listener {
                     // If the NPC doesn't have triggers, or the Proximity Trigger is not enabled,
                     // then just return.
                     //
-                    if (!citizensNPC.hasTrait(TriggerTrait.class) || !citizensNPC.getTrait(TriggerTrait.class).isEnabled(name)) {
+                    if (!citizensNPC.hasTrait(TriggerTrait.class) || !citizensNPC.getOrAddTrait(TriggerTrait.class).isEnabled(name)) {
                         continue;
                     }
                     NPCTag npc = new NPCTag(citizensNPC);

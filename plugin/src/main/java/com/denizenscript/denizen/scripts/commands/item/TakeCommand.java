@@ -19,10 +19,13 @@ import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
 import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.Deprecations;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.function.Function;
 
@@ -30,14 +33,14 @@ public class TakeCommand extends AbstractCommand {
 
     public TakeCommand() {
         setName("take");
-        setSyntax("take [money/xp/iteminhand/scriptname:<name>/bydisplay:<name>/bycover:<title>|<author>/slot:<slot>/nbt:<key>/material:<material>/<item>|...] (quantity:<#>) (from:<inventory>)");
+        setSyntax("take [money/xp/iteminhand/cursoritem/scriptname:<name>/bydisplay:<name>/bycover:<title>|<author>/slot:<slot>/flagged:<flag>/material:<material>/<item>|...] (quantity:<#>) (from:<inventory>)");
         setRequiredArguments(1, 3);
         isProcedural = false;
     }
 
     // <--[command]
     // @Name Take
-    // @Syntax take [money/xp/iteminhand/scriptname:<name>/bydisplay:<name>/bycover:<title>|<author>/slot:<slot>/nbt:<key>/material:<material>/<item>|...] (quantity:<#>) (from:<inventory>)
+    // @Syntax take [money/xp/iteminhand/cursoritem/scriptname:<name>/bydisplay:<name>/bycover:<title>|<author>/slot:<slot>/flagged:<flag>/material:<material>/<item>|...] (quantity:<#>) (from:<inventory>)
     // @Required 1
     // @Maximum 3
     // @Short Takes an item from the player.
@@ -50,9 +53,11 @@ public class TakeCommand extends AbstractCommand {
     //
     // Using 'slot:' will take the items from that specific slot.
     //
-    // Using 'nbt:' with a key will take items with the specified NBT key, as set by <@link mechanism ItemTag.nbt>.
+    // Using 'flagged:' with a flag name will take items with the specified flag name, see <@link language flag system>.
     //
     // Using 'iteminhand' will take from the player's held item slot.
+    //
+    // Using 'cursoritem' will take from the player's held cursor item (as in, one that's actively being picked up and moved in an inventory screen).
     //
     // Using 'scriptname:' will take items with the specified item script name.
     //
@@ -72,6 +77,8 @@ public class TakeCommand extends AbstractCommand {
     //
     // Optionally using 'from:' to specify a specific inventory to take from. If not specified, the linked player's inventory will be used.
     //
+    // The options 'iteminhand', 'cursoritem', 'money', and 'xp' require a linked player and will ignore the 'from:' inventory.
+    //
     // @Tags
     // <PlayerTag.item_in_hand>
     // <PlayerTag.money>
@@ -79,18 +86,23 @@ public class TakeCommand extends AbstractCommand {
     // @Usage
     // Use to take money from the player
     // - take money quantity:10
+    //
     // @Usage
     // Use to take an arrow from the player's enderchest
     // - take material:arrow from:<player.enderchest>
+    //
     // @Usage
     // Use to take the current holding item from the player's hand
     // - take iteminhand
+    //
     // @Usage
     // Use to take 5 emeralds from the player's inventory
     // - take material:emerald quantity:5
     // -->
 
-    private enum Type {MONEY, XP, ITEMINHAND, ITEM, INVENTORY, BYDISPLAY, SLOT, BYCOVER, SCRIPTNAME, NBT, MATERIAL}
+    private enum Type {MONEY, XP, ITEMINHAND, CURSORITEM, ITEM, INVENTORY, BYDISPLAY, SLOT, BYCOVER, SCRIPTNAME, NBT, MATERIAL, FLAGGED}
+
+    public static HashSet<Type> requiresPlayerTypes = new HashSet<>(Arrays.asList(Type.XP, Type.MONEY, Type.ITEMINHAND, Type.CURSORITEM));
 
     @Override
     public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
@@ -107,9 +119,16 @@ public class TakeCommand extends AbstractCommand {
                     && arg.matches("item_in_hand", "iteminhand")) {
                 scriptEntry.addObject("type", Type.ITEMINHAND);
             }
+            else if (!scriptEntry.hasObject("type")
+                    && arg.matches("cursoritem", "cursor_item")) {
+                scriptEntry.addObject("type", Type.CURSORITEM);
+            }
             else if (!scriptEntry.hasObject("quantity")
                     && arg.matchesPrefix("q", "qty", "quantity")
                     && arg.matchesFloat()) {
+                if (arg.matchesPrefix("q", "qty")) {
+                    Deprecations.qtyTags.warn(scriptEntry);
+                }
                 scriptEntry.addObject("quantity", arg.asElement());
             }
             else if (!scriptEntry.hasObject("items")
@@ -121,8 +140,15 @@ public class TakeCommand extends AbstractCommand {
             else if (!scriptEntry.hasObject("items")
                     && arg.matchesPrefix("nbt")
                     && !scriptEntry.hasObject("type")) {
+                Deprecations.itemNbt.warn(scriptEntry);
                 scriptEntry.addObject("type", Type.NBT);
                 scriptEntry.addObject("nbt_key", arg.asElement());
+            }
+            else if (!scriptEntry.hasObject("items")
+                    && arg.matchesPrefix("flagged")
+                    && !scriptEntry.hasObject("type")) {
+                scriptEntry.addObject("type", Type.FLAGGED);
+                scriptEntry.addObject("flag_name", arg.asElement());
             }
             else if (!scriptEntry.hasObject("type")
                     && !scriptEntry.hasObject("items")
@@ -151,7 +177,7 @@ public class TakeCommand extends AbstractCommand {
             else if (!scriptEntry.hasObject("items")
                     && !scriptEntry.hasObject("type")
                     && arg.matchesArgumentList(ItemTag.class)) {
-                scriptEntry.addObject("items", ListTag.valueOf(arg.raw_value.replace("item:", ""), scriptEntry.getContext()).filter(ItemTag.class, scriptEntry));
+                scriptEntry.addObject("items", ListTag.valueOf(arg.getRawValue().replace("item:", ""), scriptEntry.getContext()).filter(ItemTag.class, scriptEntry));
             }
             else if (!scriptEntry.hasObject("inventory")
                     && arg.matchesPrefix("f", "from")
@@ -184,6 +210,9 @@ public class TakeCommand extends AbstractCommand {
         if (type == Type.ITEM && scriptEntry.getObject("items") == null) {
             throw new InvalidArgumentsException("Must specify item/items!");
         }
+        if (requiresPlayerTypes.contains(type) && !Utilities.entryHasPlayer(scriptEntry)) {
+            throw new InvalidArgumentsException("Cannot take '" + type.name() + "' without a linked player.");
+        }
     }
 
     @Override
@@ -195,13 +224,10 @@ public class TakeCommand extends AbstractCommand {
         ElementTag slot = scriptEntry.getElement("slot");
         ListTag titleAuthor = scriptEntry.getObjectTag("cover");
         ElementTag nbtKey = scriptEntry.getElement("nbt_key");
+        ElementTag flagName = scriptEntry.getElement("flag_name");
         MaterialTag material = scriptEntry.getObjectTag("material");
         Type type = (Type) scriptEntry.getObject("type");
-        Object items_object = scriptEntry.getObject("items");
-        List<ItemTag> items = null;
-        if (items_object != null) {
-            items = (List<ItemTag>) items_object;
-        }
+        List<ItemTag> items = (List<ItemTag>) scriptEntry.getObject("items");
         if (scriptEntry.dbCallShouldDebug()) {
             Debug.report(scriptEntry, getName(), ArgumentHelper.debugObj("Type", type.name())
                             + quantity.debug()
@@ -211,6 +237,7 @@ public class TakeCommand extends AbstractCommand {
                             + ArgumentHelper.debugObj("Items", items)
                             + (slot != null ? slot.debug() : "")
                             + (nbtKey != null ? nbtKey.debug() : "")
+                            + (flagName != null ? flagName.debug() : "")
                             + (material != null ? material.debug() : "")
                             + (titleAuthor != null ? titleAuthor.debug() : ""));
         }
@@ -220,24 +247,47 @@ public class TakeCommand extends AbstractCommand {
                 break;
             }
             case ITEMINHAND: {
-                int inHandAmt = Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().getEquipment().getItemInMainHand().getAmount();
+                Player player = Utilities.getEntryPlayer(scriptEntry).getPlayerEntity();
+                int inHandAmt = player.getEquipment().getItemInMainHand().getAmount();
                 int theAmount = (int) quantity.asDouble();
                 ItemStack newHandItem = new ItemStack(Material.AIR);
                 if (theAmount > inHandAmt) {
                     Debug.echoDebug(scriptEntry, "...player did not have enough of the item in hand, taking all...");
-                    Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().setItemInHand(newHandItem);
+                    player.getEquipment().setItemInMainHand(newHandItem);
                 }
                 else {
                     // amount is just right!
                     if (theAmount == inHandAmt) {
-                        Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().setItemInHand(newHandItem);
+                        player.getEquipment().setItemInMainHand(newHandItem);
                     }
                     else {
                         // amount is less than what's in hand, need to make a new itemstack of what's left...
-                        newHandItem = Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().getEquipment().getItemInMainHand().clone();
+                        newHandItem = player.getEquipment().getItemInMainHand().clone();
                         newHandItem.setAmount(inHandAmt - theAmount);
-                        Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().setItemInHand(newHandItem);
-                        Utilities.getEntryPlayer(scriptEntry).getPlayerEntity().updateInventory();
+                        player.getEquipment().setItemInMainHand(newHandItem);
+                        player.updateInventory();
+                    }
+                }
+                break;
+            }
+            case CURSORITEM: {
+                Player player = Utilities.getEntryPlayer(scriptEntry).getPlayerEntity();
+                int currentAmount = player.getItemOnCursor().getAmount();
+                int takeAmount = (int) quantity.asDouble();
+                ItemStack newItem = new ItemStack(Material.AIR);
+                if (takeAmount > currentAmount) {
+                    Debug.echoDebug(scriptEntry, "...player did not have enough of the item on cursor, taking all...");
+                    player.setItemOnCursor(newItem);
+                }
+                else {
+                    if (takeAmount == currentAmount) {
+                        player.setItemOnCursor(newItem);
+                    }
+                    else {
+                        newItem = player.getItemOnCursor().clone();
+                        newItem.setAmount(currentAmount - takeAmount);
+                        player.setItemOnCursor(newItem);
+                        player.updateInventory();
                     }
                 }
                 break;
@@ -281,6 +331,14 @@ public class TakeCommand extends AbstractCommand {
                 takeByMatcher(inventory, (item) -> item.hasItemMeta() && item.getItemMeta() instanceof BookMeta
                                 && equalOrNull(titleAuthor.get(0), ((BookMeta) item.getItemMeta()).getTitle())
                                 && (titleAuthor.size() == 1 || equalOrNull(titleAuthor.get(1), ((BookMeta) item.getItemMeta()).getAuthor())), quantity.asInt());
+                break;
+            }
+            case FLAGGED: {
+                if (flagName == null) {
+                    Debug.echoError(scriptEntry.getResidingQueue(), "Must specify a flag name!");
+                    return;
+                }
+                takeByMatcher(inventory, (item) -> new ItemTag(item).getFlagTracker().hasFlag(flagName.asString()), quantity.asInt());
                 break;
             }
             case NBT: {

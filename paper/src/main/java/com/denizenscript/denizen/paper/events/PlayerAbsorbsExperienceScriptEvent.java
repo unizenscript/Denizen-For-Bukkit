@@ -2,7 +2,6 @@ package com.denizenscript.denizen.paper.events;
 
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizen.objects.EntityTag;
-import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizencore.events.ScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
@@ -19,7 +18,7 @@ public class PlayerAbsorbsExperienceScriptEvent extends BukkitScriptEvent implem
     //
     // @Regex ^on player absorbs experience$
     //
-    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Location true
     //
     // @Plugin Paper
     //
@@ -61,7 +60,7 @@ public class PlayerAbsorbsExperienceScriptEvent extends BukkitScriptEvent implem
 
     @Override
     public ScriptEntryData getScriptEntryData() {
-        return new BukkitScriptEntryData(new PlayerTag(event.getPlayer()), null);
+        return new BukkitScriptEntryData(event.getPlayer());
     }
 
     @Override

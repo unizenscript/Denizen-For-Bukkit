@@ -1,6 +1,5 @@
 package com.denizenscript.denizen.scripts.commands.entity;
-
-import com.denizenscript.denizen.utilities.DenizenAPI;
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.depends.Depends;
@@ -31,7 +30,7 @@ public class WalkCommand extends AbstractCommand implements Holdable {
         setSyntax("walk (<entity>|...) [<location>/stop] (speed:<#.#>) (auto_range) (radius:<#.#>) (lookat:<location>)");
         setRequiredArguments(1, 6);
         if (Depends.citizens != null) {
-            DenizenAPI.getCurrentInstance().getServer().getPluginManager().registerEvents(new WalkCommandCitizensEvents(), DenizenAPI.getCurrentInstance());
+            Denizen.getInstance().getServer().getPluginManager().registerEvents(new WalkCommandCitizensEvents(), Denizen.getInstance());
         }
         isProcedural = false;
     }
@@ -201,10 +200,7 @@ public class WalkCommand extends AbstractCommand implements Holdable {
                     npc.getNavigator().getLocalParameters().speedModifier(speed.asFloat());
                 }
                 if (radius != null) {
-                    npc.getNavigator().getLocalParameters().distanceMargin(radius.asDouble());
-                    npc.getNavigator().getLocalParameters().pathDistanceMargin(radius.asDouble());
-                    npc.getNavigator().getLocalParameters().addRunCallback(WalkCommandCitizensEvents
-                            .generateNewFlocker(npc.getCitizen(), radius.asDouble()));
+                    npc.getNavigator().getLocalParameters().addRunCallback(WalkCommandCitizensEvents.generateNewFlocker(npc.getCitizen(), radius.asDouble()));
                 }
             }
             else if (shouldStop) {

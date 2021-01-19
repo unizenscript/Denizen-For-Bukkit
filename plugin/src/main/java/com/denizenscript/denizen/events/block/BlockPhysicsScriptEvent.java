@@ -20,7 +20,7 @@ public class BlockPhysicsScriptEvent extends BukkitScriptEvent implements Listen
     //
     // @Group Block
     //
-    // @Switch in:<area> to only process the event if it occurred within a specified area.
+    // @Location true
     //
     // @Warning This event may fire very rapidly.
     //
@@ -57,16 +57,13 @@ public class BlockPhysicsScriptEvent extends BukkitScriptEvent implements Listen
 
     @Override
     public boolean matches(ScriptPath path) {
-
         if (!runInCheck(path, location)) {
             return false;
         }
-
         if (!tryMaterial(material, path.eventArgLowerAt(0))) {
             return false;
         }
         return super.matches(path);
-
     }
 
     @Override

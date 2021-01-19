@@ -1,6 +1,8 @@
 package com.denizenscript.denizen.nms.v1_16.helpers;
 
 import com.denizenscript.denizen.nms.NMSHandler;
+import com.denizenscript.denizen.nms.v1_16.impl.SidebarImpl;
+import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizencore.utilities.ReflectionHelper;
 import com.denizenscript.denizen.nms.v1_16.Handler;
 import com.denizenscript.denizen.nms.v1_16.impl.jnbt.CompoundTagImpl;
@@ -10,17 +12,18 @@ import com.denizenscript.denizen.nms.util.jnbt.JNBTListTag;
 import com.denizenscript.denizen.utilities.FormattedTextHelper;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.mojang.datafixers.util.Pair;
-import net.minecraft.server.v1_16_R2.*;
+import net.md_5.bungee.api.ChatColor;
+import net.minecraft.server.v1_16_R3.*;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.block.banner.Pattern;
-import org.bukkit.craftbukkit.v1_16_R2.CraftEquipmentSlot;
-import org.bukkit.craftbukkit.v1_16_R2.CraftServer;
-import org.bukkit.craftbukkit.v1_16_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_16_R2.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_16_R2.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_16_R2.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_16_R3.CraftEquipmentSlot;
+import org.bukkit.craftbukkit.v1_16_R3.CraftServer;
+import org.bukkit.craftbukkit.v1_16_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_16_R3.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -30,14 +33,14 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 import java.lang.invoke.MethodHandle;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
+import java.lang.reflect.Field;
+import java.util.*;
 
 public class PacketHelperImpl implements PacketHelper {
 
     public static final DataWatcherObject<Float> ENTITY_HUMAN_DATA_WATCHER_ABSORPTION = ReflectionHelper.getFieldValue(EntityHuman.class, "c", null);
+
+    public static final DataWatcherObject<Byte> ENTITY_DATA_WATCHER_FLAGS = ReflectionHelper.getFieldValue(net.minecraft.server.v1_16_R3.Entity.class, "S", null);
 
     public static final MethodHandle ABILITIES_PACKET_FOV_SETTER = ReflectionHelper.getFinalSetter(PacketPlayOutAbilities.class, "f");
 
@@ -171,8 +174,8 @@ public class PacketHelperImpl implements PacketHelper {
     @Override
     public void showTabListHeaderFooter(Player player, String header, String footer) {
         PacketPlayOutPlayerListHeaderFooter packet = new PacketPlayOutPlayerListHeaderFooter();
-        packet.header = Handler.componentToNMS(FormattedTextHelper.parse(header));
-        packet.footer = Handler.componentToNMS(FormattedTextHelper.parse(footer));
+        packet.header = Handler.componentToNMS(FormattedTextHelper.parse(header, ChatColor.WHITE));
+        packet.footer = Handler.componentToNMS(FormattedTextHelper.parse(footer, ChatColor.WHITE));
         sendPacket(player, packet);
     }
 
@@ -185,17 +188,17 @@ public class PacketHelperImpl implements PacketHelper {
     public void showTitle(Player player, String title, String subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks) {
         sendPacket(player, new PacketPlayOutTitle(fadeInTicks, stayTicks, fadeOutTicks));
         if (title != null) {
-            sendPacket(player, new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.TITLE, Handler.componentToNMS(FormattedTextHelper.parse(title))));
+            sendPacket(player, new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.TITLE, Handler.componentToNMS(FormattedTextHelper.parse(title, ChatColor.WHITE))));
         }
         if (subtitle != null) {
-            sendPacket(player, new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.SUBTITLE, Handler.componentToNMS(FormattedTextHelper.parse(subtitle))));
+            sendPacket(player, new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.SUBTITLE, Handler.componentToNMS(FormattedTextHelper.parse(subtitle, ChatColor.WHITE))));
         }
     }
 
     @Override
     public void showEquipment(Player player, LivingEntity entity, EquipmentSlot equipmentSlot, ItemStack itemStack) {
-        Pair<EnumItemSlot, net.minecraft.server.v1_16_R2.ItemStack> pair = new Pair<>(CraftEquipmentSlot.getNMS(equipmentSlot), CraftItemStack.asNMSCopy(itemStack));
-        ArrayList<Pair<EnumItemSlot, net.minecraft.server.v1_16_R2.ItemStack>> pairList = new ArrayList<>();
+        Pair<EnumItemSlot, net.minecraft.server.v1_16_R3.ItemStack> pair = new Pair<>(CraftEquipmentSlot.getNMS(equipmentSlot), CraftItemStack.asNMSCopy(itemStack));
+        ArrayList<Pair<EnumItemSlot, net.minecraft.server.v1_16_R3.ItemStack>> pairList = new ArrayList<>();
         pairList.add(pair);
         sendPacket(player, new PacketPlayOutEntityEquipment(entity.getEntityId(), pairList));
     }
@@ -267,21 +270,46 @@ public class PacketHelperImpl implements PacketHelper {
 
     static {
         try {
-            ENTITY_CUSTOM_NAME_METADATA = ReflectionHelper.getFieldValue(net.minecraft.server.v1_16_R2.Entity.class, "aq", null);
-            ENTITY_CUSTOM_NAME_VISIBLE_METADATA = ReflectionHelper.getFieldValue(net.minecraft.server.v1_16_R2.Entity.class, "ay", null);
+            ENTITY_CUSTOM_NAME_METADATA = ReflectionHelper.getFieldValue(net.minecraft.server.v1_16_R3.Entity.class, "aq", null);
+            ENTITY_CUSTOM_NAME_VISIBLE_METADATA = ReflectionHelper.getFieldValue(net.minecraft.server.v1_16_R3.Entity.class, "ar", null);
         }
         catch (Throwable ex) {
             ex.printStackTrace();
         }
     }
 
+    public static Field ENTITY_TRACKER_ENTRY_GETTER = ReflectionHelper.getFields(PlayerChunkMap.EntityTracker.class).get("trackerEntry");
+
     @Override
-    public void sendRename(Player player, Entity entity, String name) {
+    public void sendRename(Player player, Entity entity, String name, boolean listMode) {
         try {
+            if (entity.getType() == EntityType.PLAYER) {
+                if (listMode) {
+                    sendPacket(player, new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.UPDATE_DISPLAY_NAME, ((CraftPlayer) player).getHandle()));
+                }
+                else {
+                    // For player entities, force a respawn packet and let the dynamic intercept correct the details
+                    PlayerChunkMap tracker = ((WorldServer) ((CraftEntity) entity).getHandle().world).getChunkProvider().playerChunkMap;
+                    PlayerChunkMap.EntityTracker entityTracker = tracker.trackedEntities.get(entity.getEntityId());
+                    if (entityTracker != null) {
+                        try {
+                            EntityTrackerEntry entry = (EntityTrackerEntry) ENTITY_TRACKER_ENTRY_GETTER.get(entityTracker);
+                            if (entry != null) {
+                                entry.a(((CraftPlayer) player).getHandle());
+                                entry.b(((CraftPlayer) player).getHandle());
+                            }
+                        }
+                        catch (Throwable ex) {
+                            Debug.echoError(ex);
+                        }
+                    }
+                }
+                return;
+            }
             PacketPlayOutEntityMetadata packet = new PacketPlayOutEntityMetadata();
             ENTITY_METADATA_EID_SETTER.invoke(packet, entity.getEntityId());
             List<DataWatcher.Item<?>> list = new ArrayList<>();
-            list.add(new DataWatcher.Item<>(ENTITY_CUSTOM_NAME_METADATA, Optional.of(Handler.componentToNMS(FormattedTextHelper.parse(name)))));
+            list.add(new DataWatcher.Item<>(ENTITY_CUSTOM_NAME_METADATA, Optional.of(Handler.componentToNMS(FormattedTextHelper.parse(name, ChatColor.WHITE)))));
             list.add(new DataWatcher.Item<>(ENTITY_CUSTOM_NAME_VISIBLE_METADATA, true));
             ENTITY_METADATA_LIST_SETTER.invoke(packet, list);
             sendPacket(player, packet);
@@ -289,6 +317,54 @@ public class PacketHelperImpl implements PacketHelper {
         catch (Throwable ex) {
             Debug.echoError(ex);
         }
+    }
+
+    public static HashMap<UUID, HashMap<UUID, ScoreboardTeam>> noCollideTeamMap = new HashMap<>();
+
+    @Override
+    public void generateNoCollideTeam(Player player, UUID noCollide) {
+        removeNoCollideTeam(player, noCollide);
+        ScoreboardTeam team = new ScoreboardTeam(SidebarImpl.dummyScoreboard, Utilities.generateRandomColors(8));
+        team.getPlayerNameSet().add(noCollide.toString());
+        team.setCollisionRule(ScoreboardTeamBase.EnumTeamPush.NEVER);
+        HashMap<UUID, ScoreboardTeam> map = noCollideTeamMap.get(player.getUniqueId());
+        if (map == null) {
+            map = new HashMap<>();
+            noCollideTeamMap.put(player.getUniqueId(), map);
+        }
+        map.put(noCollide, team);
+        sendPacket(player, new PacketPlayOutScoreboardTeam(team, 0));
+    }
+
+    @Override
+    public void removeNoCollideTeam(Player player, UUID noCollide) {
+        if (noCollide == null || !player.isOnline()) {
+            noCollideTeamMap.remove(player.getUniqueId());
+            return;
+        }
+        HashMap<UUID, ScoreboardTeam> map = noCollideTeamMap.get(player.getUniqueId());
+        if (map == null) {
+            return;
+        }
+        ScoreboardTeam team = map.remove(noCollide);
+        if (team != null) {
+            sendPacket(player, new PacketPlayOutScoreboardTeam(team, 1));
+        }
+        if (map.isEmpty()) {
+            noCollideTeamMap.remove(player.getUniqueId());
+        }
+    }
+
+    @Override
+    public void sendEntityMetadataFlagsUpdate(Player player) {
+        DataWatcher dw = new DataWatcher(null);
+        dw.register(ENTITY_DATA_WATCHER_FLAGS, ((CraftPlayer) player).getHandle().getDataWatcher().get(ENTITY_DATA_WATCHER_FLAGS));
+        sendPacket(player, new PacketPlayOutEntityMetadata(player.getEntityId(), dw, true));
+    }
+
+    @Override
+    public void sendEntityEffect(Player player, Entity entity, byte effectId) {
+        sendPacket(player, new PacketPlayOutEntityStatus(((CraftEntity) entity).getHandle(), effectId));
     }
 
     public static void sendPacket(Player player, Packet packet) {
