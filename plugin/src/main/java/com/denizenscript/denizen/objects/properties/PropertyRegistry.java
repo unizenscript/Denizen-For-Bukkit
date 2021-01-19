@@ -52,9 +52,7 @@ public class PropertyRegistry {
         if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
             PropertyParser.registerProperty(EntityCatType.class, EntityTag.class);
         }
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            PropertyParser.registerProperty(EntityCharging.class, EntityTag.class);
-        }
+        PropertyParser.registerProperty(EntityCharging.class, EntityTag.class);
         PropertyParser.registerProperty(EntityChestCarrier.class, EntityTag.class);
         if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_14)) {
             PropertyParser.registerProperty(EntityCollarColor.class, EntityTag.class);

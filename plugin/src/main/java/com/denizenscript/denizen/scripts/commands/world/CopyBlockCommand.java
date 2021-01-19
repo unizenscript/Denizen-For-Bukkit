@@ -1,8 +1,8 @@
 package com.denizenscript.denizen.scripts.commands.world;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.objects.CuboidTag;
-import com.denizenscript.denizen.utilities.DenizenAPI;
 import com.denizenscript.denizen.utilities.blocks.FullBlockData;
 import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.objects.LocationTag;
@@ -194,7 +194,7 @@ public class CopyBlockCommand extends AbstractCommand {
                             cancel();
                         }
                     }
-                }.runTaskTimer(DenizenAPI.getCurrentInstance(), 1, 1);
+                }.runTaskTimer(Denizen.getInstance(), 1, 1);
             }
             else {
                 for (CuboidTag.LocationPair pair : sourceCuboid.pairs) {

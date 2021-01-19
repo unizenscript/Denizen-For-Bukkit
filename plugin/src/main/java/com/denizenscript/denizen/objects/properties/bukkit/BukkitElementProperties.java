@@ -5,6 +5,7 @@ import com.denizenscript.denizen.objects.*;
 import com.denizenscript.denizen.scripts.containers.core.FormatScriptContainer;
 import com.denizenscript.denizen.scripts.containers.core.ItemScriptHelper;
 import com.denizenscript.denizen.utilities.FormattedTextHelper;
+import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizencore.objects.Argument;
 import com.denizenscript.denizen.utilities.TextWidthHelper;
 import com.denizenscript.denizencore.objects.core.ListTag;
@@ -18,9 +19,6 @@ import com.denizenscript.denizencore.objects.Mechanism;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.scripts.ScriptRegistry;
-import com.denizenscript.denizencore.tags.Attribute;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.api.ChatColor;
 

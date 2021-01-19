@@ -73,10 +73,8 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(new EntityInteractScriptEvent());
         ScriptEvent.registerScriptEvent(new EntityKilledScriptEvent());
         ScriptEvent.registerScriptEvent(new EntityMountsEntityScriptEvent());
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_13)) {
-            ScriptEvent.registerScriptEvent(new EntityPotionEffectScriptEvent());
-            ScriptEvent.registerScriptEvent(new EntityPicksUpItemScriptEvent());
-        }
+        ScriptEvent.registerScriptEvent(new EntityPotionEffectScriptEvent());
+        ScriptEvent.registerScriptEvent(new EntityPicksUpItemScriptEvent());
         ScriptEvent.registerScriptEvent(new EntityResurrectScriptEvent());
         ScriptEvent.registerScriptEvent(new EntityShootsBowEvent());
         ScriptEvent.registerScriptEvent(new EntitySpawnerSpawnScriptEvent());

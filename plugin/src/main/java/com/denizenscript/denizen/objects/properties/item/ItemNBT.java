@@ -1,5 +1,8 @@
 package com.denizenscript.denizen.objects.properties.item;
 
+import com.denizenscript.denizen.nms.NMSHandler;
+import com.denizenscript.denizen.nms.util.jnbt.*;
+import com.denizenscript.denizen.utilities.debugging.Debug;
 import com.denizenscript.denizen.utilities.nbt.CustomNBT;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -9,6 +12,7 @@ import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.properties.Property;
 import com.denizenscript.denizencore.tags.Attribute;
 import com.denizenscript.denizencore.tags.core.EscapeTagBase;
+import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.Deprecations;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;

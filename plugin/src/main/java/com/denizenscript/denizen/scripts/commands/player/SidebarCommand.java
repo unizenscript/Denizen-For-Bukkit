@@ -110,8 +110,8 @@ public class SidebarCommand extends AbstractCommand {
     @Override
     public void onEnable() {
         setParseArgs(false);
-        DenizenAPI.getCurrentInstance().getServer().getPluginManager()
-                .registerEvents(new SidebarEvents(), DenizenAPI.getCurrentInstance());
+        Denizen.getInstance().getServer().getPluginManager()
+                .registerEvents(new SidebarEvents(), Denizen.getInstance());
     }
 
     @Override
